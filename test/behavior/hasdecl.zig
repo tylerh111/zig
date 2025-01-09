@@ -11,25 +11,25 @@ const Bar = struct {
     pub var blah = "xxx";
 };
 
-test "@hasDecl" {
+test "@hasdecl" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    try expect(@hasDecl(Foo, "public_thing"));
-    try expect(!@hasDecl(Foo, "private_thing"));
-    try expect(!@hasDecl(Foo, "no_thing"));
+    try expect(@hasdecl(Foo, "public_thing"));
+    try expect(!@hasdecl(Foo, "private_thing"));
+    try expect(!@hasdecl(Foo, "no_thing"));
 
-    try expect(@hasDecl(Bar, "hi"));
-    try expect(@hasDecl(Bar, "blah"));
-    try expect(!@hasDecl(Bar, "nope"));
+    try expect(@hasdecl(Bar, "hi"));
+    try expect(@hasdecl(Bar, "blah"));
+    try expect(!@hasdecl(Bar, "nope"));
 }
 
-test "@hasDecl using a sliced string literal" {
+test "@hasdecl using a sliced string literal" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    try expect(@hasDecl(@This(), "std") == true);
-    try expect(@hasDecl(@This(), "std"[0..0]) == false);
-    try expect(@hasDecl(@This(), "std"[0..1]) == false);
-    try expect(@hasDecl(@This(), "std"[0..2]) == false);
-    try expect(@hasDecl(@This(), "std"[0..3]) == true);
-    try expect(@hasDecl(@This(), "std"[0..]) == true);
+    try expect(@hasdecl(@This(), "std") == true);
+    try expect(@hasdecl(@This(), "std"[0..0]) == false);
+    try expect(@hasdecl(@This(), "std"[0..1]) == false);
+    try expect(@hasdecl(@This(), "std"[0..2]) == false);
+    try expect(@hasdecl(@This(), "std"[0..3]) == true);
+    try expect(@hasdecl(@This(), "std"[0..]) == true);
 }

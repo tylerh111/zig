@@ -1,5 +1,5 @@
 export fn foo() void {
-    _ = @wasmMemorySize(0);
+    _ = @wasmmemorysize(0);
     return;
 }
 
@@ -7,4 +7,4 @@ export fn foo() void {
 // backend=stage2
 // target=x86_64-native
 //
-// :2:9: error: builtin @wasmMemorySize is available when targeting WebAssembly; targeted CPU architecture is x86_64
+// :2:9: error: builtin @wasmmemorysize is available when targeting WebAssembly; targeted CPU architecture is x86_64

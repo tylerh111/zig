@@ -1,5 +1,5 @@
 pub fn main() void {
-    _ = @as(*u32, @ptrFromInt(2));
+    _ = @as(*u32, @ptrfromint(2));
 }
 
 // error

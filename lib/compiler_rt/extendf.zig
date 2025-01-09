@@ -3,16 +3,16 @@ const std = @import("std");
 pub inline fn extendf(
     comptime dst_t: type,
     comptime src_t: type,
-    a: std.meta.Int(.unsigned, @typeInfo(src_t).Float.bits),
+    a: std.meta.Int(.unsigned, @typeinfo(src_t).Float.bits),
 ) dst_t {
-    const src_rep_t = std.meta.Int(.unsigned, @typeInfo(src_t).Float.bits);
-    const dst_rep_t = std.meta.Int(.unsigned, @typeInfo(dst_t).Float.bits);
+    const src_rep_t = std.meta.Int(.unsigned, @typeinfo(src_t).Float.bits);
+    const dst_rep_t = std.meta.Int(.unsigned, @typeinfo(dst_t).Float.bits);
     const srcSigBits = std.math.floatMantissaBits(src_t);
     const dstSigBits = std.math.floatMantissaBits(dst_t);
 
     // Various constants whose values follow from the type parameters.
     // Any reasonable optimizer will fold and propagate all of these.
-    const srcBits = @bitSizeOf(src_t);
+    const srcBits = @bitsizeof(src_t);
     const srcExpBits = srcBits - srcSigBits - 1;
     const srcInfExp = (1 << srcExpBits) - 1;
     const srcExpBias = srcInfExp >> 1;
@@ -24,7 +24,7 @@ pub inline fn extendf(
     const srcQNaN = 1 << (srcSigBits - 1);
     const srcNaNCode = srcQNaN - 1;
 
-    const dstBits = @bitSizeOf(dst_t);
+    const dstBits = @bitsizeof(dst_t);
     const dstExpBits = dstBits - dstSigBits - 1;
     const dstInfExp = (1 << dstExpBits) - 1;
     const dstExpBias = dstInfExp >> 1;
@@ -32,7 +32,7 @@ pub inline fn extendf(
     const dstMinNormal: dst_rep_t = @as(dst_rep_t, 1) << dstSigBits;
 
     // Break a into a sign and representation of the absolute value
-    const aRep: src_rep_t = @bitCast(a);
+    const aRep: src_rep_t = @bitcast(a);
     const aAbs: src_rep_t = aRep & srcAbsMask;
     const sign: src_rep_t = aRep & srcSignMask;
     var absResult: dst_rep_t = undefined;
@@ -56,29 +56,29 @@ pub inline fn extendf(
         // renormalize the significand and clear the leading bit, then insert
         // the correct adjusted exponent in the destination type.
         const scale: u32 = @clz(aAbs) - @clz(@as(src_rep_t, srcMinNormal));
-        absResult = @as(dst_rep_t, aAbs) << @intCast(dstSigBits - srcSigBits + scale);
+        absResult = @as(dst_rep_t, aAbs) << @intcast(dstSigBits - srcSigBits + scale);
         absResult ^= dstMinNormal;
         const resultExponent: u32 = dstExpBias - srcExpBias - scale + 1;
-        absResult |= @as(dst_rep_t, @intCast(resultExponent)) << dstSigBits;
+        absResult |= @as(dst_rep_t, @intcast(resultExponent)) << dstSigBits;
     } else {
         // a is zero.
         absResult = 0;
     }
 
     // Apply the signbit to (dst_t)abs(a).
-    const result: dst_rep_t align(@alignOf(dst_t)) = absResult | @as(dst_rep_t, sign) << (dstBits - srcBits);
-    return @bitCast(result);
+    const result: dst_rep_t align(@alignof(dst_t)) = absResult | @as(dst_rep_t, sign) << (dstBits - srcBits);
+    return @bitcast(result);
 }
 
-pub inline fn extend_f80(comptime src_t: type, a: std.meta.Int(.unsigned, @typeInfo(src_t).Float.bits)) f80 {
-    const src_rep_t = std.meta.Int(.unsigned, @typeInfo(src_t).Float.bits);
+pub inline fn extend_f80(comptime src_t: type, a: std.meta.Int(.unsigned, @typeinfo(src_t).Float.bits)) f80 {
+    const src_rep_t = std.meta.Int(.unsigned, @typeinfo(src_t).Float.bits);
     const src_sig_bits = std.math.floatMantissaBits(src_t);
     const dst_int_bit = 0x8000000000000000;
     const dst_sig_bits = std.math.floatMantissaBits(f80) - 1; // -1 for the integer bit
 
     const dst_exp_bias = 16383;
 
-    const src_bits = @bitSizeOf(src_t);
+    const src_bits = @bitsizeof(src_t);
     const src_exp_bits = src_bits - src_sig_bits - 1;
     const src_inf_exp = (1 << src_exp_bits) - 1;
     const src_exp_bias = src_inf_exp >> 1;
@@ -100,7 +100,7 @@ pub inline fn extend_f80(comptime src_t: type, a: std.meta.Int(.unsigned, @typeI
         // a is a normal number.
         // Extend to the destination type by shifting the significand and
         // exponent into the proper position and rebiasing the exponent.
-        dst.exp = @intCast(a_abs >> src_sig_bits);
+        dst.exp = @intcast(a_abs >> src_sig_bits);
         dst.exp += dst_exp_bias - src_exp_bias;
         dst.fraction = @as(u64, a_abs) << (dst_sig_bits - src_sig_bits);
         dst.fraction |= dst_int_bit; // bit 64 is always set for normal numbers
@@ -119,9 +119,9 @@ pub inline fn extend_f80(comptime src_t: type, a: std.meta.Int(.unsigned, @typeI
         // the correct adjusted exponent in the destination type.
         const scale: u16 = @clz(a_abs) - @clz(@as(src_rep_t, src_min_normal));
 
-        dst.fraction = @as(u64, a_abs) << @intCast(dst_sig_bits - src_sig_bits + scale);
+        dst.fraction = @as(u64, a_abs) << @intcast(dst_sig_bits - src_sig_bits + scale);
         dst.fraction |= dst_int_bit; // bit 64 is always set for normal numbers
-        dst.exp = @truncate(a_abs >> @intCast(src_sig_bits - scale));
+        dst.exp = @truncate(a_abs >> @intcast(src_sig_bits - scale));
         dst.exp ^= 1;
         dst.exp |= dst_exp_bias - src_exp_bias - scale + 1;
     } else {

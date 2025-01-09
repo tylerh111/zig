@@ -1,5 +1,5 @@
 export fn foo() void {
-    _ = @wasmMemoryGrow(0, 1);
+    _ = @wasmmemorygrow(0, 1);
     return;
 }
 
@@ -7,4 +7,4 @@ export fn foo() void {
 // backend=stage2
 // target=x86_64-native
 //
-// :2:9: error: builtin @wasmMemoryGrow is available when targeting WebAssembly; targeted CPU architecture is x86_64
+// :2:9: error: builtin @wasmmemorygrow is available when targeting WebAssembly; targeted CPU architecture is x86_64

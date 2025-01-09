@@ -7,12 +7,12 @@ export fn entry1(x: u8) u8 {
 export fn entry2() void {
     var x: u5 = 1;
     _ = &x;
-    _ = @shlExact(12345, x);
+    _ = @shlexact(12345, x);
 }
 export fn entry3() void {
     var x: u5 = 1;
     _ = &x;
-    _ = @shrExact(12345, x);
+    _ = @shrexact(12345, x);
 }
 
 // error

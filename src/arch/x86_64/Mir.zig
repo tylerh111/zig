@@ -266,7 +266,7 @@ pub const Inst = struct {
 
         pub fn fromCondition(cc: bits.Condition) Fixes {
             return switch (cc) {
-                inline else => |cc_tag| @field(Fixes, "_" ++ @tagName(cc_tag)),
+                inline else => |cc_tag| @field(Fixes, "_" ++ @tagname(cc_tag)),
                 .z_and_np, .nz_or_p => unreachable,
             };
         }
@@ -1015,7 +1015,7 @@ pub const Inst = struct {
     // Note that in safety builds, Zig is allowed to insert a secret field for safety checks.
     comptime {
         if (!std.debug.runtime_safety) {
-            assert(@sizeOf(Data) == 8);
+            assert(@sizeof(Data) == 8);
         }
     }
 };
@@ -1029,7 +1029,7 @@ pub const RegisterList = struct {
 
     fn getIndexForReg(registers: []const Register, reg: Register) BitSet.MaskInt {
         for (registers, 0..) |cpreg, i| {
-            if (reg.id() == cpreg.id()) return @intCast(i);
+            if (reg.id() == cpreg.id()) return @intcast(i);
         }
         unreachable; // register not in input register list!
     }
@@ -1049,11 +1049,11 @@ pub const RegisterList = struct {
     }
 
     pub fn count(self: Self) i32 {
-        return @intCast(self.bitset.count());
+        return @intcast(self.bitset.count());
     }
 
     pub fn size(self: Self) i32 {
-        return @intCast(self.bitset.count() * 8);
+        return @intcast(self.bitset.count() * 8);
     }
 };
 
@@ -1074,8 +1074,8 @@ pub const Imm64 = struct {
 
     pub fn decode(imm: Imm64) u64 {
         var res: u64 = 0;
-        res |= @as(u64, @intCast(imm.msb)) << 32;
-        res |= @as(u64, @intCast(imm.lsb));
+        res |= @as(u64, @intcast(imm.msb)) << 32;
+        res |= @as(u64, @intcast(imm.lsb));
         return res;
     }
 };
@@ -1087,8 +1087,8 @@ pub const Memory = struct {
     extra: u32,
 
     pub const Info = packed struct(u32) {
-        base: @typeInfo(bits.Memory.Base).Union.tag_type.?,
-        mod: @typeInfo(bits.Memory.Mod).Union.tag_type.?,
+        base: @typeinfo(bits.Memory.Base).Union.tag_type.?,
+        mod: @typeinfo(bits.Memory.Mod).Union.tag_type.?,
         size: bits.Memory.Size,
         index: Register,
         scale: bits.Memory.Scale,
@@ -1116,18 +1116,18 @@ pub const Memory = struct {
             },
             .base = switch (mem.base) {
                 .none => undefined,
-                .reg => |reg| @intFromEnum(reg),
-                .frame => |frame_index| @intFromEnum(frame_index),
+                .reg => |reg| @intfromenum(reg),
+                .frame => |frame_index| @intfromenum(frame_index),
                 .reloc => |symbol| symbol.sym_index,
             },
             .off = switch (mem.mod) {
-                .rm => |rm| @bitCast(rm.disp),
+                .rm => |rm| @bitcast(rm.disp),
                 .off => |off| @truncate(off),
             },
             .extra = if (mem.base == .reloc)
                 mem.base.reloc.atom_index
             else if (mem.mod == .off)
-                @intCast(mem.mod.off >> 32)
+                @intcast(mem.mod.off >> 32)
             else
                 undefined,
         };
@@ -1136,16 +1136,16 @@ pub const Memory = struct {
     pub fn decode(mem: Memory) encoder.Instruction.Memory {
         switch (mem.info.mod) {
             .rm => {
-                if (mem.info.base == .reg and @as(Register, @enumFromInt(mem.base)) == .rip) {
+                if (mem.info.base == .reg and @as(Register, @enumfromint(mem.base)) == .rip) {
                     assert(mem.info.index == .none and mem.info.scale == .@"1");
-                    return encoder.Instruction.Memory.rip(mem.info.size, @bitCast(mem.off));
+                    return encoder.Instruction.Memory.rip(mem.info.size, @bitcast(mem.off));
                 }
                 return encoder.Instruction.Memory.sib(mem.info.size, .{
-                    .disp = @bitCast(mem.off),
+                    .disp = @bitcast(mem.off),
                     .base = switch (mem.info.base) {
                         .none => .none,
-                        .reg => .{ .reg = @enumFromInt(mem.base) },
-                        .frame => .{ .frame = @enumFromInt(mem.base) },
+                        .reg => .{ .reg = @enumfromint(mem.base) },
+                        .frame => .{ .frame = @enumfromint(mem.base) },
                         .reloc => .{ .reloc = .{ .atom_index = mem.extra, .sym_index = mem.base } },
                     },
                     .scale_index = switch (mem.info.index) {
@@ -1153,7 +1153,7 @@ pub const Memory = struct {
                         else => |index| .{ .scale = switch (mem.info.scale) {
                             inline else => |scale| comptime std.fmt.parseInt(
                                 u4,
-                                @tagName(scale),
+                                @tagname(scale),
                                 10,
                             ) catch unreachable,
                         }, .index = index },
@@ -1163,7 +1163,7 @@ pub const Memory = struct {
             .off => {
                 assert(mem.info.base == .reg);
                 return encoder.Instruction.Memory.moffs(
-                    @enumFromInt(mem.base),
+                    @enumfromint(mem.base),
                     @as(u64, mem.extra) << 32 | mem.off,
                 );
             },
@@ -1185,8 +1185,8 @@ pub fn extraData(mir: Mir, comptime T: type, index: u32) struct { data: T, end: 
     inline for (fields) |field| {
         @field(result, field.name) = switch (field.type) {
             u32 => mir.extra[i],
-            i32, Memory.Info => @bitCast(mir.extra[i]),
-            else => @compileError("bad field type: " ++ field.name ++ ": " ++ @typeName(field.type)),
+            i32, Memory.Info => @bitcast(mir.extra[i]),
+            else => @compileerror("bad field type: " ++ field.name ++ ": " ++ @typename(field.type)),
         };
         i += 1;
     }
@@ -1212,8 +1212,8 @@ pub fn resolveFrameLoc(mir: Mir, mem: Memory) Memory {
                 .index = mem.info.index,
                 .scale = mem.info.scale,
             },
-            .base = @intFromEnum(mir.frame_locs.items(.base)[mem.base]),
-            .off = @bitCast(mir.frame_locs.items(.disp)[mem.base] + @as(i32, @bitCast(mem.off))),
+            .base = @intfromenum(mir.frame_locs.items(.base)[mem.base]),
+            .off = @bitcast(mir.frame_locs.items(.disp)[mem.base] + @as(i32, @bitcast(mem.off))),
             .extra = mem.extra,
         } else mem,
     };

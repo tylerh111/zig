@@ -133,7 +133,7 @@ pub fn lowerMir(lower: *Lower, index: Mir.Inst.Index) Error!struct {
                 const data = lower.mir.extraData(Mir.LoadSymbolPayload, payload).data;
 
                 try lower.emit(.lui, &.{
-                    .{ .reg = @enumFromInt(data.register) },
+                    .{ .reg = @enumfromint(data.register) },
                     .{ .imm = lower.reloc(.{ .load_symbol_reloc = .{
                         .atom_index = data.atom_index,
                         .sym_index = data.sym_index,
@@ -142,8 +142,8 @@ pub fn lowerMir(lower: *Lower, index: Mir.Inst.Index) Error!struct {
 
                 // the above reloc implies this one
                 try lower.emit(.addi, &.{
-                    .{ .reg = @enumFromInt(data.register) },
-                    .{ .reg = @enumFromInt(data.register) },
+                    .{ .reg = @enumfromint(data.register) },
+                    .{ .reg = @enumfromint(data.register) },
                     .{ .imm = Immediate.s(0) },
                 });
             },
@@ -247,7 +247,7 @@ pub fn lowerMir(lower: *Lower, index: Mir.Inst.Index) Error!struct {
                 });
             },
 
-            else => return lower.fail("TODO lower: psuedo {s}", .{@tagName(inst.ops)}),
+            else => return lower.fail("TODO lower: psuedo {s}", .{@tagname(inst.ops)}),
         },
     }
 
@@ -258,10 +258,10 @@ pub fn lowerMir(lower: *Lower, index: Mir.Inst.Index) Error!struct {
 }
 
 fn generic(lower: *Lower, inst: Mir.Inst) Error!void {
-    const mnemonic = std.meta.stringToEnum(Encoding.Mnemonic, @tagName(inst.tag)) orelse {
+    const mnemonic = std.meta.stringToEnum(Encoding.Mnemonic, @tagname(inst.tag)) orelse {
         return lower.fail("generic inst name '{s}' with op {s} doesn't match with a mnemonic", .{
-            @tagName(inst.tag),
-            @tagName(inst.ops),
+            @tagname(inst.tag),
+            @tagname(inst.ops),
         });
     };
     try lower.emit(mnemonic, switch (inst.ops) {
@@ -289,7 +289,7 @@ fn generic(lower: *Lower, inst: Mir.Inst) Error!void {
             .{ .reg = inst.data.r_type.rs1 },
             .{ .reg = inst.data.r_type.rs2 },
         },
-        else => return lower.fail("TODO: generic lower ops {s}", .{@tagName(inst.ops)}),
+        else => return lower.fail("TODO: generic lower ops {s}", .{@tagname(inst.ops)}),
     });
 }
 
@@ -313,7 +313,7 @@ fn pushPopRegList(lower: *Lower, comptime spilling: bool, reg_list: Mir.Register
 
     var reg_i: u31 = 0;
     while (it.next()) |i| {
-        const frame = lower.mir.frame_locs.get(@intFromEnum(bits.FrameIndex.spill_frame));
+        const frame = lower.mir.frame_locs.get(@intfromenum(bits.FrameIndex.spill_frame));
 
         if (spilling) {
             try lower.emit(.sd, &.{

@@ -74,7 +74,7 @@ typedef enum CorMethodAttr {
 
 #ifndef __IMAGE_COR20_HEADER_DEFINED__
 #define __IMAGE_COR20_HEADER_DEFINED__
-typedef enum ReplacesCorHdrNumericDefines {
+typedef enum ReplacesCorHdrNumericdefines {
   COMIMAGE_FLAGS_ILONLY = 0x1,
   COMIMAGE_FLAGS_32BITREQUIRED = 0x2,
   COMIMAGE_FLAGS_IL_LIBRARY = 0x4,
@@ -96,7 +96,7 @@ typedef enum ReplacesCorHdrNumericDefines {
   COR_VTABLE_CALL_MOST_DERIVED = 0x10,
   MAX_CLASS_NAME = 1024,
   MAX_PACKAGE_NAME = 1024
-} ReplacesCorHdrNumericDefines;
+} ReplacesCorHdrNumericdefines;
 
 typedef struct IMAGE_COR20_HEADER {
   DWORD cb;

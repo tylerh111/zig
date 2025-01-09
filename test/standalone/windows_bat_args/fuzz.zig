@@ -145,7 +145,7 @@ fn randomArg(allocator: Allocator, rand: std.rand.Random) ![]const u8 {
         // Instead of concatenating to ensure well-formed WTF-8,
         // we just skip encoding the low surrogate.
         if (std.unicode.isSurrogateCodepoint(last_codepoint) and std.unicode.isSurrogateCodepoint(codepoint)) {
-            if (std.unicode.utf16IsHighSurrogate(@intCast(last_codepoint)) and std.unicode.utf16IsLowSurrogate(@intCast(codepoint))) {
+            if (std.unicode.utf16IsHighSurrogate(@intcast(last_codepoint)) and std.unicode.utf16IsLowSurrogate(@intcast(codepoint))) {
                 continue;
             }
         }

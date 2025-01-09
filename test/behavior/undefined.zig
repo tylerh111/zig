@@ -82,7 +82,7 @@ test "type name of undefined" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
 
     const x = undefined;
-    try expect(mem.eql(u8, @typeName(@TypeOf(x)), "@TypeOf(undefined)"));
+    try expect(mem.eql(u8, @typename(@TypeOf(x)), "@TypeOf(undefined)"));
 }
 
 var buf: []u8 = undefined;
@@ -109,14 +109,14 @@ test "returned undef is 0xaa bytes when runtime safety is enabled" {
     const Rect = struct {
         x: f32,
         fn getUndefStruct() @This() {
-            @setRuntimeSafety(true);
+            @setruntimesafety(true);
             return undefined;
         }
         fn getUndefInt() u32 {
-            @setRuntimeSafety(true);
+            @setruntimesafety(true);
             return undefined;
         }
     };
-    try std.testing.expect(@as(u32, @bitCast(Rect.getUndefStruct().x)) == 0xAAAAAAAA);
+    try std.testing.expect(@as(u32, @bitcast(Rect.getUndefStruct().x)) == 0xAAAAAAAA);
     try std.testing.expect(Rect.getUndefInt() == 0xAAAAAAAA);
 }

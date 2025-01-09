@@ -28,12 +28,12 @@ comptime {
 
 pub fn __ceilh(x: f16) callconv(.C) f16 {
     // TODO: more efficient implementation
-    return @floatCast(ceilf(x));
+    return @floatcast(ceilf(x));
 }
 
 pub fn ceilf(x: f32) callconv(.C) f32 {
-    var u: u32 = @bitCast(x);
-    const e = @as(i32, @intCast((u >> 23) & 0xFF)) - 0x7F;
+    var u: u32 = @bitcast(x);
+    const e = @as(i32, @intcast((u >> 23) & 0xFF)) - 0x7F;
     var m: u32 = undefined;
 
     // TODO: Shouldn't need this explicit check.
@@ -44,7 +44,7 @@ pub fn ceilf(x: f32) callconv(.C) f32 {
     if (e >= 23) {
         return x;
     } else if (e >= 0) {
-        m = @as(u32, 0x007FFFFF) >> @intCast(e);
+        m = @as(u32, 0x007FFFFF) >> @intcast(e);
         if (u & m == 0) {
             return x;
         }
@@ -53,7 +53,7 @@ pub fn ceilf(x: f32) callconv(.C) f32 {
             u += m;
         }
         u &= ~m;
-        return @bitCast(u);
+        return @bitcast(u);
     } else {
         mem.doNotOptimizeAway(x + 0x1.0p120);
         if (u >> 31 != 0) {
@@ -67,7 +67,7 @@ pub fn ceilf(x: f32) callconv(.C) f32 {
 pub fn ceil(x: f64) callconv(.C) f64 {
     const f64_toint = 1.0 / math.floatEps(f64);
 
-    const u: u64 = @bitCast(x);
+    const u: u64 = @bitcast(x);
     const e = (u >> 52) & 0x7FF;
     var y: f64 = undefined;
 
@@ -97,13 +97,13 @@ pub fn ceil(x: f64) callconv(.C) f64 {
 
 pub fn __ceilx(x: f80) callconv(.C) f80 {
     // TODO: more efficient implementation
-    return @floatCast(ceilq(x));
+    return @floatcast(ceilq(x));
 }
 
 pub fn ceilq(x: f128) callconv(.C) f128 {
     const f128_toint = 1.0 / math.floatEps(f128);
 
-    const u: u128 = @bitCast(x);
+    const u: u128 = @bitcast(x);
     const e = (u >> 112) & 0x7FFF;
     var y: f128 = undefined;
 
@@ -130,13 +130,13 @@ pub fn ceilq(x: f128) callconv(.C) f128 {
 }
 
 pub fn ceill(x: c_longdouble) callconv(.C) c_longdouble {
-    switch (@typeInfo(c_longdouble).Float.bits) {
+    switch (@typeinfo(c_longdouble).Float.bits) {
         16 => return __ceilh(x),
         32 => return ceilf(x),
         64 => return ceil(x),
         80 => return __ceilx(x),
         128 => return ceilq(x),
-        else => @compileError("unreachable"),
+        else => @compileerror("unreachable"),
     }
 }
 

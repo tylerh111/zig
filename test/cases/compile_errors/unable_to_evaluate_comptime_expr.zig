@@ -16,10 +16,10 @@ pub export fn entry2() void {
     _ = b;
 }
 
-const Int = @typeInfo(bar).Struct.backing_integer.?;
+const Int = @typeinfo(bar).Struct.backing_integer.?;
 
 const foo = enum(Int) {
-    c = @bitCast(bar{
+    c = @bitcast(bar{
         .name = "test",
     }),
 };

@@ -34,7 +34,7 @@ test "basic slices" {
     try expect(@TypeOf(&slice[0]) == *i32);
     // Using the `ptr` field gives a many-item pointer.
     try expect(@TypeOf(slice.ptr) == [*]i32);
-    try expect(@intFromPtr(slice.ptr) == @intFromPtr(&slice[0]));
+    try expect(@intfromptr(slice.ptr) == @intfromptr(&slice[0]));
 
     // Slices have array bounds checking. If you try to access something out
     // of bounds, you'll get a safety check failure:

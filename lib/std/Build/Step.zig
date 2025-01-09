@@ -111,7 +111,7 @@ pub const Id = enum {
             .config_header => ConfigHeader,
             .objcopy => ObjCopy,
             .options => Options,
-            .custom => @compileError("no type available for custom step"),
+            .custom => @compileerror("no type available for custom step"),
         };
     }
 };
@@ -155,7 +155,7 @@ pub fn init(options: StepOptions) Step {
         .debug_stack_trace = blk: {
             const addresses = arena.alloc(usize, options.owner.debug_stack_frames_count) catch @panic("OOM");
             @memset(addresses, 0);
-            const first_ret_addr = options.first_ret_addr orelse @returnAddress();
+            const first_ret_addr = options.first_ret_addr orelse @returnaddress();
             var stack_trace = std.builtin.StackTrace{
                 .instruction_addresses = addresses,
                 .index = 0,
@@ -183,7 +183,7 @@ pub fn make(s: *Step, prog_node: std.Progress.Node) error{ MakeFailed, MakeSkipp
         error.MakeFailed => return error.MakeFailed,
         error.MakeSkipped => return error.MakeSkipped,
         else => {
-            s.result_error_msgs.append(arena, @errorName(err)) catch @panic("OOM");
+            s.result_error_msgs.append(arena, @errorname(err)) catch @panic("OOM");
             return error.MakeFailed;
         },
     };
@@ -231,7 +231,7 @@ fn makeNoOp(step: *Step, prog_node: std.Progress.Node) anyerror!void {
 
 pub fn cast(step: *Step, comptime T: type) ?*T {
     if (step.id == T.base_id) {
-        return @fieldParentPtr("step", step);
+        return @fieldparentptr("step", step);
     }
     return null;
 }
@@ -242,7 +242,7 @@ pub fn dump(step: *Step, file: std.fs.File) void {
     const tty_config = std.io.tty.detectConfig(file);
     const debug_info = std.debug.getSelfDebugInfo() catch |err| {
         w.print("Unable to dump stack trace: Unable to open debug info: {s}\n", .{
-            @errorName(err),
+            @errorname(err),
         }) catch {};
         return;
     };
@@ -250,12 +250,12 @@ pub fn dump(step: *Step, file: std.fs.File) void {
     if (step.getStackTrace()) |stack_trace| {
         w.print("name: '{s}'. creation stack trace:\n", .{step.name}) catch {};
         std.debug.writeStackTrace(stack_trace, w, ally, debug_info, tty_config) catch |err| {
-            w.print("Unable to dump stack trace: {s}\n", .{@errorName(err)}) catch {};
+            w.print("Unable to dump stack trace: {s}\n", .{@errorname(err)}) catch {};
             return;
         };
     } else {
         const field = "debug_stack_frames_count";
-        comptime assert(@hasField(Build, field));
+        comptime assert(@hasfield(Build, field));
         tty_config.setColor(w, .yellow) catch {};
         w.print("name: '{s}'. no stack trace collected for this step, see std.Build." ++ field ++ "\n", .{step.name}) catch {};
         tty_config.setColor(w, .reset) catch {};
@@ -278,7 +278,7 @@ pub fn evalChildProcess(s: *Step, argv: []const []const u8) !void {
     const result = std.process.Child.run(.{
         .allocator = arena,
         .argv = argv,
-    }) catch |err| return s.fail("unable to spawn {s}: {s}", .{ argv[0], @errorName(err) });
+    }) catch |err| return s.fail("unable to spawn {s}: {s}", .{ argv[0], @errorname(err) });
 
     if (result.stderr.len > 0) {
         try s.result_error_msgs.append(arena, result.stderr);
@@ -322,7 +322,7 @@ pub fn evalZigProcess(
     child.progress_node = prog_node;
 
     child.spawn() catch |err| return s.fail("unable to spawn {s}: {s}", .{
-        argv[0], @errorName(err),
+        argv[0], @errorname(err),
     });
     var timer = try std.time.Timer.start();
 
@@ -341,7 +341,7 @@ pub fn evalZigProcess(
     const stdout = poller.fifo(.stdout);
 
     poll: while (true) {
-        while (stdout.readableLength() < @sizeOf(Header)) {
+        while (stdout.readableLength() < @sizeof(Header)) {
             if (!(try poller.poll())) break :poll;
         }
         const header = stdout.reader().readStruct(Header) catch unreachable;
@@ -361,12 +361,12 @@ pub fn evalZigProcess(
             },
             .error_bundle => {
                 const EbHdr = std.zig.Server.Message.ErrorBundle;
-                const eb_hdr = @as(*align(1) const EbHdr, @ptrCast(body));
+                const eb_hdr = @as(*align(1) const EbHdr, @ptrcast(body));
                 const extra_bytes =
-                    body[@sizeOf(EbHdr)..][0 .. @sizeOf(u32) * eb_hdr.extra_len];
+                    body[@sizeof(EbHdr)..][0 .. @sizeof(u32) * eb_hdr.extra_len];
                 const string_bytes =
-                    body[@sizeOf(EbHdr) + extra_bytes.len ..][0..eb_hdr.string_bytes_len];
-                // TODO: use @ptrCast when the compiler supports it
+                    body[@sizeof(EbHdr) + extra_bytes.len ..][0..eb_hdr.string_bytes_len];
+                // TODO: use @ptrcast when the compiler supports it
                 const unaligned_extra = std.mem.bytesAsSlice(u32, extra_bytes);
                 const extra_array = try arena.alloc(u32, unaligned_extra.len);
                 @memcpy(extra_array, unaligned_extra);
@@ -377,9 +377,9 @@ pub fn evalZigProcess(
             },
             .emit_bin_path => {
                 const EbpHdr = std.zig.Server.Message.EmitBinPath;
-                const ebp_hdr = @as(*align(1) const EbpHdr, @ptrCast(body));
+                const ebp_hdr = @as(*align(1) const EbpHdr, @ptrcast(body));
                 s.result_cached = ebp_hdr.flags.cache_hit;
-                result = try arena.dupe(u8, body[@sizeOf(EbpHdr)..]);
+                result = try arena.dupe(u8, body[@sizeof(EbpHdr)..]);
             },
             else => {}, // ignore other messages
         }
@@ -397,7 +397,7 @@ pub fn evalZigProcess(
     child.stdin = null;
 
     const term = child.wait() catch |err| {
-        return s.fail("unable to wait for {s}: {s}", .{ argv[0], @errorName(err) });
+        return s.fail("unable to wait for {s}: {s}", .{ argv[0], @errorname(err) });
     };
     s.result_duration_ns = timer.read();
     s.result_peak_rss = child.resource_usage_statistics.getMaxRss() orelse 0;
@@ -537,13 +537,13 @@ fn failWithCacheError(s: *Step, man: *const std.Build.Cache.Manifest, err: anyer
     const i = man.failed_file_index orelse return err;
     const pp = man.files.keys()[i].prefixed_path;
     const prefix = man.cache.prefixes()[pp.prefix].path orelse "";
-    return s.fail("{s}: {s}/{s}", .{ @errorName(err), prefix, pp.sub_path });
+    return s.fail("{s}: {s}/{s}", .{ @errorname(err), prefix, pp.sub_path });
 }
 
 pub fn writeManifest(s: *Step, man: *std.Build.Cache.Manifest) !void {
     if (s.test_results.isSuccess()) {
         man.writeManifest() catch |err| {
-            try s.addError("unable to write cache manifest: {s}", .{@errorName(err)});
+            try s.addError("unable to write cache manifest: {s}", .{@errorname(err)});
         };
     }
 }

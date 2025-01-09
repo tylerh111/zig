@@ -17,12 +17,12 @@ const AnySlice = union(enum) {
 };
 
 fn withFor(any: AnySlice) usize {
-    const Tag = @typeInfo(AnySlice).Union.tag_type.?;
-    inline for (@typeInfo(Tag).Enum.fields) |field| {
+    const Tag = @typeinfo(AnySlice).Union.tag_type.?;
+    inline for (@typeinfo(Tag).Enum.fields) |field| {
         // With `inline for` the function gets generated as
         // a series of `if` statements relying on the optimizer
         // to convert it to a switch.
-        if (field.value == @intFromEnum(any)) {
+        if (field.value == @intfromenum(any)) {
             return @field(any, field.name).len;
         }
     }

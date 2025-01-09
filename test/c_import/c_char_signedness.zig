@@ -1,8 +1,8 @@
 const std = @import("std");
 const builtin = @import("builtin");
 const expectEqual = std.testing.expectEqual;
-const c = @cImport({
-    @cInclude("limits.h");
+const c = @cimport({
+    @cinclude("limits.h");
 });
 
 test "c_char signedness" {

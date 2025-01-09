@@ -4,7 +4,7 @@ const debug = std.debug;
 const testing = std.testing;
 
 noinline fn frame4(expected: *[5]usize, unwound: *[5]usize) void {
-    expected[0] = @returnAddress();
+    expected[0] = @returnaddress();
 
     var context: debug.ThreadContext = undefined;
     testing.expect(debug.getContext(&context)) catch @panic("failed to getContext");
@@ -19,12 +19,12 @@ noinline fn frame4(expected: *[5]usize, unwound: *[5]usize) void {
 }
 
 noinline fn frame3(expected: *[5]usize, unwound: *[5]usize) void {
-    expected[1] = @returnAddress();
+    expected[1] = @returnaddress();
     frame4(expected, unwound);
 }
 
 fn frame2(expected: *[5]usize, unwound: *[5]usize) callconv(.C) void {
-    expected[2] = @returnAddress();
+    expected[2] = @returnaddress();
     frame3(expected, unwound);
 }
 

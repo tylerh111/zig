@@ -1,7 +1,7 @@
 comptime {
     const err = error.AnError;
-    const number = @intFromError(err) + 10;
-    const invalid_err = @errorFromInt(number);
+    const number = @intfromerror(err) + 10;
+    const invalid_err = @errorfromint(number);
     _ = invalid_err;
 }
 

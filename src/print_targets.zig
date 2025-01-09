@@ -20,7 +20,7 @@ pub fn cmdTargets(
 ) !void {
     _ = args;
     var zig_lib_directory = introspect.findZigLibDir(allocator) catch |err| {
-        fatal("unable to find zig installation directory: {s}\n", .{@errorName(err)});
+        fatal("unable to find zig installation directory: {s}\n", .{@errorname(err)});
     };
     defer zig_lib_directory.handle.close();
     defer allocator.free(zig_lib_directory.path.?);
@@ -31,7 +31,7 @@ pub fn cmdTargets(
         glibc.abilists_max_size,
     ) catch |err| switch (err) {
         error.OutOfMemory => return error.OutOfMemory,
-        else => fatal("unable to read " ++ glibc.abilists_path ++ ": {s}", .{@errorName(err)}),
+        else => fatal("unable to read " ++ glibc.abilists_path ++ ": {s}", .{@errorname(err)}),
     };
     defer allocator.free(abilists_contents);
 
@@ -69,7 +69,7 @@ pub fn cmdTargets(
     try jws.beginArray();
     for (std.zig.target.available_libcs) |libc| {
         const tmp = try std.fmt.allocPrint(allocator, "{s}-{s}-{s}", .{
-            @tagName(libc.arch), @tagName(libc.os), @tagName(libc.abi),
+            @tagname(libc.arch), @tagname(libc.os), @tagname(libc.abi),
         });
         defer allocator.free(tmp);
         try jws.write(tmp);
@@ -88,13 +88,13 @@ pub fn cmdTargets(
     try jws.objectField("cpus");
     try jws.beginObject();
     for (meta.tags(Target.Cpu.Arch)) |arch| {
-        try jws.objectField(@tagName(arch));
+        try jws.objectField(@tagname(arch));
         try jws.beginObject();
         for (arch.allCpuModels()) |model| {
             try jws.objectField(model.name);
             try jws.beginArray();
             for (arch.allFeaturesList(), 0..) |feature, i_usize| {
-                const index = @as(Target.Cpu.Feature.Set.Index, @intCast(i_usize));
+                const index = @as(Target.Cpu.Feature.Set.Index, @intcast(i_usize));
                 if (model.features.isEnabled(index)) {
                     try jws.write(feature.name);
                 }
@@ -108,7 +108,7 @@ pub fn cmdTargets(
     try jws.objectField("cpuFeatures");
     try jws.beginObject();
     for (meta.tags(Target.Cpu.Arch)) |arch| {
-        try jws.objectField(@tagName(arch));
+        try jws.objectField(@tagname(arch));
         try jws.beginArray();
         for (arch.allFeaturesList()) |feature| {
             try jws.write(feature.name);
@@ -129,7 +129,7 @@ pub fn cmdTargets(
         try jws.objectField("cpu");
         try jws.beginObject();
         try jws.objectField("arch");
-        try jws.write(@tagName(native_target.cpu.arch));
+        try jws.write(@tagname(native_target.cpu.arch));
 
         try jws.objectField("name");
         const cpu = native_target.cpu;
@@ -139,7 +139,7 @@ pub fn cmdTargets(
             try jws.objectField("features");
             try jws.beginArray();
             for (native_target.cpu.arch.allFeaturesList(), 0..) |feature, i_usize| {
-                const index = @as(Target.Cpu.Feature.Set.Index, @intCast(i_usize));
+                const index = @as(Target.Cpu.Feature.Set.Index, @intcast(i_usize));
                 if (cpu.features.isEnabled(index)) {
                     try jws.write(feature.name);
                 }
@@ -149,9 +149,9 @@ pub fn cmdTargets(
         try jws.endObject();
     }
     try jws.objectField("os");
-    try jws.write(@tagName(native_target.os.tag));
+    try jws.write(@tagname(native_target.os.tag));
     try jws.objectField("abi");
-    try jws.write(@tagName(native_target.abi));
+    try jws.write(@tagname(native_target.abi));
     try jws.endObject();
 
     try jws.endObject();

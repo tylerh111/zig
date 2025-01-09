@@ -396,16 +396,16 @@ pub fn createEmpty(
 
         // Initialize PT_PHDR program header
         const p_align: u16 = switch (self.ptr_width) {
-            .p32 => @alignOf(elf.Elf32_Phdr),
-            .p64 => @alignOf(elf.Elf64_Phdr),
+            .p32 => @alignof(elf.Elf32_Phdr),
+            .p64 => @alignof(elf.Elf64_Phdr),
         };
         const ehsize: u64 = switch (self.ptr_width) {
-            .p32 => @sizeOf(elf.Elf32_Ehdr),
-            .p64 => @sizeOf(elf.Elf64_Ehdr),
+            .p32 => @sizeof(elf.Elf32_Ehdr),
+            .p64 => @sizeof(elf.Elf64_Ehdr),
         };
         const phsize: u64 = switch (self.ptr_width) {
-            .p32 => @sizeOf(elf.Elf32_Phdr),
-            .p64 => @sizeOf(elf.Elf64_Phdr),
+            .p32 => @sizeof(elf.Elf32_Phdr),
+            .p64 => @sizeof(elf.Elf64_Phdr),
         };
         const max_nphdrs = comptime getMaxNumberOfPhdrs();
         const reserved: u64 = mem.alignForward(u64, padToIdeal(max_nphdrs * phsize), self.page_size);
@@ -431,7 +431,7 @@ pub fn createEmpty(
 
     if (opt_zcu) |zcu| {
         if (!use_llvm) {
-            const index: File.Index = @intCast(try self.files.addOne(gpa));
+            const index: File.Index = @intcast(try self.files.addOne(gpa));
             self.files.set(index, .{ .zig_object = .{
                 .index = index,
                 .path = try std.fmt.allocPrint(arena, "{s}.o", .{fs.path.stem(
@@ -565,14 +565,14 @@ pub fn getAnonDeclVAddr(self: *Elf, decl_val: InternPool.Index, reloc_info: link
 /// Returns end pos of collision, if any.
 fn detectAllocCollision(self: *Elf, start: u64, size: u64) ?u64 {
     const small_ptr = self.ptr_width == .p32;
-    const ehdr_size: u64 = if (small_ptr) @sizeOf(elf.Elf32_Ehdr) else @sizeOf(elf.Elf64_Ehdr);
+    const ehdr_size: u64 = if (small_ptr) @sizeof(elf.Elf32_Ehdr) else @sizeof(elf.Elf64_Ehdr);
     if (start < ehdr_size)
         return ehdr_size;
 
     const end = start + padToIdeal(size);
 
     if (self.shdr_table_offset) |off| {
-        const shdr_size: u64 = if (small_ptr) @sizeOf(elf.Elf32_Shdr) else @sizeOf(elf.Elf64_Shdr);
+        const shdr_size: u64 = if (small_ptr) @sizeof(elf.Elf32_Shdr) else @sizeof(elf.Elf64_Shdr);
         const tight_size = self.shdrs.items.len * shdr_size;
         const increased_size = padToIdeal(tight_size);
         const test_end = off +| increased_size;
@@ -878,7 +878,7 @@ pub fn initMetadata(self: *Elf, options: InitMetadataOptions) !void {
                 .offset = std.math.maxInt(u64),
             });
             const shdr = &self.shdrs.items[self.debug_str_section_index.?];
-            const size = @as(u64, @intCast(dw.strtab.buffer.items.len));
+            const size = @as(u64, @intcast(dw.strtab.buffer.items.len));
             const off = self.findFreeSpace(size, 1);
             shdr.sh_offset = off;
             shdr.sh_size = size;
@@ -1161,7 +1161,7 @@ pub fn flushModule(self: *Elf, arena: Allocator, prog_node: std.Progress.Node) l
             else => |e| try self.reportParseError(
                 obj.path,
                 "unexpected error: parsing input file failed with error {s}",
-                .{@errorName(e)},
+                .{@errorname(e)},
             ),
         };
     }
@@ -1247,7 +1247,7 @@ pub fn flushModule(self: *Elf, arena: Allocator, prog_node: std.Progress.Node) l
             else => |e| try self.reportParseError(
                 lib.path,
                 "unexpected error: parsing library failed with error {s}",
-                .{@errorName(e)},
+                .{@errorname(e)},
             ),
         };
     }
@@ -1270,7 +1270,7 @@ pub fn flushModule(self: *Elf, arena: Allocator, prog_node: std.Progress.Node) l
             else => |e| try self.reportParseError(
                 obj.path,
                 "unexpected error: parsing input file failed with error {s}",
-                .{@errorName(e)},
+                .{@errorname(e)},
             ),
         };
     }
@@ -1281,7 +1281,7 @@ pub fn flushModule(self: *Elf, arena: Allocator, prog_node: std.Progress.Node) l
     {
         var seen_dsos = std.StringHashMap(void).init(gpa);
         defer seen_dsos.deinit();
-        try seen_dsos.ensureTotalCapacity(@as(u32, @intCast(self.shared_objects.items.len)));
+        try seen_dsos.ensureTotalCapacity(@as(u32, @intcast(self.shared_objects.items.len)));
 
         var i: usize = 0;
         while (i < self.shared_objects.items.len) {
@@ -1298,7 +1298,7 @@ pub fn flushModule(self: *Elf, arena: Allocator, prog_node: std.Progress.Node) l
     // If we haven't already, create a linker-generated input file comprising of
     // linker-defined synthetic symbols only such as `_DYNAMIC`, etc.
     if (self.linker_defined_index == null) {
-        const index = @as(File.Index, @intCast(try self.files.addOne(gpa)));
+        const index = @as(File.Index, @intcast(try self.files.addOne(gpa)));
         self.files.set(index, .{ .linker_defined = .{ .index = index } });
         self.linker_defined_index = index;
     }
@@ -1385,7 +1385,7 @@ pub fn flushModule(self: *Elf, arena: Allocator, prog_node: std.Progress.Node) l
             if (shdr.sh_type == elf.SHT_NOBITS) continue;
             const code = try zig_object.codeAlloc(self, atom_index);
             defer gpa.free(code);
-            const file_offset = shdr.sh_offset + @as(u64, @intCast(atom_ptr.value));
+            const file_offset = shdr.sh_offset + @as(u64, @intcast(atom_ptr.value));
             atom_ptr.resolveRelocsAlloc(self, code) catch |err| switch (err) {
                 error.RelocFailure, error.RelaxFailure => has_reloc_errors = true,
                 error.UnsupportedCpuArch => {
@@ -1622,7 +1622,7 @@ fn dumpArgv(self: *Elf, comp: *Compilation) !void {
 
         for (self.base.comp.system_libs.values()) |lib_info| {
             const lib_as_needed = !lib_info.needed;
-            switch ((@as(u2, @intFromBool(lib_as_needed)) << 1) | @intFromBool(as_needed)) {
+            switch ((@as(u2, @intfrombool(lib_as_needed)) << 1) | @intfrombool(as_needed)) {
                 0b00, 0b11 => {},
                 0b01 => {
                     argv.appendAssumeCapacity("--no-as-needed");
@@ -1733,7 +1733,7 @@ fn parseObject(self: *Elf, path: []const u8) ParseError!void {
     const handle = try fs.cwd().openFile(path, .{});
     const fh = try self.addFileHandle(handle);
 
-    const index = @as(File.Index, @intCast(try self.files.addOne(gpa)));
+    const index = @as(File.Index, @intcast(try self.files.addOne(gpa)));
     self.files.set(index, .{ .object = .{
         .path = try gpa.dupe(u8, path),
         .file_handle = fh,
@@ -1761,7 +1761,7 @@ fn parseArchive(self: *Elf, path: []const u8, must_link: bool) ParseError!void {
     defer gpa.free(objects);
 
     for (objects) |extracted| {
-        const index = @as(File.Index, @intCast(try self.files.addOne(gpa)));
+        const index = @as(File.Index, @intcast(try self.files.addOne(gpa)));
         self.files.set(index, .{ .object = extracted });
         const object = &self.files.items(.data)[index].object;
         object.index = index;
@@ -1779,7 +1779,7 @@ fn parseSharedObject(self: *Elf, lib: SystemLib) ParseError!void {
     const handle = try fs.cwd().openFile(lib.path, .{});
     defer handle.close();
 
-    const index = @as(File.Index, @intCast(try self.files.addOne(gpa)));
+    const index = @as(File.Index, @intcast(try self.files.addOne(gpa)));
     self.files.set(index, .{ .shared_object = .{
         .path = try gpa.dupe(u8, lib.path),
         .index = index,
@@ -1865,7 +1865,7 @@ fn parseLdScript(self: *Elf, lib: SystemLib) ParseError!void {
             else => |e| try self.reportParseError(
                 full_path,
                 "unexpected error: parsing library failed with error {s}",
-                .{@errorName(e)},
+                .{@errorname(e)},
             ),
         };
     }
@@ -2016,7 +2016,7 @@ fn markImportsExports(self: *Elf) void {
                 const global = elf_file.symbol(global_index);
                 if (global.version_index == elf.VER_NDX_LOCAL) continue;
                 const file_ptr = global.file(elf_file) orelse continue;
-                const vis = @as(elf.STV, @enumFromInt(global.elfSym(elf_file).st_other));
+                const vis = @as(elf.STV, @enumfromint(global.elfSym(elf_file).st_other));
                 if (vis == .HIDDEN) continue;
                 if (file_ptr == .shared_object and !global.isAbs(elf_file)) {
                     global.flags.import = true;
@@ -2037,7 +2037,7 @@ fn markImportsExports(self: *Elf) void {
             for (self.file(index).?.globals()) |global_index| {
                 const global = self.symbol(global_index);
                 const file_ptr = global.file(self) orelse continue;
-                const vis = @as(elf.STV, @enumFromInt(global.elfSym(self).st_other));
+                const vis = @as(elf.STV, @enumfromint(global.elfSym(self).st_other));
                 if (file_ptr != .shared_object and vis != .HIDDEN) global.flags.@"export" = true;
             }
         }
@@ -2100,7 +2100,7 @@ fn scanRelocs(self: *Elf) !void {
     if (has_reloc_errors) return error.FlushFailure;
 
     for (self.symbols.items, 0..) |*sym, i| {
-        const index = @as(u32, @intCast(i));
+        const index = @as(u32, @intcast(i));
         if (!sym.isLocal(self) and !sym.flags.has_dynamic) {
             log.debug("'{s}' is non-local", .{sym.name(self)});
             try self.dynsym.addSymbol(index, self);
@@ -2281,7 +2281,7 @@ fn linkWithLLD(self: *Elf, arena: Allocator, prog_node: std.Progress.Node) !void
             id_symlink_basename,
             &prev_digest_buf,
         ) catch |err| blk: {
-            log.debug("ELF LLD new_digest={s} error: {s}", .{ std.fmt.fmtSliceHexLower(&digest), @errorName(err) });
+            log.debug("ELF LLD new_digest={s} error: {s}", .{ std.fmt.fmtSliceHexLower(&digest), @errorname(err) });
             // Handle this as a cache miss.
             break :blk prev_digest_buf[0..0];
         };
@@ -2386,7 +2386,7 @@ fn linkWithLLD(self: *Elf, arena: Allocator, prog_node: std.Progress.Node) !void
                 .none => {},
                 .fast, .uuid, .sha1, .md5 => {
                     try argv.append(try std.fmt.allocPrint(arena, "--build-id={s}", .{
-                        @tagName(self.base.build_id),
+                        @tagname(self.base.build_id),
                     }));
                 },
                 .hexstring => |hs| {
@@ -2405,7 +2405,7 @@ fn linkWithLLD(self: *Elf, arena: Allocator, prog_node: std.Progress.Node) !void
         }
 
         if (self.sort_section) |how| {
-            const arg = try std.fmt.allocPrint(arena, "--sort-section={s}", .{@tagName(how)});
+            const arg = try std.fmt.allocPrint(arena, "--sort-section={s}", .{@tagname(how)});
             try argv.append(arg);
         }
 
@@ -2636,7 +2636,7 @@ fn linkWithLLD(self: *Elf, arena: Allocator, prog_node: std.Progress.Node) !void
 
             for (system_libs_values) |lib_info| {
                 const lib_as_needed = !lib_info.needed;
-                switch ((@as(u2, @intFromBool(lib_as_needed)) << 1) | @intFromBool(as_needed)) {
+                switch ((@as(u2, @intfrombool(lib_as_needed)) << 1) | @intfrombool(as_needed)) {
                     0b00, 0b11 => {},
                     0b01 => {
                         argv.appendAssumeCapacity("--no-as-needed");
@@ -2730,11 +2730,11 @@ fn linkWithLLD(self: *Elf, arena: Allocator, prog_node: std.Progress.Node) !void
         // Update the file with the digest. If it fails we can continue; it only
         // means that the next invocation will have an unnecessary cache miss.
         Cache.writeSmallFile(directory.handle, id_symlink_basename, &digest) catch |err| {
-            log.warn("failed to save linking hash digest file: {s}", .{@errorName(err)});
+            log.warn("failed to save linking hash digest file: {s}", .{@errorname(err)});
         };
         // Again failure here only means an unnecessary cache miss.
         man.writeManifest() catch |err| {
-            log.warn("failed to write cache manifest when linking: {s}", .{@errorName(err)});
+            log.warn("failed to write cache manifest when linking: {s}", .{@errorname(err)});
         };
         // We hang on to this lock so that the output file path can be used without
         // other processes clobbering it.
@@ -2746,7 +2746,7 @@ fn writeDwarfAddrAssumeCapacity(self: *Elf, buf: *std.ArrayList(u8), addr: u64) 
     const target = self.base.comp.root_mod.resolved_target.result;
     const target_endian = target.cpu.arch.endian();
     switch (self.ptr_width) {
-        .p32 => mem.writeInt(u32, buf.addManyAsArrayAssumeCapacity(4), @as(u32, @intCast(addr)), target_endian),
+        .p32 => mem.writeInt(u32, buf.addManyAsArrayAssumeCapacity(4), @as(u32, @intcast(addr)), target_endian),
         .p64 => mem.writeInt(u64, buf.addManyAsArrayAssumeCapacity(8), addr, target_endian),
     }
 }
@@ -2757,12 +2757,12 @@ pub fn writeShdrTable(self: *Elf) !void {
     const target_endian = target.cpu.arch.endian();
     const foreign_endian = target_endian != builtin.cpu.arch.endian();
     const shsize: u64 = switch (self.ptr_width) {
-        .p32 => @sizeOf(elf.Elf32_Shdr),
-        .p64 => @sizeOf(elf.Elf64_Shdr),
+        .p32 => @sizeof(elf.Elf32_Shdr),
+        .p64 => @sizeof(elf.Elf64_Shdr),
     };
     const shalign: u16 = switch (self.ptr_width) {
-        .p32 => @alignOf(elf.Elf32_Shdr),
-        .p64 => @alignOf(elf.Elf64_Shdr),
+        .p32 => @alignof(elf.Elf32_Shdr),
+        .p64 => @alignof(elf.Elf64_Shdr),
     };
 
     const shoff = self.shdr_table_offset orelse 0;
@@ -2787,7 +2787,7 @@ pub fn writeShdrTable(self: *Elf) !void {
                 assert(self.shdrs.items[i].sh_offset != math.maxInt(u64));
                 shdr.* = shdrTo32(self.shdrs.items[i]);
                 if (foreign_endian) {
-                    mem.byteSwapAllFields(elf.Elf32_Shdr, shdr);
+                    mem.byteswapAllFields(elf.Elf32_Shdr, shdr);
                 }
             }
             try self.base.file.?.pwriteAll(mem.sliceAsBytes(buf), self.shdr_table_offset.?);
@@ -2800,7 +2800,7 @@ pub fn writeShdrTable(self: *Elf) !void {
                 assert(self.shdrs.items[i].sh_offset != math.maxInt(u64));
                 shdr.* = self.shdrs.items[i];
                 if (foreign_endian) {
-                    mem.byteSwapAllFields(elf.Elf64_Shdr, shdr);
+                    mem.byteswapAllFields(elf.Elf64_Shdr, shdr);
                 }
             }
             try self.base.file.?.pwriteAll(mem.sliceAsBytes(buf), self.shdr_table_offset.?);
@@ -2828,7 +2828,7 @@ fn writePhdrTable(self: *Elf) !void {
             for (buf, 0..) |*phdr, i| {
                 phdr.* = phdrTo32(self.phdrs.items[i]);
                 if (foreign_endian) {
-                    mem.byteSwapAllFields(elf.Elf32_Phdr, phdr);
+                    mem.byteswapAllFields(elf.Elf32_Phdr, phdr);
                 }
             }
             try self.base.file.?.pwriteAll(mem.sliceAsBytes(buf), phdr_table.p_offset);
@@ -2840,7 +2840,7 @@ fn writePhdrTable(self: *Elf) !void {
             for (buf, 0..) |*phdr, i| {
                 phdr.* = self.phdrs.items[i];
                 if (foreign_endian) {
-                    mem.byteSwapAllFields(elf.Elf64_Phdr, phdr);
+                    mem.byteswapAllFields(elf.Elf64_Phdr, phdr);
                 }
             }
             try self.base.file.?.pwriteAll(mem.sliceAsBytes(buf), phdr_table.p_offset);
@@ -2852,7 +2852,7 @@ pub fn writeElfHeader(self: *Elf) !void {
     const comp = self.base.comp;
     if (comp.link_errors.items.len > 0) return; // We had errors, so skip flushing to render the output unusable
 
-    var hdr_buf: [@sizeOf(elf.Elf64_Ehdr)]u8 = undefined;
+    var hdr_buf: [@sizeof(elf.Elf64_Ehdr)]u8 = undefined;
 
     var index: usize = 0;
     hdr_buf[0..4].* = elf.MAGIC.*;
@@ -2893,11 +2893,11 @@ pub fn writeElfHeader(self: *Elf) !void {
             .dynamic => .DYN,
         },
     };
-    mem.writeInt(u16, hdr_buf[index..][0..2], @intFromEnum(elf_type), endian);
+    mem.writeInt(u16, hdr_buf[index..][0..2], @intfromenum(elf_type), endian);
     index += 2;
 
     const machine = target.cpu.arch.toElfMachine();
-    mem.writeInt(u16, hdr_buf[index..][0..2], @intFromEnum(machine), endian);
+    mem.writeInt(u16, hdr_buf[index..][0..2], @intfromenum(machine), endian);
     index += 2;
 
     // ELF Version, again
@@ -2905,21 +2905,21 @@ pub fn writeElfHeader(self: *Elf) !void {
     index += 4;
 
     const e_entry = if (self.entry_index) |entry_index|
-        @as(u64, @intCast(self.symbol(entry_index).address(.{}, self)))
+        @as(u64, @intcast(self.symbol(entry_index).address(.{}, self)))
     else
         0;
     const phdr_table_offset = if (self.phdr_table_index) |phndx| self.phdrs.items[phndx].p_offset else 0;
     switch (self.ptr_width) {
         .p32 => {
-            mem.writeInt(u32, hdr_buf[index..][0..4], @as(u32, @intCast(e_entry)), endian);
+            mem.writeInt(u32, hdr_buf[index..][0..4], @as(u32, @intcast(e_entry)), endian);
             index += 4;
 
             // e_phoff
-            mem.writeInt(u32, hdr_buf[index..][0..4], @as(u32, @intCast(phdr_table_offset)), endian);
+            mem.writeInt(u32, hdr_buf[index..][0..4], @as(u32, @intcast(phdr_table_offset)), endian);
             index += 4;
 
             // e_shoff
-            mem.writeInt(u32, hdr_buf[index..][0..4], @as(u32, @intCast(self.shdr_table_offset.?)), endian);
+            mem.writeInt(u32, hdr_buf[index..][0..4], @as(u32, @intcast(self.shdr_table_offset.?)), endian);
             index += 4;
         },
         .p64 => {
@@ -2942,35 +2942,35 @@ pub fn writeElfHeader(self: *Elf) !void {
     index += 4;
 
     const e_ehsize: u16 = switch (self.ptr_width) {
-        .p32 => @sizeOf(elf.Elf32_Ehdr),
-        .p64 => @sizeOf(elf.Elf64_Ehdr),
+        .p32 => @sizeof(elf.Elf32_Ehdr),
+        .p64 => @sizeof(elf.Elf64_Ehdr),
     };
     mem.writeInt(u16, hdr_buf[index..][0..2], e_ehsize, endian);
     index += 2;
 
     const e_phentsize: u16 = switch (self.ptr_width) {
-        .p32 => @sizeOf(elf.Elf32_Phdr),
-        .p64 => @sizeOf(elf.Elf64_Phdr),
+        .p32 => @sizeof(elf.Elf32_Phdr),
+        .p64 => @sizeof(elf.Elf64_Phdr),
     };
     mem.writeInt(u16, hdr_buf[index..][0..2], e_phentsize, endian);
     index += 2;
 
-    const e_phnum = @as(u16, @intCast(self.phdrs.items.len));
+    const e_phnum = @as(u16, @intcast(self.phdrs.items.len));
     mem.writeInt(u16, hdr_buf[index..][0..2], e_phnum, endian);
     index += 2;
 
     const e_shentsize: u16 = switch (self.ptr_width) {
-        .p32 => @sizeOf(elf.Elf32_Shdr),
-        .p64 => @sizeOf(elf.Elf64_Shdr),
+        .p32 => @sizeof(elf.Elf32_Shdr),
+        .p64 => @sizeof(elf.Elf64_Shdr),
     };
     mem.writeInt(u16, hdr_buf[index..][0..2], e_shentsize, endian);
     index += 2;
 
-    const e_shnum = @as(u16, @intCast(self.shdrs.items.len));
+    const e_shnum = @as(u16, @intcast(self.shdrs.items.len));
     mem.writeInt(u16, hdr_buf[index..][0..2], e_shnum, endian);
     index += 2;
 
-    mem.writeInt(u16, hdr_buf[index..][0..2], @intCast(self.shstrtab_section_index.?), endian);
+    mem.writeInt(u16, hdr_buf[index..][0..2], @intcast(self.shstrtab_section_index.?), endian);
     index += 2;
 
     assert(index == e_ehsize);
@@ -3093,14 +3093,14 @@ fn allocateLinkerDefinedSymbols(self: *Elf) void {
     if (self.dynamic_section_index) |shndx| {
         const shdr = &self.shdrs.items[shndx];
         const symbol_ptr = self.symbol(self.dynamic_index.?);
-        symbol_ptr.value = @intCast(shdr.sh_addr);
+        symbol_ptr.value = @intcast(shdr.sh_addr);
         symbol_ptr.output_section_index = shndx;
     }
 
     // __ehdr_start
     {
         const symbol_ptr = self.symbol(self.ehdr_start_index.?);
-        symbol_ptr.value = @intCast(self.image_base);
+        symbol_ptr.value = @intcast(self.image_base);
         symbol_ptr.output_section_index = 1;
     }
 
@@ -3110,9 +3110,9 @@ fn allocateLinkerDefinedSymbols(self: *Elf) void {
         const end_sym = self.symbol(self.init_array_end_index.?);
         const shdr = &self.shdrs.items[shndx];
         start_sym.output_section_index = shndx;
-        start_sym.value = @intCast(shdr.sh_addr);
+        start_sym.value = @intcast(shdr.sh_addr);
         end_sym.output_section_index = shndx;
-        end_sym.value = @intCast(shdr.sh_addr + shdr.sh_size);
+        end_sym.value = @intcast(shdr.sh_addr + shdr.sh_size);
     }
 
     // __fini_array_start, __fini_array_end
@@ -3121,9 +3121,9 @@ fn allocateLinkerDefinedSymbols(self: *Elf) void {
         const end_sym = self.symbol(self.fini_array_end_index.?);
         const shdr = &self.shdrs.items[shndx];
         start_sym.output_section_index = shndx;
-        start_sym.value = @intCast(shdr.sh_addr);
+        start_sym.value = @intcast(shdr.sh_addr);
         end_sym.output_section_index = shndx;
-        end_sym.value = @intCast(shdr.sh_addr + shdr.sh_size);
+        end_sym.value = @intcast(shdr.sh_addr + shdr.sh_size);
     }
 
     // __preinit_array_start, __preinit_array_end
@@ -3132,9 +3132,9 @@ fn allocateLinkerDefinedSymbols(self: *Elf) void {
         const end_sym = self.symbol(self.preinit_array_end_index.?);
         const shdr = &self.shdrs.items[shndx];
         start_sym.output_section_index = shndx;
-        start_sym.value = @intCast(shdr.sh_addr);
+        start_sym.value = @intcast(shdr.sh_addr);
         end_sym.output_section_index = shndx;
-        end_sym.value = @intCast(shdr.sh_addr + shdr.sh_size);
+        end_sym.value = @intcast(shdr.sh_addr + shdr.sh_size);
     }
 
     // _GLOBAL_OFFSET_TABLE_
@@ -3142,14 +3142,14 @@ fn allocateLinkerDefinedSymbols(self: *Elf) void {
         if (self.got_plt_section_index) |shndx| {
             const shdr = self.shdrs.items[shndx];
             const sym = self.symbol(self.got_index.?);
-            sym.value = @intCast(shdr.sh_addr);
+            sym.value = @intcast(shdr.sh_addr);
             sym.output_section_index = shndx;
         }
     } else {
         if (self.got_section_index) |shndx| {
             const shdr = self.shdrs.items[shndx];
             const sym = self.symbol(self.got_index.?);
-            sym.value = @intCast(shdr.sh_addr);
+            sym.value = @intcast(shdr.sh_addr);
             sym.output_section_index = shndx;
         }
     }
@@ -3158,7 +3158,7 @@ fn allocateLinkerDefinedSymbols(self: *Elf) void {
     if (self.plt_section_index) |shndx| {
         const shdr = &self.shdrs.items[shndx];
         const symbol_ptr = self.symbol(self.plt_index.?);
-        symbol_ptr.value = @intCast(shdr.sh_addr);
+        symbol_ptr.value = @intcast(shdr.sh_addr);
         symbol_ptr.output_section_index = shndx;
     }
 
@@ -3166,7 +3166,7 @@ fn allocateLinkerDefinedSymbols(self: *Elf) void {
     if (self.dso_handle_index) |index| {
         const shdr = &self.shdrs.items[1];
         const symbol_ptr = self.symbol(index);
-        symbol_ptr.value = @intCast(shdr.sh_addr);
+        symbol_ptr.value = @intcast(shdr.sh_addr);
         symbol_ptr.output_section_index = 0;
     }
 
@@ -3174,7 +3174,7 @@ fn allocateLinkerDefinedSymbols(self: *Elf) void {
     if (self.eh_frame_hdr_section_index) |shndx| {
         const shdr = &self.shdrs.items[shndx];
         const symbol_ptr = self.symbol(self.gnu_eh_frame_hdr_index.?);
-        symbol_ptr.value = @intCast(shdr.sh_addr);
+        symbol_ptr.value = @intcast(shdr.sh_addr);
         symbol_ptr.output_section_index = shndx;
     }
 
@@ -3183,12 +3183,12 @@ fn allocateLinkerDefinedSymbols(self: *Elf) void {
         if (link_mode != .static or comp.config.pie) break :blk;
         const shdr = &self.shdrs.items[shndx];
         const end_addr = shdr.sh_addr + shdr.sh_size;
-        const start_addr = end_addr - self.calcNumIRelativeRelocs() * @sizeOf(elf.Elf64_Rela);
+        const start_addr = end_addr - self.calcNumIRelativeRelocs() * @sizeof(elf.Elf64_Rela);
         const start_sym = self.symbol(self.rela_iplt_start_index.?);
         const end_sym = self.symbol(self.rela_iplt_end_index.?);
-        start_sym.value = @intCast(start_addr);
+        start_sym.value = @intcast(start_addr);
         start_sym.output_section_index = shndx;
-        end_sym.value = @intCast(end_addr);
+        end_sym.value = @intcast(end_addr);
         end_sym.output_section_index = shndx;
     }
 
@@ -3197,8 +3197,8 @@ fn allocateLinkerDefinedSymbols(self: *Elf) void {
         const end_symbol = self.symbol(self.end_index.?);
         for (self.shdrs.items, 0..) |shdr, shndx| {
             if (shdr.sh_flags & elf.SHF_ALLOC != 0) {
-                end_symbol.value = @intCast(shdr.sh_addr + shdr.sh_size);
-                end_symbol.output_section_index = @intCast(shndx);
+                end_symbol.value = @intcast(shdr.sh_addr + shdr.sh_size);
+                end_symbol.output_section_index = @intcast(shndx);
             }
         }
     }
@@ -3212,9 +3212,9 @@ fn allocateLinkerDefinedSymbols(self: *Elf) void {
             const stop = self.symbol(self.start_stop_indexes.items[index + 1]);
             const shndx = self.sectionByName(name["__start_".len..]).?;
             const shdr = &self.shdrs.items[shndx];
-            start.value = @intCast(shdr.sh_addr);
+            start.value = @intcast(shdr.sh_addr);
             start.output_section_index = shndx;
-            stop.value = @intCast(shdr.sh_addr + shdr.sh_size);
+            stop.value = @intcast(shdr.sh_addr + shdr.sh_size);
             stop.output_section_index = shndx;
         }
     }
@@ -3224,7 +3224,7 @@ fn allocateLinkerDefinedSymbols(self: *Elf) void {
         const sym = self.symbol(index);
         if (self.sectionByName(".sdata")) |shndx| {
             const shdr = self.shdrs.items[shndx];
-            sym.value = @intCast(shdr.sh_addr + 0x800);
+            sym.value = @intcast(shdr.sh_addr + 0x800);
             sym.output_section_index = shndx;
         } else {
             sym.value = 0;
@@ -3312,7 +3312,7 @@ pub fn updateMergeSectionSizes(self: *Elf) !void {
             assert(msub.alive);
             const offset = msub.alignment.forward(shdr.sh_size);
             const padding = offset - shdr.sh_size;
-            msub.value = @intCast(offset);
+            msub.value = @intcast(offset);
             shdr.sh_size += padding + msub.size;
             shdr.sh_addralign = @max(shdr.sh_addralign, msub.alignment.toByteUnits() orelse 1);
         }
@@ -3412,7 +3412,7 @@ fn initSyntheticSections(self: *Elf) !void {
         .name = ".got.plt",
         .type = elf.SHT_PROGBITS,
         .flags = elf.SHF_ALLOC | elf.SHF_WRITE,
-        .addralign = @alignOf(u64),
+        .addralign = @alignof(u64),
         .offset = std.math.maxInt(u64),
     });
 
@@ -3432,8 +3432,8 @@ fn initSyntheticSections(self: *Elf) !void {
             .name = ".rela.dyn",
             .type = elf.SHT_RELA,
             .flags = elf.SHF_ALLOC,
-            .addralign = @alignOf(elf.Elf64_Rela),
-            .entsize = @sizeOf(elf.Elf64_Rela),
+            .addralign = @alignof(elf.Elf64_Rela),
+            .entsize = @sizeof(elf.Elf64_Rela),
             .offset = std.math.maxInt(u64),
         });
     }
@@ -3450,8 +3450,8 @@ fn initSyntheticSections(self: *Elf) !void {
             .name = ".rela.plt",
             .type = elf.SHT_RELA,
             .flags = elf.SHF_ALLOC,
-            .addralign = @alignOf(elf.Elf64_Rela),
-            .entsize = @sizeOf(elf.Elf64_Rela),
+            .addralign = @alignof(elf.Elf64_Rela),
+            .entsize = @sizeof(elf.Elf64_Rela),
             .offset = std.math.maxInt(u64),
         });
     }
@@ -3507,16 +3507,16 @@ fn initSyntheticSections(self: *Elf) !void {
             .name = ".dynamic",
             .flags = elf.SHF_ALLOC | elf.SHF_WRITE,
             .type = elf.SHT_DYNAMIC,
-            .entsize = @sizeOf(elf.Elf64_Dyn),
-            .addralign = @alignOf(elf.Elf64_Dyn),
+            .entsize = @sizeof(elf.Elf64_Dyn),
+            .addralign = @alignof(elf.Elf64_Dyn),
             .offset = std.math.maxInt(u64),
         });
         self.dynsymtab_section_index = try self.addSection(.{
             .name = ".dynsym",
             .flags = elf.SHF_ALLOC,
             .type = elf.SHT_DYNSYM,
-            .addralign = @alignOf(elf.Elf64_Sym),
-            .entsize = @sizeOf(elf.Elf64_Sym),
+            .addralign = @alignof(elf.Elf64_Sym),
+            .entsize = @sizeof(elf.Elf64_Sym),
             .info = 1,
             .offset = std.math.maxInt(u64),
         });
@@ -3545,15 +3545,15 @@ fn initSyntheticSections(self: *Elf) !void {
                 .name = ".gnu.version",
                 .flags = elf.SHF_ALLOC,
                 .type = elf.SHT_GNU_VERSYM,
-                .addralign = @alignOf(elf.Elf64_Versym),
-                .entsize = @sizeOf(elf.Elf64_Versym),
+                .addralign = @alignof(elf.Elf64_Versym),
+                .entsize = @sizeof(elf.Elf64_Versym),
                 .offset = std.math.maxInt(u64),
             });
             self.verneed_section_index = try self.addSection(.{
                 .name = ".gnu.version_r",
                 .flags = elf.SHF_ALLOC,
                 .type = elf.SHT_GNU_VERNEED,
-                .addralign = @alignOf(elf.Elf64_Verneed),
+                .addralign = @alignof(elf.Elf64_Verneed),
                 .offset = std.math.maxInt(u64),
             });
         }
@@ -3572,8 +3572,8 @@ pub fn initSymtab(self: *Elf) !void {
         self.symtab_section_index = try self.addSection(.{
             .name = ".symtab",
             .type = elf.SHT_SYMTAB,
-            .addralign = if (small_ptr) @alignOf(elf.Elf32_Sym) else @alignOf(elf.Elf64_Sym),
-            .entsize = if (small_ptr) @sizeOf(elf.Elf32_Sym) else @sizeOf(elf.Elf64_Sym),
+            .addralign = if (small_ptr) @alignof(elf.Elf32_Sym) else @alignof(elf.Elf64_Sym),
+            .entsize = if (small_ptr) @sizeof(elf.Elf32_Sym) else @sizeof(elf.Elf64_Sym),
             .offset = std.math.maxInt(u64),
         });
     }
@@ -3689,7 +3689,7 @@ fn sortInitFini(self: *Elf) !void {
 
         if (!is_init_fini and !is_ctor_dtor) continue;
 
-        const atom_list = self.output_sections.getPtr(@intCast(shndx)).?;
+        const atom_list = self.output_sections.getPtr(@intcast(shndx)).?;
         if (atom_list.items.len == 0) continue;
 
         var entries = std.ArrayList(Entry).init(gpa);
@@ -3758,7 +3758,7 @@ fn setVersionSymtab(self: *Elf) !void {
     if (self.verneed_section_index) |shndx| {
         try self.verneed.generate(self);
         const shdr = &self.shdrs.items[shndx];
-        shdr.sh_info = @as(u32, @intCast(self.verneed.verneed.items.len));
+        shdr.sh_info = @as(u32, @intcast(self.verneed.verneed.items.len));
     }
 }
 
@@ -3802,7 +3802,7 @@ fn sortPhdrs(self: *Elf) error{OutOfMemory}!void {
     var entries = try std.ArrayList(Entry).initCapacity(gpa, self.phdrs.items.len);
     defer entries.deinit();
     for (0..self.phdrs.items.len) |phndx| {
-        entries.appendAssumeCapacity(.{ .phndx = @as(u16, @intCast(phndx)) });
+        entries.appendAssumeCapacity(.{ .phndx = @as(u16, @intcast(phndx)) });
     }
 
     mem.sort(Entry, entries.items, self, Entry.lessThan);
@@ -3810,7 +3810,7 @@ fn sortPhdrs(self: *Elf) error{OutOfMemory}!void {
     const backlinks = try gpa.alloc(u16, entries.items.len);
     defer gpa.free(backlinks);
     for (entries.items, 0..) |entry, i| {
-        backlinks[entry.phndx] = @as(u16, @intCast(i));
+        backlinks[entry.phndx] = @as(u16, @intcast(i));
     }
 
     const slice = try self.phdrs.toOwnedSlice(gpa);
@@ -3907,7 +3907,7 @@ pub fn sortShdrs(self: *Elf) !void {
     var entries = try std.ArrayList(Entry).initCapacity(gpa, self.shdrs.items.len);
     defer entries.deinit();
     for (0..self.shdrs.items.len) |shndx| {
-        entries.appendAssumeCapacity(.{ .shndx = @intCast(shndx) });
+        entries.appendAssumeCapacity(.{ .shndx = @intcast(shndx) });
     }
 
     mem.sort(Entry, entries.items, self, Entry.lessThan);
@@ -3915,7 +3915,7 @@ pub fn sortShdrs(self: *Elf) !void {
     const backlinks = try gpa.alloc(u32, entries.items.len);
     defer gpa.free(backlinks);
     for (entries.items, 0..) |entry, i| {
-        backlinks[entry.shndx] = @intCast(i);
+        backlinks[entry.shndx] = @intcast(i);
     }
 
     const slice = try self.shdrs.toOwnedSlice(gpa);
@@ -4127,7 +4127,7 @@ fn updateSectionSizes(self: *Elf) !void {
             if (!atom_ptr.flags.alive) continue;
             const offset = atom_ptr.alignment.forward(shdr.sh_size);
             const padding = offset - shdr.sh_size;
-            atom_ptr.value = @intCast(offset);
+            atom_ptr.value = @intcast(offset);
             shdr.sh_size += padding + atom_ptr.size;
             shdr.sh_addralign = @max(shdr.sh_addralign, atom_ptr.alignment.toByteUnits() orelse 1);
         }
@@ -4176,11 +4176,11 @@ fn updateSectionSizes(self: *Elf) !void {
         for (self.objects.items) |index| {
             num += self.file(index).?.object.num_dynrelocs;
         }
-        self.shdrs.items[shndx].sh_size = num * @sizeOf(elf.Elf64_Rela);
+        self.shdrs.items[shndx].sh_size = num * @sizeof(elf.Elf64_Rela);
     }
 
     if (self.rela_plt_section_index) |index| {
-        self.shdrs.items[index].sh_size = self.plt.numRela() * @sizeOf(elf.Elf64_Rela);
+        self.shdrs.items[index].sh_size = self.plt.numRela() * @sizeof(elf.Elf64_Rela);
     }
 
     if (self.copy_rel_section_index) |index| {
@@ -4212,7 +4212,7 @@ fn updateSectionSizes(self: *Elf) !void {
     }
 
     if (self.versym_section_index) |index| {
-        self.shdrs.items[index].sh_size = self.versym.items.len * @sizeOf(elf.Elf64_Versym);
+        self.shdrs.items[index].sh_size = self.versym.items.len * @sizeof(elf.Elf64_Versym);
     }
 
     if (self.verneed_section_index) |index| {
@@ -4261,7 +4261,7 @@ fn calcNumberOfSegments(self: *Elf) usize {
     for (self.shdrs.items, 0..) |shdr, shndx| {
         if (shdr.sh_type == elf.SHT_NULL) continue;
         if (shdr.sh_flags & elf.SHF_ALLOC == 0) continue;
-        if (self.isZigSection(@intCast(shndx))) continue;
+        if (self.isZigSection(@intcast(shndx))) continue;
         const flags = shdrToPhdrFlags(shdr.sh_flags);
         covers[flags - 1] = true;
     }
@@ -4279,12 +4279,12 @@ fn allocatePhdrTable(self: *Elf) error{OutOfMemory}!void {
     const phdr_table_load = &self.phdrs.items[self.phdr_table_load_index.?];
 
     const ehsize: u64 = switch (self.ptr_width) {
-        .p32 => @sizeOf(elf.Elf32_Ehdr),
-        .p64 => @sizeOf(elf.Elf64_Ehdr),
+        .p32 => @sizeof(elf.Elf32_Ehdr),
+        .p64 => @sizeof(elf.Elf64_Ehdr),
     };
     const phsize: u64 = switch (self.ptr_width) {
-        .p32 => @sizeOf(elf.Elf32_Phdr),
-        .p64 => @sizeOf(elf.Elf64_Phdr),
+        .p32 => @sizeof(elf.Elf32_Phdr),
+        .p64 => @sizeof(elf.Elf64_Phdr),
     };
     const needed_size = (self.phdrs.items.len + new_load_segments) * phsize;
     const available_space = self.allocatedSize(phdr_table.p_offset);
@@ -4358,9 +4358,9 @@ pub fn allocateAllocSections(self: *Elf) error{OutOfMemory}!void {
     for (self.shdrs.items, 0..) |shdr, shndx| {
         if (shdr.sh_type == elf.SHT_NULL) continue;
         if (shdr.sh_flags & elf.SHF_ALLOC == 0) continue;
-        if (self.isZigSection(@intCast(shndx))) continue;
+        if (self.isZigSection(@intcast(shndx))) continue;
         const flags = shdrToPhdrFlags(shdr.sh_flags);
-        try covers[flags - 1].append(@intCast(shndx));
+        try covers[flags - 1].append(@intcast(shndx));
     }
 
     // Now we can proceed with allocating the sections in virtual memory.
@@ -4465,7 +4465,7 @@ pub fn allocateNonAllocSections(self: *Elf) !void {
             shdr.sh_size = 0;
             const new_offset = self.findFreeSpace(needed_size, shdr.sh_addralign);
 
-            if (self.isDebugSection(@intCast(shndx))) {
+            if (self.isDebugSection(@intcast(shndx))) {
                 log.debug("moving {s} from 0x{x} to 0x{x}", .{
                     self.getShString(shdr.sh_name),
                     shdr.sh_offset,
@@ -4574,13 +4574,13 @@ fn writeAtoms(self: *Elf) !void {
         if (shdr.sh_type == elf.SHT_NULL) continue;
         if (shdr.sh_type == elf.SHT_NOBITS) continue;
 
-        const atom_list = self.output_sections.get(@intCast(shndx)) orelse continue;
+        const atom_list = self.output_sections.get(@intcast(shndx)) orelse continue;
         if (atom_list.items.len == 0) continue;
 
         log.debug("writing atoms in '{s}' section", .{self.getShString(shdr.sh_name)});
 
         // TODO really, really handle debug section separately
-        const base_offset = if (self.isDebugSection(@intCast(shndx))) blk: {
+        const base_offset = if (self.isDebugSection(@intcast(shndx))) blk: {
             const zig_object = self.zigObjectPtr().?;
             if (shndx == self.debug_info_section_index.?)
                 break :blk zig_object.debug_info_section_zig_size;
@@ -4610,7 +4610,7 @@ fn writeAtoms(self: *Elf) !void {
             const atom_ptr = self.atom(atom_index).?;
             assert(atom_ptr.flags.alive);
 
-            const offset = math.cast(usize, atom_ptr.value - @as(i64, @intCast(base_offset))) orelse
+            const offset = math.cast(usize, atom_ptr.value - @as(i64, @intcast(base_offset))) orelse
                 return error.Overflow;
             const size = math.cast(usize, atom_ptr.size) orelse return error.Overflow;
 
@@ -4651,7 +4651,7 @@ fn writeAtoms(self: *Elf) !void {
             const thunk_size = th.size(self);
             try buffer.ensureUnusedCapacity(thunk_size);
             const shdr = self.shdrs.items[th.output_section_index];
-            const offset = @as(u64, @intCast(th.value)) + shdr.sh_offset;
+            const offset = @as(u64, @intcast(th.value)) + shdr.sh_offset;
             try th.write(self, buffer.writer());
             assert(buffer.items.len == thunk_size);
             try self.base.file.?.pwriteAll(buffer.items, offset);
@@ -4686,7 +4686,7 @@ pub fn updateSymtabSize(self: *Elf) !void {
     if (self.eh_frame_section_index) |_| {
         nlocals += 1;
     }
-    nlocals += @intCast(self.merge_sections.items.len);
+    nlocals += @intcast(self.merge_sections.items.len);
 
     if (self.requiresThunks()) for (self.thunks.items) |*th| {
         th.output_symtab_ctx.ilocal = nlocals + 1;
@@ -4749,8 +4749,8 @@ pub fn updateSymtabSize(self: *Elf) !void {
     symtab_shdr.sh_link = self.strtab_section_index.?;
 
     const sym_size: u64 = switch (self.ptr_width) {
-        .p32 => @sizeOf(elf.Elf32_Sym),
-        .p64 => @sizeOf(elf.Elf64_Sym),
+        .p32 => @sizeof(elf.Elf32_Sym),
+        .p64 => @sizeof(elf.Elf64_Sym),
     };
     const needed_size = (nlocals + nglobals + 1) * sym_size;
     symtab_shdr.sh_size = needed_size;
@@ -4904,10 +4904,10 @@ pub fn writeSymtab(self: *Elf) !void {
     const symtab_shdr = self.shdrs.items[self.symtab_section_index.?];
     const strtab_shdr = self.shdrs.items[self.strtab_section_index.?];
     const sym_size: u64 = switch (self.ptr_width) {
-        .p32 => @sizeOf(elf.Elf32_Sym),
-        .p64 => @sizeOf(elf.Elf64_Sym),
+        .p32 => @sizeof(elf.Elf32_Sym),
+        .p64 => @sizeof(elf.Elf64_Sym),
     };
-    const nsyms = math.cast(usize, @divExact(symtab_shdr.sh_size, sym_size)) orelse return error.Overflow;
+    const nsyms = math.cast(usize, @divexact(symtab_shdr.sh_size, sym_size)) orelse return error.Overflow;
 
     log.debug("writing {d} symbols in .symtab from 0x{x} to 0x{x}", .{
         nsyms,
@@ -4976,16 +4976,16 @@ pub fn writeSymtab(self: *Elf) !void {
                     .st_info = sym.st_info,
                     .st_other = sym.st_other,
                     .st_shndx = sym.st_shndx,
-                    .st_value = @as(u32, @intCast(sym.st_value)),
-                    .st_size = @as(u32, @intCast(sym.st_size)),
+                    .st_value = @as(u32, @intcast(sym.st_value)),
+                    .st_size = @as(u32, @intcast(sym.st_size)),
                 };
-                if (foreign_endian) mem.byteSwapAllFields(elf.Elf32_Sym, out);
+                if (foreign_endian) mem.byteswapAllFields(elf.Elf32_Sym, out);
             }
             try self.base.file.?.pwriteAll(mem.sliceAsBytes(buf), symtab_shdr.sh_offset);
         },
         .p64 => {
             if (foreign_endian) {
-                for (self.symtab.items) |*sym| mem.byteSwapAllFields(elf.Elf64_Sym, sym);
+                for (self.symtab.items) |*sym| mem.byteswapAllFields(elf.Elf64_Sym, sym);
             }
             try self.base.file.?.pwriteAll(mem.sliceAsBytes(self.symtab.items), symtab_shdr.sh_offset);
         },
@@ -5003,7 +5003,7 @@ fn writeSectionSymbols(self: *Elf) void {
             .st_name = 0,
             .st_value = shdr.sh_addr,
             .st_info = elf.STT_SECTION,
-            .st_shndx = @intCast(shndx),
+            .st_shndx = @intcast(shndx),
             .st_size = 0,
             .st_other = 0,
         };
@@ -5017,7 +5017,7 @@ fn writeSectionSymbols(self: *Elf) void {
             .st_name = 0,
             .st_value = shdr.sh_addr,
             .st_info = elf.STT_SECTION,
-            .st_shndx = @intCast(shndx),
+            .st_shndx = @intcast(shndx),
             .st_size = 0,
             .st_other = 0,
         };
@@ -5031,7 +5031,7 @@ fn writeSectionSymbols(self: *Elf) void {
             .st_name = 0,
             .st_value = shdr.sh_addr,
             .st_info = elf.STT_SECTION,
-            .st_shndx = @intCast(msec.output_section_index),
+            .st_shndx = @intcast(msec.output_section_index),
             .st_size = 0,
             .st_other = 0,
         };
@@ -5041,13 +5041,13 @@ fn writeSectionSymbols(self: *Elf) void {
 
 pub fn sectionSymbolOutputSymtabIndex(self: Elf, shndx: u32) u32 {
     if (self.eh_frame_section_index) |index| {
-        if (index == shndx) return @intCast(self.output_sections.keys().len + 1);
+        if (index == shndx) return @intcast(self.output_sections.keys().len + 1);
     }
     const base: usize = if (self.eh_frame_section_index == null) 0 else 1;
     for (self.merge_sections.items, 0..) |msec, index| {
-        if (msec.output_section_index == shndx) return @intCast(self.output_sections.keys().len + 1 + index + base);
+        if (msec.output_section_index == shndx) return @intcast(self.output_sections.keys().len + 1 + index + base);
     }
-    return @intCast(self.output_sections.getIndex(shndx).? + 1);
+    return @intcast(self.output_sections.getIndex(shndx).? + 1);
 }
 
 /// Always 4 or 8 depending on whether this is 32-bit ELF or 64-bit ELF.
@@ -5062,19 +5062,19 @@ pub fn ptrWidthBytes(self: Elf) u8 {
 /// in a 32-bit ELF file.
 pub fn archPtrWidthBytes(self: Elf) u8 {
     const target = self.base.comp.root_mod.resolved_target.result;
-    return @intCast(@divExact(target.ptrBitWidth(), 8));
+    return @intcast(@divexact(target.ptrBitWidth(), 8));
 }
 
 fn phdrTo32(phdr: elf.Elf64_Phdr) elf.Elf32_Phdr {
     return .{
         .p_type = phdr.p_type,
         .p_flags = phdr.p_flags,
-        .p_offset = @as(u32, @intCast(phdr.p_offset)),
-        .p_vaddr = @as(u32, @intCast(phdr.p_vaddr)),
-        .p_paddr = @as(u32, @intCast(phdr.p_paddr)),
-        .p_filesz = @as(u32, @intCast(phdr.p_filesz)),
-        .p_memsz = @as(u32, @intCast(phdr.p_memsz)),
-        .p_align = @as(u32, @intCast(phdr.p_align)),
+        .p_offset = @as(u32, @intcast(phdr.p_offset)),
+        .p_vaddr = @as(u32, @intcast(phdr.p_vaddr)),
+        .p_paddr = @as(u32, @intcast(phdr.p_paddr)),
+        .p_filesz = @as(u32, @intcast(phdr.p_filesz)),
+        .p_memsz = @as(u32, @intcast(phdr.p_memsz)),
+        .p_align = @as(u32, @intcast(phdr.p_align)),
     };
 }
 
@@ -5082,14 +5082,14 @@ fn shdrTo32(shdr: elf.Elf64_Shdr) elf.Elf32_Shdr {
     return .{
         .sh_name = shdr.sh_name,
         .sh_type = shdr.sh_type,
-        .sh_flags = @as(u32, @intCast(shdr.sh_flags)),
-        .sh_addr = @as(u32, @intCast(shdr.sh_addr)),
-        .sh_offset = @as(u32, @intCast(shdr.sh_offset)),
-        .sh_size = @as(u32, @intCast(shdr.sh_size)),
+        .sh_flags = @as(u32, @intcast(shdr.sh_flags)),
+        .sh_addr = @as(u32, @intcast(shdr.sh_addr)),
+        .sh_offset = @as(u32, @intcast(shdr.sh_offset)),
+        .sh_size = @as(u32, @intcast(shdr.sh_size)),
         .sh_link = shdr.sh_link,
         .sh_info = shdr.sh_info,
-        .sh_addralign = @as(u32, @intCast(shdr.sh_addralign)),
-        .sh_entsize = @as(u32, @intCast(shdr.sh_entsize)),
+        .sh_addralign = @as(u32, @intcast(shdr.sh_addralign)),
+        .sh_entsize = @as(u32, @intcast(shdr.sh_entsize)),
     };
 }
 
@@ -5393,7 +5393,7 @@ fn addPhdr(self: *Elf, opts: struct {
     memsz: u64 = 0,
 }) error{OutOfMemory}!u16 {
     const gpa = self.base.comp.gpa;
-    const index = @as(u16, @intCast(self.phdrs.items.len));
+    const index = @as(u16, @intcast(self.phdrs.items.len));
     try self.phdrs.append(gpa, .{
         .p_type = opts.type,
         .p_flags = opts.flags,
@@ -5409,12 +5409,12 @@ fn addPhdr(self: *Elf, opts: struct {
 
 pub fn addRelaShdr(self: *Elf, name: [:0]const u8, shndx: u32) !u32 {
     const entsize: u64 = switch (self.ptr_width) {
-        .p32 => @sizeOf(elf.Elf32_Rela),
-        .p64 => @sizeOf(elf.Elf64_Rela),
+        .p32 => @sizeof(elf.Elf32_Rela),
+        .p64 => @sizeof(elf.Elf64_Rela),
     };
     const addralign: u64 = switch (self.ptr_width) {
-        .p32 => @alignOf(elf.Elf32_Rela),
-        .p64 => @alignOf(elf.Elf64_Rela),
+        .p32 => @alignof(elf.Elf32_Rela),
+        .p64 => @alignof(elf.Elf64_Rela),
     };
     return self.addSection(.{
         .name = name,
@@ -5440,7 +5440,7 @@ pub const AddSectionOpts = struct {
 
 pub fn addSection(self: *Elf, opts: AddSectionOpts) !u32 {
     const gpa = self.base.comp.gpa;
-    const index = @as(u32, @intCast(self.shdrs.items.len));
+    const index = @as(u32, @intcast(self.shdrs.items.len));
     const shdr = try self.shdrs.addOne(gpa);
     shdr.* = .{
         .sh_name = try self.insertShString(opts.name),
@@ -5460,7 +5460,7 @@ pub fn addSection(self: *Elf, opts: AddSectionOpts) !u32 {
 pub fn sectionByName(self: *Elf, name: [:0]const u8) ?u32 {
     for (self.shdrs.items, 0..) |*shdr, i| {
         const this_name = self.getShString(shdr.sh_name);
-        if (mem.eql(u8, this_name, name)) return @intCast(i);
+        if (mem.eql(u8, this_name, name)) return @intcast(i);
     } else return null;
 }
 
@@ -5546,25 +5546,25 @@ pub fn atom(self: *Elf, atom_index: Atom.Index) ?*Atom {
 
 pub fn addAtom(self: *Elf) !Atom.Index {
     const gpa = self.base.comp.gpa;
-    const index = @as(Atom.Index, @intCast(self.atoms.items.len));
+    const index = @as(Atom.Index, @intcast(self.atoms.items.len));
     const atom_ptr = try self.atoms.addOne(gpa);
     atom_ptr.* = .{ .atom_index = index };
     return index;
 }
 
 pub fn addAtomExtra(self: *Elf, extra: Atom.Extra) !u32 {
-    const fields = @typeInfo(Atom.Extra).Struct.fields;
+    const fields = @typeinfo(Atom.Extra).Struct.fields;
     try self.atoms_extra.ensureUnusedCapacity(self.base.comp.gpa, fields.len);
     return self.addAtomExtraAssumeCapacity(extra);
 }
 
 pub fn addAtomExtraAssumeCapacity(self: *Elf, extra: Atom.Extra) u32 {
-    const index = @as(u32, @intCast(self.atoms_extra.items.len));
-    const fields = @typeInfo(Atom.Extra).Struct.fields;
+    const index = @as(u32, @intcast(self.atoms_extra.items.len));
+    const fields = @typeinfo(Atom.Extra).Struct.fields;
     inline for (fields) |field| {
         self.atoms_extra.appendAssumeCapacity(switch (field.type) {
             u32 => @field(extra, field.name),
-            else => @compileError("bad field type"),
+            else => @compileerror("bad field type"),
         });
     }
     return index;
@@ -5572,13 +5572,13 @@ pub fn addAtomExtraAssumeCapacity(self: *Elf, extra: Atom.Extra) u32 {
 
 pub fn atomExtra(self: *Elf, index: u32) ?Atom.Extra {
     if (index == 0) return null;
-    const fields = @typeInfo(Atom.Extra).Struct.fields;
+    const fields = @typeinfo(Atom.Extra).Struct.fields;
     var i: usize = index;
     var result: Atom.Extra = undefined;
     inline for (fields) |field| {
         @field(result, field.name) = switch (field.type) {
             u32 => self.atoms_extra.items[i],
-            else => @compileError("bad field type"),
+            else => @compileerror("bad field type"),
         };
         i += 1;
     }
@@ -5587,17 +5587,17 @@ pub fn atomExtra(self: *Elf, index: u32) ?Atom.Extra {
 
 pub fn setAtomExtra(self: *Elf, index: u32, extra: Atom.Extra) void {
     assert(index > 0);
-    const fields = @typeInfo(Atom.Extra).Struct.fields;
+    const fields = @typeinfo(Atom.Extra).Struct.fields;
     inline for (fields, 0..) |field, i| {
         self.atoms_extra.items[index + i] = switch (field.type) {
             u32 => @field(extra, field.name),
-            else => @compileError("bad field type"),
+            else => @compileerror("bad field type"),
         };
     }
 }
 
 pub fn addThunk(self: *Elf) !Thunk.Index {
-    const index = @as(Thunk.Index, @intCast(self.thunks.items.len));
+    const index = @as(Thunk.Index, @intcast(self.thunks.items.len));
     const th = try self.thunks.addOne(self.base.comp.gpa);
     th.* = .{};
     return index;
@@ -5621,7 +5621,7 @@ pub fn file(self: *Elf, index: File.Index) ?File {
 
 pub fn addFileHandle(self: *Elf, handle: fs.File) !File.HandleIndex {
     const gpa = self.base.comp.gpa;
-    const index: File.HandleIndex = @intCast(self.file_handles.items.len);
+    const index: File.HandleIndex = @intcast(self.file_handles.items.len);
     const fh = try self.file_handles.addOne(gpa);
     fh.* = handle;
     return index;
@@ -5646,7 +5646,7 @@ pub fn addSymbol(self: *Elf) !Symbol.Index {
             break :blk index;
         } else {
             log.debug("  (allocating symbol index {d})", .{self.symbols.items.len});
-            const index: Symbol.Index = @intCast(self.symbols.items.len);
+            const index: Symbol.Index = @intcast(self.symbols.items.len);
             _ = self.symbols.addOneAssumeCapacity();
             break :blk index;
         }
@@ -5657,18 +5657,18 @@ pub fn addSymbol(self: *Elf) !Symbol.Index {
 
 pub fn addSymbolExtra(self: *Elf, extra: Symbol.Extra) !u32 {
     const gpa = self.base.comp.gpa;
-    const fields = @typeInfo(Symbol.Extra).Struct.fields;
+    const fields = @typeinfo(Symbol.Extra).Struct.fields;
     try self.symbols_extra.ensureUnusedCapacity(gpa, fields.len);
     return self.addSymbolExtraAssumeCapacity(extra);
 }
 
 pub fn addSymbolExtraAssumeCapacity(self: *Elf, extra: Symbol.Extra) u32 {
-    const index = @as(u32, @intCast(self.symbols_extra.items.len));
-    const fields = @typeInfo(Symbol.Extra).Struct.fields;
+    const index = @as(u32, @intcast(self.symbols_extra.items.len));
+    const fields = @typeinfo(Symbol.Extra).Struct.fields;
     inline for (fields) |field| {
         self.symbols_extra.appendAssumeCapacity(switch (field.type) {
             u32 => @field(extra, field.name),
-            else => @compileError("bad field type"),
+            else => @compileerror("bad field type"),
         });
     }
     return index;
@@ -5676,13 +5676,13 @@ pub fn addSymbolExtraAssumeCapacity(self: *Elf, extra: Symbol.Extra) u32 {
 
 pub fn symbolExtra(self: *Elf, index: u32) ?Symbol.Extra {
     if (index == 0) return null;
-    const fields = @typeInfo(Symbol.Extra).Struct.fields;
+    const fields = @typeinfo(Symbol.Extra).Struct.fields;
     var i: usize = index;
     var result: Symbol.Extra = undefined;
     inline for (fields) |field| {
         @field(result, field.name) = switch (field.type) {
             u32 => self.symbols_extra.items[i],
-            else => @compileError("bad field type"),
+            else => @compileerror("bad field type"),
         };
         i += 1;
     }
@@ -5691,11 +5691,11 @@ pub fn symbolExtra(self: *Elf, index: u32) ?Symbol.Extra {
 
 pub fn setSymbolExtra(self: *Elf, index: u32, extra: Symbol.Extra) void {
     assert(index > 0);
-    const fields = @typeInfo(Symbol.Extra).Struct.fields;
+    const fields = @typeinfo(Symbol.Extra).Struct.fields;
     inline for (fields, 0..) |field, i| {
         self.symbols_extra.items[index + i] = switch (field.type) {
             u32 => @field(extra, field.name),
-            else => @compileError("bad field type"),
+            else => @compileerror("bad field type"),
         };
     }
 }
@@ -5747,7 +5747,7 @@ pub fn getOrCreateComdatGroupOwner(self: *Elf, name: [:0]const u8) !GetOrCreateC
     const off = try self.strings.insert(gpa, name);
     const gop = try self.comdat_groups_table.getOrPut(gpa, off);
     if (!gop.found_existing) {
-        const index: ComdatGroupOwner.Index = @intCast(self.comdat_groups_owners.items.len);
+        const index: ComdatGroupOwner.Index = @intcast(self.comdat_groups_owners.items.len);
         const owner = try self.comdat_groups_owners.addOne(gpa);
         owner.* = .{};
         gop.value_ptr.* = index;
@@ -5760,7 +5760,7 @@ pub fn getOrCreateComdatGroupOwner(self: *Elf, name: [:0]const u8) !GetOrCreateC
 
 pub fn addComdatGroup(self: *Elf) !ComdatGroup.Index {
     const gpa = self.base.comp.gpa;
-    const index = @as(ComdatGroup.Index, @intCast(self.comdat_groups.items.len));
+    const index = @as(ComdatGroup.Index, @intcast(self.comdat_groups.items.len));
     _ = try self.comdat_groups.addOne(gpa);
     return index;
 }
@@ -5776,7 +5776,7 @@ pub fn comdatGroupOwner(self: *Elf, index: ComdatGroupOwner.Index) *ComdatGroupO
 }
 
 pub fn addInputMergeSection(self: *Elf) !InputMergeSection.Index {
-    const index: InputMergeSection.Index = @intCast(self.merge_input_sections.items.len);
+    const index: InputMergeSection.Index = @intcast(self.merge_input_sections.items.len);
     const msec = try self.merge_input_sections.addOne(self.base.comp.gpa);
     msec.* = .{};
     return index;
@@ -5788,7 +5788,7 @@ pub fn inputMergeSection(self: *Elf, index: InputMergeSection.Index) ?*InputMerg
 }
 
 pub fn addMergeSubsection(self: *Elf) !MergeSubsection.Index {
-    const index: MergeSubsection.Index = @intCast(self.merge_subsections.items.len);
+    const index: MergeSubsection.Index = @intcast(self.merge_subsections.items.len);
     const msec = try self.merge_subsections.addOne(self.base.comp.gpa);
     msec.* = .{};
     return index;
@@ -5810,9 +5810,9 @@ pub fn getOrCreateMergeSection(self: *Elf, name: []const u8, flags: u64, @"type"
     const out_off = try self.strings.insert(gpa, out_name);
     const out_flags = flags & ~@as(u64, elf.SHF_COMPRESSED | elf.SHF_GROUP);
     for (self.merge_sections.items, 0..) |msec, index| {
-        if (msec.name_offset == out_off) return @intCast(index);
+        if (msec.name_offset == out_off) return @intcast(index);
     }
-    const index = @as(MergeSection.Index, @intCast(self.merge_sections.items.len));
+    const index = @as(MergeSection.Index, @intcast(self.merge_sections.items.len));
     const msec = try self.merge_sections.addOne(gpa);
     msec.* = .{
         .name_offset = out_off,
@@ -5833,7 +5833,7 @@ pub fn gotAddress(self: *Elf) i64 {
             break :blk self.got_plt_section_index.?;
         break :blk if (self.got_section_index) |shndx| shndx else null;
     };
-    return if (shndx) |index| @intCast(self.shdrs.items[index].sh_addr) else 0;
+    return if (shndx) |index| @intcast(self.shdrs.items[index].sh_addr) else 0;
 }
 
 pub fn tpAddress(self: *Elf) i64 {
@@ -5844,19 +5844,19 @@ pub fn tpAddress(self: *Elf) i64 {
         .aarch64 => mem.alignBackward(u64, phdr.p_vaddr - 16, phdr.p_align),
         else => @panic("TODO implement getTpAddress for this arch"),
     };
-    return @intCast(addr);
+    return @intcast(addr);
 }
 
 pub fn dtpAddress(self: *Elf) i64 {
     const index = self.phdr_tls_index orelse return 0;
     const phdr = self.phdrs.items[index];
-    return @intCast(phdr.p_vaddr);
+    return @intcast(phdr.p_vaddr);
 }
 
 pub fn tlsAddress(self: *Elf) i64 {
     const index = self.phdr_tls_index orelse return 0;
     const phdr = self.phdrs.items[index];
-    return @intCast(phdr.p_vaddr);
+    return @intcast(phdr.p_vaddr);
 }
 
 const ErrorWithNotes = struct {
@@ -5911,12 +5911,12 @@ fn addErrorWithNotesAssumeCapacity(self: *Elf, note_count: usize) error{OutOfMem
 
 pub fn getShString(self: Elf, off: u32) [:0]const u8 {
     assert(off < self.shstrtab.items.len);
-    return mem.sliceTo(@as([*:0]const u8, @ptrCast(self.shstrtab.items.ptr + off)), 0);
+    return mem.sliceTo(@as([*:0]const u8, @ptrcast(self.shstrtab.items.ptr + off)), 0);
 }
 
 pub fn insertShString(self: *Elf, name: [:0]const u8) error{OutOfMemory}!u32 {
     const gpa = self.base.comp.gpa;
-    const off = @as(u32, @intCast(self.shstrtab.items.len));
+    const off = @as(u32, @intcast(self.shstrtab.items.len));
     try self.shstrtab.ensureUnusedCapacity(gpa, name.len + 1);
     self.shstrtab.writer(gpa).print("{s}\x00", .{name}) catch unreachable;
     return off;
@@ -5924,12 +5924,12 @@ pub fn insertShString(self: *Elf, name: [:0]const u8) error{OutOfMemory}!u32 {
 
 pub fn getDynString(self: Elf, off: u32) [:0]const u8 {
     assert(off < self.dynstrtab.items.len);
-    return mem.sliceTo(@as([*:0]const u8, @ptrCast(self.dynstrtab.items.ptr + off)), 0);
+    return mem.sliceTo(@as([*:0]const u8, @ptrcast(self.dynstrtab.items.ptr + off)), 0);
 }
 
 pub fn insertDynString(self: *Elf, name: []const u8) error{OutOfMemory}!u32 {
     const gpa = self.base.comp.gpa;
-    const off = @as(u32, @intCast(self.dynstrtab.items.len));
+    const off = @as(u32, @intcast(self.dynstrtab.items.len));
     try self.dynstrtab.ensureUnusedCapacity(gpa, name.len + 1);
     self.dynstrtab.writer(gpa).print("{s}\x00", .{name}) catch unreachable;
     return off;
@@ -5947,7 +5947,7 @@ fn reportUndefinedSymbols(self: *Elf, undefs: anytype) !void {
         const undef_index = entry.key_ptr.*;
         const atoms = entry.value_ptr.*.items;
         const natoms = @min(atoms.len, max_notes);
-        const nnotes = natoms + @intFromBool(atoms.len > max_notes);
+        const nnotes = natoms + @intfrombool(atoms.len > max_notes);
 
         var err = try self.addErrorWithNotesAssumeCapacity(nnotes);
         try err.addMsg(self, "undefined symbol: {s}", .{self.symbol(undef_index).name(self)});
@@ -5972,7 +5972,7 @@ fn reportDuplicates(self: *Elf, dupes: anytype) error{ HasDuplicates, OutOfMemor
     while (it.next()) |entry| {
         const sym = self.symbol(entry.key_ptr.*);
         const notes = entry.value_ptr.*;
-        const nnotes = @min(notes.items.len, max_notes) + @intFromBool(notes.items.len > max_notes);
+        const nnotes = @min(notes.items.len, max_notes) + @intfrombool(notes.items.len > max_notes);
 
         var err = try self.addErrorWithNotes(nnotes + 1);
         try err.addMsg(self, "duplicate symbol definition: {s}", .{sym.name(self)});
@@ -6011,7 +6011,7 @@ fn reportMissingLibraryError(
 pub fn reportUnsupportedCpuArch(self: *Elf) error{OutOfMemory}!void {
     var err = try self.addErrorWithNotes(0);
     try err.addMsg(self, "fatal linker error: unsupported CPU architecture {s}", .{
-        @tagName(self.getTarget().cpu.arch),
+        @tagname(self.getTarget().cpu.arch),
     });
 }
 
@@ -6243,7 +6243,7 @@ fn fmtDumpState(
     for (self.shdrs.items, 0..) |shdr, shndx| {
         try writer.print("  shdr({d}) : phdr({?d}) : {}\n", .{
             shndx,
-            self.phdr_to_shdr_table.get(@intCast(shndx)),
+            self.phdr_to_shdr_table.get(@intcast(shndx)),
             self.fmtShdr(shdr),
         });
     }
@@ -6264,8 +6264,8 @@ pub fn preadAllAlloc(allocator: Allocator, handle: fs.File, offset: u64, size: u
 
 /// Binary search
 pub fn bsearch(comptime T: type, haystack: []align(1) const T, predicate: anytype) usize {
-    if (!@hasDecl(@TypeOf(predicate), "predicate"))
-        @compileError("Predicate is required to define fn predicate(@This(), T) bool");
+    if (!@hasdecl(@TypeOf(predicate), "predicate"))
+        @compileerror("Predicate is required to define fn predicate(@This(), T) bool");
 
     var min: usize = 0;
     var max: usize = haystack.len;
@@ -6283,8 +6283,8 @@ pub fn bsearch(comptime T: type, haystack: []align(1) const T, predicate: anytyp
 
 /// Linear search
 pub fn lsearch(comptime T: type, haystack: []align(1) const T, predicate: anytype) usize {
-    if (!@hasDecl(@TypeOf(predicate), "predicate"))
-        @compileError("Predicate is required to define fn predicate(@This(), T) bool");
+    if (!@hasdecl(@TypeOf(predicate), "predicate"))
+        @compileerror("Predicate is required to define fn predicate(@This(), T) bool");
 
     var i: usize = 0;
     while (i < haystack.len) : (i += 1) {

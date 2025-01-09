@@ -42,7 +42,7 @@ pub fn buildStaticLib(comp: *Compilation, prog_node: std.Progress.Node) BuildErr
         comp.setMiscFailure(
             .libunwind,
             "unable to build libunwind: resolving configuration failed: {s}",
-            .{@errorName(err)},
+            .{@errorname(err)},
         );
         return error.SubCompilationFailed;
     };
@@ -76,7 +76,7 @@ pub fn buildStaticLib(comp: *Compilation, prog_node: std.Progress.Node) BuildErr
         comp.setMiscFailure(
             .libunwind,
             "unable to build libunwind: creating module failed: {s}",
-            .{@errorName(err)},
+            .{@errorname(err)},
         );
         return error.SubCompilationFailed;
     };
@@ -172,7 +172,7 @@ pub fn buildStaticLib(comp: *Compilation, prog_node: std.Progress.Node) BuildErr
         comp.setMiscFailure(
             .libunwind,
             "unable to build libunwind: create compilation failed: {s}",
-            .{@errorName(err)},
+            .{@errorname(err)},
         );
         return error.SubCompilationFailed;
     };
@@ -184,7 +184,7 @@ pub fn buildStaticLib(comp: *Compilation, prog_node: std.Progress.Node) BuildErr
             comp.setMiscFailure(
                 .libunwind,
                 "unable to build libunwind: compilation failed: {s}",
-                .{@errorName(e)},
+                .{@errorname(e)},
             );
             return error.SubCompilationFailed;
         },

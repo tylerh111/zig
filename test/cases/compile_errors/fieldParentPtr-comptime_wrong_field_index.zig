@@ -8,7 +8,7 @@ const foo = Foo{
 };
 
 comptime {
-    const another_foo_ptr: *const Foo = @fieldParentPtr("b", &foo.a);
+    const another_foo_ptr: *const Foo = @fieldparentptr("b", &foo.a);
     _ = another_foo_ptr;
 }
 

@@ -194,7 +194,7 @@ pub const TokenType = enum {
 /// to get meaningful information from this.
 pub const Diagnostics = struct {
     line_number: u64 = 1,
-    line_start_cursor: usize = @as(usize, @bitCast(@as(isize, -1))), // Start just "before" the input buffer to get a 1-based column for line 1.
+    line_start_cursor: usize = @as(usize, @bitcast(@as(isize, -1))), // Start just "before" the input buffer to get a 1-based column for line 1.
     total_bytes_before_current_input: u64 = 0,
     cursor_pointer: *const usize = undefined,
 

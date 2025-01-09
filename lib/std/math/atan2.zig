@@ -35,7 +35,7 @@ pub fn atan2(y: anytype, x: anytype) @TypeOf(x, y) {
     return switch (T) {
         f32 => atan2_32(y, x),
         f64 => atan2_64(y, x),
-        else => @compileError("atan2 not implemented for " ++ @typeName(T)),
+        else => @compileerror("atan2 not implemented for " ++ @typename(T)),
     };
 }
 
@@ -47,8 +47,8 @@ fn atan2_32(y: f32, x: f32) f32 {
         return x + y;
     }
 
-    var ix = @as(u32, @bitCast(x));
-    var iy = @as(u32, @bitCast(y));
+    var ix = @as(u32, @bitcast(x));
+    var iy = @as(u32, @bitcast(y));
 
     // x = 1.0
     if (ix == 0x3F800000) {
@@ -132,13 +132,13 @@ fn atan2_64(y: f64, x: f64) f64 {
         return x + y;
     }
 
-    const ux: u64 = @bitCast(x);
-    var ix: u32 = @intCast(ux >> 32);
-    const lx: u32 = @intCast(ux & 0xFFFFFFFF);
+    const ux: u64 = @bitcast(x);
+    var ix: u32 = @intcast(ux >> 32);
+    const lx: u32 = @intcast(ux & 0xFFFFFFFF);
 
-    const uy: u64 = @bitCast(y);
-    var iy: u32 = @intCast(uy >> 32);
-    const ly: u32 = @intCast(uy & 0xFFFFFFFF);
+    const uy: u64 = @bitcast(y);
+    var iy: u32 = @intcast(uy >> 32);
+    const ly: u32 = @intcast(uy & 0xFFFFFFFF);
 
     // x = 1.0
     if ((ix -% 0x3FF00000) | lx == 0) {

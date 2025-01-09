@@ -11,21 +11,21 @@ const Divided = packed struct {
     quarter4: u4,
 };
 
-test "@bitCast between packed structs" {
+test "@bitcast between packed structs" {
     try doTheTest();
     try comptime doTheTest();
 }
 
 fn doTheTest() !void {
-    try expect(@sizeOf(Full) == 2);
-    try expect(@sizeOf(Divided) == 2);
+    try expect(@sizeof(Full) == 2);
+    try expect(@sizeof(Divided) == 2);
     const full = Full{ .number = 0x1234 };
-    const divided: Divided = @bitCast(full);
+    const divided: Divided = @bitcast(full);
     try expect(divided.half1 == 0x34);
     try expect(divided.quarter3 == 0x2);
     try expect(divided.quarter4 == 0x1);
 
-    const ordered: [2]u8 = @bitCast(full);
+    const ordered: [2]u8 = @bitcast(full);
     switch (native_endian) {
         .big => {
             try expect(ordered[0] == 0x12);

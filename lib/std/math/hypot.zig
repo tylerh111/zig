@@ -22,10 +22,10 @@ const floatMax = math.floatMax;
 /// |  fin  |  nan  |  nan  |
 pub fn hypot(x: anytype, y: anytype) @TypeOf(x, y) {
     const T = @TypeOf(x, y);
-    switch (@typeInfo(T)) {
+    switch (@typeinfo(T)) {
         .Float => {},
         .ComptimeFloat => return @sqrt(x * x + y * y),
-        else => @compileError("hypot not implemented for " ++ @typeName(T)),
+        else => @compileerror("hypot not implemented for " ++ @typename(T)),
     }
     const lower = @sqrt(floatMin(T));
     const upper = @sqrt(floatMax(T) / 2);
@@ -36,8 +36,8 @@ pub fn hypot(x: anytype, y: anytype) @TypeOf(x, y) {
     var minor: T = y;
     if (isInf(major) or isInf(minor)) return inf(T);
     if (isNan(major) or isNan(minor)) return nan(T);
-    if (T == f16) return @floatCast(@sqrt(@mulAdd(f32, x, x, @as(f32, y) * y)));
-    if (T == f32) return @floatCast(@sqrt(@mulAdd(f64, x, x, @as(f64, y) * y)));
+    if (T == f16) return @floatcast(@sqrt(@muladd(f32, x, x, @as(f32, y) * y)));
+    if (T == f32) return @floatcast(@sqrt(@muladd(f64, x, x, @as(f64, y) * y)));
     major = @abs(major);
     minor = @abs(minor);
     if (minor > major) {
@@ -52,7 +52,7 @@ pub fn hypot(x: anytype, y: anytype) @TypeOf(x, y) {
 }
 
 inline fn emulateFma(comptime T: type) bool {
-    // If @mulAdd lowers to the software implementation,
+    // If @muladd lowers to the software implementation,
     // hypotUnfused should be used in place of hypotFused.
     // This takes an educated guess, but ideally we should
     // properly detect at comptime when that fallback will
@@ -61,10 +61,10 @@ inline fn emulateFma(comptime T: type) bool {
 }
 
 inline fn hypotFused(comptime F: type, x: F, y: F) F {
-    const r = @sqrt(@mulAdd(F, x, x, y * y));
+    const r = @sqrt(@muladd(F, x, x, y * y));
     const rr = r * r;
     const xx = x * x;
-    const z = @mulAdd(F, -y, y, rr - xx) + @mulAdd(F, r, r, -rr) - @mulAdd(F, x, x, -xx);
+    const z = @muladd(F, -y, y, rr - xx) + @muladd(F, r, r, -rr) - @muladd(F, x, x, -xx);
     return r - z / (2 * r);
 }
 

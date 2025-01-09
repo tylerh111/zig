@@ -16,25 +16,25 @@ pub const featureSetHasAny = CpuFeature.feature_set_fns(Feature).featureSetHasAn
 pub const featureSetHasAll = CpuFeature.feature_set_fns(Feature).featureSetHasAll;
 
 pub const all_features = blk: {
-    const len = @typeInfo(Feature).Enum.fields.len;
+    const len = @typeinfo(Feature).Enum.fields.len;
     std.debug.assert(len <= CpuFeature.Set.needed_bit_count);
     var result: [len]CpuFeature = undefined;
-    result[@intFromEnum(Feature.alu32)] = .{
+    result[@intfromenum(Feature.alu32)] = .{
         .llvm_name = "alu32",
         .description = "Enable ALU32 instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.dummy)] = .{
+    result[@intfromenum(Feature.dummy)] = .{
         .llvm_name = "dummy",
         .description = "unused feature",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.dwarfris)] = .{
+    result[@intfromenum(Feature.dwarfris)] = .{
         .llvm_name = "dwarfris",
         .description = "Disable MCAsmInfo DwarfUsesRelocationsAcrossSections",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    const ti = @typeInfo(Feature);
+    const ti = @typeinfo(Feature);
     for (&result, 0..) |*elem, i| {
         elem.index = i;
         elem.name = ti.Enum.fields[i].name;

@@ -42,7 +42,7 @@ pub fn rescanMac(cb: *Bundle, gpa: Allocator) RescanMacError!void {
 
         const table_header = try reader.readStructEndian(TableHeader, .big);
 
-        if (@as(std.c.cssm.DB_RECORDTYPE, @enumFromInt(table_header.table_id)) != .X509_CERTIFICATE) {
+        if (@as(std.c.cssm.DB_RECORDTYPE, @enumfromint(table_header.table_id)) != .X509_CERTIFICATE) {
             continue;
         }
 
@@ -61,7 +61,7 @@ pub fn rescanMac(cb: *Bundle, gpa: Allocator) RescanMacError!void {
 
             try cb.bytes.ensureUnusedCapacity(gpa, cert_header.cert_size);
 
-            const cert_start = @as(u32, @intCast(cb.bytes.items.len));
+            const cert_start = @as(u32, @intcast(cb.bytes.items.len));
             const dest_buf = cb.bytes.allocatedSlice()[cert_start..];
             cb.bytes.items.len += try reader.readAtLeast(dest_buf, cert_header.cert_size);
 

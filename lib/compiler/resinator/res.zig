@@ -156,11 +156,11 @@ pub const Language = packed struct(u16) {
     pub const default: u16 = (Language{}).asInt();
 
     pub fn fromInt(int: u16) Language {
-        return @bitCast(int);
+        return @bitcast(int);
     }
 
     pub fn asInt(self: Language) u16 {
-        return @bitCast(self);
+        return @bitcast(self);
     }
 };
 
@@ -237,7 +237,7 @@ pub const NameOrOrdinal = union(enum) {
         switch (self) {
             .name => |name| {
                 // + 1 for 0-terminated
-                return (name.len + 1) * @sizeOf(u16);
+                return (name.len + 1) * @sizeof(u16);
             },
             .ordinal => return 4,
         }
@@ -280,19 +280,19 @@ pub const NameOrOrdinal = union(enum) {
                 try buf.append(std.mem.nativeToLittle(u16, '�'));
             } else if (c < 0x7F) {
                 // ASCII chars in names are always converted to uppercase
-                try buf.append(std.mem.nativeToLittle(u16, std.ascii.toUpper(@intCast(c))));
+                try buf.append(std.mem.nativeToLittle(u16, std.ascii.toUpper(@intcast(c))));
             } else if (c < 0x10000) {
-                const short: u16 = @intCast(c);
+                const short: u16 = @intcast(c);
                 try buf.append(std.mem.nativeToLittle(u16, short));
             } else {
-                const high = @as(u16, @intCast((c - 0x10000) >> 10)) + 0xD800;
+                const high = @as(u16, @intcast((c - 0x10000) >> 10)) + 0xD800;
                 try buf.append(std.mem.nativeToLittle(u16, high));
 
                 // Note: This can cut-off in the middle of a UTF-16 surrogate pair,
                 //       i.e. it can make the string end with an unpaired high surrogate
                 if (buf.items.len == 256) break;
 
-                const low = @as(u16, @intCast(c & 0x3FF)) + 0xDC00;
+                const low = @as(u16, @intcast(c & 0x3FF)) + 0xDC00;
                 try buf.append(std.mem.nativeToLittle(u16, low));
             }
         }
@@ -325,7 +325,7 @@ pub const NameOrOrdinal = union(enum) {
         while (bytes.code_page.codepointAt(i, buf)) |codepoint| : (i += codepoint.byte_len) {
             const c = codepoint.value;
             const digit: u8 = switch (c) {
-                0x00...0x7F => std.fmt.charToDigit(@intCast(c), radix) catch switch (radix) {
+                0x00...0x7F => std.fmt.charToDigit(@intcast(c), radix) catch switch (radix) {
                     10 => return null,
                     // non-hex-digits are treated as a terminator rather than invalidating
                     // the number (note: if there are no valid hex digits then the result
@@ -374,7 +374,7 @@ pub const NameOrOrdinal = union(enum) {
             const digit: u16 = digit: {
                 const is_digit = (c >= '0' and c <= '9') or isNonAsciiDigit(c);
                 if (!is_digit) return null;
-                break :digit @intCast(c - '0');
+                break :digit @intcast(c - '0');
             };
 
             if (result != 0) {
@@ -392,7 +392,7 @@ pub const NameOrOrdinal = union(enum) {
         switch (self) {
             .ordinal => |ordinal| {
                 if (ordinal >= 256) return null;
-                switch (@as(RT, @enumFromInt(ordinal))) {
+                switch (@as(RT, @enumfromint(ordinal))) {
                     .ACCELERATOR,
                     .ANICURSOR,
                     .ANIICON,
@@ -645,7 +645,7 @@ pub fn parseAcceleratorKeyString(bytes: SourceBytes, is_virt: bool, options: lit
         const c = translator.translate(try parser.next()) orelse return error.InvalidControlCharacter;
         switch (c) {
             '^' => return '^', // special case
-            'a'...'z', 'A'...'Z' => return std.ascii.toUpper(@intCast(c)) - 0x40,
+            'a'...'z', 'A'...'Z' => return std.ascii.toUpper(@intcast(c)) - 0x40,
             // Note: The Windows RC compiler allows more than just A-Z, but what it allows
             //       seems to be tied to some sort of Unicode-aware 'is character' function or something.
             //       The full list of codepoints that trigger an out-of-range error can be found here:
@@ -657,7 +657,7 @@ pub fn parseAcceleratorKeyString(bytes: SourceBytes, is_virt: bool, options: lit
             //       Windows RC compiler.
             else => return error.ControlCharacterOutOfRange,
         }
-        @compileError("this should be unreachable");
+        @compileerror("this should be unreachable");
     }
 
     const second_codepoint = translator.translate(try parser.next());
@@ -667,7 +667,7 @@ pub fn parseAcceleratorKeyString(bytes: SourceBytes, is_virt: bool, options: lit
             if (second_codepoint != null and second_codepoint.? != 0) return error.AcceleratorTooLong;
             // No idea why it works this way, but this seems to match the Windows RC
             // behavior for codepoints >= 0x10000
-            const low = @as(u16, @intCast(first_codepoint & 0x3FF)) + 0xDC00;
+            const low = @as(u16, @intcast(first_codepoint & 0x3FF)) + 0xDC00;
             const extra = (first_codepoint - 0x10000) / 0x400;
             break :initial_value low + extra * 0x100;
         }
@@ -885,11 +885,11 @@ pub const ForcedOrdinal = struct {
                 // broken up into their UTF-16 code units and each code unit
                 // is interpreted as a digit.
                 0x10000...0x10FFFF => {
-                    const high = @as(u16, @intCast((codepoint.value - 0x10000) >> 10)) + 0xD800;
+                    const high = @as(u16, @intcast((codepoint.value - 0x10000) >> 10)) + 0xD800;
                     if (result != 0) result *%= 10;
                     result +%= high -% '0';
 
-                    const low = @as(u16, @intCast(codepoint.value & 0x3FF)) + 0xDC00;
+                    const low = @as(u16, @intcast(codepoint.value & 0x3FF)) + 0xDC00;
                     if (result != 0) result *%= 10;
                     result +%= low -% '0';
                     continue;
@@ -1004,7 +1004,7 @@ pub const MenuItemFlags = struct {
     }
 
     fn optionValue(option: rc.MenuItem.Option) u16 {
-        return @intCast(switch (option) {
+        return @intcast(switch (option) {
             .checked => MF.CHECKED,
             .grayed => MF.GRAYED,
             .help => MF.HELP,
@@ -1015,7 +1015,7 @@ pub const MenuItemFlags = struct {
     }
 
     pub fn markLast(self: *MenuItemFlags) void {
-        self.value |= @intCast(MF.END);
+        self.value |= @intcast(MF.END);
     }
 };
 

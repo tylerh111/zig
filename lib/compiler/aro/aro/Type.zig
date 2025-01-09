@@ -294,7 +294,7 @@ pub const Record = struct {
         return r;
     }
 
-    pub fn hasFieldOfType(self: *const Record, ty: Type, comp: *const Compilation) bool {
+    pub fn hasfieldOfType(self: *const Record, ty: Type, comp: *const Compilation) bool {
         if (self.isIncomplete()) return false;
         for (self.fields) |f| {
             if (ty.eql(f.ty, comp, false)) return true;
@@ -804,14 +804,14 @@ pub fn makeIntegerUnsigned(ty: Type) Type {
         // zig fmt: on
 
         .char, .complex_char => {
-            base.specifier = @enumFromInt(@intFromEnum(base.specifier) + 2);
+            base.specifier = @enumfromint(@intfromenum(base.specifier) + 2);
             return base;
         },
 
         // zig fmt: off
         .schar, .short, .int, .long, .long_long, .int128,
         .complex_schar, .complex_short, .complex_int, .complex_long, .complex_long_long, .complex_int128 => {
-            base.specifier = @enumFromInt(@intFromEnum(base.specifier) + 1);
+            base.specifier = @enumfromint(@intfromenum(base.specifier) + 1);
             return base;
         },
         // zig fmt: on
@@ -914,25 +914,25 @@ pub fn hasUnboundVLA(ty: Type) bool {
     }
 }
 
-pub fn hasField(ty: Type, name: StringId) bool {
+pub fn hasfield(ty: Type, name: StringId) bool {
     switch (ty.specifier) {
         .@"struct" => {
             std.debug.assert(!ty.data.record.isIncomplete());
             for (ty.data.record.fields) |f| {
-                if (f.isAnonymousRecord() and f.ty.hasField(name)) return true;
+                if (f.isAnonymousRecord() and f.ty.hasfield(name)) return true;
                 if (name == f.name) return true;
             }
         },
         .@"union" => {
             std.debug.assert(!ty.data.record.isIncomplete());
             for (ty.data.record.fields) |f| {
-                if (f.isAnonymousRecord() and f.ty.hasField(name)) return true;
+                if (f.isAnonymousRecord() and f.ty.hasfield(name)) return true;
                 if (name == f.name) return true;
             }
         },
-        .typeof_type => return ty.data.sub_type.hasField(name),
-        .typeof_expr => return ty.data.expr.ty.hasField(name),
-        .attributed => return ty.data.attributed.base.hasField(name),
+        .typeof_type => return ty.data.sub_type.hasfield(name),
+        .typeof_expr => return ty.data.expr.ty.hasfield(name),
+        .attributed => return ty.data.attributed.base.hasfield(name),
         .invalid => return false,
         else => unreachable,
     }
@@ -1071,7 +1071,7 @@ pub fn alignof(ty: Type, comp: *const Compilation) u29 {
             }
         } else if (ty.getRecord()) |rec| {
             if (ty.hasIncompleteSize()) return 0;
-            const computed: u29 = @intCast(@divExact(rec.type_layout.field_alignment_bits, 8));
+            const computed: u29 = @intcast(@divexact(rec.type_layout.field_alignment_bits, 8));
             return @max(requested, computed);
         } else if (comp.langopts.emulate == .msvc) {
             const type_align = ty.data.attributed.base.alignof(comp);
@@ -1134,7 +1134,7 @@ pub fn alignof(ty: Type, comp: *const Compilation) u29 {
             .avr => 1,
             else => comp.target.ptrBitWidth() / 8,
         },
-        .@"struct", .@"union" => if (ty.data.record.isIncomplete()) 0 else @intCast(ty.data.record.type_layout.field_alignment_bits / 8),
+        .@"struct", .@"union" => if (ty.data.record.isIncomplete()) 0 else @intcast(ty.data.record.type_layout.field_alignment_bits / 8),
         .@"enum" => if (ty.data.@"enum".isIncomplete() and !ty.data.@"enum".fixed) 0 else ty.data.@"enum".tag_ty.alignof(comp),
         .typeof_type => ty.data.sub_type.alignof(comp),
         .typeof_expr => ty.data.expr.ty.alignof(comp),
@@ -1304,7 +1304,7 @@ pub fn floatRank(ty: Type) usize {
 /// Asserts that ty is an integer type
 pub fn integerRank(ty: Type, comp: *const Compilation) usize {
     const real = ty.makeReal();
-    return @intCast(switch (real.specifier) {
+    return @intcast(switch (real.specifier) {
         .bit_int => @as(u64, real.data.int.bits) << 3,
 
         .bool => 1 + (ty.bitSizeof(comp).? << 3),
@@ -1331,11 +1331,11 @@ pub fn makeReal(ty: Type) Type {
     var base = ty.canonicalize(.standard);
     switch (base.specifier) {
         .complex_float, .complex_double, .complex_long_double, .complex_float80, .complex_float128 => {
-            base.specifier = @enumFromInt(@intFromEnum(base.specifier) - 5);
+            base.specifier = @enumfromint(@intfromenum(base.specifier) - 5);
             return base;
         },
         .complex_char, .complex_schar, .complex_uchar, .complex_short, .complex_ushort, .complex_int, .complex_uint, .complex_long, .complex_ulong, .complex_long_long, .complex_ulong_long, .complex_int128, .complex_uint128 => {
-            base.specifier = @enumFromInt(@intFromEnum(base.specifier) - 13);
+            base.specifier = @enumfromint(@intfromenum(base.specifier) - 13);
             return base;
         },
         .complex_bit_int => {
@@ -1351,11 +1351,11 @@ pub fn makeComplex(ty: Type) Type {
     var base = ty.canonicalize(.standard);
     switch (base.specifier) {
         .float, .double, .long_double, .float80, .float128 => {
-            base.specifier = @enumFromInt(@intFromEnum(base.specifier) + 5);
+            base.specifier = @enumfromint(@intfromenum(base.specifier) + 5);
             return base;
         },
         .char, .schar, .uchar, .short, .ushort, .int, .uint, .long, .ulong, .long_long, .ulong_long, .int128, .uint128 => {
-            base.specifier = @enumFromInt(@intFromEnum(base.specifier) + 13);
+            base.specifier = @enumfromint(@intfromenum(base.specifier) + 13);
             return base;
         },
         .bit_int => {
@@ -1775,7 +1775,7 @@ pub const Builder = struct {
                 ty.specifier = if (b.complex_tok != null) .complex_bit_int else .bit_int;
                 ty.data = .{ .int = .{
                     .signedness = if (unsigned) .unsigned else .signed,
-                    .bits = @intCast(bits),
+                    .bits = @intcast(bits),
                 } };
             },
 
@@ -1891,7 +1891,7 @@ pub const Builder = struct {
 
     pub fn combineFromTypeof(b: *Builder, p: *Parser, new: Type, source_tok: TokenIndex) Compilation.Error!void {
         if (b.typeof != null) return p.errStr(.cannot_combine_spec, source_tok, "typeof");
-        if (b.specifier != .none) return p.errStr(.invalid_typeof, source_tok, @tagName(b.specifier));
+        if (b.specifier != .none) return p.errStr(.invalid_typeof, source_tok, @tagname(b.specifier));
         const inner = switch (new.specifier) {
             .typeof_type => new.data.sub_type.*,
             .typeof_expr => new.data.expr.ty,
@@ -1931,7 +1931,7 @@ pub const Builder = struct {
     fn combineExtra(b: *Builder, p: *Parser, new: Builder.Specifier, source_tok: TokenIndex) !void {
         if (b.typeof != null) {
             if (b.error_on_invalid) return error.CannotCombine;
-            try p.errStr(.invalid_typeof, source_tok, @tagName(new));
+            try p.errStr(.invalid_typeof, source_tok, @tagname(new));
         }
 
         switch (new) {
@@ -2356,7 +2356,7 @@ pub fn getAttribute(ty: Type, comptime tag: Attribute.Tag) ?Attribute.ArgumentsF
         .typeof_expr => return ty.data.expr.ty.getAttribute(tag),
         .attributed => {
             for (ty.data.attributed.attributes) |attribute| {
-                if (attribute.tag == tag) return @field(attribute.args, @tagName(tag));
+                if (attribute.tag == tag) return @field(attribute.args, @tagname(tag));
             }
             return null;
         },

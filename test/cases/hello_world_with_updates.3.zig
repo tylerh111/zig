@@ -5,7 +5,7 @@ pub fn main() void {
 }
 
 fn print() void {
-    const msg = @intFromPtr("Hello, World!\n");
+    const msg = @intfromptr("Hello, World!\n");
     const len = 14;
     _ = write(1, msg, len);
 }

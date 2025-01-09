@@ -83,7 +83,7 @@ test "basic for loop" {
     }
     for (array, 0..) |item, index| {
         _ = item;
-        buffer[buf_index] = @as(u8, @intCast(index));
+        buffer[buf_index] = @as(u8, @intcast(index));
         buf_index += 1;
     }
     const array_ptr = &array;
@@ -93,7 +93,7 @@ test "basic for loop" {
     }
     for (array_ptr, 0..) |item, index| {
         _ = item;
-        buffer[buf_index] = @as(u8, @intCast(index));
+        buffer[buf_index] = @as(u8, @intcast(index));
         buf_index += 1;
     }
     const unknown_size: []const u8 = &array;
@@ -102,7 +102,7 @@ test "basic for loop" {
         buf_index += 1;
     }
     for (unknown_size, 0..) |_, index| {
-        buffer[buf_index] = @as(u8, @intCast(index));
+        buffer[buf_index] = @as(u8, @intcast(index));
         buf_index += 1;
     }
 
@@ -207,7 +207,7 @@ test "for on slice with allowzero ptr" {
 
     const S = struct {
         fn doTheTest(slice: []const u8) !void {
-            const ptr = @as([*]allowzero const u8, @ptrCast(slice.ptr))[0..slice.len];
+            const ptr = @as([*]allowzero const u8, @ptrcast(slice.ptr))[0..slice.len];
             for (ptr, 0..) |x, i| try expect(x == i + 1);
             for (ptr, 0..) |*x, i| try expect(x.* == i + 1);
         }
@@ -393,7 +393,7 @@ test "raw pointer and counter" {
     const ptr: [*]u8 = &buf;
 
     for (ptr, 0..4) |*a, b| {
-        a.* = @as(u8, @intCast('A' + b));
+        a.* = @as(u8, @intcast('A' + b));
     }
 
     try expect(buf[0] == 'A');
@@ -422,7 +422,7 @@ test "inline for with slice as the comptime-known" {
                 try expect(b == 4);
                 ok += 1;
             } else {
-                @compileError("fail");
+                @compileerror("fail");
             }
         }
     };
@@ -454,7 +454,7 @@ test "inline for with counter as the comptime-known" {
                 try expect(a == 'o');
                 ok += 1;
             } else {
-                @compileError("fail");
+                @compileerror("fail");
             }
         }
     };

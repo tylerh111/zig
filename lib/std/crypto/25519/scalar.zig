@@ -27,8 +27,8 @@ pub fn rejectNonCanonical(s: CompressedScalar) NonCanonicalError!void {
     while (true) : (i -= 1) {
         const xs = @as(u16, s[i]);
         const xfield_order_s = @as(u16, field_order_s[i]);
-        c |= @as(u8, @intCast(((xs -% xfield_order_s) >> 8) & n));
-        n &= @as(u8, @intCast(((xs ^ xfield_order_s) -% 1) >> 8));
+        c |= @as(u8, @intcast(((xs -% xfield_order_s) >> 8) & n));
+        n &= @as(u8, @intcast(((xs ^ xfield_order_s) -% 1) >> 8));
         if (i == 0) break;
     }
     if (c == 0) {
@@ -61,7 +61,7 @@ pub fn mul(a: CompressedScalar, b: CompressedScalar) CompressedScalar {
 }
 
 /// Return a*b+c (mod L)
-pub fn mulAdd(a: CompressedScalar, b: CompressedScalar, c: CompressedScalar) CompressedScalar {
+pub fn muladd(a: CompressedScalar, b: CompressedScalar, c: CompressedScalar) CompressedScalar {
     return Scalar.fromBytes(a).mul(Scalar.fromBytes(b)).add(Scalar.fromBytes(c)).toBytes();
 }
 
@@ -129,7 +129,7 @@ pub const Scalar = struct {
         while (i < 4) : (i += 1) {
             mem.writeInt(u64, bytes[i * 7 ..][0..8], expanded.limbs[i], .little);
         }
-        mem.writeInt(u32, bytes[i * 7 ..][0..4], @intCast(expanded.limbs[i]), .little);
+        mem.writeInt(u32, bytes[i * 7 ..][0..4], @intcast(expanded.limbs[i]), .little);
         return bytes;
     }
 
@@ -498,7 +498,7 @@ pub const Scalar = struct {
         const t = ((b << 56) + s4) -% (y41 + b3);
         const b4 = b;
         const t4 = t;
-        const mask = (b4 -% @as(u64, @intCast(((1)))));
+        const mask = (b4 -% @as(u64, @intcast(((1)))));
         const z04 = s0 ^ (mask & (s0 ^ t0));
         const z14 = s1 ^ (mask & (s1 ^ t1));
         const z24 = s2 ^ (mask & (s2 ^ t2));
@@ -861,11 +861,11 @@ test "non-canonical scalar25519" {
     try std.testing.expectError(error.NonCanonical, rejectNonCanonical(too_targe));
 }
 
-test "mulAdd overflow check" {
+test "muladd overflow check" {
     const a: [32]u8 = [_]u8{0xff} ** 32;
     const b: [32]u8 = [_]u8{0xff} ** 32;
     const c: [32]u8 = [_]u8{0xff} ** 32;
-    const x = mulAdd(a, b, c);
+    const x = muladd(a, b, c);
     var buf: [128]u8 = undefined;
     try std.testing.expectEqualStrings(try std.fmt.bufPrint(&buf, "{s}", .{std.fmt.fmtSliceHexUpper(&x)}), "D14DF91389432C25AD60FF9791B9FD1D67BEF517D273ECCE3D9A307C1B419903");
 }

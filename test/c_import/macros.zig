@@ -4,8 +4,8 @@ const expect = std.testing.expect;
 const expectEqual = std.testing.expectEqual;
 const expectEqualStrings = std.testing.expectEqualStrings;
 
-const h = @cImport(@cInclude("macros.h"));
-const latin1 = @cImport(@cInclude("macros_not_utf8.h"));
+const h = @cimport(@cinclude("macros.h"));
+const latin1 = @cimport(@cinclude("macros_not_utf8.h"));
 
 test "casting to void with a macro" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
@@ -42,15 +42,15 @@ test "sizeof in macros" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_spirv64) return error.SkipZigTest;
 
-    try expect(@as(c_int, @sizeOf(u32)) == h.MY_SIZEOF(u32));
-    try expect(@as(c_int, @sizeOf(u32)) == h.MY_SIZEOF2(u32));
+    try expect(@as(c_int, @sizeof(u32)) == h.MY_SIZEOF(u32));
+    try expect(@as(c_int, @sizeof(u32)) == h.MY_SIZEOF2(u32));
 }
 
 test "reference to a struct type" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_spirv64) return error.SkipZigTest;
 
-    try expect(@sizeOf(h.struct_Foo) == h.SIZE_OF_FOO);
+    try expect(@sizeof(h.struct_Foo) == h.SIZE_OF_FOO);
 }
 
 test "cast negative integer to pointer" {
@@ -59,7 +59,7 @@ test "cast negative integer to pointer" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_spirv64) return error.SkipZigTest;
 
-    try expectEqual(@as(?*anyopaque, @ptrFromInt(@as(usize, @bitCast(@as(isize, -1))))), h.MAP_FAILED);
+    try expectEqual(@as(?*anyopaque, @ptrfromint(@as(usize, @bitcast(@as(isize, -1))))), h.MAP_FAILED);
 }
 
 test "casting to union with a macro" {
@@ -86,7 +86,7 @@ test "casting or calling a value with a paren-surrounded macro" {
 
     const l: c_long = 42;
     const casted = h.CAST_OR_CALL_WITH_PARENS(c_int, l);
-    try expect(casted == @as(c_int, @intCast(l)));
+    try expect(casted == @as(c_int, @intcast(l)));
 
     const Helper = struct {
         fn foo(n: c_int) !void {
@@ -219,10 +219,10 @@ test "Macro that uses remainder operator. Issue #13346" {
     );
 }
 
-test "@typeInfo on @cImport result" {
+test "@typeinfo on @cimport result" {
     if (builtin.zig_backend == .stage2_spirv64) return error.SkipZigTest;
 
-    try expect(@typeInfo(h).Struct.decls.len > 1);
+    try expect(@typeinfo(h).Struct.decls.len > 1);
 }
 
 test "Macro that uses Long type concatenation casting" {

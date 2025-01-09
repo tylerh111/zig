@@ -5,7 +5,7 @@ const Foo = enum {
 };
 comptime {
     const a: u2 = 3;
-    const b: Foo = @enumFromInt(a);
+    const b: Foo = @enumfromint(a);
     _ = b;
 }
 

@@ -114,7 +114,7 @@ const ExternPtrOrInt = extern union {
     int: u64,
 };
 test "extern union size" {
-    comptime assert(@sizeOf(ExternPtrOrInt) == 8);
+    comptime assert(@sizeof(ExternPtrOrInt) == 8);
 }
 
 test "0-sized extern union definition" {
@@ -203,8 +203,8 @@ const TaggedUnionWithPayload = union(enum) {
 
 test "union alignment" {
     comptime {
-        try expect(@alignOf(AlignTestTaggedUnion) >= @alignOf([9]u8));
-        try expect(@alignOf(AlignTestTaggedUnion) >= @alignOf(u64));
+        try expect(@alignof(AlignTestTaggedUnion) >= @alignof([9]u8));
+        try expect(@alignof(AlignTestTaggedUnion) >= @alignof(u64));
     }
 }
 
@@ -376,7 +376,7 @@ test "simple union(enum(u32))" {
     var x = MultipleChoice.C;
     _ = &x;
     try expect(x == MultipleChoice.C);
-    try expect(@intFromEnum(@as(Tag(MultipleChoice), x)) == 60);
+    try expect(@intfromenum(@as(Tag(MultipleChoice), x)) == 60);
 }
 
 const PackedPtrOrInt = packed union {
@@ -384,14 +384,14 @@ const PackedPtrOrInt = packed union {
     int: u64,
 };
 test "packed union size" {
-    comptime assert(@sizeOf(PackedPtrOrInt) == 8);
+    comptime assert(@sizeof(PackedPtrOrInt) == 8);
 }
 
 const ZeroBits = union {
     OnlyField: void,
 };
 test "union with only 1 field which is void should be zero bits" {
-    comptime assert(@sizeOf(ZeroBits) == 0);
+    comptime assert(@sizeof(ZeroBits) == 0);
 }
 
 test "assigning to union with zero size field" {
@@ -488,7 +488,7 @@ test "global union with single field is correctly initialized" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
 
     glbl = Foo1{
-        .f = @typeInfo(Foo1).Union.fields[0].type{ .x = 123 },
+        .f = @typeinfo(Foo1).Union.fields[0].type{ .x = 123 },
     };
     try expect(glbl.f.x == 123);
 }
@@ -552,7 +552,7 @@ test "runtime tag name with single field" {
 
     var v = U{ .A = 42 };
     _ = &v;
-    try expect(std.mem.eql(u8, @tagName(v), "A"));
+    try expect(std.mem.eql(u8, @tagname(v), "A"));
 }
 
 test "method call on an empty union" {
@@ -611,10 +611,10 @@ test "tagged union type" {
     const baz = Baz.B;
 
     try expect(baz == Baz.B);
-    try expect(@typeInfo(TaggedFoo).Union.fields.len == 3);
-    try expect(@typeInfo(Baz).Enum.fields.len == 4);
-    try expect(@sizeOf(TaggedFoo) == @sizeOf(FooNoVoid));
-    try expect(@sizeOf(Baz) == 1);
+    try expect(@typeinfo(TaggedFoo).Union.fields.len == 3);
+    try expect(@typeinfo(Baz).Enum.fields.len == 4);
+    try expect(@sizeof(TaggedFoo) == @sizeof(FooNoVoid));
+    try expect(@sizeof(Baz) == 1);
 }
 
 test "tagged union as return value" {
@@ -686,7 +686,7 @@ const MultipleChoice2 = union(enum(u32)) {
 };
 
 fn testEnumWithSpecifiedAndUnspecifiedTagValues(x: MultipleChoice2) !void {
-    try expect(@intFromEnum(@as(Tag(MultipleChoice2), x)) == 60);
+    try expect(@intfromenum(@as(Tag(MultipleChoice2), x)) == 60);
     try expect(1123 == switch (x) {
         MultipleChoice2.A => 1,
         MultipleChoice2.B => 2,
@@ -751,11 +751,11 @@ test "union with only 1 field casted to its enum type which has enum value speci
     comptime assert(Tag(ExprTag) == comptime_int);
     const t = comptime @as(ExprTag, e);
     try expect(t == Expr.Literal);
-    try expect(@intFromEnum(t) == 33);
-    comptime assert(@intFromEnum(t) == 33);
+    try expect(@intfromenum(t) == 33);
+    comptime assert(@intfromenum(t) == 33);
 }
 
-test "@intFromEnum works on unions" {
+test "@intfromenum works on unions" {
     if (builtin.zig_backend == .stage2_arm) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_aarch64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
@@ -771,9 +771,9 @@ test "@intFromEnum works on unions" {
     var b = Bar{ .B = undefined };
     var c = Bar.C;
     _ = .{ &b, &c };
-    try expect(@intFromEnum(a) == 0);
-    try expect(@intFromEnum(b) == 1);
-    try expect(@intFromEnum(c) == 2);
+    try expect(@intfromenum(a) == 0);
+    try expect(@intfromenum(b) == 1);
+    try expect(@intfromenum(c) == 2);
 }
 
 test "comptime union field value equality" {
@@ -840,7 +840,7 @@ test "return union init with void payload" {
     try comptime S.entry();
 }
 
-test "@unionInit stored to a const" {
+test "@unioninit stored to a const" {
     if (builtin.zig_backend == .stage2_aarch64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_arm) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
@@ -855,13 +855,13 @@ test "@unionInit stored to a const" {
             {
                 var t = true;
                 _ = &t;
-                const u = @unionInit(U, "boolean", t);
+                const u = @unioninit(U, "boolean", t);
                 try expect(u.boolean);
             }
             {
                 var byte: u8 = 69;
                 _ = &byte;
-                const u = @unionInit(U, "byte", byte);
+                const u = @unioninit(U, "byte", byte);
                 try expect(u.byte == 69);
             }
         }
@@ -871,7 +871,7 @@ test "@unionInit stored to a const" {
     try S.doTheTest();
 }
 
-test "@unionInit can modify a union type" {
+test "@unioninit can modify a union type" {
     if (builtin.zig_backend == .stage2_aarch64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_arm) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
@@ -884,18 +884,18 @@ test "@unionInit can modify a union type" {
 
     var value: UnionInitEnum = undefined;
 
-    value = @unionInit(UnionInitEnum, "Boolean", true);
+    value = @unioninit(UnionInitEnum, "Boolean", true);
     try expect(value.Boolean == true);
     value.Boolean = false;
     try expect(value.Boolean == false);
 
-    value = @unionInit(UnionInitEnum, "Byte", 2);
+    value = @unioninit(UnionInitEnum, "Byte", 2);
     try expect(value.Byte == 2);
     value.Byte = 3;
     try expect(value.Byte == 3);
 }
 
-test "@unionInit can modify a pointer value" {
+test "@unioninit can modify a pointer value" {
     if (builtin.zig_backend == .stage2_aarch64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_arm) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
@@ -909,10 +909,10 @@ test "@unionInit can modify a pointer value" {
     var value: UnionInitEnum = undefined;
     const value_ptr = &value;
 
-    value_ptr.* = @unionInit(UnionInitEnum, "Boolean", true);
+    value_ptr.* = @unioninit(UnionInitEnum, "Boolean", true);
     try expect(value.Boolean == true);
 
-    value_ptr.* = @unionInit(UnionInitEnum, "Byte", 2);
+    value_ptr.* = @unioninit(UnionInitEnum, "Byte", 2);
     try expect(value.Byte == 2);
 }
 
@@ -1144,7 +1144,7 @@ test "containers with single-field enums" {
     try comptime S.doTheTest();
 }
 
-test "@unionInit on union with tag but no fields" {
+test "@unioninit on union with tag but no fields" {
     if (builtin.zig_backend == .stage2_arm) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_aarch64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
@@ -1159,12 +1159,12 @@ test "@unionInit on union with tag but no fields" {
 
             pub fn decode(buf: []const u8) Data {
                 _ = buf;
-                return @unionInit(Data, "no_op", {});
+                return @unioninit(Data, "no_op", {});
             }
         };
 
         comptime {
-            assert(@sizeOf(Data) == 1);
+            assert(@sizeof(Data) == 1);
         }
 
         fn doTheTest() !void {
@@ -1188,7 +1188,7 @@ test "union enum type gets a separate scope" {
         };
 
         fn doTheTest() !void {
-            try expect(!@hasDecl(Tag(U), "foo"));
+            try expect(!@hasdecl(Tag(U), "foo"));
         }
     };
 
@@ -1361,18 +1361,18 @@ test "noreturn field in union" {
     };
     var a = U{ .a = 1 };
     var count: u32 = 0;
-    if (a == .b) @compileError("bad");
+    if (a == .b) @compileerror("bad");
     switch (a) {
         .a => count += 1,
         .b => |val| {
             _ = val;
-            @compileError("bad");
+            @compileerror("bad");
         },
-        .c => @compileError("bad"),
+        .c => @compileerror("bad"),
     }
     switch (a) {
         .a => count += 1,
-        .b, .c => @compileError("bad"),
+        .b, .c => @compileerror("bad"),
     }
     switch (a) {
         .a, .b, .c => {
@@ -1382,7 +1382,7 @@ test "noreturn field in union" {
     }
     switch (a) {
         .a => count += 1,
-        else => @compileError("bad"),
+        else => @compileerror("bad"),
     }
     switch (a) {
         else => {
@@ -1394,13 +1394,13 @@ test "noreturn field in union" {
         .a => count += 1,
         .b, .c => |*val| {
             _ = val;
-            @compileError("bad");
+            @compileerror("bad");
         },
     }
     try expect(count == 6);
 }
 
-test "@unionInit uses tag value instead of field index" {
+test "@unioninit uses tag value instead of field index" {
     if (builtin.zig_backend == .stage2_aarch64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_arm) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
@@ -1416,7 +1416,7 @@ test "@unionInit uses tag value instead of field index" {
     };
     var i: isize = -1;
     _ = &i;
-    var u = @unionInit(U, "b", i);
+    var u = @unioninit(U, "b", i);
     {
         var a = u.b;
         _ = &a;
@@ -1427,7 +1427,7 @@ test "@unionInit uses tag value instead of field index" {
         _ = &a;
         try expect(a.* == i);
     }
-    try expect(@intFromEnum(u) == 255);
+    try expect(@intfromenum(u) == 255);
 }
 
 test "union field ptr - zero sized payload" {
@@ -1509,7 +1509,7 @@ test "union int tag type is properly managed" {
         y: u8,
         z: u8,
     };
-    try expect(@sizeOf(Bar) + 1 == 3);
+    try expect(@sizeof(Bar) + 1 == 3);
 }
 
 test "no dependency loop when function pointer in union returns the union" {
@@ -1788,7 +1788,7 @@ test "memset packed union" {
 }
 
 fn littleToNativeEndian(comptime T: type, v: T) T {
-    return if (endian == .little) v else @byteSwap(v);
+    return if (endian == .little) v else @byteswap(v);
 }
 
 test "reinterpret extern union" {
@@ -1890,7 +1890,7 @@ test "reinterpret packed union" {
                 try expectEqual(@as(u12, 0xe2a), u.qux);
 
                 // https://github.com/ziglang/zig/issues/17360
-                if (@inComptime()) {
+                if (@incomptime()) {
                     try expectEqual(@as(u29, 0x1bbbbe2a), u.bar);
                     try expectEqual(@as(u64, 0xbbbbbe2a), u.baz);
                 }
@@ -1981,23 +1981,23 @@ test "inner struct initializer uses union layout" {
     const namespace = struct {
         const U = union {
             a: struct {
-                x: u32 = @alignOf(U) + 1,
+                x: u32 = @alignof(U) + 1,
             },
             b: struct {
-                y: u16 = @sizeOf(U) + 2,
+                y: u16 = @sizeof(U) + 2,
             },
         };
     };
 
     {
         const u: namespace.U = .{ .a = .{} };
-        try expectEqual(4, @alignOf(namespace.U));
+        try expectEqual(4, @alignof(namespace.U));
         try expectEqual(@as(usize, 5), u.a.x);
     }
 
     {
         const u: namespace.U = .{ .b = .{} };
-        try expectEqual(@as(usize, @sizeOf(namespace.U) + 2), u.b.y);
+        try expectEqual(@as(usize, @sizeof(namespace.U) + 2), u.b.y);
     }
 }
 
@@ -2008,23 +2008,23 @@ test "inner struct initializer uses packed union layout" {
     const namespace = struct {
         const U = packed union {
             a: packed struct {
-                x: u32 = @alignOf(U) + 1,
+                x: u32 = @alignof(U) + 1,
             },
             b: packed struct {
-                y: u16 = @sizeOf(U) + 2,
+                y: u16 = @sizeof(U) + 2,
             },
         };
     };
 
     {
         const u: namespace.U = .{ .a = .{} };
-        try expectEqual(4, @alignOf(namespace.U));
+        try expectEqual(4, @alignof(namespace.U));
         try expectEqual(@as(usize, 5), u.a.x);
     }
 
     {
         const u: namespace.U = .{ .b = .{} };
-        try expectEqual(@as(usize, @sizeOf(namespace.U) + 2), u.b.y);
+        try expectEqual(@as(usize, @sizeof(namespace.U) + 2), u.b.y);
     }
 }
 
@@ -2215,7 +2215,7 @@ test "runtime union init, most-aligned field != largest" {
     _ = &x;
     try U.foo(.{ .x = x });
 
-    const val: U = @unionInit(U, "x", x);
+    const val: U = @unioninit(U, "x", x);
     try expect(val.x == 1);
 
     const val2: U = .{ .x = x };
@@ -2343,7 +2343,7 @@ test "create union(enum) from other union(enum)" {
 test "matching captures causes union equivalence" {
     const S = struct {
         fn SignedUnsigned(comptime I: type) type {
-            const bits = @typeInfo(I).Int.bits;
+            const bits = @typeinfo(I).Int.bits;
             return union {
                 u: @Type(.{ .Int = .{
                     .signedness = .unsigned,

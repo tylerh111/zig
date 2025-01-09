@@ -237,7 +237,7 @@ test "smhasher" {
         }
     };
     try Test.do();
-    @setEvalBranchQuota(50000);
+    @setevalbranchquota(50000);
     try comptime Test.do();
 }
 
@@ -248,7 +248,7 @@ test "iterative api" {
         }
     };
     try Test.do();
-    @setEvalBranchQuota(50000);
+    @setevalbranchquota(50000);
     try comptime Test.do();
 }
 

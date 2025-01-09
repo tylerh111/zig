@@ -76,7 +76,7 @@ pub const Resource = enum {
         const maybe_ordinal = res.NameOrOrdinal.maybeOrdinalFromString(bytes);
         if (maybe_ordinal) |ordinal| {
             if (ordinal.ordinal >= 256) return .user_defined;
-            return fromRT(@enumFromInt(ordinal.ordinal));
+            return fromRT(@enumfromint(ordinal.ordinal));
         }
         return map.get(bytes.slice) orelse .user_defined;
     }
@@ -130,16 +130,16 @@ pub const Resource = enum {
             // zig fmt: off
             .accelerators, .bitmap, .cursor, .dialog, .dialogex, .dlginclude, .dlginit, .font,
             .html, .icon, .menu, .menuex, .messagetable, .plugplay, .rcdata, .stringtable,
-            .toolbar, .versioninfo, .vxd => @tagName(resource),
+            .toolbar, .versioninfo, .vxd => @tagname(resource),
             // zig fmt: on
             .user_defined => "user-defined",
-            .cursor_num => std.fmt.comptimePrint("{d} (cursor)", .{@intFromEnum(res.RT.CURSOR)}),
-            .icon_num => std.fmt.comptimePrint("{d} (icon)", .{@intFromEnum(res.RT.ICON)}),
-            .string_num => std.fmt.comptimePrint("{d} (string)", .{@intFromEnum(res.RT.STRING)}),
-            .anicursor_num => std.fmt.comptimePrint("{d} (anicursor)", .{@intFromEnum(res.RT.ANICURSOR)}),
-            .aniicon_num => std.fmt.comptimePrint("{d} (aniicon)", .{@intFromEnum(res.RT.ANIICON)}),
-            .fontdir_num => std.fmt.comptimePrint("{d} (fontdir)", .{@intFromEnum(res.RT.FONTDIR)}),
-            .manifest_num => std.fmt.comptimePrint("{d} (manifest)", .{@intFromEnum(res.RT.MANIFEST)}),
+            .cursor_num => std.fmt.comptimePrint("{d} (cursor)", .{@intfromenum(res.RT.CURSOR)}),
+            .icon_num => std.fmt.comptimePrint("{d} (icon)", .{@intfromenum(res.RT.ICON)}),
+            .string_num => std.fmt.comptimePrint("{d} (string)", .{@intfromenum(res.RT.STRING)}),
+            .anicursor_num => std.fmt.comptimePrint("{d} (anicursor)", .{@intfromenum(res.RT.ANICURSOR)}),
+            .aniicon_num => std.fmt.comptimePrint("{d} (aniicon)", .{@intfromenum(res.RT.ANIICON)}),
+            .fontdir_num => std.fmt.comptimePrint("{d} (fontdir)", .{@intfromenum(res.RT.FONTDIR)}),
+            .manifest_num => std.fmt.comptimePrint("{d} (manifest)", .{@intfromenum(res.RT.MANIFEST)}),
         };
     }
 };
@@ -282,7 +282,7 @@ const ascii = struct {
         if (a.len != b.len) return false;
         for (a, b) |a_c, b_c| {
             if (a_c < 128) {
-                if (std.ascii.toLower(@intCast(a_c)) != std.ascii.toLower(@intCast(b_c))) return false;
+                if (std.ascii.toLower(@intcast(a_c)) != std.ascii.toLower(@intcast(b_c))) return false;
             } else {
                 if (a_c != b_c) return false;
             }

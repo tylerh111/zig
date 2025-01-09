@@ -158,7 +158,7 @@ pub fn addRelocation(elf: *Elf, name: []const u8, section_kind: Object.Section, 
 
     try section.relocations.append(elf.arena.child_allocator, .{
         .symbol = symbol,
-        .offset = @intCast(address),
+        .offset = @intcast(address),
         .addend = addend,
         .type = if (symbol.section == null) 4 else 2, // TODO
     });
@@ -181,15 +181,15 @@ pub fn finish(elf: *Elf, file: std.fs.File) !void {
         var it = elf.sections.valueIterator();
         while (it.next()) |sect| {
             sections_len += sect.*.data.items.len;
-            relocations_len += sect.*.relocations.items.len * @sizeOf(std.elf.Elf64_Rela);
+            relocations_len += sect.*.relocations.items.len * @sizeof(std.elf.Elf64_Rela);
             sect.*.index = num_sections;
             num_sections += 1;
-            num_sections += @intFromBool(sect.*.relocations.items.len != 0);
+            num_sections += @intfrombool(sect.*.relocations.items.len != 0);
         }
     }
-    const symtab_len = (elf.local_symbols.count() + elf.global_symbols.count() + 1) * @sizeOf(std.elf.Elf64_Sym);
+    const symtab_len = (elf.local_symbols.count() + elf.global_symbols.count() + 1) * @sizeof(std.elf.Elf64_Sym);
 
-    const symtab_offset = @sizeOf(std.elf.Elf64_Ehdr) + sections_len;
+    const symtab_offset = @sizeof(std.elf.Elf64_Ehdr) + sections_len;
     const symtab_offset_aligned = std.mem.alignForward(u64, symtab_offset, 8);
     const rela_offset = symtab_offset_aligned + symtab_len;
     const strtab_offset = rela_offset + relocations_len;
@@ -205,10 +205,10 @@ pub fn finish(elf: *Elf, file: std.fs.File) !void {
         .e_phoff = 0, // no program header
         .e_shoff = sh_offset_aligned, // section headers offset
         .e_flags = 0, // no flags
-        .e_ehsize = @sizeOf(std.elf.Elf64_Ehdr),
+        .e_ehsize = @sizeof(std.elf.Elf64_Ehdr),
         .e_phentsize = 0, // no program header
         .e_phnum = 0, // no program header
-        .e_shentsize = @sizeOf(std.elf.Elf64_Shdr),
+        .e_shentsize = @sizeof(std.elf.Elf64_Shdr),
         .e_shnum = num_sections,
         .e_shstrndx = strtab_index,
     };
@@ -221,7 +221,7 @@ pub fn finish(elf: *Elf, file: std.fs.File) !void {
     }
 
     // pad to 8 bytes
-    try w.writeByteNTimes(0, @intCast(symtab_offset_aligned - symtab_offset));
+    try w.writeByteNTimes(0, @intcast(symtab_offset_aligned - symtab_offset));
 
     var name_offset: u32 = strtab_default.len;
     // write symbols
@@ -243,7 +243,7 @@ pub fn finish(elf: *Elf, file: std.fs.File) !void {
             });
             sym.index = sym_index;
             sym_index += 1;
-            name_offset += @intCast(entry.key_ptr.len + 1); // +1 for null byte
+            name_offset += @intcast(entry.key_ptr.len + 1); // +1 for null byte
         }
         it = elf.global_symbols.iterator();
         while (it.next()) |entry| {
@@ -258,7 +258,7 @@ pub fn finish(elf: *Elf, file: std.fs.File) !void {
             });
             sym.index = sym_index;
             sym_index += 1;
-            name_offset += @intCast(entry.key_ptr.len + 1); // +1 for null byte
+            name_offset += @intcast(entry.key_ptr.len + 1); // +1 for null byte
         }
     }
 
@@ -293,7 +293,7 @@ pub fn finish(elf: *Elf, file: std.fs.File) !void {
     }
 
     // pad to 16 bytes
-    try w.writeByteNTimes(0, @intCast(sh_offset_aligned - sh_offset));
+    try w.writeByteNTimes(0, @intcast(sh_offset_aligned - sh_offset));
     // mandatory null header
     try w.writeStruct(std.mem.zeroes(std.elf.Elf64_Shdr));
 
@@ -326,14 +326,14 @@ pub fn finish(elf: *Elf, file: std.fs.File) !void {
             .sh_link = strtab_index,
             .sh_info = elf.local_symbols.size + 1,
             .sh_addralign = 8,
-            .sh_entsize = @sizeOf(std.elf.Elf64_Sym),
+            .sh_entsize = @sizeof(std.elf.Elf64_Sym),
         };
         try w.writeStruct(sect_header);
     }
 
     // remaining section headers
     {
-        var sect_offset: u64 = @sizeOf(std.elf.Elf64_Ehdr);
+        var sect_offset: u64 = @sizeof(std.elf.Elf64_Ehdr);
         var rela_sect_offset: u64 = rela_offset;
         var it = elf.sections.iterator();
         while (it.next()) |entry| {
@@ -354,24 +354,24 @@ pub fn finish(elf: *Elf, file: std.fs.File) !void {
             });
 
             if (rela_count != 0) {
-                const size = rela_count * @sizeOf(std.elf.Elf64_Rela);
+                const size = rela_count * @sizeof(std.elf.Elf64_Rela);
                 try w.writeStruct(std.elf.Elf64_Shdr{
                     .sh_name = name_offset,
                     .sh_type = std.elf.SHT_RELA,
                     .sh_flags = 0,
                     .sh_addr = 0,
                     .sh_offset = rela_sect_offset,
-                    .sh_size = rela_count * @sizeOf(std.elf.Elf64_Rela),
+                    .sh_size = rela_count * @sizeof(std.elf.Elf64_Rela),
                     .sh_link = symtab_index,
                     .sh_info = sect.index,
                     .sh_addralign = 8,
-                    .sh_entsize = @sizeOf(std.elf.Elf64_Rela),
+                    .sh_entsize = @sizeof(std.elf.Elf64_Rela),
                 });
                 rela_sect_offset += size;
             }
 
             sect_offset += sect.data.items.len;
-            name_offset += @as(u32, @intCast(entry.key_ptr.len + ".\x00".len)) + rela_name_offset;
+            name_offset += @as(u32, @intcast(entry.key_ptr.len + ".\x00".len)) + rela_name_offset;
         }
     }
     try buf_writer.flush();

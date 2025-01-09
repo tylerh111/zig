@@ -486,15 +486,15 @@ pub const Header = struct {
     }
 
     pub fn read(parse_source: anytype) !Header {
-        var hdr_buf: [@sizeOf(Elf64_Ehdr)]u8 align(@alignOf(Elf64_Ehdr)) = undefined;
+        var hdr_buf: [@sizeof(Elf64_Ehdr)]u8 align(@alignof(Elf64_Ehdr)) = undefined;
         try parse_source.seekableStream().seekTo(0);
         try parse_source.reader().readNoEof(&hdr_buf);
         return Header.parse(&hdr_buf);
     }
 
-    pub fn parse(hdr_buf: *align(@alignOf(Elf64_Ehdr)) const [@sizeOf(Elf64_Ehdr)]u8) !Header {
-        const hdr32 = @as(*const Elf32_Ehdr, @ptrCast(hdr_buf));
-        const hdr64 = @as(*const Elf64_Ehdr, @ptrCast(hdr_buf));
+    pub fn parse(hdr_buf: *align(@alignof(Elf64_Ehdr)) const [@sizeof(Elf64_Ehdr)]u8) !Header {
+        const hdr32 = @as(*const Elf32_Ehdr, @ptrcast(hdr_buf));
+        const hdr64 = @as(*const Elf64_Ehdr, @ptrcast(hdr_buf));
         if (!mem.eql(u8, hdr32.e_ident[0..4], MAGIC)) return error.InvalidElfMagic;
         if (hdr32.e_ident[EI_VERSION] != 1) return error.InvalidElfVersion;
 
@@ -512,8 +512,8 @@ pub const Header = struct {
         };
 
         const machine = if (need_bswap) blk: {
-            const value = @intFromEnum(hdr32.e_machine);
-            break :blk @as(EM, @enumFromInt(@byteSwap(value)));
+            const value = @intfromenum(hdr32.e_machine);
+            break :blk @as(EM, @enumfromint(@byteswap(value)));
         } else hdr32.e_machine;
 
         return @as(Header, .{
@@ -544,7 +544,7 @@ pub fn ProgramHeaderIterator(comptime ParseSource: anytype) type {
 
             if (self.elf_header.is_64) {
                 var phdr: Elf64_Phdr = undefined;
-                const offset = self.elf_header.phoff + @sizeOf(@TypeOf(phdr)) * self.index;
+                const offset = self.elf_header.phoff + @sizeof(@TypeOf(phdr)) * self.index;
                 try self.parse_source.seekableStream().seekTo(offset);
                 try self.parse_source.reader().readNoEof(mem.asBytes(&phdr));
 
@@ -552,19 +552,19 @@ pub fn ProgramHeaderIterator(comptime ParseSource: anytype) type {
                 if (self.elf_header.endian == native_endian) return phdr;
 
                 // Convert fields to native endianness.
-                mem.byteSwapAllFields(Elf64_Phdr, &phdr);
+                mem.byteswapAllFields(Elf64_Phdr, &phdr);
                 return phdr;
             }
 
             var phdr: Elf32_Phdr = undefined;
-            const offset = self.elf_header.phoff + @sizeOf(@TypeOf(phdr)) * self.index;
+            const offset = self.elf_header.phoff + @sizeof(@TypeOf(phdr)) * self.index;
             try self.parse_source.seekableStream().seekTo(offset);
             try self.parse_source.reader().readNoEof(mem.asBytes(&phdr));
 
             // ELF endianness does NOT match native endianness.
             if (self.elf_header.endian != native_endian) {
                 // Convert fields to native endianness.
-                mem.byteSwapAllFields(Elf32_Phdr, &phdr);
+                mem.byteswapAllFields(Elf32_Phdr, &phdr);
             }
 
             // Convert 32-bit header to 64-bit.
@@ -594,7 +594,7 @@ pub fn SectionHeaderIterator(comptime ParseSource: anytype) type {
 
             if (self.elf_header.is_64) {
                 var shdr: Elf64_Shdr = undefined;
-                const offset = self.elf_header.shoff + @sizeOf(@TypeOf(shdr)) * self.index;
+                const offset = self.elf_header.shoff + @sizeof(@TypeOf(shdr)) * self.index;
                 try self.parse_source.seekableStream().seekTo(offset);
                 try self.parse_source.reader().readNoEof(mem.asBytes(&shdr));
 
@@ -602,19 +602,19 @@ pub fn SectionHeaderIterator(comptime ParseSource: anytype) type {
                 if (self.elf_header.endian == native_endian) return shdr;
 
                 // Convert fields to native endianness.
-                mem.byteSwapAllFields(Elf64_Shdr, &shdr);
+                mem.byteswapAllFields(Elf64_Shdr, &shdr);
                 return shdr;
             }
 
             var shdr: Elf32_Shdr = undefined;
-            const offset = self.elf_header.shoff + @sizeOf(@TypeOf(shdr)) * self.index;
+            const offset = self.elf_header.shoff + @sizeof(@TypeOf(shdr)) * self.index;
             try self.parse_source.seekableStream().seekTo(offset);
             try self.parse_source.reader().readNoEof(mem.asBytes(&shdr));
 
             // ELF endianness does NOT match native endianness.
             if (self.elf_header.endian != native_endian) {
                 // Convert fields to native endianness.
-                mem.byteSwapAllFields(Elf32_Shdr, &shdr);
+                mem.byteswapAllFields(Elf32_Shdr, &shdr);
             }
 
             // Convert 32-bit header to 64-bit.
@@ -637,7 +637,7 @@ pub fn SectionHeaderIterator(comptime ParseSource: anytype) type {
 pub fn int(is_64: bool, need_bswap: bool, int_32: anytype, int_64: anytype) @TypeOf(int_64) {
     if (is_64) {
         if (need_bswap) {
-            return @byteSwap(int_64);
+            return @byteswap(int_64);
         } else {
             return int_64;
         }
@@ -648,7 +648,7 @@ pub fn int(is_64: bool, need_bswap: bool, int_32: anytype, int_64: anytype) @Typ
 
 pub fn int32(need_bswap: bool, int_32: anytype, comptime Int64: anytype) Int64 {
     if (need_bswap) {
-        return @byteSwap(int_32);
+        return @byteswap(int_32);
     } else {
         return int_32;
     }
@@ -1012,80 +1012,80 @@ pub const Elf_MIPS_ABIFlags_v0 = extern struct {
 };
 
 comptime {
-    assert(@sizeOf(Elf32_Ehdr) == 52);
-    assert(@sizeOf(Elf64_Ehdr) == 64);
+    assert(@sizeof(Elf32_Ehdr) == 52);
+    assert(@sizeof(Elf64_Ehdr) == 64);
 
-    assert(@sizeOf(Elf32_Phdr) == 32);
-    assert(@sizeOf(Elf64_Phdr) == 56);
+    assert(@sizeof(Elf32_Phdr) == 32);
+    assert(@sizeof(Elf64_Phdr) == 56);
 
-    assert(@sizeOf(Elf32_Shdr) == 40);
-    assert(@sizeOf(Elf64_Shdr) == 64);
+    assert(@sizeof(Elf32_Shdr) == 40);
+    assert(@sizeof(Elf64_Shdr) == 64);
 }
 
-pub const Auxv = switch (@sizeOf(usize)) {
+pub const Auxv = switch (@sizeof(usize)) {
     4 => Elf32_auxv_t,
     8 => Elf64_auxv_t,
-    else => @compileError("expected pointer size of 32 or 64"),
+    else => @compileerror("expected pointer size of 32 or 64"),
 };
-pub const Ehdr = switch (@sizeOf(usize)) {
+pub const Ehdr = switch (@sizeof(usize)) {
     4 => Elf32_Ehdr,
     8 => Elf64_Ehdr,
-    else => @compileError("expected pointer size of 32 or 64"),
+    else => @compileerror("expected pointer size of 32 or 64"),
 };
-pub const Phdr = switch (@sizeOf(usize)) {
+pub const Phdr = switch (@sizeof(usize)) {
     4 => Elf32_Phdr,
     8 => Elf64_Phdr,
-    else => @compileError("expected pointer size of 32 or 64"),
+    else => @compileerror("expected pointer size of 32 or 64"),
 };
-pub const Dyn = switch (@sizeOf(usize)) {
+pub const Dyn = switch (@sizeof(usize)) {
     4 => Elf32_Dyn,
     8 => Elf64_Dyn,
-    else => @compileError("expected pointer size of 32 or 64"),
+    else => @compileerror("expected pointer size of 32 or 64"),
 };
-pub const Rel = switch (@sizeOf(usize)) {
+pub const Rel = switch (@sizeof(usize)) {
     4 => Elf32_Rel,
     8 => Elf64_Rel,
-    else => @compileError("expected pointer size of 32 or 64"),
+    else => @compileerror("expected pointer size of 32 or 64"),
 };
-pub const Rela = switch (@sizeOf(usize)) {
+pub const Rela = switch (@sizeof(usize)) {
     4 => Elf32_Rela,
     8 => Elf64_Rela,
-    else => @compileError("expected pointer size of 32 or 64"),
+    else => @compileerror("expected pointer size of 32 or 64"),
 };
-pub const Shdr = switch (@sizeOf(usize)) {
+pub const Shdr = switch (@sizeof(usize)) {
     4 => Elf32_Shdr,
     8 => Elf64_Shdr,
-    else => @compileError("expected pointer size of 32 or 64"),
+    else => @compileerror("expected pointer size of 32 or 64"),
 };
-pub const Chdr = switch (@sizeOf(usize)) {
+pub const Chdr = switch (@sizeof(usize)) {
     4 => Elf32_Chdr,
     8 => Elf64_Chdr,
-    else => @compileError("expected pointer size of 32 or 64"),
+    else => @compileerror("expected pointer size of 32 or 64"),
 };
-pub const Sym = switch (@sizeOf(usize)) {
+pub const Sym = switch (@sizeof(usize)) {
     4 => Elf32_Sym,
     8 => Elf64_Sym,
-    else => @compileError("expected pointer size of 32 or 64"),
+    else => @compileerror("expected pointer size of 32 or 64"),
 };
-pub const Verdef = switch (@sizeOf(usize)) {
+pub const Verdef = switch (@sizeof(usize)) {
     4 => Elf32_Verdef,
     8 => Elf64_Verdef,
-    else => @compileError("expected pointer size of 32 or 64"),
+    else => @compileerror("expected pointer size of 32 or 64"),
 };
-pub const Verdaux = switch (@sizeOf(usize)) {
+pub const Verdaux = switch (@sizeof(usize)) {
     4 => Elf32_Verdaux,
     8 => Elf64_Verdaux,
-    else => @compileError("expected pointer size of 32 or 64"),
+    else => @compileerror("expected pointer size of 32 or 64"),
 };
-pub const Addr = switch (@sizeOf(usize)) {
+pub const Addr = switch (@sizeof(usize)) {
     4 => Elf32_Addr,
     8 => Elf64_Addr,
-    else => @compileError("expected pointer size of 32 or 64"),
+    else => @compileerror("expected pointer size of 32 or 64"),
 };
-pub const Half = switch (@sizeOf(usize)) {
+pub const Half = switch (@sizeof(usize)) {
     4 => Elf32_Half,
     8 => Elf64_Half,
-    else => @compileError("expected pointer size of 32 or 64"),
+    else => @compileerror("expected pointer size of 32 or 64"),
 };
 
 /// Machine architectures.

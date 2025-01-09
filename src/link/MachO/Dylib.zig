@@ -56,12 +56,12 @@ pub fn parse(self: *Dylib, macho_file: *MachO, file: std.fs.File, fat_arch: ?fat
 
     log.debug("parsing dylib from binary: {s}", .{self.path});
 
-    var header_buffer: [@sizeOf(macho.mach_header_64)]u8 = undefined;
+    var header_buffer: [@sizeof(macho.mach_header_64)]u8 = undefined;
     {
         const amt = try file.preadAll(&header_buffer, offset);
-        if (amt != @sizeOf(macho.mach_header_64)) return error.InputOutput;
+        if (amt != @sizeof(macho.mach_header_64)) return error.InputOutput;
     }
-    const header = @as(*align(1) const macho.mach_header_64, @ptrCast(&header_buffer)).*;
+    const header = @as(*align(1) const macho.mach_header_64, @ptrcast(&header_buffer)).*;
 
     const this_cpu_arch: std.Target.Cpu.Arch = switch (header.cputype) {
         macho.CPU_TYPE_ARM64 => .aarch64,
@@ -72,14 +72,14 @@ pub fn parse(self: *Dylib, macho_file: *MachO, file: std.fs.File, fat_arch: ?fat
         },
     };
     if (macho_file.getTarget().cpu.arch != this_cpu_arch) {
-        try macho_file.reportParseError2(self.index, "invalid cpu architecture: {s}", .{@tagName(this_cpu_arch)});
+        try macho_file.reportParseError2(self.index, "invalid cpu architecture: {s}", .{@tagname(this_cpu_arch)});
         return error.InvalidCpuArch;
     }
 
     const lc_buffer = try gpa.alloc(u8, header.sizeofcmds);
     defer gpa.free(lc_buffer);
     {
-        const amt = try file.preadAll(lc_buffer, offset + @sizeOf(macho.mach_header_64));
+        const amt = try file.preadAll(lc_buffer, offset + @sizeof(macho.mach_header_64));
         if (amt != lc_buffer.len) return error.InputOutput;
     }
 
@@ -178,7 +178,7 @@ const TrieIterator = struct {
             if (byte == 0) break;
         }
 
-        const str = @as([*:0]const u8, @ptrCast(it.data.ptr + it.pos))[0..count :0];
+        const str = @as([*:0]const u8, @ptrcast(it.data.ptr + it.pos))[0..count :0];
         it.pos += count + 1;
         return str;
     }
@@ -573,7 +573,7 @@ pub fn calcSymtabSize(self: *Dylib, macho_file: *MachO) !void {
         global.flags.output_symtab = true;
         try global.addExtra(.{ .symtab = self.output_symtab_ctx.nimports }, macho_file);
         self.output_symtab_ctx.nimports += 1;
-        self.output_symtab_ctx.strsize += @as(u32, @intCast(global.getName(macho_file).len + 1));
+        self.output_symtab_ctx.strsize += @as(u32, @intcast(global.getName(macho_file).len + 1));
     }
 }
 
@@ -586,7 +586,7 @@ pub fn writeSymtab(self: Dylib, macho_file: *MachO, ctx: anytype) void {
         const file = global.getFile(macho_file) orelse continue;
         if (file.getIndex() != self.index) continue;
         const idx = global.getOutputSymtabIndex(macho_file) orelse continue;
-        const n_strx = @as(u32, @intCast(ctx.strtab.items.len));
+        const n_strx = @as(u32, @intcast(ctx.strtab.items.len));
         ctx.strtab.appendSliceAssumeCapacity(global.getName(macho_file));
         ctx.strtab.appendAssumeCapacity(0);
         const out_sym = &ctx.symtab.items[idx];
@@ -600,14 +600,14 @@ pub inline fn getUmbrella(self: Dylib, macho_file: *MachO) *Dylib {
 }
 
 fn addString(self: *Dylib, allocator: Allocator, name: []const u8) !u32 {
-    const off = @as(u32, @intCast(self.strtab.items.len));
+    const off = @as(u32, @intcast(self.strtab.items.len));
     try self.strtab.writer(allocator).print("{s}\x00", .{name});
     return off;
 }
 
 pub inline fn getString(self: Dylib, off: u32) [:0]const u8 {
     assert(off < self.strtab.items.len);
-    return mem.sliceTo(@as([*:0]const u8, @ptrCast(self.strtab.items.ptr + off)), 0);
+    return mem.sliceTo(@as([*:0]const u8, @ptrcast(self.strtab.items.ptr + off)), 0);
 }
 
 pub fn asFile(self: *Dylib) File {
@@ -624,7 +624,7 @@ pub fn format(
     _ = unused_fmt_string;
     _ = options;
     _ = writer;
-    @compileError("do not format dylib directly");
+    @compileerror("do not format dylib directly");
 }
 
 pub fn fmtSymtab(self: *Dylib, macho_file: *MachO) std.fmt.Formatter(formatSymtab) {
@@ -815,7 +815,7 @@ pub const Id = struct {
                 .int => |int| {
                     var out: u32 = 0;
                     const major = math.cast(u16, int) orelse return error.Overflow;
-                    out += @as(u32, @intCast(major)) << 16;
+                    out += @as(u32, @intcast(major)) << 16;
                     return out;
                 },
                 .float => |float| {
@@ -846,9 +846,9 @@ pub const Id = struct {
             out += try fmt.parseInt(u8, values[2], 10);
         }
         if (count > 1) {
-            out += @as(u32, @intCast(try fmt.parseInt(u8, values[1], 10))) << 8;
+            out += @as(u32, @intcast(try fmt.parseInt(u8, values[1], 10))) << 8;
         }
-        out += @as(u32, @intCast(try fmt.parseInt(u16, values[0], 10))) << 16;
+        out += @as(u32, @intcast(try fmt.parseInt(u16, values[0], 10))) << 16;
 
         return out;
     }

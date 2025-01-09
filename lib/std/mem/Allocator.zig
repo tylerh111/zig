@@ -101,20 +101,20 @@ pub inline fn rawFree(self: Allocator, buf: []u8, log2_buf_align: u8, ret_addr: 
 /// Returns a pointer to undefined memory.
 /// Call `destroy` with the result to free the memory.
 pub fn create(self: Allocator, comptime T: type) Error!*T {
-    if (@sizeOf(T) == 0) return @as(*T, @ptrFromInt(math.maxInt(usize)));
-    const ptr: *T = @ptrCast(try self.allocBytesWithAlignment(@alignOf(T), @sizeOf(T), @returnAddress()));
+    if (@sizeof(T) == 0) return @as(*T, @ptrfromint(math.maxInt(usize)));
+    const ptr: *T = @ptrcast(try self.allocBytesWithAlignment(@alignof(T), @sizeof(T), @returnaddress()));
     return ptr;
 }
 
 /// `ptr` should be the return value of `create`, or otherwise
 /// have the same address and alignment property.
 pub fn destroy(self: Allocator, ptr: anytype) void {
-    const info = @typeInfo(@TypeOf(ptr)).Pointer;
-    if (info.size != .One) @compileError("ptr must be a single item pointer");
+    const info = @typeinfo(@TypeOf(ptr)).Pointer;
+    if (info.size != .One) @compileerror("ptr must be a single item pointer");
     const T = info.child;
-    if (@sizeOf(T) == 0) return;
-    const non_const_ptr = @as([*]u8, @ptrCast(@constCast(ptr)));
-    self.rawFree(non_const_ptr[0..@sizeOf(T)], log2a(info.alignment), @returnAddress());
+    if (@sizeof(T) == 0) return;
+    const non_const_ptr = @as([*]u8, @ptrcast(@constcast(ptr)));
+    self.rawFree(non_const_ptr[0..@sizeof(T)], log2a(info.alignment), @returnaddress());
 }
 
 /// Allocates an array of `n` items of type `T` and sets all the
@@ -126,7 +126,7 @@ pub fn destroy(self: Allocator, ptr: anytype) void {
 ///
 /// For allocating a single item, see `create`.
 pub fn alloc(self: Allocator, comptime T: type, n: usize) Error![]T {
-    return self.allocAdvancedWithRetAddr(T, null, n, @returnAddress());
+    return self.allocAdvancedWithRetAddr(T, null, n, @returnaddress());
 }
 
 pub fn allocWithOptions(
@@ -137,7 +137,7 @@ pub fn allocWithOptions(
     comptime optional_alignment: ?u29,
     comptime optional_sentinel: ?Elem,
 ) Error!AllocWithOptionsPayload(Elem, optional_alignment, optional_sentinel) {
-    return self.allocWithOptionsRetAddr(Elem, n, optional_alignment, optional_sentinel, @returnAddress());
+    return self.allocWithOptionsRetAddr(Elem, n, optional_alignment, optional_sentinel, @returnaddress());
 }
 
 pub fn allocWithOptionsRetAddr(
@@ -160,9 +160,9 @@ pub fn allocWithOptionsRetAddr(
 
 fn AllocWithOptionsPayload(comptime Elem: type, comptime alignment: ?u29, comptime sentinel: ?Elem) type {
     if (sentinel) |s| {
-        return [:s]align(alignment orelse @alignOf(Elem)) Elem;
+        return [:s]align(alignment orelse @alignof(Elem)) Elem;
     } else {
-        return []align(alignment orelse @alignOf(Elem)) Elem;
+        return []align(alignment orelse @alignof(Elem)) Elem;
     }
 }
 
@@ -180,7 +180,7 @@ pub fn allocSentinel(
     n: usize,
     comptime sentinel: Elem,
 ) Error![:sentinel]Elem {
-    return self.allocWithOptionsRetAddr(Elem, n, null, sentinel, @returnAddress());
+    return self.allocWithOptionsRetAddr(Elem, n, null, sentinel, @returnaddress());
 }
 
 pub fn alignedAlloc(
@@ -189,8 +189,8 @@ pub fn alignedAlloc(
     /// null means naturally aligned
     comptime alignment: ?u29,
     n: usize,
-) Error![]align(alignment orelse @alignOf(T)) T {
-    return self.allocAdvancedWithRetAddr(T, alignment, n, @returnAddress());
+) Error![]align(alignment orelse @alignof(T)) T {
+    return self.allocAdvancedWithRetAddr(T, alignment, n, @returnaddress());
 }
 
 pub inline fn allocAdvancedWithRetAddr(
@@ -200,9 +200,9 @@ pub inline fn allocAdvancedWithRetAddr(
     comptime alignment: ?u29,
     n: usize,
     return_address: usize,
-) Error![]align(alignment orelse @alignOf(T)) T {
-    const a = alignment orelse @alignOf(T);
-    const ptr: [*]align(a) T = @ptrCast(try self.allocWithSizeAndAlignment(@sizeOf(T), a, n, return_address));
+) Error![]align(alignment orelse @alignof(T)) T {
+    const a = alignment orelse @alignof(T);
+    const ptr: [*]align(a) T = @ptrcast(try self.allocWithSizeAndAlignment(@sizeof(T), a, n, return_address));
     return ptr[0..n];
 }
 
@@ -219,20 +219,20 @@ fn allocBytesWithAlignment(self: Allocator, comptime alignment: u29, byte_count:
 
     if (byte_count == 0) {
         const ptr = comptime std.mem.alignBackward(usize, math.maxInt(usize), alignment);
-        return @as([*]align(alignment) u8, @ptrFromInt(ptr));
+        return @as([*]align(alignment) u8, @ptrfromint(ptr));
     }
 
     const byte_ptr = self.rawAlloc(byte_count, log2a(alignment), return_address) orelse return Error.OutOfMemory;
     // TODO: https://github.com/ziglang/zig/issues/4298
     @memset(byte_ptr[0..byte_count], undefined);
-    return @as([*]align(alignment) u8, @alignCast(byte_ptr));
+    return @as([*]align(alignment) u8, @aligncast(byte_ptr));
 }
 
 /// Requests to modify the size of an allocation. It is guaranteed to not move
 /// the pointer, however the allocator implementation may refuse the resize
 /// request by returning `false`.
 pub fn resize(self: Allocator, old_mem: anytype, new_n: usize) bool {
-    const Slice = @typeInfo(@TypeOf(old_mem)).Pointer;
+    const Slice = @typeinfo(@TypeOf(old_mem)).Pointer;
     const T = Slice.child;
     if (new_n == 0) {
         self.free(old_mem);
@@ -244,19 +244,19 @@ pub fn resize(self: Allocator, old_mem: anytype, new_n: usize) bool {
     const old_byte_slice = mem.sliceAsBytes(old_mem);
     // I would like to use saturating multiplication here, but LLVM cannot lower it
     // on WebAssembly: https://github.com/ziglang/zig/issues/9660
-    //const new_byte_count = new_n *| @sizeOf(T);
-    const new_byte_count = math.mul(usize, @sizeOf(T), new_n) catch return false;
-    return self.rawResize(old_byte_slice, log2a(Slice.alignment), new_byte_count, @returnAddress());
+    //const new_byte_count = new_n *| @sizeof(T);
+    const new_byte_count = math.mul(usize, @sizeof(T), new_n) catch return false;
+    return self.rawResize(old_byte_slice, log2a(Slice.alignment), new_byte_count, @returnaddress());
 }
 
 /// This function requests a new byte size for an existing allocation, which
 /// can be larger, smaller, or the same size as the old memory allocation.
 /// If `new_n` is 0, this is the same as `free` and it always succeeds.
 pub fn realloc(self: Allocator, old_mem: anytype, new_n: usize) t: {
-    const Slice = @typeInfo(@TypeOf(old_mem)).Pointer;
+    const Slice = @typeinfo(@TypeOf(old_mem)).Pointer;
     break :t Error![]align(Slice.alignment) Slice.child;
 } {
-    return self.reallocAdvanced(old_mem, new_n, @returnAddress());
+    return self.reallocAdvanced(old_mem, new_n, @returnaddress());
 }
 
 pub fn reallocAdvanced(
@@ -265,10 +265,10 @@ pub fn reallocAdvanced(
     new_n: usize,
     return_address: usize,
 ) t: {
-    const Slice = @typeInfo(@TypeOf(old_mem)).Pointer;
+    const Slice = @typeinfo(@TypeOf(old_mem)).Pointer;
     break :t Error![]align(Slice.alignment) Slice.child;
 } {
-    const Slice = @typeInfo(@TypeOf(old_mem)).Pointer;
+    const Slice = @typeinfo(@TypeOf(old_mem)).Pointer;
     const T = Slice.child;
     if (old_mem.len == 0) {
         return self.allocAdvancedWithRetAddr(T, Slice.alignment, new_n, return_address);
@@ -276,15 +276,15 @@ pub fn reallocAdvanced(
     if (new_n == 0) {
         self.free(old_mem);
         const ptr = comptime std.mem.alignBackward(usize, math.maxInt(usize), Slice.alignment);
-        return @as([*]align(Slice.alignment) T, @ptrFromInt(ptr))[0..0];
+        return @as([*]align(Slice.alignment) T, @ptrfromint(ptr))[0..0];
     }
 
     const old_byte_slice = mem.sliceAsBytes(old_mem);
-    const byte_count = math.mul(usize, @sizeOf(T), new_n) catch return Error.OutOfMemory;
+    const byte_count = math.mul(usize, @sizeof(T), new_n) catch return Error.OutOfMemory;
     // Note: can't set shrunk memory to undefined as memory shouldn't be modified on realloc failure
-    if (mem.isAligned(@intFromPtr(old_byte_slice.ptr), Slice.alignment)) {
+    if (mem.isAligned(@intfromptr(old_byte_slice.ptr), Slice.alignment)) {
         if (self.rawResize(old_byte_slice, log2a(Slice.alignment), byte_count, return_address)) {
-            const new_bytes: []align(Slice.alignment) u8 = @alignCast(old_byte_slice.ptr[0..byte_count]);
+            const new_bytes: []align(Slice.alignment) u8 = @aligncast(old_byte_slice.ptr[0..byte_count]);
             return mem.bytesAsSlice(T, new_bytes);
         }
     }
@@ -297,21 +297,21 @@ pub fn reallocAdvanced(
     @memset(old_byte_slice, undefined);
     self.rawFree(old_byte_slice, log2a(Slice.alignment), return_address);
 
-    const new_bytes: []align(Slice.alignment) u8 = @alignCast(new_mem[0..byte_count]);
+    const new_bytes: []align(Slice.alignment) u8 = @aligncast(new_mem[0..byte_count]);
     return mem.bytesAsSlice(T, new_bytes);
 }
 
 /// Free an array allocated with `alloc`. To free a single item,
 /// see `destroy`.
 pub fn free(self: Allocator, memory: anytype) void {
-    const Slice = @typeInfo(@TypeOf(memory)).Pointer;
+    const Slice = @typeinfo(@TypeOf(memory)).Pointer;
     const bytes = mem.sliceAsBytes(memory);
-    const bytes_len = bytes.len + if (Slice.sentinel != null) @sizeOf(Slice.child) else 0;
+    const bytes_len = bytes.len + if (Slice.sentinel != null) @sizeof(Slice.child) else 0;
     if (bytes_len == 0) return;
-    const non_const_ptr = @constCast(bytes.ptr);
+    const non_const_ptr = @constcast(bytes.ptr);
     // TODO: https://github.com/ziglang/zig/issues/4298
     @memset(non_const_ptr[0..bytes_len], undefined);
-    self.rawFree(non_const_ptr[0..bytes_len], log2a(Slice.alignment), @returnAddress());
+    self.rawFree(non_const_ptr[0..bytes_len], log2a(Slice.alignment), @returnaddress());
 }
 
 /// Copies `m` to newly allocated memory. Caller owns the memory.
@@ -331,14 +331,14 @@ pub fn dupeZ(allocator: Allocator, comptime T: type, m: []const T) Error![:0]T {
 
 /// TODO replace callsites with `@log2` after this proposal is implemented:
 /// https://github.com/ziglang/zig/issues/13642
-inline fn log2a(x: anytype) switch (@typeInfo(@TypeOf(x))) {
+inline fn log2a(x: anytype) switch (@typeinfo(@TypeOf(x))) {
     .Int => math.Log2Int(@TypeOf(x)),
     .ComptimeInt => comptime_int,
-    else => @compileError("int please"),
+    else => @compileerror("int please"),
 } {
-    switch (@typeInfo(@TypeOf(x))) {
+    switch (@typeinfo(@TypeOf(x))) {
         .Int => return math.log2_int(@TypeOf(x), x),
         .ComptimeInt => return math.log2(x),
-        else => @compileError("bad"),
+        else => @compileerror("bad"),
     }
 }

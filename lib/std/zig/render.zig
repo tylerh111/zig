@@ -45,7 +45,7 @@ pub const Fixups = struct {
             f.append_string_after_node.count() +
             f.replace_nodes_with_node.count() +
             f.rename_identifiers.count() +
-            @intFromBool(f.rebase_imported_paths != null);
+            @intfrombool(f.rebase_imported_paths != null);
     }
 
     pub fn clearRetainingCapacity(f: *Fixups) void {
@@ -1909,7 +1909,7 @@ fn renderSwitchCase(
 
     if (switch_case.payload_token) |payload_token| {
         try renderToken(r, payload_token - 1, .none); // pipe
-        const ident = payload_token + @intFromBool(token_tags[payload_token] == .asterisk);
+        const ident = payload_token + @intfrombool(token_tags[payload_token] == .asterisk);
         if (token_tags[payload_token] == .asterisk) {
             try renderToken(r, payload_token, .none); // asterisk
         }
@@ -2901,7 +2901,7 @@ fn renderIdentifier(r: *Render, token_index: Ast.TokenIndex, space: Space, quote
     while (contents_i < contents.len and buf_i < longest_keyword_or_primitive_len) {
         if (contents[contents_i] == '\\') {
             const res = std.zig.string_literal.parseEscapeSequence(contents, &contents_i).success;
-            buf[buf_i] = @as(u8, @intCast(res));
+            buf[buf_i] = @as(u8, @intcast(res));
             buf_i += 1;
         } else {
             buf[buf_i] = contents[contents_i];
@@ -2957,7 +2957,7 @@ fn renderIdentifierContents(writer: anytype, bytes: []const u8) !void {
                 switch (res) {
                     .success => |codepoint| {
                         if (codepoint <= 0x7f) {
-                            const buf = [1]u8{@as(u8, @intCast(codepoint))};
+                            const buf = [1]u8{@as(u8, @intcast(codepoint))};
                             try std.fmt.format(writer, "{}", .{std.zig.fmtEscapes(&buf)});
                         } else {
                             try writer.writeAll(escape_sequence);

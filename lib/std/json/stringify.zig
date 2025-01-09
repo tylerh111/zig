@@ -417,7 +417,7 @@ pub fn WriteStream(
         /// See `WriteStream`.
         pub fn write(self: *Self, value: anytype) Error!void {
             const T = @TypeOf(value);
-            switch (@typeInfo(T)) {
+            switch (@typeinfo(T)) {
                 .Int => {
                     try self.valueStart();
                     if (self.options.emit_nonportable_numbers_as_strings and
@@ -434,9 +434,9 @@ pub fn WriteStream(
                     return self.write(@as(std.math.IntFittingRange(value, value), value));
                 },
                 .Float, .ComptimeFloat => {
-                    if (@as(f64, @floatCast(value)) == value) {
+                    if (@as(f64, @floatcast(value)) == value) {
                         try self.valueStart();
-                        try self.stream.print("{}", .{@as(f64, @floatCast(value))});
+                        try self.stream.print("{}", .{@as(f64, @floatcast(value))});
                         self.valueDone();
                         return;
                     }
@@ -470,14 +470,14 @@ pub fn WriteStream(
                         return value.jsonStringify(self);
                     }
 
-                    return self.stringValue(@tagName(value));
+                    return self.stringValue(@tagname(value));
                 },
                 .Union => {
                     if (std.meta.hasFn(T, "jsonStringify")) {
                         return value.jsonStringify(self);
                     }
 
-                    const info = @typeInfo(T).Union;
+                    const info = @typeinfo(T).Union;
                     if (info.tag_type) |UnionTagType| {
                         try self.beginObject();
                         inline for (info.fields) |u_field| {
@@ -498,7 +498,7 @@ pub fn WriteStream(
                         try self.endObject();
                         return;
                     } else {
-                        @compileError("Unable to stringify untagged union '" ++ @typeName(T) ++ "'");
+                        @compileerror("Unable to stringify untagged union '" ++ @typename(T) ++ "'");
                     }
                 },
                 .Struct => |S| {
@@ -518,7 +518,7 @@ pub fn WriteStream(
                         var emit_field = true;
 
                         // don't include optional fields that are null when emit_null_optional_fields is set to false
-                        if (@typeInfo(Field.type) == .Optional) {
+                        if (@typeinfo(Field.type) == .Optional) {
                             if (self.options.emit_null_optional_fields == false) {
                                 if (@field(value, Field.name) == null) {
                                     emit_field = false;
@@ -540,9 +540,9 @@ pub fn WriteStream(
                     }
                     return;
                 },
-                .ErrorSet => return self.stringValue(@errorName(value)),
+                .ErrorSet => return self.stringValue(@errorname(value)),
                 .Pointer => |ptr_info| switch (ptr_info.size) {
-                    .One => switch (@typeInfo(ptr_info.child)) {
+                    .One => switch (@typeinfo(ptr_info.child)) {
                         .Array => {
                             // Coerce `*[N]T` to `[]const T`.
                             const Slice = []const std.meta.Elem(ptr_info.child);
@@ -554,7 +554,7 @@ pub fn WriteStream(
                     },
                     .Many, .Slice => {
                         if (ptr_info.size == .Many and ptr_info.sentinel == null)
-                            @compileError("unable to stringify type '" ++ @typeName(T) ++ "' without sentinel");
+                            @compileerror("unable to stringify type '" ++ @typename(T) ++ "' without sentinel");
                         const slice = if (ptr_info.size == .Many) std.mem.span(value) else value;
 
                         if (ptr_info.child == u8) {
@@ -571,7 +571,7 @@ pub fn WriteStream(
                         try self.endArray();
                         return;
                     },
-                    else => @compileError("Unable to stringify type '" ++ @typeName(T) ++ "'"),
+                    else => @compileerror("Unable to stringify type '" ++ @typename(T) ++ "'"),
                 },
                 .Array => {
                     // Coerce `[N]T` to `*const [N]T` (and then to `[]const T`).
@@ -581,7 +581,7 @@ pub fn WriteStream(
                     const array: [info.len]info.child = value;
                     return self.write(&array);
                 },
-                else => @compileError("Unable to stringify type '" ++ @typeName(T) ++ "'"),
+                else => @compileerror("Unable to stringify type '" ++ @typename(T) ++ "'"),
             }
             unreachable;
         }
@@ -605,8 +605,8 @@ fn outputUnicodeEscape(codepoint: u21, out_stream: anytype) !void {
         assert(codepoint <= 0x10FFFF);
         // To escape an extended character that is not in the Basic Multilingual Plane,
         // the character is represented as a 12-character sequence, encoding the UTF-16 surrogate pair.
-        const high = @as(u16, @intCast((codepoint - 0x10000) >> 10)) + 0xD800;
-        const low = @as(u16, @intCast(codepoint & 0x3FF)) + 0xDC00;
+        const high = @as(u16, @intcast((codepoint - 0x10000) >> 10)) + 0xD800;
+        const low = @as(u16, @intcast(codepoint & 0x3FF)) + 0xDC00;
         try out_stream.writeAll("\\u");
         try std.fmt.formatIntValue(high, "x", std.fmt.FormatOptions{ .width = 4, .fill = '0' }, out_stream);
         try out_stream.writeAll("\\u");

@@ -1,6 +1,6 @@
-const c = @cImport({
-    @cDefine("_NO_CRT_STDIO_INLINE", "1");
-    @cInclude("stdio.h");
+const c = @cimport({
+    @cdefine("_NO_CRT_STDIO_INLINE", "1");
+    @cinclude("stdio.h");
 });
 pub fn main() void {
     _ = c;

@@ -171,7 +171,7 @@ pub const Instruction = struct {
             _ = unused_format_string;
             _ = options;
             _ = writer;
-            @compileError("do not format Operand directly; use fmtPrint() instead");
+            @compileerror("do not format Operand directly; use fmtPrint() instead");
         }
 
         const FormatContext = struct {
@@ -191,7 +191,7 @@ pub const Instruction = struct {
             const enc_op = ctx.enc_op;
             switch (op) {
                 .none => {},
-                .reg => |reg| try writer.writeAll(@tagName(reg)),
+                .reg => |reg| try writer.writeAll(@tagname(reg)),
                 .mem => |mem| switch (mem) {
                     .rip => |rip| {
                         try writer.print("{} [rip", .{rip.ptr_size});
@@ -205,7 +205,7 @@ pub const Instruction = struct {
                         try writer.print("{} ", .{sib.ptr_size});
 
                         if (mem.isSegmentRegister()) {
-                            return writer.print("{s}:0x{x}", .{ @tagName(sib.base.reg), sib.disp });
+                            return writer.print("{s}:0x{x}", .{ @tagname(sib.base.reg), sib.disp });
                         }
 
                         try writer.writeByte('[');
@@ -214,7 +214,7 @@ pub const Instruction = struct {
                         switch (sib.base) {
                             .none => {},
                             .reg => |reg| {
-                                try writer.print("{s}", .{@tagName(reg)});
+                                try writer.print("{s}", .{@tagname(reg)});
                                 any = true;
                             },
                             inline .frame, .reloc => |payload| {
@@ -224,7 +224,7 @@ pub const Instruction = struct {
                         }
                         if (mem.scaleIndex()) |si| {
                             if (any) try writer.writeAll(" + ");
-                            try writer.print("{s} * {d}", .{ @tagName(si.index), si.scale });
+                            try writer.print("{s} * {d}", .{ @tagname(si.index), si.scale });
                             any = true;
                         }
                         if (sib.disp != 0 or !any) {
@@ -239,7 +239,7 @@ pub const Instruction = struct {
                         try writer.writeByte(']');
                     },
                     .moffs => |moffs| try writer.print("{s}:0x{x}", .{
-                        @tagName(moffs.seg),
+                        @tagname(moffs.seg),
                         moffs.offset,
                     }),
                 },
@@ -259,12 +259,12 @@ pub const Instruction = struct {
     pub fn new(prefix: Prefix, mnemonic: Mnemonic, ops: []const Operand) !Instruction {
         const encoding = (try Encoding.findByMnemonic(prefix, mnemonic, ops)) orelse {
             log.err("no encoding found for: {s} {s} {s} {s} {s} {s}", .{
-                @tagName(prefix),
-                @tagName(mnemonic),
-                @tagName(if (ops.len > 0) Encoding.Op.fromOperand(ops[0]) else .none),
-                @tagName(if (ops.len > 1) Encoding.Op.fromOperand(ops[1]) else .none),
-                @tagName(if (ops.len > 2) Encoding.Op.fromOperand(ops[2]) else .none),
-                @tagName(if (ops.len > 3) Encoding.Op.fromOperand(ops[3]) else .none),
+                @tagname(prefix),
+                @tagname(mnemonic),
+                @tagname(if (ops.len > 0) Encoding.Op.fromOperand(ops[0]) else .none),
+                @tagname(if (ops.len > 1) Encoding.Op.fromOperand(ops[1]) else .none),
+                @tagname(if (ops.len > 2) Encoding.Op.fromOperand(ops[2]) else .none),
+                @tagname(if (ops.len > 3) Encoding.Op.fromOperand(ops[3]) else .none),
             });
             return error.InvalidInstruction;
         };
@@ -287,8 +287,8 @@ pub const Instruction = struct {
     ) @TypeOf(writer).Error!void {
         _ = unused_format_string;
         _ = options;
-        if (inst.prefix != .none) try writer.print("{s} ", .{@tagName(inst.prefix)});
-        try writer.print("{s}", .{@tagName(inst.encoding.mnemonic)});
+        if (inst.prefix != .none) try writer.print("{s} ", .{@tagname(inst.prefix)});
+        try writer.print("{s}", .{@tagname(inst.encoding.mnemonic)});
         for (inst.ops, inst.encoding.data.ops, 0..) |op, enc, i| {
             if (op == .none) break;
             if (i > 0) try writer.writeByte(',');
@@ -363,7 +363,7 @@ pub const Instruction = struct {
 
     fn encodeOpcode(inst: Instruction, encoder: anytype) !void {
         const opcode = inst.encoding.opcode();
-        const first = @intFromBool(inst.encoding.mandatoryPrefix() != null);
+        const first = @intfrombool(inst.encoding.mandatoryPrefix() != null);
         const final = opcode.len - 1;
         for (opcode[first..final]) |byte| try encoder.opcode_1byte(byte);
         switch (inst.encoding.data.op_en) {
@@ -609,9 +609,9 @@ pub const Instruction = struct {
     fn encodeImm(imm: Immediate, kind: Encoding.Op, encoder: anytype) !void {
         const raw = imm.asUnsigned(kind.immBitSize());
         switch (kind.immBitSize()) {
-            8 => try encoder.imm8(@as(u8, @intCast(raw))),
-            16 => try encoder.imm16(@as(u16, @intCast(raw))),
-            32 => try encoder.imm32(@as(u32, @intCast(raw))),
+            8 => try encoder.imm8(@as(u8, @intcast(raw))),
+            16 => try encoder.imm16(@as(u16, @intcast(raw))),
+            32 => try encoder.imm32(@as(u32, @intcast(raw))),
             64 => try encoder.imm64(raw),
             else => unreachable,
         }
@@ -681,7 +681,7 @@ fn Encoder(comptime T: type, comptime opts: Options) type {
 
         /// Encodes legacy prefixes
         pub fn legacyPrefixes(self: Self, prefixes: LegacyPrefixes) !void {
-            if (@as(u16, @bitCast(prefixes)) != 0) {
+            if (@as(u16, @bitcast(prefixes)) != 0) {
                 // Hopefully this path isn't taken very often, so we'll do it the slow way for now
 
                 // LOCK
@@ -747,25 +747,25 @@ fn Encoder(comptime T: type, comptime opts: Options) type {
                 try self.writer.writeByte(0b1100_0100);
 
                 try self.writer.writeByte(
-                    @as(u8, ~@intFromBool(fields.r)) << 7 |
-                        @as(u8, ~@intFromBool(fields.x)) << 6 |
-                        @as(u8, ~@intFromBool(fields.b)) << 5 |
-                        @as(u8, @intFromEnum(fields.m)) << 0,
+                    @as(u8, ~@intfrombool(fields.r)) << 7 |
+                        @as(u8, ~@intfrombool(fields.x)) << 6 |
+                        @as(u8, ~@intfrombool(fields.b)) << 5 |
+                        @as(u8, @intfromenum(fields.m)) << 0,
                 );
 
                 try self.writer.writeByte(
-                    @as(u8, @intFromBool(fields.w)) << 7 |
+                    @as(u8, @intfrombool(fields.w)) << 7 |
                         @as(u8, ~fields.v.enc()) << 3 |
-                        @as(u8, @intFromBool(fields.l)) << 2 |
-                        @as(u8, @intFromEnum(fields.p)) << 0,
+                        @as(u8, @intfrombool(fields.l)) << 2 |
+                        @as(u8, @intfromenum(fields.p)) << 0,
                 );
             } else {
                 try self.writer.writeByte(0b1100_0101);
                 try self.writer.writeByte(
-                    @as(u8, ~@intFromBool(fields.r)) << 7 |
+                    @as(u8, ~@intfrombool(fields.r)) << 7 |
                         @as(u8, ~fields.v.enc()) << 3 |
-                        @as(u8, @intFromBool(fields.l)) << 2 |
-                        @as(u8, @intFromEnum(fields.p)) << 0,
+                        @as(u8, @intfrombool(fields.l)) << 2 |
+                        @as(u8, @intfromenum(fields.p)) << 0,
                 );
             }
         }
@@ -991,7 +991,7 @@ fn Encoder(comptime T: type, comptime opts: Options) type {
         ///
         /// It is sign-extended to 64 bits by the cpu.
         pub fn disp8(self: Self, disp: i8) !void {
-            try self.writer.writeByte(@as(u8, @bitCast(disp)));
+            try self.writer.writeByte(@as(u8, @bitcast(disp)));
         }
 
         /// Encode an 32 bit displacement
@@ -2183,7 +2183,7 @@ const Assembler = struct {
     }
 
     fn mnemonicFromString(bytes: []const u8) ?Instruction.Mnemonic {
-        const ti = @typeInfo(Instruction.Mnemonic).Enum;
+        const ti = @typeinfo(Instruction.Mnemonic).Enum;
         inline for (ti.fields) |field| {
             if (std.mem.eql(u8, bytes, field.name)) {
                 return @field(Instruction.Mnemonic, field.name);
@@ -2199,8 +2199,8 @@ const Assembler = struct {
                 _ = try as.expect(.comma);
                 try as.skip(1, .{.space});
             }
-            if (@typeInfo(@TypeOf(cond)) != .EnumLiteral) {
-                @compileError("invalid condition in the rule: " ++ @typeName(@TypeOf(cond)));
+            if (@typeinfo(@TypeOf(cond)) != .EnumLiteral) {
+                @compileerror("invalid condition in the rule: " ++ @typename(@TypeOf(cond)));
             }
             switch (cond) {
                 .register => {
@@ -2222,7 +2222,7 @@ const Assembler = struct {
                     } else .{ .unsigned = try std.fmt.parseInt(u64, as.source(imm_tok), 0) };
                     ops[i] = .{ .imm = imm };
                 },
-                else => @compileError("unhandled enum literal " ++ @tagName(cond)),
+                else => @compileerror("unhandled enum literal " ++ @tagname(cond)),
             }
             try as.skip(1, .{.space});
         }
@@ -2236,7 +2236,7 @@ const Assembler = struct {
     }
 
     fn registerFromString(bytes: []const u8) ?Register {
-        const ti = @typeInfo(Register).Enum;
+        const ti = @typeinfo(Register).Enum;
         inline for (ti.fields) |field| {
             if (std.mem.eql(u8, bytes, field.name)) {
                 return @field(Register, field.name);
@@ -2326,8 +2326,8 @@ const Assembler = struct {
     fn parseMemoryRule(as: *Assembler, rule: anytype) ParseError!Instruction.MemoryParseResult {
         var res: MemoryParseResult = .{};
         inline for (rule, 0..) |cond, i| {
-            if (@typeInfo(@TypeOf(cond)) != .EnumLiteral) {
-                @compileError("unsupported condition type in the rule: " ++ @typeName(@TypeOf(cond)));
+            if (@typeinfo(@TypeOf(cond)) != .EnumLiteral) {
+                @compileerror("unsupported condition type in the rule: " ++ @typename(@TypeOf(cond)));
             }
             switch (cond) {
                 .open_br, .close_br, .plus, .minus, .star, .colon => {
@@ -2383,7 +2383,7 @@ const Assembler = struct {
                         else => return err,
                     }
                 },
-                else => @compileError("unhandled operand output type: " ++ @tagName(cond)),
+                else => @compileerror("unhandled operand output type: " ++ @tagname(cond)),
             }
             try as.skip(1, .{.space});
         }
@@ -2587,7 +2587,7 @@ test "assemble - Jcc" {
     };
 
     inline for (&mnemonics) |mnemonic| {
-        const input = @tagName(mnemonic[0]) ++ " 0x0";
+        const input = @tagname(mnemonic[0]) ++ " 0x0";
         const expected = [_]u8{ 0x0f, mnemonic[1], 0x0, 0x0, 0x0, 0x0 };
         var as = Assembler.init(input);
         var output = std.ArrayList(u8).init(testing.allocator);
@@ -2632,7 +2632,7 @@ test "assemble - SETcc" {
     };
 
     inline for (&mnemonics) |mnemonic| {
-        const input = @tagName(mnemonic[0]) ++ " al";
+        const input = @tagname(mnemonic[0]) ++ " al";
         const expected = [_]u8{ 0x0f, mnemonic[1], 0xC0 };
         var as = Assembler.init(input);
         var output = std.ArrayList(u8).init(testing.allocator);
@@ -2677,7 +2677,7 @@ test "assemble - CMOVcc" {
     };
 
     inline for (&mnemonics) |mnemonic| {
-        const input = @tagName(mnemonic[0]) ++ " rax, rbx";
+        const input = @tagname(mnemonic[0]) ++ " rax, rbx";
         const expected = [_]u8{ 0x48, 0x0f, mnemonic[1], 0xC3 };
         var as = Assembler.init(input);
         var output = std.ArrayList(u8).init(testing.allocator);

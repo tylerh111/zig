@@ -21,8 +21,8 @@ comptime {
 }
 
 pub fn __mulsi3(a: i32, b: i32) callconv(.C) i32 {
-    var ua: u32 = @bitCast(a);
-    var ub: u32 = @bitCast(b);
+    var ua: u32 = @bitcast(a);
+    var ub: u32 = @bitcast(b);
     var r: u32 = 0;
 
     while (ua > 0) {
@@ -31,7 +31,7 @@ pub fn __mulsi3(a: i32, b: i32) callconv(.C) i32 {
         ub <<= 1;
     }
 
-    return @bitCast(r);
+    return @bitcast(r);
 }
 
 pub fn __muldi3(a: i64, b: i64) callconv(.C) i64 {
@@ -67,7 +67,7 @@ fn DoubleInt(comptime T: type) type {
 fn muldXi(comptime T: type, a: T, b: T) DoubleInt(T) {
     const DT = DoubleInt(T);
     const word_t = common.HalveInt(DT, false);
-    const bits_in_word_2 = @sizeOf(T) * 8 / 2;
+    const bits_in_word_2 = @sizeof(T) * 8 / 2;
     const lower_mask = (~@as(T, 0)) >> bits_in_word_2;
 
     var r: word_t = undefined;
@@ -93,7 +93,7 @@ pub fn __multi3(a: i128, b: i128) callconv(.C) i128 {
 const v2u64 = @Vector(2, u64);
 
 fn __multi3_windows_x86_64(a: v2u64, b: v2u64) callconv(.C) v2u64 {
-    return @bitCast(mulX(i128, @as(i128, @bitCast(a)), @as(i128, @bitCast(b))));
+    return @bitcast(mulX(i128, @as(i128, @bitcast(a)), @as(i128, @bitcast(b))));
 }
 
 test {

@@ -43,7 +43,7 @@ pub fn mul(a: CompressedScalar, b: CompressedScalar, endian: std.builtin.Endian)
 }
 
 /// Return a*b+c (mod L)
-pub fn mulAdd(a: CompressedScalar, b: CompressedScalar, c: CompressedScalar, endian: std.builtin.Endian) NonCanonicalError!CompressedScalar {
+pub fn muladd(a: CompressedScalar, b: CompressedScalar, c: CompressedScalar, endian: std.builtin.Endian) NonCanonicalError!CompressedScalar {
     return (try Scalar.fromBytes(a, endian)).mul(try Scalar.fromBytes(b, endian)).add(try Scalar.fromBytes(c, endian)).toBytes(endian);
 }
 

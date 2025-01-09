@@ -22,14 +22,14 @@ comptime {
 // TODO also note, ReactOS has a +1 on StartAddressOfRawData and AddressOfCallBacks. Investigate
 // why they do that.
 //export const _tls_used linksection(".rdata$T") = std.os.windows.IMAGE_TLS_DIRECTORY {
-//    .StartAddressOfRawData = @intFromPtr(&_tls_start),
-//    .EndAddressOfRawData = @intFromPtr(&_tls_end),
-//    .AddressOfIndex = @intFromPtr(&_tls_index),
-//    .AddressOfCallBacks = @intFromPtr(__xl_a),
+//    .StartAddressOfRawData = @intfromptr(&_tls_start),
+//    .EndAddressOfRawData = @intfromptr(&_tls_end),
+//    .AddressOfIndex = @intfromptr(&_tls_index),
+//    .AddressOfCallBacks = @intfromptr(__xl_a),
 //    .SizeOfZeroFill = 0,
 //    .Characteristics = 0,
 //};
-// This is the workaround because we can't do @intFromPtr at comptime like that.
+// This is the workaround because we can't do @intfromptr at comptime like that.
 pub const IMAGE_TLS_DIRECTORY = extern struct {
     StartAddressOfRawData: *anyopaque,
     EndAddressOfRawData: *anyopaque,
@@ -42,7 +42,7 @@ export const _tls_used linksection(".rdata$T") = IMAGE_TLS_DIRECTORY{
     .StartAddressOfRawData = &_tls_start,
     .EndAddressOfRawData = &_tls_end,
     .AddressOfIndex = &_tls_index,
-    .AddressOfCallBacks = @as(*anyopaque, @ptrCast(&__xl_a)),
+    .AddressOfCallBacks = @as(*anyopaque, @ptrcast(&__xl_a)),
     .SizeOfZeroFill = 0,
     .Characteristics = 0,
 };

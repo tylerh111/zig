@@ -12,7 +12,7 @@ fn parse(comptime T: type, allocator: std.mem.Allocator) !void {
 }
 
 fn parseFree(comptime T: type, value: T, allocator: std.mem.Allocator) void {
-    switch (@typeInfo(T)) {
+    switch (@typeinfo(T)) {
         .Struct => |structInfo| {
             inline for (structInfo.fields) |field| {
                 if (!field.is_comptime)

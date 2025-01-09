@@ -22,7 +22,7 @@ const KeyAdapter = struct {
 
     pub fn eql(adapter: KeyAdapter, a: Key, b_void: void, b_map_index: usize) bool {
         _ = b_void;
-        return adapter.interner.get(@as(Ref, @enumFromInt(b_map_index))).eql(a);
+        return adapter.interner.get(@as(Ref, @enumfromint(b_map_index))).eql(a);
     }
 
     pub fn hash(adapter: KeyAdapter, a: Key) u32 {
@@ -86,7 +86,7 @@ pub const Key = union(enum) {
             .float => |repr| switch (repr) {
                 inline else => |data| std.hash.autoHash(
                     &hasher,
-                    @as(std.meta.Int(.unsigned, @bitSizeOf(@TypeOf(data))), @bitCast(data)),
+                    @as(std.meta.Int(.unsigned, @bitsizeof(@TypeOf(data))), @bitcast(data)),
                 ),
             },
             .int => |repr| {
@@ -129,7 +129,7 @@ pub const Key = union(enum) {
                 return a_big.eql(b_big);
             },
             inline else => |a_info, tag| {
-                const b_info = @field(b, @tagName(tag));
+                const b_info = @field(b, @tagname(tag));
                 return std.meta.eql(a_info, b_info);
             },
         }
@@ -285,7 +285,7 @@ pub const Tag = enum(u8) {
         pub const BigIntSpace = struct {
             /// The +1 is headroom so that operations such as incrementing once
             /// or decrementing once are possible without using an allocator.
-            limbs: [(@sizeOf(u64) / @sizeOf(std.math.big.Limb)) + 1]std.math.big.Limb,
+            limbs: [(@sizeof(u64) / @sizeof(std.math.big.Limb)) + 1]std.math.big.Limb,
         };
     };
 
@@ -295,11 +295,11 @@ pub const Tag = enum(u8) {
 
         pub fn get(self: F64) f64 {
             const int_bits = @as(u64, self.piece0) | (@as(u64, self.piece1) << 32);
-            return @bitCast(int_bits);
+            return @bitcast(int_bits);
         }
 
         fn pack(val: f64) F64 {
-            const bits = @as(u64, @bitCast(val));
+            const bits = @as(u64, @bitcast(val));
             return .{
                 .piece0 = @as(u32, @truncate(bits)),
                 .piece1 = @as(u32, @truncate(bits >> 32)),
@@ -316,11 +316,11 @@ pub const Tag = enum(u8) {
             const int_bits = @as(u80, self.piece0) |
                 (@as(u80, self.piece1) << 32) |
                 (@as(u80, self.piece2) << 64);
-            return @bitCast(int_bits);
+            return @bitcast(int_bits);
         }
 
         fn pack(val: f80) F80 {
-            const bits = @as(u80, @bitCast(val));
+            const bits = @as(u80, @bitcast(val));
             return .{
                 .piece0 = @as(u32, @truncate(bits)),
                 .piece1 = @as(u32, @truncate(bits >> 32)),
@@ -340,11 +340,11 @@ pub const Tag = enum(u8) {
                 (@as(u128, self.piece1) << 32) |
                 (@as(u128, self.piece2) << 64) |
                 (@as(u128, self.piece3) << 96);
-            return @bitCast(int_bits);
+            return @bitcast(int_bits);
         }
 
         fn pack(val: f128) F128 {
-            const bits = @as(u128, @bitCast(val));
+            const bits = @as(u128, @bitcast(val));
             return .{
                 .piece0 = @as(u32, @truncate(bits)),
                 .piece1 = @as(u32, @truncate(bits >> 32)),
@@ -371,11 +371,11 @@ pub const PackedU64 = packed struct(u64) {
     b: u32,
 
     pub fn get(x: PackedU64) u64 {
-        return @bitCast(x);
+        return @bitcast(x);
     }
 
     pub fn init(x: u64) PackedU64 {
-        return @bitCast(x);
+        return @bitcast(x);
     }
 };
 
@@ -391,7 +391,7 @@ pub fn put(i: *Interner, gpa: Allocator, key: Key) !Ref {
     if (key.toRef()) |some| return some;
     const adapter: KeyAdapter = .{ .interner = i };
     const gop = try i.map.getOrPutAdapted(gpa, key, adapter);
-    if (gop.found_existing) return @enumFromInt(gop.index);
+    if (gop.found_existing) return @enumfromint(gop.index);
     try i.items.ensureUnusedCapacity(gpa, 1);
 
     switch (key) {
@@ -441,7 +441,7 @@ pub fn put(i: *Interner, gpa: Allocator, key: Key) !Ref {
                 .i64 => |data| if (std.math.cast(i32, data)) |small| {
                     i.items.appendAssumeCapacity(.{
                         .tag = .i32,
-                        .data = @bitCast(small),
+                        .data = @bitcast(small),
                     });
                     break :int;
                 },
@@ -455,30 +455,30 @@ pub fn put(i: *Interner, gpa: Allocator, key: Key) !Ref {
                     } else if (data.fitsInTwosComp(.signed, 32)) {
                         i.items.appendAssumeCapacity(.{
                             .tag = .i32,
-                            .data = @bitCast(data.to(i32) catch unreachable),
+                            .data = @bitcast(data.to(i32) catch unreachable),
                         });
                         break :int;
                     }
                 },
             }
-            const limbs_index: u32 = @intCast(i.limbs.items.len);
+            const limbs_index: u32 = @intcast(i.limbs.items.len);
             try i.limbs.appendSlice(gpa, big.limbs);
             i.items.appendAssumeCapacity(.{
                 .tag = if (big.positive) .int_positive else .int_negative,
                 .data = try i.addExtra(gpa, Tag.Int{
                     .limbs_index = limbs_index,
-                    .limbs_len = @intCast(big.limbs.len),
+                    .limbs_len = @intcast(big.limbs.len),
                 }),
             });
         },
         .float => |repr| switch (repr) {
             .f16 => |data| i.items.appendAssumeCapacity(.{
                 .tag = .f16,
-                .data = @as(u16, @bitCast(data)),
+                .data = @as(u16, @bitcast(data)),
             }),
             .f32 => |data| i.items.appendAssumeCapacity(.{
                 .tag = .f32,
-                .data = @as(u32, @bitCast(data)),
+                .data = @as(u32, @bitcast(data)),
             }),
             .f64 => |data| i.items.appendAssumeCapacity(.{
                 .tag = .f64,
@@ -494,26 +494,26 @@ pub fn put(i: *Interner, gpa: Allocator, key: Key) !Ref {
             }),
         },
         .bytes => |bytes| {
-            const strings_index: u32 = @intCast(i.strings.items.len);
+            const strings_index: u32 = @intcast(i.strings.items.len);
             try i.strings.appendSlice(gpa, bytes);
             i.items.appendAssumeCapacity(.{
                 .tag = .bytes,
                 .data = try i.addExtra(gpa, Tag.Bytes{
                     .strings_index = strings_index,
-                    .len = @intCast(bytes.len),
+                    .len = @intcast(bytes.len),
                 }),
             });
         },
         .record_ty => |elems| {
-            try i.extra.ensureUnusedCapacity(gpa, @typeInfo(Tag.Record).Struct.fields.len +
+            try i.extra.ensureUnusedCapacity(gpa, @typeinfo(Tag.Record).Struct.fields.len +
                 elems.len);
             i.items.appendAssumeCapacity(.{
                 .tag = .record_ty,
                 .data = i.addExtraAssumeCapacity(Tag.Record{
-                    .elements_len = @intCast(elems.len),
+                    .elements_len = @intcast(elems.len),
                 }),
             });
-            i.extra.appendSliceAssumeCapacity(@ptrCast(elems));
+            i.extra.appendSliceAssumeCapacity(@ptrcast(elems));
         },
         .ptr_ty,
         .noreturn_ty,
@@ -523,22 +523,22 @@ pub fn put(i: *Interner, gpa: Allocator, key: Key) !Ref {
         => unreachable,
     }
 
-    return @enumFromInt(gop.index);
+    return @enumfromint(gop.index);
 }
 
 fn addExtra(i: *Interner, gpa: Allocator, extra: anytype) Allocator.Error!u32 {
-    const fields = @typeInfo(@TypeOf(extra)).Struct.fields;
+    const fields = @typeinfo(@TypeOf(extra)).Struct.fields;
     try i.extra.ensureUnusedCapacity(gpa, fields.len);
     return i.addExtraAssumeCapacity(extra);
 }
 
 fn addExtraAssumeCapacity(i: *Interner, extra: anytype) u32 {
-    const result = @as(u32, @intCast(i.extra.items.len));
-    inline for (@typeInfo(@TypeOf(extra)).Struct.fields) |field| {
+    const result = @as(u32, @intcast(i.extra.items.len));
+    inline for (@typeinfo(@TypeOf(extra)).Struct.fields) |field| {
         i.extra.appendAssumeCapacity(switch (field.type) {
-            Ref => @intFromEnum(@field(extra, field.name)),
+            Ref => @intfromenum(@field(extra, field.name)),
             u32 => @field(extra, field.name),
-            else => @compileError("bad field type: " ++ @typeName(field.type)),
+            else => @compileerror("bad field type: " ++ @typename(field.type)),
         });
     }
     return result;
@@ -567,11 +567,11 @@ pub fn get(i: *const Interner, ref: Ref) Key {
         else => {},
     }
 
-    const item = i.items.get(@intFromEnum(ref));
+    const item = i.items.get(@intfromenum(ref));
     const data = item.data;
     return switch (item.tag) {
-        .int_ty => .{ .int_ty = @intCast(data) },
-        .float_ty => .{ .float_ty = @intCast(data) },
+        .int_ty => .{ .int_ty = @intcast(data) },
+        .float_ty => .{ .float_ty = @intcast(data) },
         .array_ty => {
             const array_ty = i.extraData(Tag.Array, data);
             return .{ .array_ty = .{
@@ -587,7 +587,7 @@ pub fn get(i: *const Interner, ref: Ref) Key {
             } };
         },
         .u32 => .{ .int = .{ .u64 = data } },
-        .i32 => .{ .int = .{ .i64 = @as(i32, @bitCast(data)) } },
+        .i32 => .{ .int = .{ .i64 = @as(i32, @bitcast(data)) } },
         .int_positive, .int_negative => {
             const int_info = i.extraData(Tag.Int, data);
             const limbs = i.limbs.items[int_info.limbs_index..][0..int_info.limbs_len];
@@ -598,8 +598,8 @@ pub fn get(i: *const Interner, ref: Ref) Key {
                 },
             } };
         },
-        .f16 => .{ .float = .{ .f16 = @bitCast(@as(u16, @intCast(data))) } },
-        .f32 => .{ .float = .{ .f32 = @bitCast(data) } },
+        .f16 => .{ .float = .{ .f16 = @bitcast(@as(u16, @intcast(data))) } },
+        .f32 => .{ .float = .{ .f32 = @bitcast(data) } },
         .f64 => {
             const float = i.extraData(Tag.F64, data);
             return .{ .float = .{ .f64 = float.get() } };
@@ -619,7 +619,7 @@ pub fn get(i: *const Interner, ref: Ref) Key {
         .record_ty => {
             const extra = i.extraDataTrail(Tag.Record, data);
             return .{
-                .record_ty = @ptrCast(i.extra.items[extra.end..][0..extra.data.elements_len]),
+                .record_ty = @ptrcast(i.extra.items[extra.end..][0..extra.data.elements_len]),
             };
         },
     };
@@ -631,17 +631,17 @@ fn extraData(i: *const Interner, comptime T: type, index: usize) T {
 
 fn extraDataTrail(i: *const Interner, comptime T: type, index: usize) struct { data: T, end: u32 } {
     var result: T = undefined;
-    const fields = @typeInfo(T).Struct.fields;
+    const fields = @typeinfo(T).Struct.fields;
     inline for (fields, 0..) |field, field_i| {
         const int32 = i.extra.items[field_i + index];
         @field(result, field.name) = switch (field.type) {
-            Ref => @enumFromInt(int32),
+            Ref => @enumfromint(int32),
             u32 => int32,
-            else => @compileError("bad field type: " ++ @typeName(field.type)),
+            else => @compileerror("bad field type: " ++ @typename(field.type)),
         };
     }
     return .{
         .data = result,
-        .end = @intCast(index + fields.len),
+        .end = @intcast(index + fields.len),
     };
 }

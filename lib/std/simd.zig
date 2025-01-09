@@ -11,7 +11,7 @@ const builtin = @import("builtin");
 pub fn suggestVectorLengthForCpu(comptime T: type, comptime cpu: std.Target.Cpu) ?comptime_int {
     // This is guesswork, if you have better suggestions can add it or edit the current here
     // This can run in comptime only, but stage 1 fails at it, stage 2 can understand it
-    const element_bit_size = @max(8, std.math.ceilPowerOfTwo(u16, @bitSizeOf(T)) catch unreachable);
+    const element_bit_size = @max(8, std.math.ceilPowerOfTwo(u16, @bitsizeof(T)) catch unreachable);
     const vector_bit_size: u16 = blk: {
         if (cpu.arch.isX86()) {
             if (T == bool and std.Target.x86.featureSetHas(cpu.features, .prefer_mask_registers)) return 64;
@@ -52,7 +52,7 @@ pub fn suggestVectorLengthForCpu(comptime T: type, comptime cpu: std.Target.Cpu)
     };
     if (vector_bit_size <= element_bit_size) return null;
 
-    return @divExact(vector_bit_size, element_bit_size);
+    return @divexact(vector_bit_size, element_bit_size);
 }
 
 /// Suggests a target-dependant vector length for a given type, or null if scalars are recommended.
@@ -63,7 +63,7 @@ pub fn suggestVectorLength(comptime T: type) ?comptime_int {
 
 test "suggestVectorLengthForCpu works with signed and unsigned values" {
     comptime var cpu = std.Target.Cpu.baseline(std.Target.Cpu.Arch.x86_64);
-    comptime cpu.features.addFeature(@intFromEnum(std.Target.x86.Feature.avx512f));
+    comptime cpu.features.addFeature(@intfromenum(std.Target.x86.Feature.avx512f));
     comptime cpu.features.populateDependencies(&std.Target.x86.all_features);
     const expected_len: usize = switch (builtin.zig_backend) {
         .stage2_x86_64 => 8,
@@ -76,10 +76,10 @@ test "suggestVectorLengthForCpu works with signed and unsigned values" {
 }
 
 fn vectorLength(comptime VectorType: type) comptime_int {
-    return switch (@typeInfo(VectorType)) {
+    return switch (@typeinfo(VectorType)) {
         .Vector => |info| info.len,
         .Array => |info| info.len,
-        else => @compileError("Invalid type " ++ @typeName(VectorType)),
+        else => @compileerror("Invalid type " ++ @typename(VectorType)),
     };
 }
 
@@ -99,10 +99,10 @@ pub inline fn iota(comptime T: type, comptime len: usize) @Vector(len, T) {
     comptime {
         var out: [len]T = undefined;
         for (&out, 0..) |*element, i| {
-            element.* = switch (@typeInfo(T)) {
-                .Int => @as(T, @intCast(i)),
-                .Float => @as(T, @floatFromInt(i)),
-                else => @compileError("Can't use type " ++ @typeName(T) ++ " in iota."),
+            element.* = switch (@typeinfo(T)) {
+                .Int => @as(T, @intcast(i)),
+                .Float => @as(T, @floatfromint(i)),
+                else => @compileerror("Can't use type " ++ @typename(T) ++ " in iota."),
             };
         }
         return @as(@Vector(len, T), out);
@@ -114,7 +114,7 @@ pub inline fn iota(comptime T: type, comptime len: usize) @Vector(len, T) {
 pub fn repeat(comptime len: usize, vec: anytype) @Vector(len, std.meta.Child(@TypeOf(vec))) {
     const Child = std.meta.Child(@TypeOf(vec));
 
-    return @shuffle(Child, vec, undefined, iota(i32, len) % @as(@Vector(len, i32), @splat(@intCast(vectorLength(@TypeOf(vec))))));
+    return @shuffle(Child, vec, undefined, iota(i32, len) % @as(@Vector(len, i32), @splat(@intcast(vectorLength(@TypeOf(vec))))));
 }
 
 /// Returns a vector containing all elements of the first vector at the lower indices followed by all elements of the second vector
@@ -135,7 +135,7 @@ pub fn interlace(vecs: anytype) @Vector(vectorLength(@TypeOf(vecs[0])) * vecs.le
     //  The indices are correct. The problem seems to be with the @shuffle builtin.
     //  On MIPS, the test that interlaces small_base gives { 0, 2, 0, 0, 64, 255, 248, 200, 0, 0 }.
     //  Calling this with two inputs seems to work fine, but I'll let the compile error trigger for all inputs, just to be safe.
-    comptime if (builtin.cpu.arch.isMIPS()) @compileError("TODO: Find out why interlace() doesn't work on MIPS");
+    comptime if (builtin.cpu.arch.isMIPS()) @compileerror("TODO: Find out why interlace() doesn't work on MIPS");
 
     const VecType = @TypeOf(vecs[0]);
     const vecs_arr = @as([vecs.len]VecType, vecs);
@@ -146,8 +146,8 @@ pub fn interlace(vecs: anytype) @Vector(vectorLength(@TypeOf(vecs[0])) * vecs.le
     const a_vec_count = (1 + vecs_arr.len) >> 1;
     const b_vec_count = vecs_arr.len >> 1;
 
-    const a = interlace(@as(*const [a_vec_count]VecType, @ptrCast(vecs_arr[0..a_vec_count])).*);
-    const b = interlace(@as(*const [b_vec_count]VecType, @ptrCast(vecs_arr[a_vec_count..])).*);
+    const a = interlace(@as(*const [a_vec_count]VecType, @ptrcast(vecs_arr[0..a_vec_count])).*);
+    const b = interlace(@as(*const [b_vec_count]VecType, @ptrcast(vecs_arr[a_vec_count..])).*);
 
     const a_len = vectorLength(@TypeOf(a));
     const b_len = vectorLength(@TypeOf(b));
@@ -156,10 +156,10 @@ pub fn interlace(vecs: anytype) @Vector(vectorLength(@TypeOf(vecs[0])) * vecs.le
     const indices = comptime blk: {
         const Vi32 = @Vector(len, i32);
         const count_up = iota(i32, len);
-        const cycle = @divFloor(count_up, @as(Vi32, @splat(@intCast(vecs_arr.len))));
+        const cycle = @divfloor(count_up, @as(Vi32, @splat(@intcast(vecs_arr.len))));
         const select_mask = repeat(len, join(@as(@Vector(a_vec_count, bool), @splat(true)), @as(@Vector(b_vec_count, bool), @splat(false))));
-        const a_indices = count_up - cycle * @as(Vi32, @splat(@intCast(b_vec_count)));
-        const b_indices = shiftElementsRight(count_up - cycle * @as(Vi32, @splat(@intCast(a_vec_count))), a_vec_count, 0);
+        const a_indices = count_up - cycle * @as(Vi32, @splat(@intcast(b_vec_count)));
+        const b_indices = shiftElementsRight(count_up - cycle * @as(Vi32, @splat(@intcast(a_vec_count))), a_vec_count, 0);
         break :blk @select(i32, select_mask, a_indices, ~b_indices);
     };
 
@@ -182,7 +182,7 @@ pub fn deinterlace(
 
     comptime var i: usize = 0; // for-loops don't work for this, apparently.
     inline while (i < out.len) : (i += 1) {
-        const indices = comptime iota(i32, vec_len) * @as(@Vector(vec_len, i32), @splat(@intCast(vec_count))) + @as(@Vector(vec_len, i32), @splat(@intCast(i)));
+        const indices = comptime iota(i32, vec_len) * @as(@Vector(vec_len, i32), @splat(@intcast(vec_count))) + @as(@Vector(vec_len, i32), @splat(@intcast(i)));
         out[i] = @shuffle(Child, interlaced, undefined, indices);
     }
 
@@ -197,9 +197,9 @@ pub fn extract(
     const Child = std.meta.Child(@TypeOf(vec));
     const len = vectorLength(@TypeOf(vec));
 
-    std.debug.assert(@as(comptime_int, @intCast(first)) + @as(comptime_int, @intCast(count)) <= len);
+    std.debug.assert(@as(comptime_int, @intcast(first)) + @as(comptime_int, @intcast(count)) <= len);
 
-    return @shuffle(Child, vec, undefined, iota(i32, count) + @as(@Vector(count, i32), @splat(@intCast(first))));
+    return @shuffle(Child, vec, undefined, iota(i32, count) + @as(@Vector(count, i32), @splat(@intcast(first))));
 }
 
 test "vector patterns" {
@@ -275,7 +275,7 @@ pub fn reverseOrder(vec: anytype) @TypeOf(vec) {
     const Child = std.meta.Child(@TypeOf(vec));
     const len = vectorLength(@TypeOf(vec));
 
-    return @shuffle(Child, vec, undefined, @as(@Vector(len, i32), @splat(@as(i32, @intCast(len)) - 1)) - iota(i32, len));
+    return @shuffle(Child, vec, undefined, @as(@Vector(len, i32), @splat(@as(i32, @intcast(len)) - 1)) - iota(i32, len));
 }
 
 test "vector shifting" {
@@ -367,11 +367,11 @@ pub fn prefixScanWithFunc(
     comptime identity: std.meta.Child(@TypeOf(vec)),
 ) if (ErrorType == void) @TypeOf(vec) else ErrorType!@TypeOf(vec) {
     // I haven't debugged this, but it might be a cousin of sorts to what's going on with interlace.
-    comptime if (builtin.cpu.arch.isMIPS()) @compileError("TODO: Find out why prefixScan doesn't work on MIPS");
+    comptime if (builtin.cpu.arch.isMIPS()) @compileerror("TODO: Find out why prefixScan doesn't work on MIPS");
 
     const len = vectorLength(@TypeOf(vec));
 
-    if (hop == 0) @compileError("hop can not be 0; you'd be going nowhere forever!");
+    if (hop == 0) @compileerror("hop can not be 0; you'd be going nowhere forever!");
     const abs_hop = if (hop < 0) -hop else hop;
 
     var acc = vec;
@@ -393,11 +393,11 @@ pub fn prefixScan(comptime op: std.builtin.ReduceOp, comptime hop: isize, vec: a
     const VecType = @TypeOf(vec);
     const Child = std.meta.Child(VecType);
 
-    const identity = comptime switch (@typeInfo(Child)) {
+    const identity = comptime switch (@typeinfo(Child)) {
         .Bool => switch (op) {
             .Or, .Xor => false,
             .And => true,
-            else => @compileError("Invalid prefixScan operation " ++ @tagName(op) ++ " for vector of booleans."),
+            else => @compileerror("Invalid prefixScan operation " ++ @tagname(op) ++ " for vector of booleans."),
         },
         .Int => switch (op) {
             .Max => std.math.minInt(Child),
@@ -410,9 +410,9 @@ pub fn prefixScan(comptime op: std.builtin.ReduceOp, comptime hop: isize, vec: a
             .Add => 0,
             .Mul => 1,
             .Min => std.math.inf(Child),
-            else => @compileError("Invalid prefixScan operation " ++ @tagName(op) ++ " for vector of floats."),
+            else => @compileerror("Invalid prefixScan operation " ++ @tagname(op) ++ " for vector of floats."),
         },
-        else => @compileError("Invalid type " ++ @typeName(VecType) ++ " for prefixScan."),
+        else => @compileerror("Invalid type " ++ @typename(VecType) ++ " for prefixScan."),
     };
 
     const fn_container = struct {

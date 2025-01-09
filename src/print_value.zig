@@ -69,7 +69,7 @@ pub fn print(
             .void => try writer.writeAll("{}"),
             .empty_struct => try writer.writeAll(".{}"),
             .generic_poison => try writer.writeAll("(generic poison)"),
-            else => try writer.writeAll(@tagName(simple_value)),
+            else => try writer.writeAll(@tagname(simple_value)),
         },
         .variable => try writer.writeAll("(variable)"),
         .extern_func => |extern_func| try writer.print("(extern function '{}')", .{
@@ -83,11 +83,11 @@ pub fn print(
             .lazy_align => |ty| if (opt_sema) |sema| {
                 const a = (try Type.fromInterned(ty).abiAlignmentAdvanced(mod, .{ .sema = sema })).scalar;
                 try writer.print("{}", .{a.toByteUnits() orelse 0});
-            } else try writer.print("@alignOf({})", .{Type.fromInterned(ty).fmt(mod)}),
+            } else try writer.print("@alignof({})", .{Type.fromInterned(ty).fmt(mod)}),
             .lazy_size => |ty| if (opt_sema) |sema| {
                 const s = (try Type.fromInterned(ty).abiSizeAdvanced(mod, .{ .sema = sema })).scalar;
                 try writer.print("{}", .{s});
-            } else try writer.print("@sizeOf({})", .{Type.fromInterned(ty).fmt(mod)}),
+            } else try writer.print("@sizeof({})", .{Type.fromInterned(ty).fmt(mod)}),
         },
         .err => |err| try writer.print("error.{}", .{
             err.name.fmt(ip),
@@ -107,15 +107,15 @@ pub fn print(
                 return writer.print(".{i}", .{enum_type.names.get(ip)[tag_index].fmt(ip)});
             }
             if (level == 0) {
-                return writer.writeAll("@enumFromInt(...)");
+                return writer.writeAll("@enumfromint(...)");
             }
-            try writer.writeAll("@enumFromInt(");
+            try writer.writeAll("@enumfromint(");
             try print(Value.fromInterned(enum_tag.int), writer, level - 1, mod, opt_sema);
             try writer.writeAll(")");
         },
         .empty_enum_value => try writer.writeAll("(empty enum value)"),
         .float => |float| switch (float.storage) {
-            inline else => |x| try writer.print("{d}", .{@as(f64, @floatCast(x))}),
+            inline else => |x| try writer.print("{d}", .{@as(f64, @floatcast(x))}),
         },
         .slice => |slice| {
             const print_contents = switch (ip.getBackingAddrTag(slice.ptr).?) {
@@ -160,7 +160,7 @@ pub fn print(
             }
             if (un.tag == .none) {
                 const backing_ty = try val.typeOf(mod).unionBackingType(mod);
-                try writer.print("@bitCast(@as({}, ", .{backing_ty.fmt(mod)});
+                try writer.print("@bitcast(@as({}, ", .{backing_ty.fmt(mod)});
                 try print(Value.fromInterned(un.val), writer, level - 1, mod, opt_sema);
                 try writer.writeAll("))");
             } else {
@@ -200,7 +200,7 @@ fn printAggregate(
             const max_len = @min(ty.structFieldCount(zcu), max_aggregate_items);
             for (0..max_len) |i| {
                 if (i != 0) try writer.writeAll(", ");
-                const field_name = ty.structFieldName(@intCast(i), zcu).unwrap().?;
+                const field_name = ty.structFieldName(@intcast(i), zcu).unwrap().?;
                 try writer.print(".{i} = ", .{field_name.fmt(ip)});
                 try print(try val.fieldValue(zcu, i), writer, level - 1, zcu, opt_sema);
             }
@@ -230,7 +230,7 @@ fn printAggregate(
                     const elem_val = Value.fromInterned(aggregate.storage.values()[0]);
                     if (elem_val.isUndef(zcu)) break :one_byte_str;
                     const byte = elem_val.toUnsignedInt(zcu);
-                    try writer.print("\"{}\"", .{std.zig.fmtEscapes(&.{@intCast(byte)})});
+                    try writer.print("\"{}\"", .{std.zig.fmtEscapes(&.{@intcast(byte)})});
                     if (!is_ref) try writer.writeAll(".*");
                     return;
                 },
@@ -293,7 +293,7 @@ fn printPtr(ptr_val: Value, writer: anytype, level: u8, zcu: *Zcu, opt_sema: ?*S
 fn printPtrDerivation(derivation: Value.PointerDeriveStep, writer: anytype, level: u8, zcu: *Zcu, opt_sema: ?*Sema) (@TypeOf(writer).Error || Module.CompileError)!void {
     const ip = &zcu.intern_pool;
     switch (derivation) {
-        .int => |int| try writer.print("@as({}, @ptrFromInt({x})).*", .{
+        .int => |int| try writer.print("@as({}, @ptrfromint({x})).*", .{
             int.ptr_ty.fmt(zcu),
             int.addr,
         }),
@@ -353,11 +353,11 @@ fn printPtrDerivation(derivation: Value.PointerDeriveStep, writer: anytype, leve
             try writer.print("[{d}]", .{elem.elem_idx});
         },
         .offset_and_cast => |oac| if (oac.byte_offset == 0) {
-            try writer.print("@as({}, @ptrCast(", .{oac.new_ptr_ty.fmt(zcu)});
+            try writer.print("@as({}, @ptrcast(", .{oac.new_ptr_ty.fmt(zcu)});
             try printPtrDerivation(oac.parent.*, writer, level, zcu, opt_sema);
             try writer.writeAll("))");
         } else {
-            try writer.print("@as({}, @ptrFromInt(@intFromPtr(", .{oac.new_ptr_ty.fmt(zcu)});
+            try writer.print("@as({}, @ptrfromint(@intfromptr(", .{oac.new_ptr_ty.fmt(zcu)});
             try printPtrDerivation(oac.parent.*, writer, level, zcu, opt_sema);
             try writer.print(") + {d}))", .{oac.byte_offset});
         },

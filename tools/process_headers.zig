@@ -32,7 +32,7 @@ const MultiArch = union(enum) {
     specific: Arch,
 
     fn eql(a: MultiArch, b: MultiArch) bool {
-        if (@intFromEnum(a) != @intFromEnum(b))
+        if (@intfromenum(a) != @intfromenum(b))
             return false;
         if (a != .specific)
             return true;
@@ -45,7 +45,7 @@ const MultiAbi = union(enum) {
     specific: Abi,
 
     fn eql(a: MultiAbi, b: MultiAbi) bool {
-        if (@intFromEnum(a) != @intFromEnum(b))
+        if (@intfromenum(a) != @intfromenum(b))
             return false;
         if (std.meta.Tag(MultiAbi)(a) != .specific)
             return true;
@@ -283,9 +283,9 @@ const DestTarget = struct {
     const HashContext = struct {
         pub fn hash(self: @This(), a: DestTarget) u32 {
             _ = self;
-            return @intFromEnum(a.arch) +%
-                (@intFromEnum(a.os) *% @as(u32, 4202347608)) +%
-                (@intFromEnum(a.abi) *% @as(u32, 4082223418));
+            return @intfromenum(a.arch) +%
+                (@intfromenum(a.os) *% @as(u32, 4202347608)) +%
+                (@intfromenum(a.abi) *% @as(u32, 4082223418));
         }
 
         pub fn eql(self: @This(), a: DestTarget, b: DestTarget, b_index: usize) bool {
@@ -507,13 +507,13 @@ pub fn main() !void {
 
             const dest_target = hash_kv.key_ptr.*;
             const arch_name = switch (dest_target.arch) {
-                .specific => |a| @tagName(a),
-                else => @tagName(dest_target.arch),
+                .specific => |a| @tagname(a),
+                else => @tagname(dest_target.arch),
             };
             const out_subpath = try std.fmt.allocPrint(allocator, "{s}-{s}-{s}", .{
                 arch_name,
-                @tagName(dest_target.os),
-                @tagName(dest_target.abi),
+                @tagname(dest_target.os),
+                @tagname(dest_target.abi),
             });
             const full_path = try std.fs.path.join(allocator, &[_][]const u8{ out_dir, out_subpath, path_kv.key_ptr.* });
             try std.fs.cwd().makePath(std.fs.path.dirname(full_path).?);

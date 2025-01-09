@@ -9,7 +9,7 @@ pub const Version = packed struct(Word) {
     padding0: u8 = 0,
 
     pub fn toWord(self: @This()) Word {
-        return @bitCast(self);
+        return @bitcast(self);
     }
 };
 
@@ -26,7 +26,7 @@ pub const IdResult = enum(Word) {
     ) @TypeOf(writer).Error!void {
         switch (self) {
             .none => try writer.writeAll("(none)"),
-            else => try writer.print("%{}", .{@intFromEnum(self)}),
+            else => try writer.print("%{}", .{@intfromenum(self)}),
         }
     }
 };

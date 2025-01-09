@@ -8,14 +8,14 @@ const assert = std.debug.assert;
 
 comptime {
     if (builtin.os.tag == .wasi) {
-        assert(@alignOf(i8) == 1);
-        assert(@alignOf(u8) == 1);
-        assert(@alignOf(i16) == 2);
-        assert(@alignOf(u16) == 2);
-        assert(@alignOf(i32) == 4);
-        assert(@alignOf(u32) == 4);
-        assert(@alignOf(i64) == 8);
-        assert(@alignOf(u64) == 8);
+        assert(@alignof(i8) == 1);
+        assert(@alignof(u8) == 1);
+        assert(@alignof(i16) == 2);
+        assert(@alignof(u16) == 2);
+        assert(@alignof(i32) == 4);
+        assert(@alignof(u32) == 4);
+        assert(@alignof(i64) == 8);
+        assert(@alignof(u64) == 8);
     }
 }
 

@@ -26,13 +26,13 @@ pub fn parse(self: *Archive, elf_file: *Elf, path: []const u8, handle_index: Fil
         if (pos >= size) break;
         if (!mem.isAligned(pos, 2)) pos += 1;
 
-        var hdr_buffer: [@sizeOf(elf.ar_hdr)]u8 = undefined;
+        var hdr_buffer: [@sizeof(elf.ar_hdr)]u8 = undefined;
         {
             const amt = try handle.preadAll(&hdr_buffer, pos);
-            if (amt != @sizeOf(elf.ar_hdr)) return error.InputOutput;
+            if (amt != @sizeof(elf.ar_hdr)) return error.InputOutput;
         }
-        const hdr = @as(*align(1) const elf.ar_hdr, @ptrCast(&hdr_buffer)).*;
-        pos += @sizeOf(elf.ar_hdr);
+        const hdr = @as(*align(1) const elf.ar_hdr, @ptrcast(&hdr_buffer)).*;
+        pos += @sizeof(elf.ar_hdr);
 
         if (!mem.eql(u8, &hdr.ar_fmag, elf.ARFMAG)) {
             try elf_file.reportParseError(path, "invalid archive header delimiter: {s}", .{
@@ -80,7 +80,7 @@ pub fn parse(self: *Archive, elf_file: *Elf, path: []const u8, handle_index: Fil
 
 fn getString(self: Archive, off: u32) []const u8 {
     assert(off < self.strtab.items.len);
-    const name = mem.sliceTo(@as([*:'\n']const u8, @ptrCast(self.strtab.items.ptr + off)), 0);
+    const name = mem.sliceTo(@as([*:'\n']const u8, @ptrcast(self.strtab.items.ptr + off)), 0);
     return name[0 .. name.len - 1];
 }
 
@@ -153,14 +153,14 @@ pub const ArSymtab = struct {
 
     pub fn write(ar: ArSymtab, kind: enum { p32, p64 }, elf_file: *Elf, writer: anytype) !void {
         assert(kind == .p64); // TODO p32
-        const hdr = setArHdr(.{ .name = .symtab, .size = @intCast(ar.size(.p64)) });
+        const hdr = setArHdr(.{ .name = .symtab, .size = @intcast(ar.size(.p64)) });
         try writer.writeAll(mem.asBytes(&hdr));
 
         const comp = elf_file.base.comp;
         const gpa = comp.gpa;
         var offsets = std.AutoHashMap(File.Index, u64).init(gpa);
         defer offsets.deinit();
-        try offsets.ensureUnusedCapacity(@intCast(elf_file.objects.items.len + 1));
+        try offsets.ensureUnusedCapacity(@intcast(elf_file.objects.items.len + 1));
 
         if (elf_file.zigObjectPtr()) |zig_object| {
             offsets.putAssumeCapacityNoClobber(zig_object.index, zig_object.output_ar_state.file_off);
@@ -170,7 +170,7 @@ pub const ArSymtab = struct {
         }
 
         // Number of symbols
-        try writer.writeInt(u64, @as(u64, @intCast(ar.symtab.items.len)), .big);
+        try writer.writeInt(u64, @as(u64, @intcast(ar.symtab.items.len)), .big);
 
         // Offsets to files
         for (ar.symtab.items) |entry| {
@@ -194,7 +194,7 @@ pub const ArSymtab = struct {
         _ = unused_fmt_string;
         _ = options;
         _ = writer;
-        @compileError("do not format ar symtab directly; use fmt instead");
+        @compileerror("do not format ar symtab directly; use fmt instead");
     }
 
     const FormatContext = struct {
@@ -248,7 +248,7 @@ pub const ArStrtab = struct {
     }
 
     pub fn insert(ar: *ArStrtab, allocator: Allocator, name: []const u8) error{OutOfMemory}!u32 {
-        const off = @as(u32, @intCast(ar.buffer.items.len));
+        const off = @as(u32, @intcast(ar.buffer.items.len));
         try ar.buffer.writer(allocator).print("{s}/{c}", .{ name, strtab_delimiter });
         return off;
     }
@@ -258,7 +258,7 @@ pub const ArStrtab = struct {
     }
 
     pub fn write(ar: ArStrtab, writer: anytype) !void {
-        const hdr = setArHdr(.{ .name = .strtab, .size = @intCast(ar.size()) });
+        const hdr = setArHdr(.{ .name = .strtab, .size = @intcast(ar.size()) });
         try writer.writeAll(mem.asBytes(&hdr));
         try writer.writeAll(ar.buffer.items);
     }

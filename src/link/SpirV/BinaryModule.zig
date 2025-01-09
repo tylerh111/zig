@@ -62,7 +62,7 @@ pub fn finalize(self: BinaryModule, a: Allocator) ![]Word {
     errdefer a.free(result);
 
     result[0] = spec.magic_number;
-    result[1] = @bitCast(self.version);
+    result[1] = @bitcast(self.version);
     result[2] = spec.zig_generator_id;
     result[3] = self.id_bound;
     result[4] = 0; // Schema
@@ -120,7 +120,7 @@ pub const Instruction = struct {
             assert(self.offset < self.words.len);
 
             return Instruction{
-                .opcode = @enumFromInt(self.words[self.offset] & 0xFFFF),
+                .opcode = @enumfromint(self.words[self.offset] & 0xFFFF),
                 .index = self.index,
                 .offset = self.offset,
                 .operands = self.words[self.offset..][1..instruction_len],
@@ -158,14 +158,14 @@ pub const Parser = struct {
 
         inline for (std.meta.tags(InstructionSet)) |set| {
             const instructions = set.instructions();
-            try self.opcode_table.ensureUnusedCapacity(a, @intCast(instructions.len));
+            try self.opcode_table.ensureUnusedCapacity(a, @intcast(instructions.len));
             for (instructions, 0..) |inst, i| {
                 // Note: Some instructions may alias another. In this case we don't really care
                 // which one is first: they all (should) have the same operands anyway. Just pick
                 // the first, which is usually the core, KHR or EXT variant.
-                const entry = self.opcode_table.getOrPutAssumeCapacity(mapSetAndOpcode(set, @intCast(inst.opcode)));
+                const entry = self.opcode_table.getOrPutAssumeCapacity(mapSetAndOpcode(set, @intcast(inst.opcode)));
                 if (!entry.found_existing) {
-                    entry.value_ptr.* = @intCast(i);
+                    entry.value_ptr.* = @intcast(i);
                 }
             }
         }
@@ -178,11 +178,11 @@ pub const Parser = struct {
     }
 
     fn mapSetAndOpcode(set: InstructionSet, opcode: u16) u32 {
-        return (@as(u32, @intFromEnum(set)) << 16) | opcode;
+        return (@as(u32, @intfromenum(set)) << 16) | opcode;
     }
 
     pub fn getInstSpec(self: Parser, opcode: Opcode) ?spec.Instruction {
-        const index = self.opcode_table.get(mapSetAndOpcode(.core, @intFromEnum(opcode))) orelse return null;
+        const index = self.opcode_table.get(mapSetAndOpcode(.core, @intfromenum(opcode))) orelse return null;
         return InstructionSet.core.instructions()[index];
     }
 
@@ -195,7 +195,7 @@ pub const Parser = struct {
         }
 
         var binary = BinaryModule{
-            .version = @bitCast(module[1]),
+            .version = @bitcast(module[1]),
             .generator_magic = module[2],
             .id_bound = module[3],
             .instructions = module[header_words..],
@@ -222,9 +222,9 @@ pub const Parser = struct {
             // We can't really efficiently use non-exhaustive enums here, because we would
             // need to manually write out all valid cases. Since we have this map anyway, just
             // use that.
-            const opcode: Opcode = @enumFromInt(@as(u16, @truncate(binary.instructions[offset])));
+            const opcode: Opcode = @enumfromint(@as(u16, @truncate(binary.instructions[offset])));
             const inst_spec = self.getInstSpec(opcode) orelse {
-                log.err("invalid opcode for core set: {}", .{@intFromEnum(opcode)});
+                log.err("invalid opcode for core set: {}", .{@intfromenum(opcode)});
                 return error.InvalidOpcode;
             };
 
@@ -237,10 +237,10 @@ pub const Parser = struct {
                         return error.InvalidExtInstImport;
                     };
                     if (set == .core) return error.InvalidExtInstImport;
-                    try binary.ext_inst_map.put(self.a, @enumFromInt(operands[0]), set);
+                    try binary.ext_inst_map.put(self.a, @enumfromint(operands[0]), set);
                 },
                 .OpTypeInt, .OpTypeFloat => {
-                    const entry = try binary.arith_type_width.getOrPut(self.a, @enumFromInt(operands[0]));
+                    const entry = try binary.arith_type_width.getOrPut(self.a, @enumfromint(operands[0]));
                     if (entry.found_existing) return error.DuplicateId;
                     entry.value_ptr.* = std.math.cast(u16, operands[1]) orelse return error.InvalidOperands;
                 },
@@ -258,8 +258,8 @@ pub const Parser = struct {
                 spec_operands[1].kind == .IdResult)
             {
                 if (operands.len < 2) return error.InvalidOperands;
-                if (binary.arith_type_width.get(@enumFromInt(operands[0]))) |width| {
-                    const entry = try binary.arith_type_width.getOrPut(self.a, @enumFromInt(operands[1]));
+                if (binary.arith_type_width.get(@enumfromint(operands[0]))) |width| {
+                    const entry = try binary.arith_type_width.getOrPut(self.a, @enumfromint(operands[1]));
                     if (entry.found_existing) return error.DuplicateId;
                     entry.value_ptr.* = width;
                 }
@@ -282,7 +282,7 @@ pub const Parser = struct {
         inst: Instruction,
         offsets: *std.ArrayList(u16),
     ) !void {
-        const index = self.opcode_table.get(mapSetAndOpcode(.core, @intFromEnum(inst.opcode))).?;
+        const index = self.opcode_table.get(mapSetAndOpcode(.core, @intfromenum(inst.opcode))).?;
         const operands = InstructionSet.core.instructions()[index].operands;
 
         var offset: usize = 0;
@@ -307,10 +307,10 @@ pub const Parser = struct {
                 offset = try self.parseOperandsResultIds(binary, inst, operands[0..2], offset, offsets);
 
                 if (offset + 1 >= inst.operands.len) return error.InvalidPhysicalFormat;
-                const set_id: ResultId = @enumFromInt(inst.operands[offset]);
-                try offsets.append(@intCast(offset));
+                const set_id: ResultId = @enumfromint(inst.operands[offset]);
+                try offsets.append(@intcast(offset));
                 const set = binary.ext_inst_map.get(set_id) orelse {
-                    log.err("invalid instruction set {}", .{@intFromEnum(set_id)});
+                    log.err("invalid instruction set {}", .{@intfromenum(set_id)});
                     return error.InvalidId;
                 };
                 const ext_opcode = std.math.cast(u16, inst.operands[offset + 1]) orelse return error.InvalidPhysicalFormat;
@@ -401,7 +401,7 @@ pub const Parser = struct {
                 }
             },
             .id => {
-                try offsets.append(@intCast(offset));
+                try offsets.append(@intcast(offset));
                 offset += 1;
             },
             else => switch (kind) {
@@ -421,7 +421,7 @@ pub const Parser = struct {
                 },
                 .LiteralContextDependentNumber => {
                     assert(inst.opcode == .OpConstant or inst.opcode == .OpSpecConstantOp);
-                    const bit_width = binary.arith_type_width.get(@enumFromInt(inst.operands[0])) orelse {
+                    const bit_width = binary.arith_type_width.get(@enumfromint(inst.operands[0])) orelse {
                         log.err("invalid LiteralContextDependentNumber type {}", .{inst.operands[0]});
                         return error.InvalidId;
                     };
@@ -435,7 +435,7 @@ pub const Parser = struct {
                 .LiteralSpecConstantOpInteger => unreachable,
                 .PairLiteralIntegerIdRef => { // Switch case
                     assert(inst.opcode == .OpSwitch);
-                    const bit_width = binary.arith_type_width.get(@enumFromInt(inst.operands[0])) orelse {
+                    const bit_width = binary.arith_type_width.get(@enumfromint(inst.operands[0])) orelse {
                         log.err("invalid OpSwitch type {}", .{inst.operands[0]});
                         return error.InvalidId;
                     };
@@ -444,16 +444,16 @@ pub const Parser = struct {
                         33...64 => 2,
                         else => unreachable,
                     };
-                    try offsets.append(@intCast(offset));
+                    try offsets.append(@intcast(offset));
                     offset += 1;
                 },
                 .PairIdRefLiteralInteger => {
-                    try offsets.append(@intCast(offset));
+                    try offsets.append(@intcast(offset));
                     offset += 2;
                 },
                 .PairIdRefIdRef => {
-                    try offsets.append(@intCast(offset));
-                    try offsets.append(@intCast(offset + 1));
+                    try offsets.append(@intcast(offset));
+                    try offsets.append(@intcast(offset + 1));
                     offset += 2;
                 },
                 else => unreachable,

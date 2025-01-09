@@ -9,7 +9,7 @@ pub fn cmdEnv(arena: Allocator, args: []const []const u8, stdout: std.fs.File.Wr
     const self_exe_path = try introspect.findZigExePath(arena);
 
     var zig_lib_directory = introspect.findZigLibDirFromSelfExe(arena, self_exe_path) catch |err| {
-        fatal("unable to find zig installation directory: {s}\n", .{@errorName(err)});
+        fatal("unable to find zig installation directory: {s}\n", .{@errorname(err)});
     };
     defer zig_lib_directory.handle.close();
 
@@ -47,7 +47,7 @@ pub fn cmdEnv(arena: Allocator, args: []const []const u8, stdout: std.fs.File.Wr
 
     try jws.objectField("env");
     try jws.beginObject();
-    inline for (@typeInfo(std.zig.EnvVar).Enum.fields) |field| {
+    inline for (@typeinfo(std.zig.EnvVar).Enum.fields) |field| {
         try jws.objectField(field.name);
         try jws.write(try @field(std.zig.EnvVar, field.name).get(arena));
     }

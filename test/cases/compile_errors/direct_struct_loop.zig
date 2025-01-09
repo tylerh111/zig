@@ -2,7 +2,7 @@ const A = struct {
     a: A,
 };
 export fn entry() usize {
-    return @sizeOf(A);
+    return @sizeof(A);
 }
 
 // error

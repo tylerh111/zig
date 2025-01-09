@@ -5,9 +5,9 @@ const expect = std.testing.expect;
 /// Returns whether x is an infinity, ignoring sign.
 pub inline fn isInf(x: anytype) bool {
     const T = @TypeOf(x);
-    const TBits = std.meta.Int(.unsigned, @typeInfo(T).Float.bits);
+    const TBits = std.meta.Int(.unsigned, @typeinfo(T).Float.bits);
     const remove_sign = ~@as(TBits, 0) >> 1;
-    return @as(TBits, @bitCast(x)) & remove_sign == @as(TBits, @bitCast(math.inf(T)));
+    return @as(TBits, @bitcast(x)) & remove_sign == @as(TBits, @bitcast(math.inf(T)));
 }
 
 /// Returns whether x is an infinity with a positive sign.

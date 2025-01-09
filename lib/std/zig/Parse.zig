@@ -36,20 +36,20 @@ const Members = struct {
 fn listToSpan(p: *Parse, list: []const Node.Index) !Node.SubRange {
     try p.extra_data.appendSlice(p.gpa, list);
     return Node.SubRange{
-        .start = @as(Node.Index, @intCast(p.extra_data.items.len - list.len)),
-        .end = @as(Node.Index, @intCast(p.extra_data.items.len)),
+        .start = @as(Node.Index, @intcast(p.extra_data.items.len - list.len)),
+        .end = @as(Node.Index, @intcast(p.extra_data.items.len)),
     };
 }
 
 fn addNode(p: *Parse, elem: Ast.Node) Allocator.Error!Node.Index {
-    const result = @as(Node.Index, @intCast(p.nodes.len));
+    const result = @as(Node.Index, @intcast(p.nodes.len));
     try p.nodes.append(p.gpa, elem);
     return result;
 }
 
 fn setNode(p: *Parse, i: usize, elem: Ast.Node) Node.Index {
     p.nodes.set(i, elem);
-    return @as(Node.Index, @intCast(i));
+    return @as(Node.Index, @intcast(i));
 }
 
 fn reserveNode(p: *Parse, tag: Ast.Node.Tag) !usize {
@@ -72,7 +72,7 @@ fn unreserveNode(p: *Parse, node_index: usize) void {
 fn addExtra(p: *Parse, extra: anytype) Allocator.Error!Node.Index {
     const fields = std.meta.fields(@TypeOf(extra));
     try p.extra_data.ensureUnusedCapacity(p.gpa, fields.len);
-    const result = @as(u32, @intCast(p.extra_data.items.len));
+    const result = @as(u32, @intcast(p.extra_data.items.len));
     inline for (fields) |field| {
         comptime assert(field.type == Node.Index);
         p.extra_data.appendAssumeCapacity(@field(extra, field.name));
@@ -1145,14 +1145,14 @@ fn expectVarDeclExprStatement(p: *Parse, comptime_token: ?TokenIndex) !Node.Inde
 
     const extra_start = p.extra_data.items.len;
     try p.extra_data.ensureUnusedCapacity(p.gpa, lhs_count + 1);
-    p.extra_data.appendAssumeCapacity(@intCast(lhs_count));
+    p.extra_data.appendAssumeCapacity(@intcast(lhs_count));
     p.extra_data.appendSliceAssumeCapacity(p.scratch.items[scratch_top..]);
 
     return p.addNode(.{
         .tag = .assign_destructure,
         .main_token = equal_token,
         .data = .{
-            .lhs = @intCast(extra_start),
+            .lhs = @intcast(extra_start),
             .rhs = rhs,
         },
     });
@@ -1332,8 +1332,8 @@ fn parseForStatement(p: *Parse) !Node.Index {
         .main_token = for_token,
         .data = .{
             .lhs = (try p.listToSpan(p.scratch.items[scratch_top..])).start,
-            .rhs = @as(u32, @bitCast(Node.For{
-                .inputs = @as(u31, @intCast(inputs)),
+            .rhs = @as(u32, @bitcast(Node.For{
+                .inputs = @as(u31, @intcast(inputs)),
                 .has_else = has_else,
             })),
         },
@@ -1575,14 +1575,14 @@ fn finishAssignDestructureExpr(p: *Parse, first_lhs: Node.Index) !Node.Index {
 
     const extra_start = p.extra_data.items.len;
     try p.extra_data.ensureUnusedCapacity(p.gpa, lhs_count + 1);
-    p.extra_data.appendAssumeCapacity(@intCast(lhs_count));
+    p.extra_data.appendAssumeCapacity(@intcast(lhs_count));
     p.extra_data.appendSliceAssumeCapacity(p.scratch.items[scratch_top..]);
 
     return p.addNode(.{
         .tag = .assign_destructure,
         .main_token = equal_token,
         .data = .{
-            .lhs = @intCast(extra_start),
+            .lhs = @intcast(extra_start),
             .rhs = rhs,
         },
     });
@@ -1681,7 +1681,7 @@ fn parseExprPrecedence(p: *Parse, min_prec: i32) Error!Node.Index {
 
     while (true) {
         const tok_tag = p.token_tags[p.tok_i];
-        const info = operTable[@as(usize, @intCast(@intFromEnum(tok_tag)))];
+        const info = operTable[@as(usize, @intcast(@intfromenum(tok_tag)))];
         if (info.prec < min_prec) {
             break;
         }
@@ -3971,8 +3971,8 @@ fn parseFor(p: *Parse, comptime bodyParseFn: fn (p: *Parse) Error!Node.Index) !N
         .main_token = for_token,
         .data = .{
             .lhs = (try p.listToSpan(p.scratch.items[scratch_top..])).start,
-            .rhs = @as(u32, @bitCast(Node.For{
-                .inputs = @as(u31, @intCast(inputs)),
+            .rhs = @as(u32, @bitcast(Node.For{
+                .inputs = @as(u31, @intcast(inputs)),
                 .has_else = has_else,
             })),
         },

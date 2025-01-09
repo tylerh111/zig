@@ -8,8 +8,8 @@ const foo = Foo{
 };
 
 comptime {
-    const field_ptr: *i32 = @ptrFromInt(0x1234);
-    const another_foo_ptr: *const Foo = @fieldParentPtr("b", field_ptr);
+    const field_ptr: *i32 = @ptrfromint(0x1234);
+    const another_foo_ptr: *const Foo = @fieldparentptr("b", field_ptr);
     _ = another_foo_ptr;
 }
 

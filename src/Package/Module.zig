@@ -297,11 +297,11 @@ pub fn create(arena: Allocator, options: CreateOptions) !*Package.Module {
 
         var buf = std.ArrayList(u8).init(arena);
         for (target.cpu.arch.allFeaturesList(), 0..) |feature, index_usize| {
-            const index = @as(std.Target.Cpu.Feature.Set.Index, @intCast(index_usize));
+            const index = @as(std.Target.Cpu.Feature.Set.Index, @intcast(index_usize));
             const is_enabled = target.cpu.features.isEnabled(index);
 
             if (feature.llvm_name) |llvm_name| {
-                const plus_or_minus = "-+"[@intFromBool(is_enabled)];
+                const plus_or_minus = "-+"[@intfrombool(is_enabled)];
                 try buf.ensureUnusedCapacity(2 + llvm_name.len);
                 buf.appendAssumeCapacity(plus_or_minus);
                 buf.appendSliceAssumeCapacity(llvm_name);
@@ -500,7 +500,7 @@ pub fn createLimited(gpa: Allocator, options: LimitedOptions) Allocator.Error!*P
 }
 
 /// Asserts that the module has a builtin module, which is not true for non-zig
-/// modules such as ones only used for `@embedFile`, or the root module when
+/// modules such as ones only used for `@embedfile`, or the root module when
 /// there is no Zig Compilation Unit.
 pub fn getBuiltinDependency(m: Module) *Module {
     const result = m.deps.values()[0];

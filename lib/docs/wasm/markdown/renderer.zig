@@ -29,8 +29,8 @@ pub fn Renderer(comptime Writer: type, comptime Context: type) type {
             node: Node.Index,
             writer: Writer,
         ) Writer.Error!void {
-            const data = doc.nodes.items(.data)[@intFromEnum(node)];
-            switch (doc.nodes.items(.tag)[@intFromEnum(node)]) {
+            const data = doc.nodes.items(.data)[@intfromenum(node)];
+            switch (doc.nodes.items(.tag)[@intfromenum(node)]) {
                 .root => {
                     for (doc.extraChildren(data.container.children)) |child| {
                         try r.renderFn(r, doc, child, writer);
@@ -58,8 +58,8 @@ pub fn Renderer(comptime Writer: type, comptime Context: type) type {
                 .list_item => {
                     try writer.writeAll("<li>");
                     for (doc.extraChildren(data.list_item.children)) |child| {
-                        if (data.list_item.tight and doc.nodes.items(.tag)[@intFromEnum(child)] == .paragraph) {
-                            const para_data = doc.nodes.items(.data)[@intFromEnum(child)];
+                        if (data.list_item.tight and doc.nodes.items(.tag)[@intfromenum(child)] == .paragraph) {
+                            const para_data = doc.nodes.items(.data)[@intfromenum(child)];
                             for (doc.extraChildren(para_data.container.children)) |para_child| {
                                 try r.renderFn(r, doc, para_child, writer);
                             }
@@ -91,7 +91,7 @@ pub fn Renderer(comptime Writer: type, comptime Context: type) type {
                     }
                     switch (data.table_cell.info.alignment) {
                         .unset => try writer.writeAll(">"),
-                        else => |a| try writer.print(" style=\"text-align: {s}\">", .{@tagName(a)}),
+                        else => |a| try writer.print(" style=\"text-align: {s}\">", .{@tagname(a)}),
                     }
 
                     for (doc.extraChildren(data.table_cell.children)) |child| {
@@ -189,8 +189,8 @@ pub fn renderInlineNodeText(
     node: Node.Index,
     writer: anytype,
 ) @TypeOf(writer).Error!void {
-    const data = doc.nodes.items(.data)[@intFromEnum(node)];
-    switch (doc.nodes.items(.tag)[@intFromEnum(node)]) {
+    const data = doc.nodes.items(.data)[@intfromenum(node)];
+    switch (doc.nodes.items(.tag)[@intfromenum(node)]) {
         .root,
         .list,
         .list_item,

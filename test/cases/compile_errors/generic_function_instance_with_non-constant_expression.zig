@@ -6,7 +6,7 @@ fn test1(a: i32, b: i32) i32 {
 }
 
 export fn entry() usize {
-    return @sizeOf(@TypeOf(&test1));
+    return @sizeof(@TypeOf(&test1));
 }
 
 // error

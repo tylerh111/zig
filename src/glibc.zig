@@ -505,7 +505,7 @@ fn add_include_dirs(comp: *Compilation, arena: Allocator, args: *std.ArrayList([
 
     try args.append("-I");
     try args.append(try std.fmt.allocPrint(arena, "{s}" ++ s ++ "libc" ++ s ++ "include" ++ s ++ "{s}-{s}-{s}", .{
-        comp.zig_lib_directory.path.?, @tagName(target.cpu.arch), @tagName(target.os.tag), @tagName(target.abi),
+        comp.zig_lib_directory.path.?, @tagname(target.cpu.arch), @tagname(target.os.tag), @tagname(target.abi),
     }));
 
     try args.append("-I");
@@ -796,7 +796,7 @@ pub fn buildSharedObjects(comp: *Compilation, prog_node: std.Progress.Node) !voi
             // Test whether the inclusion applies to our current library and target.
             const ok_lib_and_target =
                 (lib_index == lib_i) and
-                ((targets & (@as(u32, 1) << @as(u5, @intCast(target_targ_index)))) != 0);
+                ((targets & (@as(u32, 1) << @as(u5, @intcast(target_targ_index)))) != 0);
 
             while (true) {
                 const byte = metadata.inclusions[inc_i];
@@ -930,7 +930,7 @@ pub fn buildSharedObjects(comp: *Compilation, prog_node: std.Progress.Node) !voi
             // Test whether the inclusion applies to our current library and target.
             const ok_lib_and_target =
                 (lib_index == lib_i) and
-                ((targets & (@as(u32, 1) << @as(u5, @intCast(target_targ_index)))) != 0);
+                ((targets & (@as(u32, 1) << @as(u5, @intcast(target_targ_index)))) != 0);
 
             while (true) {
                 const byte = metadata.inclusions[inc_i];
@@ -1046,7 +1046,7 @@ pub fn buildSharedObjects(comp: *Compilation, prog_node: std.Progress.Node) !voi
     }
 
     man.writeManifest() catch |err| {
-        log.warn("failed to write cache manifest for glibc stubs: {s}", .{@errorName(err)});
+        log.warn("failed to write cache manifest for glibc stubs: {s}", .{@errorname(err)});
     };
 
     assert(comp.glibc_so_files == null);

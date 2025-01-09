@@ -7,7 +7,7 @@ const expectEqual = std.testing.expectEqual;
 pub fn gcd(a: anytype, b: anytype) @TypeOf(a, b) {
 
     // only unsigned integers are allowed and not both must be zero
-    comptime switch (@typeInfo(@TypeOf(a, b))) {
+    comptime switch (@typeinfo(@TypeOf(a, b))) {
         .Int => |int| std.debug.assert(int.signedness == .unsigned),
         .ComptimeInt => {
             std.debug.assert(a >= 0);

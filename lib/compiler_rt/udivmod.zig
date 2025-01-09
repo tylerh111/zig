@@ -14,31 +14,31 @@ const hi = 1 - lo;
 // Returns U / v_ and sets r = U % v_.
 fn divwide_generic(comptime T: type, _u1: T, _u0: T, v_: T, r: *T) T {
     const HalfT = HalveInt(T, false).HalfT;
-    @setRuntimeSafety(is_test);
+    @setruntimesafety(is_test);
     var v = v_;
 
-    const b = @as(T, 1) << (@bitSizeOf(T) / 2);
+    const b = @as(T, 1) << (@bitsizeof(T) / 2);
     var un64: T = undefined;
     var un10: T = undefined;
 
-    const s: Log2Int(T) = @intCast(@clz(v));
+    const s: Log2Int(T) = @intcast(@clz(v));
     if (s > 0) {
         // Normalize divisor
         v <<= s;
-        un64 = (_u1 << s) | (_u0 >> @intCast((@bitSizeOf(T) - @as(T, @intCast(s)))));
+        un64 = (_u1 << s) | (_u0 >> @intcast((@bitsizeof(T) - @as(T, @intcast(s)))));
         un10 = _u0 << s;
     } else {
-        // Avoid undefined behavior of (u0 >> @bitSizeOf(T))
+        // Avoid undefined behavior of (u0 >> @bitsizeof(T))
         un64 = _u1;
         un10 = _u0;
     }
 
     // Break divisor up into two 32-bit digits
-    const vn1 = v >> (@bitSizeOf(T) / 2);
+    const vn1 = v >> (@bitsizeof(T) / 2);
     const vn0 = v & std.math.maxInt(HalfT);
 
     // Break right half of dividend into two digits
-    const un1 = un10 >> (@bitSizeOf(T) / 2);
+    const un1 = un10 >> (@bitsizeof(T) / 2);
     const un0 = un10 & std.math.maxInt(HalfT);
 
     // Compute the first quotient digit, q1
@@ -70,7 +70,7 @@ fn divwide_generic(comptime T: type, _u1: T, _u0: T, v_: T, r: *T) T {
 }
 
 fn divwide(comptime T: type, _u1: T, _u0: T, v: T, r: *T) T {
-    @setRuntimeSafety(is_test);
+    @setruntimesafety(is_test);
     if (T == u64 and builtin.target.cpu.arch == .x86_64 and builtin.target.os.tag != .windows) {
         var rem: T = undefined;
         const quo = asm (
@@ -90,9 +90,9 @@ fn divwide(comptime T: type, _u1: T, _u0: T, v: T, r: *T) T {
 
 // Returns a_ / b_ and sets maybe_rem = a_ % b.
 pub fn udivmod(comptime T: type, a_: T, b_: T, maybe_rem: ?*T) T {
-    @setRuntimeSafety(is_test);
+    @setruntimesafety(is_test);
     const HalfT = HalveInt(T, false).HalfT;
-    const SignedT = std.meta.Int(.signed, @bitSizeOf(T));
+    const SignedT = std.meta.Int(.signed, @bitsizeof(T));
 
     if (b_ > a_) {
         if (maybe_rem) |rem| {
@@ -101,8 +101,8 @@ pub fn udivmod(comptime T: type, a_: T, b_: T, maybe_rem: ?*T) T {
         return 0;
     }
 
-    const a: [2]HalfT = @bitCast(a_);
-    const b: [2]HalfT = @bitCast(b_);
+    const a: [2]HalfT = @bitcast(a_);
+    const b: [2]HalfT = @bitcast(b_);
     var q: [2]HalfT = undefined;
     var r: [2]HalfT = undefined;
 
@@ -119,16 +119,16 @@ pub fn udivmod(comptime T: type, a_: T, b_: T, maybe_rem: ?*T) T {
             q[lo] = divwide(HalfT, a[hi] % b[lo], a[lo], b[lo], &r[lo]);
         }
         if (maybe_rem) |rem| {
-            rem.* = @bitCast(r);
+            rem.* = @bitcast(r);
         }
-        return @bitCast(q);
+        return @bitcast(q);
     }
 
     // 0 <= shift <= 63
     const shift: Log2Int(T) = @clz(b[hi]) - @clz(a[hi]);
-    var af: T = @bitCast(a);
-    var bf = @as(T, @bitCast(b)) << shift;
-    q = @bitCast(@as(T, 0));
+    var af: T = @bitcast(a);
+    var bf = @as(T, @bitcast(b)) << shift;
+    q = @bitcast(@as(T, 0));
 
     for (0..shift + 1) |_| {
         q[lo] <<= 1;
@@ -137,13 +137,13 @@ pub fn udivmod(comptime T: type, a_: T, b_: T, maybe_rem: ?*T) T {
         //     af -= bf;
         //     q[lo] |= 1;
         // }
-        const s = @as(SignedT, @bitCast(bf -% af -% 1)) >> (@bitSizeOf(T) - 1);
-        q[lo] |= @intCast(s & 1);
-        af -= bf & @as(T, @bitCast(s));
+        const s = @as(SignedT, @bitcast(bf -% af -% 1)) >> (@bitsizeof(T) - 1);
+        q[lo] |= @intcast(s & 1);
+        af -= bf & @as(T, @bitcast(s));
         bf >>= 1;
     }
     if (maybe_rem) |rem| {
-        rem.* = @bitCast(af);
+        rem.* = @bitcast(af);
     }
-    return @bitCast(q);
+    return @bitcast(q);
 }

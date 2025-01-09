@@ -11,7 +11,7 @@ const testing = std.testing;
 ///  - log10(nan)   = nan
 pub fn log10(x: anytype) @TypeOf(x) {
     const T = @TypeOf(x);
-    switch (@typeInfo(T)) {
+    switch (@typeinfo(T)) {
         .ComptimeFloat => {
             return @as(comptime_float, @log10(x));
         },
@@ -20,10 +20,10 @@ pub fn log10(x: anytype) @TypeOf(x) {
             return @as(comptime_int, @floor(@log10(@as(f64, x))));
         },
         .Int => |IntType| switch (IntType.signedness) {
-            .signed => @compileError("log10 not implemented for signed integers"),
+            .signed => @compileerror("log10 not implemented for signed integers"),
             .unsigned => return log10_int(x),
         },
-        else => @compileError("log10 not implemented for " ++ @typeName(T)),
+        else => @compileerror("log10 not implemented for " ++ @typename(T)),
     }
 }
 
@@ -37,17 +37,17 @@ pub fn log10(x: anytype) @TypeOf(x) {
 pub fn log10_int(x: anytype) std.math.Log2Int(@TypeOf(x)) {
     const T = @TypeOf(x);
     const OutT = std.math.Log2Int(T);
-    if (@typeInfo(T) != .Int or @typeInfo(T).Int.signedness != .unsigned)
-        @compileError("log10_int requires an unsigned integer, found " ++ @typeName(T));
+    if (@typeinfo(T) != .Int or @typeinfo(T).Int.signedness != .unsigned)
+        @compileerror("log10_int requires an unsigned integer, found " ++ @typename(T));
 
     std.debug.assert(x != 0);
 
-    const bit_size = @typeInfo(T).Int.bits;
+    const bit_size = @typeinfo(T).Int.bits;
 
     if (bit_size <= 8) {
-        return @as(OutT, @intCast(log10_int_u8(x)));
+        return @as(OutT, @intcast(log10_int_u8(x)));
     } else if (bit_size <= 16) {
-        return @as(OutT, @intCast(less_than_5(x)));
+        return @as(OutT, @intcast(less_than_5(x)));
     }
 
     var val = x;
@@ -67,7 +67,7 @@ pub fn log10_int(x: anytype) std.math.Log2Int(@TypeOf(x)) {
         log += 5;
     }
 
-    return @as(OutT, @intCast(log + less_than_5(@as(u32, @intCast(val)))));
+    return @as(OutT, @intcast(log + less_than_5(@as(u32, @intcast(val)))));
 }
 
 fn pow10(comptime y: comptime_int) comptime_int {
@@ -142,7 +142,7 @@ test log10_int {
         .{ 2, 4, 9, 19, 38, 77, 154 },
     ) |T, max_exponent| {
         for (0..max_exponent + 1) |exponent_usize| {
-            const exponent: std.math.Log2Int(T) = @intCast(exponent_usize);
+            const exponent: std.math.Log2Int(T) = @intcast(exponent_usize);
             const power_of_ten = try std.math.powi(T, 10, exponent);
 
             if (exponent > 0) {

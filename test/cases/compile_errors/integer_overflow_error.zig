@@ -1,6 +1,6 @@
 const x: u8 = 300;
 export fn entry() usize {
-    return @sizeOf(@TypeOf(x));
+    return @sizeof(@TypeOf(x));
 }
 
 // error

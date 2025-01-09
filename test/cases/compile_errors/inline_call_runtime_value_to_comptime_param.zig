@@ -1,5 +1,5 @@
 inline fn needComptime(comptime a: u64) void {
-    if (a != 0) @compileError("foo");
+    if (a != 0) @compileerror("foo");
 }
 fn acceptRuntime(value: u64) void {
     needComptime(value);

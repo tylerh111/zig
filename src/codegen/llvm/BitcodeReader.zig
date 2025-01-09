@@ -65,23 +65,23 @@ pub const Record = struct {
                 try operands.append(.{ .literal = record.operands[i + 1] });
                 i += 2;
             },
-            @intFromEnum(Abbrev.Operand.Encoding.fixed) => {
-                try operands.append(.{ .encoding = .{ .fixed = @intCast(record.operands[i + 1]) } });
+            @intfromenum(Abbrev.Operand.Encoding.fixed) => {
+                try operands.append(.{ .encoding = .{ .fixed = @intcast(record.operands[i + 1]) } });
                 i += 2;
             },
-            @intFromEnum(Abbrev.Operand.Encoding.vbr) => {
-                try operands.append(.{ .encoding = .{ .vbr = @intCast(record.operands[i + 1]) } });
+            @intfromenum(Abbrev.Operand.Encoding.vbr) => {
+                try operands.append(.{ .encoding = .{ .vbr = @intcast(record.operands[i + 1]) } });
                 i += 2;
             },
-            @intFromEnum(Abbrev.Operand.Encoding.array) => {
+            @intfromenum(Abbrev.Operand.Encoding.array) => {
                 try operands.append(.{ .encoding = .{ .array = 6 } });
                 i += 1;
             },
-            @intFromEnum(Abbrev.Operand.Encoding.char6) => {
+            @intfromenum(Abbrev.Operand.Encoding.char6) => {
                 try operands.append(.{ .encoding = .char6 });
                 i += 1;
             },
-            @intFromEnum(Abbrev.Operand.Encoding.blob) => {
+            @intfromenum(Abbrev.Operand.Encoding.blob) => {
                 try operands.append(.{ .encoding = .{ .blob = 6 } });
                 i += 1;
             },
@@ -147,19 +147,19 @@ pub fn next(bc: *BitcodeReader) !?Item {
                 } };
             },
             Abbrev.Builtin.enter_subblock.toRecordId() => {
-                const block_id: u32 = @intCast(record.operands[0]);
+                const block_id: u32 = @intcast(record.operands[0]);
                 switch (block_id) {
                     Block.block_info => try bc.parseBlockInfoBlock(),
                     Block.first_reserved...Block.last_standard => return error.UnsupportedBlockId,
                     else => {
-                        try bc.startBlock(block_id, @intCast(record.operands[1]));
+                        try bc.startBlock(block_id, @intcast(record.operands[1]));
                         return .{ .start_block = .{
                             .name = if (bc.block_info.get(block_id)) |block_info|
                                 block_info.block_name
                             else
                                 &.{},
                             .id = block_id,
-                            .len = @intCast(record.operands[2]),
+                            .len = @intcast(record.operands[2]),
                         } };
                     },
                 }
@@ -198,7 +198,7 @@ fn nextRecord(bc: *BitcodeReader) !?Record {
             .vbr => |width| operands.appendAssumeCapacity(try bc.readVbr(u64, width)),
             .array => |len_width| {
                 assert(abbrev_operand_i + 2 == abbrev.operands.len);
-                const len: usize = @intCast(try bc.readVbr(u32, len_width));
+                const len: usize = @intcast(try bc.readVbr(u32, len_width));
                 try operands.ensureUnusedCapacity(len);
                 for (0..len) |_| switch (abbrev.operands[abbrev.operands.len - 1]) {
                     .literal => |elem_value| operands.appendAssumeCapacity(elem_value),
@@ -216,8 +216,8 @@ fn nextRecord(bc: *BitcodeReader) !?Record {
                         }),
                         0 => {
                             const encoding: Abbrev.Operand.Encoding =
-                                @enumFromInt(try bc.readFixed(u3, 3));
-                            try operands.append(@intFromEnum(encoding));
+                                @enumfromint(try bc.readFixed(u3, 3));
+                            try operands.append(@intfromenum(encoding));
                             switch (encoding) {
                                 .fixed, .vbr => try operands.append(try bc.readVbr(u7, 5)),
                                 .array, .char6, .blob => {},
@@ -273,17 +273,17 @@ fn startBlock(bc: *BitcodeReader, block_id: ?u32, new_abbrev_len: u6) !void {
     };
     try state.abbrevs.abbrevs.ensureTotalCapacity(
         bc.allocator,
-        @typeInfo(Abbrev.Builtin).Enum.fields.len + abbrevs.len,
+        @typeinfo(Abbrev.Builtin).Enum.fields.len + abbrevs.len,
     );
 
-    assert(state.abbrevs.abbrevs.items.len == @intFromEnum(Abbrev.Builtin.end_block));
+    assert(state.abbrevs.abbrevs.items.len == @intfromenum(Abbrev.Builtin.end_block));
     try state.abbrevs.addAbbrevAssumeCapacity(bc.allocator, .{
         .operands = &.{
             .{ .literal = Abbrev.Builtin.end_block.toRecordId() },
             .align_32_bits,
         },
     });
-    assert(state.abbrevs.abbrevs.items.len == @intFromEnum(Abbrev.Builtin.enter_subblock));
+    assert(state.abbrevs.abbrevs.items.len == @intfromenum(Abbrev.Builtin.enter_subblock));
     try state.abbrevs.addAbbrevAssumeCapacity(bc.allocator, .{
         .operands = &.{
             .{ .literal = Abbrev.Builtin.enter_subblock.toRecordId() },
@@ -293,7 +293,7 @@ fn startBlock(bc: *BitcodeReader, block_id: ?u32, new_abbrev_len: u6) !void {
             .block_len,
         },
     });
-    assert(state.abbrevs.abbrevs.items.len == @intFromEnum(Abbrev.Builtin.define_abbrev));
+    assert(state.abbrevs.abbrevs.items.len == @intfromenum(Abbrev.Builtin.define_abbrev));
     try state.abbrevs.addAbbrevAssumeCapacity(bc.allocator, .{
         .operands = &.{
             .{ .literal = Abbrev.Builtin.define_abbrev.toRecordId() },
@@ -301,7 +301,7 @@ fn startBlock(bc: *BitcodeReader, block_id: ?u32, new_abbrev_len: u6) !void {
             .abbrev_op,
         },
     });
-    assert(state.abbrevs.abbrevs.items.len == @intFromEnum(Abbrev.Builtin.unabbrev_record));
+    assert(state.abbrevs.abbrevs.items.len == @intfromenum(Abbrev.Builtin.unabbrev_record));
     try state.abbrevs.addAbbrevAssumeCapacity(bc.allocator, .{
         .operands = &.{
             .{ .encoding = .{ .vbr = 6 } }, // code
@@ -309,7 +309,7 @@ fn startBlock(bc: *BitcodeReader, block_id: ?u32, new_abbrev_len: u6) !void {
             .{ .encoding = .{ .vbr = 6 } }, // ops
         },
     });
-    assert(state.abbrevs.abbrevs.items.len == @typeInfo(Abbrev.Builtin).Enum.fields.len);
+    assert(state.abbrevs.abbrevs.items.len == @typeinfo(Abbrev.Builtin).Enum.fields.len);
     for (abbrevs) |abbrev| try state.abbrevs.addAbbrevAssumeCapacity(bc.allocator, abbrev);
 }
 
@@ -383,7 +383,7 @@ fn readBytes(bc: *BitcodeReader, bytes: []u8) !void {
         var bit_buffer = [1]u8{0} ** 4;
         try bc.reader.readNoEof(bit_buffer[trailing_bytes..]);
         bc.bit_buffer = std.mem.readInt(u32, &bit_buffer, .little);
-        bc.bit_offset = @intCast(trailing_bytes * 8);
+        bc.bit_offset = @intcast(trailing_bytes * 8);
     }
 }
 
@@ -394,9 +394,9 @@ fn readFixed(bc: *BitcodeReader, comptime T: type, bits: u7) !T {
     while (remaining > 0) {
         if (bc.bit_offset == 0) bc.bit_buffer = try bc.read32Bits();
         const chunk_len = @min(@as(u6, 32) - bc.bit_offset, remaining);
-        const chunk_mask = @as(u32, std.math.maxInt(u32)) >> @intCast(32 - chunk_len);
-        result |= @as(T, @intCast(bc.bit_buffer >> bc.bit_offset & chunk_mask)) << @intCast(shift);
-        shift += @intCast(chunk_len);
+        const chunk_mask = @as(u32, std.math.maxInt(u32)) >> @intcast(32 - chunk_len);
+        result |= @as(T, @intcast(bc.bit_buffer >> bc.bit_offset & chunk_mask)) << @intcast(shift);
+        shift += @intcast(chunk_len);
         remaining -= chunk_len;
         bc.bit_offset = @truncate(bc.bit_offset + chunk_len);
     }
@@ -404,7 +404,7 @@ fn readFixed(bc: *BitcodeReader, comptime T: type, bits: u7) !T {
 }
 
 fn readVbr(bc: *BitcodeReader, comptime T: type, bits: u7) !T {
-    const chunk_bits: u6 = @intCast(bits - 1);
+    const chunk_bits: u6 = @intcast(bits - 1);
     const chunk_msb = @as(u64, 1) << chunk_bits;
 
     var result: u64 = 0;
@@ -415,7 +415,7 @@ fn readVbr(bc: *BitcodeReader, comptime T: type, bits: u7) !T {
         if (chunk & chunk_msb == 0) break;
         shift += chunk_bits;
     }
-    return @intCast(result);
+    return @intcast(result);
 }
 
 fn readChar6(bc: *BitcodeReader) !u8 {
@@ -448,9 +448,9 @@ const Abbrev = struct {
         define_abbrev,
         unabbrev_record,
 
-        const first_record_id: u32 = std.math.maxInt(u32) - @typeInfo(Builtin).Enum.fields.len + 1;
+        const first_record_id: u32 = std.math.maxInt(u32) - @typeinfo(Builtin).Enum.fields.len + 1;
         fn toRecordId(builtin: Builtin) u32 {
-            return first_record_id + @intFromEnum(builtin);
+            return first_record_id + @intfromenum(builtin);
         }
     };
 

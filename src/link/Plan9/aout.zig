@@ -14,7 +14,7 @@ pub const ExecHdr = extern struct {
     spsz: u32,
     pcsz: u32,
     comptime {
-        assert(@sizeOf(@This()) == 32);
+        assert(@sizeof(@This()) == 32);
     }
     /// It is up to the caller to discard the last 8 bytes if the header is not fat.
     pub fn toU8s(self: *@This()) [40]u8 {

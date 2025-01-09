@@ -354,13 +354,13 @@ pub const sockaddr = extern struct {
         padding: [254]u8 = undefined,
 
         comptime {
-            assert(@sizeOf(storage) == SS_MAXSIZE);
-            assert(@alignOf(storage) == 8);
+            assert(@sizeof(storage) == SS_MAXSIZE);
+            assert(@alignof(storage) == 8);
         }
     };
 
     pub const in = extern struct {
-        len: u8 = @sizeOf(in),
+        len: u8 = @sizeof(in),
         family: sa_family_t = AF.INET,
         port: in_port_t,
         addr: u32,
@@ -368,7 +368,7 @@ pub const sockaddr = extern struct {
     };
 
     pub const in6 = extern struct {
-        len: u8 = @sizeOf(in6),
+        len: u8 = @sizeof(in6),
         family: sa_family_t = AF.INET6,
         port: in_port_t,
         flowinfo: u32,
@@ -379,7 +379,7 @@ pub const sockaddr = extern struct {
     /// Definitions for UNIX IPC domain.
     pub const un = extern struct {
         /// total sockaddr length
-        len: u8 = @sizeOf(un),
+        len: u8 = @sizeof(un),
 
         family: sa_family_t = AF.LOCAL,
 
@@ -437,7 +437,7 @@ pub const W = struct {
     pub const CONTINUED = 8;
 
     pub fn EXITSTATUS(s: u32) u8 {
-        return @as(u8, @intCast((s >> 8) & 0xff));
+        return @as(u8, @intcast((s >> 8) & 0xff));
     }
     pub fn TERMSIG(s: u32) u32 {
         return (s & 0x7f);
@@ -795,11 +795,11 @@ pub const winsize = extern struct {
 const NSIG = 33;
 
 pub const SIG = struct {
-    pub const DFL: ?Sigaction.handler_fn = @ptrFromInt(0);
-    pub const IGN: ?Sigaction.handler_fn = @ptrFromInt(1);
-    pub const ERR: ?Sigaction.handler_fn = @ptrFromInt(maxInt(usize));
-    pub const CATCH: ?Sigaction.handler_fn = @ptrFromInt(2);
-    pub const HOLD: ?Sigaction.handler_fn = @ptrFromInt(3);
+    pub const DFL: ?Sigaction.handler_fn = @ptrfromint(0);
+    pub const IGN: ?Sigaction.handler_fn = @ptrfromint(1);
+    pub const ERR: ?Sigaction.handler_fn = @ptrfromint(maxInt(usize));
+    pub const CATCH: ?Sigaction.handler_fn = @ptrfromint(2);
+    pub const HOLD: ?Sigaction.handler_fn = @ptrfromint(3);
 
     pub const HUP = 1;
     pub const INT = 2;
@@ -884,16 +884,16 @@ pub const siginfo_t = extern struct {
             addr: *allowzero anyopaque,
             trapno: c_int,
         },
-        __pad: [128 - 3 * @sizeOf(c_int)]u8,
+        __pad: [128 - 3 * @sizeof(c_int)]u8,
     },
 };
 
 comptime {
-    if (@sizeOf(usize) == 4)
-        std.debug.assert(@sizeOf(siginfo_t) == 128)
+    if (@sizeof(usize) == 4)
+        std.debug.assert(@sizeof(siginfo_t) == 128)
     else
         // Take into account the padding between errno and data fields.
-        std.debug.assert(@sizeOf(siginfo_t) == 136);
+        std.debug.assert(@sizeof(siginfo_t) == 136);
 }
 
 pub const ucontext_t = switch (builtin.cpu.arch) {
@@ -940,7 +940,7 @@ pub const ucontext_t = switch (builtin.cpu.arch) {
         sc_x: [30]c_ulong,
         sc_cookie: c_long,
     },
-    else => @compileError("missing ucontext_t type definition"),
+    else => @compileerror("missing ucontext_t type definition"),
 };
 
 pub const sigset_t = c_uint;

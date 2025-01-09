@@ -21,7 +21,7 @@ pub const ReversedByteReader = struct {
         if (ctx.remaining_bytes == 0) return 0;
         const byte_index = ctx.remaining_bytes - 1;
         buffer[0] = ctx.bytes[byte_index];
-        // buffer[0] = @bitReverse(ctx.bytes[byte_index]);
+        // buffer[0] = @bitreverse(ctx.bytes[byte_index]);
         ctx.remaining_bytes = byte_index;
         return 1;
     }

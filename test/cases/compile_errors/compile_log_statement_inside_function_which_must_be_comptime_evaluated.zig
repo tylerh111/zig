@@ -1,10 +1,10 @@
 fn Foo(comptime T: type) type {
-    @compileLog(@typeName(T));
+    @compilelog(@typename(T));
     return T;
 }
 export fn entry() void {
     _ = Foo(i32);
-    _ = @typeName(Foo(i32));
+    _ = @typename(Foo(i32));
 }
 
 // error

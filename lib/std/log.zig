@@ -35,9 +35,9 @@
 //!     // Ignore all non-error logging from sources other than
 //!     // .my_project, .nice_library and the default
 //!     const scope_prefix = "(" ++ switch (scope) {
-//!         .my_project, .nice_library, std.log.default_log_scope => @tagName(scope),
-//!         else => if (@intFromEnum(level) <= @intFromEnum(std.log.Level.err))
-//!             @tagName(scope)
+//!         .my_project, .nice_library, std.log.default_log_scope => @tagname(scope),
+//!         else => if (@intfromenum(level) <= @intfromenum(std.log.Level.err))
+//!             @tagname(scope)
 //!         else
 //!             return,
 //!     } ++ "): ";
@@ -128,9 +128,9 @@ fn log(
 /// Determine if a specific log message level and scope combination are enabled for logging.
 pub fn logEnabled(comptime message_level: Level, comptime scope: @Type(.EnumLiteral)) bool {
     inline for (scope_levels) |scope_level| {
-        if (scope_level.scope == scope) return @intFromEnum(message_level) <= @intFromEnum(scope_level.level);
+        if (scope_level.scope == scope) return @intfromenum(message_level) <= @intfromenum(scope_level.level);
     }
-    return @intFromEnum(message_level) <= @intFromEnum(level);
+    return @intfromenum(message_level) <= @intfromenum(level);
 }
 
 /// Determine if a specific log message level using the default log scope is enabled for logging.
@@ -147,7 +147,7 @@ pub fn defaultLog(
     args: anytype,
 ) void {
     const level_txt = comptime message_level.asText();
-    const prefix2 = if (scope == .default) ": " else "(" ++ @tagName(scope) ++ "): ";
+    const prefix2 = if (scope == .default) ": " else "(" ++ @tagname(scope) ++ "): ";
     const stderr = std.io.getStdErr().writer();
     var bw = std.io.bufferedWriter(stderr);
     const writer = bw.writer();

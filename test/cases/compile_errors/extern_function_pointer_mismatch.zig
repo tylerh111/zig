@@ -10,7 +10,7 @@ export fn c(x: i32) i32 {
 }
 
 export fn entry() usize {
-    return @sizeOf(@TypeOf(fns));
+    return @sizeof(@TypeOf(fns));
 }
 
 // error

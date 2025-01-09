@@ -51,7 +51,7 @@ pub fn writeBranchImm(disp: i28, code: *[4]u8) void {
             Instruction.unconditional_branch_immediate,
         ), code),
     };
-    inst.unconditional_branch_immediate.imm26 = @as(u26, @truncate(@as(u28, @bitCast(disp >> 2))));
+    inst.unconditional_branch_immediate.imm26 = @as(u26, @truncate(@as(u28, @bitcast(disp >> 2))));
     mem.writeInt(u32, code, inst.toU32(), .little);
 }
 

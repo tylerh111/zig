@@ -61,7 +61,7 @@ fn testMemcpyDestManyPtr() !void {
     var buf: [5]u8 = undefined;
     var len: usize = 5;
     _ = &len;
-    @memcpy(@as([*]u8, @ptrCast(&buf)), @as([*]const u8, @ptrCast(&str))[0..len]);
+    @memcpy(@as([*]u8, @ptrcast(&buf)), @as([*]const u8, @ptrcast(&str))[0..len]);
     try expect(buf[0] == 'h');
     try expect(buf[1] == 'e');
     try expect(buf[2] == 'l');
@@ -101,5 +101,5 @@ comptime {
 
     var s = S{};
     s.set("hello");
-    if (!std.mem.eql(u8, s.buffer[0..5], "hello")) @compileError("bad");
+    if (!std.mem.eql(u8, s.buffer[0..5], "hello")) @compileerror("bad");
 }

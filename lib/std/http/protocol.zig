@@ -94,7 +94,7 @@ pub const HeadersParser = struct {
             .seen_rnr => .seen_rnr,
             .finished => .finished,
         };
-        return @intCast(result);
+        return @intcast(result);
     }
 
     pub fn findChunkedLen(r: *HeadersParser, bytes: []const u8) u32 {
@@ -122,7 +122,7 @@ pub const HeadersParser = struct {
             .invalid => .invalid,
         };
         r.next_chunk_length = cp.chunk_len;
-        return @intCast(result);
+        return @intcast(result);
     }
 
     /// Returns whether or not the parser has finished parsing a complete
@@ -145,7 +145,7 @@ pub const HeadersParser = struct {
             return error.HttpHeadersOversize;
 
         @memcpy(hp.header_bytes_buffer[hp.header_bytes_len..][0..data.len], data);
-        hp.header_bytes_len += @intCast(data.len);
+        hp.header_bytes_len += @intcast(data.len);
 
         return i;
     }
@@ -175,7 +175,7 @@ pub const HeadersParser = struct {
                         try conn.fill();
 
                         const nread = @min(conn.peek().len, data_avail);
-                        conn.drop(@intCast(nread));
+                        conn.drop(@intcast(nread));
                         r.next_chunk_length -= nread;
 
                         if (r.next_chunk_length == 0 or nread == 0) r.done = true;
@@ -184,7 +184,7 @@ pub const HeadersParser = struct {
                     } else if (out_index < buffer.len) {
                         const out_avail = buffer.len - out_index;
 
-                        const can_read = @as(usize, @intCast(@min(data_avail, out_avail)));
+                        const can_read = @as(usize, @intcast(@min(data_avail, out_avail)));
                         const nread = try conn.read(buffer[0..can_read]);
                         r.next_chunk_length -= nread;
 
@@ -199,7 +199,7 @@ pub const HeadersParser = struct {
                     try conn.fill();
 
                     const i = r.findChunkedLen(conn.peek());
-                    conn.drop(@intCast(i));
+                    conn.drop(@intcast(i));
 
                     switch (r.state) {
                         .invalid => return error.HttpChunkInvalid,
@@ -229,10 +229,10 @@ pub const HeadersParser = struct {
                         try conn.fill();
 
                         const nread = @min(conn.peek().len, data_avail);
-                        conn.drop(@intCast(nread));
+                        conn.drop(@intcast(nread));
                         r.next_chunk_length -= nread;
                     } else if (out_avail > 0) {
-                        const can_read: usize = @intCast(@min(data_avail, out_avail));
+                        const can_read: usize = @intcast(@min(data_avail, out_avail));
                         const nread = try conn.read(buffer[out_index..][0..can_read]);
                         r.next_chunk_length -= nread;
                         out_index += nread;
@@ -251,20 +251,20 @@ pub const HeadersParser = struct {
 };
 
 inline fn int16(array: *const [2]u8) u16 {
-    return @as(u16, @bitCast(array.*));
+    return @as(u16, @bitcast(array.*));
 }
 
 inline fn int24(array: *const [3]u8) u24 {
-    return @as(u24, @bitCast(array.*));
+    return @as(u24, @bitcast(array.*));
 }
 
 inline fn int32(array: *const [4]u8) u32 {
-    return @as(u32, @bitCast(array.*));
+    return @as(u32, @bitcast(array.*));
 }
 
 inline fn intShift(comptime T: type, x: anytype) T {
     switch (@import("builtin").cpu.arch.endian()) {
-        .little => return @as(T, @truncate(x >> (@bitSizeOf(@TypeOf(x)) - @bitSizeOf(T)))),
+        .little => return @as(T, @truncate(x >> (@bitsizeof(@TypeOf(x)) - @bitsizeof(T)))),
         .big => return @as(T, @truncate(x)),
     }
 }
@@ -364,7 +364,7 @@ test "HeadersParser.read length" {
         try conn.fill();
 
         const nchecked = try r.checkCompleteHead(conn.peek());
-        conn.drop(@intCast(nchecked));
+        conn.drop(@intcast(nchecked));
 
         if (r.state.isContent()) break;
     }
@@ -394,7 +394,7 @@ test "HeadersParser.read chunked" {
         try conn.fill();
 
         const nchecked = try r.checkCompleteHead(conn.peek());
-        conn.drop(@intCast(nchecked));
+        conn.drop(@intcast(nchecked));
 
         if (r.state.isContent()) break;
     }
@@ -423,7 +423,7 @@ test "HeadersParser.read chunked trailer" {
         try conn.fill();
 
         const nchecked = try r.checkCompleteHead(conn.peek());
-        conn.drop(@intCast(nchecked));
+        conn.drop(@intcast(nchecked));
 
         if (r.state.isContent()) break;
     }
@@ -438,7 +438,7 @@ test "HeadersParser.read chunked trailer" {
         try conn.fill();
 
         const nchecked = try r.checkCompleteHead(conn.peek());
-        conn.drop(@intCast(nchecked));
+        conn.drop(@intcast(nchecked));
 
         if (r.state.isContent()) break;
     }

@@ -33,7 +33,7 @@ const test_targets = blk: {
     // getBaselineCpuFeatures calls populateDependencies which has a O(N ^ 2) algorithm
     // (where N is roughly 160, which technically makes it O(1), but it adds up to a
     // lot of branches)
-    @setEvalBranchQuota(50000);
+    @setevalbranchquota(50000);
     break :blk [_]TestTarget{
         .{},
         .{
@@ -1090,7 +1090,7 @@ pub fn addModuleTests(b: *std.Build, options: ModuleTestOptions) *Step {
             options.name,
             triple_txt,
             model_txt,
-            @tagName(test_target.optimize_mode),
+            @tagname(test_target.optimize_mode),
             libc_suffix,
             single_threaded_suffix,
             backend_suffix,
@@ -1207,7 +1207,7 @@ pub fn addCAbiTests(b: *std.Build, skip_non_native: bool, skip_release: bool) *S
                 .name = b.fmt("test-c-abi-{s}-{s}-{s}{s}{s}{s}", .{
                     target.zigTriple(b.allocator) catch @panic("OOM"),
                     target.cpu.model.name,
-                    @tagName(optimize_mode),
+                    @tagname(optimize_mode),
                     if (c_abi_target.use_llvm == true)
                         "-llvm"
                     else if (target.ofmt == .c)

@@ -1,6 +1,6 @@
 comptime {
     const opt_ptr: ?*i32 = null;
-    const ptr: *i32 = @ptrCast(opt_ptr);
+    const ptr: *i32 = @ptrcast(opt_ptr);
     _ = ptr;
 }
 

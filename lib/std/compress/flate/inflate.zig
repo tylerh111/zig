@@ -107,7 +107,7 @@ pub fn Inflate(comptime container: Container, comptime LookaheadType: type, comp
             while (len > 0) {
                 const buf = self.hist.getWritable(len);
                 try self.bits.readAll(buf);
-                len -= @intCast(buf.len);
+                len -= @intcast(buf.len);
             }
             return true;
         }
@@ -116,9 +116,9 @@ pub fn Inflate(comptime container: Container, comptime LookaheadType: type, comp
             while (!self.hist.full()) {
                 const code = try self.bits.readFixedCode();
                 switch (code) {
-                    0...255 => self.hist.write(@intCast(code)),
+                    0...255 => self.hist.write(@intcast(code)),
                     256 => return true, // end of block
-                    257...285 => try self.fixedDistanceCode(@intCast(code - 257)),
+                    257...285 => try self.fixedDistanceCode(@intcast(code - 257)),
                     else => return error.InvalidCode,
                 }
             }
@@ -197,7 +197,7 @@ pub fn Inflate(comptime container: Container, comptime LookaheadType: type, comp
             switch (code) {
                 0...15 => {
                     // Represent code lengths of 0 - 15
-                    lens[pos] = @intCast(code);
+                    lens[pos] = @intcast(code);
                     return 1;
                 },
                 16 => {
@@ -489,7 +489,7 @@ test "fuzzing tests" {
         out: []const u8 = "",
         err: ?anyerror = null,
     }{
-        .{ .input = "deflate-stream", .out = @embedFile("testdata/fuzz/deflate-stream.expect") }, // 0
+        .{ .input = "deflate-stream", .out = @embedfile("testdata/fuzz/deflate-stream.expect") }, // 0
         .{ .input = "empty-distance-alphabet01" },
         .{ .input = "empty-distance-alphabet02" },
         .{ .input = "end-of-stream", .err = error.EndOfStream },
@@ -532,7 +532,7 @@ test "fuzzing tests" {
     };
 
     inline for (cases, 0..) |c, case_no| {
-        var in = std.io.fixedBufferStream(@embedFile("testdata/fuzz/" ++ c.input ++ ".input"));
+        var in = std.io.fixedBufferStream(@embedfile("testdata/fuzz/" ++ c.input ++ ".input"));
         var out = std.ArrayList(u8).init(testing.allocator);
         defer out.deinit();
         errdefer std.debug.print("test case failed {}\n", .{case_no});
@@ -547,8 +547,8 @@ test "fuzzing tests" {
 }
 
 test "bug 18966" {
-    const input = @embedFile("testdata/fuzz/bug_18966.input");
-    const expect = @embedFile("testdata/fuzz/bug_18966.expect");
+    const input = @embedfile("testdata/fuzz/bug_18966.input");
+    const expect = @embedfile("testdata/fuzz/bug_18966.expect");
 
     var in = std.io.fixedBufferStream(input);
     var out = std.ArrayList(u8).init(testing.allocator);

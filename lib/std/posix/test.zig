@@ -426,7 +426,7 @@ fn start1() u8 {
 }
 
 fn start2(ctx: *i32) u8 {
-    _ = @atomicRmw(i32, ctx, AtomicRmwOp.Add, 1, AtomicOrder.seq_cst);
+    _ = @atomicrmw(i32, ctx, AtomicRmwOp.Add, 1, AtomicOrder.seq_cst);
     return 0;
 }
 
@@ -483,7 +483,7 @@ test "sigaltstack" {
 
 // If the type is not available use void to avoid erroring out when `iter_fn` is
 // analyzed
-const dl_phdr_info = if (@hasDecl(posix.system, "dl_phdr_info")) posix.dl_phdr_info else anyopaque;
+const dl_phdr_info = if (@hasdecl(posix.system, "dl_phdr_info")) posix.dl_phdr_info else anyopaque;
 
 const IterFnError = error{
     MissingPtLoadSegment,
@@ -511,7 +511,7 @@ fn iter_fn(info: *dl_phdr_info, size: usize, counter: *usize) IterFnError!void {
 
         const reloc_addr = info.dlpi_addr + phdr.p_vaddr;
         // Find the ELF header
-        const elf_header = @as(*elf.Ehdr, @ptrFromInt(reloc_addr - phdr.p_offset));
+        const elf_header = @as(*elf.Ehdr, @ptrfromint(reloc_addr - phdr.p_offset));
         // Validate the magic
         if (!mem.eql(u8, elf_header.e_ident[0..4], elf.MAGIC)) return error.BadElfMagic;
         // Consistency check
@@ -626,7 +626,7 @@ test "mmap" {
         const stream = file.writer();
 
         var i: u32 = 0;
-        while (i < alloc_size / @sizeOf(u32)) : (i += 1) {
+        while (i < alloc_size / @sizeof(u32)) : (i += 1) {
             try stream.writeInt(u32, i, .little);
         }
     }
@@ -650,7 +650,7 @@ test "mmap" {
         const stream = mem_stream.reader();
 
         var i: u32 = 0;
-        while (i < alloc_size / @sizeOf(u32)) : (i += 1) {
+        while (i < alloc_size / @sizeof(u32)) : (i += 1) {
             try testing.expectEqual(i, try stream.readInt(u32, .little));
         }
     }
@@ -673,8 +673,8 @@ test "mmap" {
         var mem_stream = io.fixedBufferStream(data);
         const stream = mem_stream.reader();
 
-        var i: u32 = alloc_size / 2 / @sizeOf(u32);
-        while (i < alloc_size / @sizeOf(u32)) : (i += 1) {
+        var i: u32 = alloc_size / 2 / @sizeof(u32);
+        while (i < alloc_size / @sizeof(u32)) : (i += 1) {
             try testing.expectEqual(i, try stream.readInt(u32, .little));
         }
     }
@@ -774,12 +774,12 @@ test "fsync" {
 }
 
 test "getrlimit and setrlimit" {
-    if (!@hasDecl(posix.system, "rlimit")) {
+    if (!@hasdecl(posix.system, "rlimit")) {
         return error.SkipZigTest;
     }
 
     inline for (std.meta.fields(posix.rlimit_resource)) |field| {
-        const resource = @as(posix.rlimit_resource, @enumFromInt(field.value));
+        const resource = @as(posix.rlimit_resource, @enumfromint(field.value));
         const limit = try posix.getrlimit(resource);
 
         // XNU kernel does not support RLIMIT_STACK if a custom stack is active,
@@ -966,10 +966,10 @@ test "POSIX file locking with fcntl" {
 
     // Place an exclusive lock on the first byte, and a shared lock on the second byte:
     var struct_flock = std.mem.zeroInit(posix.Flock, .{ .type = posix.F.WRLCK });
-    _ = try posix.fcntl(fd, posix.F.SETLK, @intFromPtr(&struct_flock));
+    _ = try posix.fcntl(fd, posix.F.SETLK, @intfromptr(&struct_flock));
     struct_flock.start = 1;
     struct_flock.type = posix.F.RDLCK;
-    _ = try posix.fcntl(fd, posix.F.SETLK, @intFromPtr(&struct_flock));
+    _ = try posix.fcntl(fd, posix.F.SETLK, @intfromptr(&struct_flock));
 
     // Check the locks in a child process:
     const pid = try posix.fork();
@@ -977,15 +977,15 @@ test "POSIX file locking with fcntl" {
         // child expects be denied the exclusive lock:
         struct_flock.start = 0;
         struct_flock.type = posix.F.WRLCK;
-        try expectError(error.Locked, posix.fcntl(fd, posix.F.SETLK, @intFromPtr(&struct_flock)));
+        try expectError(error.Locked, posix.fcntl(fd, posix.F.SETLK, @intfromptr(&struct_flock)));
         // child expects to get the shared lock:
         struct_flock.start = 1;
         struct_flock.type = posix.F.RDLCK;
-        _ = try posix.fcntl(fd, posix.F.SETLK, @intFromPtr(&struct_flock));
+        _ = try posix.fcntl(fd, posix.F.SETLK, @intfromptr(&struct_flock));
         // child waits for the exclusive lock in order to test deadlock:
         struct_flock.start = 0;
         struct_flock.type = posix.F.WRLCK;
-        _ = try posix.fcntl(fd, posix.F.SETLKW, @intFromPtr(&struct_flock));
+        _ = try posix.fcntl(fd, posix.F.SETLKW, @intfromptr(&struct_flock));
         // child exits without continuing:
         posix.exit(0);
     } else {
@@ -994,15 +994,15 @@ test "POSIX file locking with fcntl" {
         // parent expects deadlock when attempting to upgrade the shared lock to exclusive:
         struct_flock.start = 1;
         struct_flock.type = posix.F.WRLCK;
-        try expectError(error.DeadLock, posix.fcntl(fd, posix.F.SETLKW, @intFromPtr(&struct_flock)));
+        try expectError(error.DeadLock, posix.fcntl(fd, posix.F.SETLKW, @intfromptr(&struct_flock)));
         // parent releases exclusive lock:
         struct_flock.start = 0;
         struct_flock.type = posix.F.UNLCK;
-        _ = try posix.fcntl(fd, posix.F.SETLK, @intFromPtr(&struct_flock));
+        _ = try posix.fcntl(fd, posix.F.SETLK, @intfromptr(&struct_flock));
         // parent releases shared lock:
         struct_flock.start = 1;
         struct_flock.type = posix.F.UNLCK;
-        _ = try posix.fcntl(fd, posix.F.SETLK, @intFromPtr(&struct_flock));
+        _ = try posix.fcntl(fd, posix.F.SETLK, @intfromptr(&struct_flock));
         // parent waits for child:
         const result = posix.waitpid(pid, 0);
         try expect(result.status == 0 * 256);
@@ -1311,7 +1311,7 @@ const CommonOpenFlags = packed struct {
             .NONBLOCK = cof.NONBLOCK,
             .CLOEXEC = cof.CLOEXEC,
         };
-        if (@hasField(posix.O, "LARGEFILE")) result.LARGEFILE = cof.LARGEFILE;
+        if (@hasfield(posix.O, "LARGEFILE")) result.LARGEFILE = cof.LARGEFILE;
         return result;
     }
 };

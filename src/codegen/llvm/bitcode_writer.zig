@@ -59,7 +59,7 @@ pub fn BitcodeWriter(comptime types: []const type) type {
             // Store input bits in buffer if they fit otherwise store as many as possible and flush
             if (self.bit_count > 0) {
                 const bits_remaining = 31 - self.bit_count + 1;
-                const n: u5 = @intCast(@min(bits_remaining, in_bits));
+                const n: u5 = @intcast(@min(bits_remaining, in_bits));
                 const v = @as(u32, @truncate(in_buffer)) << self.bit_count;
                 self.bit_buffer |= v;
                 in_buffer >>= n;
@@ -83,7 +83,7 @@ pub fn BitcodeWriter(comptime types: []const type) type {
 
             // Store remaining input bits in buffer
             if (in_bits > 0) {
-                self.bit_count = @intCast(in_bits);
+                self.bit_count = @intcast(in_bits);
                 self.bit_buffer = @truncate(in_buffer);
             }
         }
@@ -91,19 +91,19 @@ pub fn BitcodeWriter(comptime types: []const type) type {
         pub fn writeVBR(self: *BcWriter, value: anytype, comptime vbr_bits: usize) Error!void {
             comptime {
                 std.debug.assert(vbr_bits > 1);
-                if (@bitSizeOf(@TypeOf(value)) > 64) @compileError("Unsupported VBR block type: " ++ @typeName(@TypeOf(value)));
+                if (@bitsizeof(@TypeOf(value)) > 64) @compileerror("Unsupported VBR block type: " ++ @typename(@TypeOf(value)));
             }
 
             var in_buffer = bufValue(value, vbr_bits);
 
-            const continue_bit = @as(@TypeOf(in_buffer), 1) << @intCast(vbr_bits - 1);
+            const continue_bit = @as(@TypeOf(in_buffer), 1) << @intcast(vbr_bits - 1);
             const mask = continue_bit - 1;
 
             // If input is larger than one VBR block can store
             // then store vbr_bits - 1 bits and a continue bit
             while (in_buffer > mask) {
                 try self.writeBits(in_buffer & mask | continue_bit, vbr_bits);
-                in_buffer >>= @intCast(vbr_bits - 1);
+                in_buffer >>= @intcast(vbr_bits - 1);
             }
 
             // Store remaining bits
@@ -113,25 +113,25 @@ pub fn BitcodeWriter(comptime types: []const type) type {
         pub fn bitsVBR(_: *const BcWriter, value: anytype, comptime vbr_bits: usize) u16 {
             comptime {
                 std.debug.assert(vbr_bits > 1);
-                if (@bitSizeOf(@TypeOf(value)) > 64) @compileError("Unsupported VBR block type: " ++ @typeName(@TypeOf(value)));
+                if (@bitsizeof(@TypeOf(value)) > 64) @compileerror("Unsupported VBR block type: " ++ @typename(@TypeOf(value)));
             }
 
             var bits: u16 = 0;
 
             var in_buffer = bufValue(value, vbr_bits);
 
-            const continue_bit = @as(@TypeOf(in_buffer), 1) << @intCast(vbr_bits - 1);
+            const continue_bit = @as(@TypeOf(in_buffer), 1) << @intcast(vbr_bits - 1);
             const mask = continue_bit - 1;
 
             // If input is larger than one VBR block can store
             // then store vbr_bits - 1 bits and a continue bit
             while (in_buffer > mask) {
-                bits += @intCast(vbr_bits);
-                in_buffer >>= @intCast(vbr_bits - 1);
+                bits += @intcast(vbr_bits);
+                in_buffer >>= @intcast(vbr_bits - 1);
             }
 
             // Store remaining bits
-            bits += @intCast(vbr_bits);
+            bits += @intcast(vbr_bits);
             return bits;
         }
 
@@ -169,7 +169,7 @@ pub fn BitcodeWriter(comptime types: []const type) type {
                 // The minimum abbrev id length based on the number of abbrevs present in the block
                 pub const abbrev_len = std.math.log2_int_ceil(
                     u6,
-                    4 + (if (@hasDecl(Block, "abbrevs")) Block.abbrevs.len else 0),
+                    4 + (if (@hasdecl(Block, "abbrevs")) Block.abbrevs.len else 0),
                 );
 
                 start: usize,
@@ -234,7 +234,7 @@ pub fn BitcodeWriter(comptime types: []const type) type {
                         if (Abbrev == abbrev) return i + 4;
                     }
 
-                    @compileError("Unknown abbrev: " ++ @typeName(Abbrev));
+                    @compileerror("Unknown abbrev: " ++ @typename(Abbrev));
                 }
 
                 pub fn writeAbbrevAdapted(
@@ -406,28 +406,28 @@ fn charTo6Bit(c: u8) u8 {
 }
 
 fn BufType(comptime T: type, comptime min_len: usize) type {
-    return std.meta.Int(.unsigned, @max(min_len, @bitSizeOf(switch (@typeInfo(T)) {
+    return std.meta.Int(.unsigned, @max(min_len, @bitsizeof(switch (@typeinfo(T)) {
         .ComptimeInt => u32,
         .Int => |info| if (info.signedness == .unsigned)
             T
         else
-            @compileError("Unsupported type: " ++ @typeName(T)),
+            @compileerror("Unsupported type: " ++ @typename(T)),
         .Enum => |info| info.tag_type,
         .Bool => u1,
         .Struct => |info| switch (info.layout) {
-            .auto, .@"extern" => @compileError("Unsupported type: " ++ @typeName(T)),
-            .@"packed" => std.meta.Int(.unsigned, @bitSizeOf(T)),
+            .auto, .@"extern" => @compileerror("Unsupported type: " ++ @typename(T)),
+            .@"packed" => std.meta.Int(.unsigned, @bitsizeof(T)),
         },
-        else => @compileError("Unsupported type: " ++ @typeName(T)),
+        else => @compileerror("Unsupported type: " ++ @typename(T)),
     })));
 }
 
 fn bufValue(value: anytype, comptime min_len: usize) BufType(@TypeOf(value), min_len) {
-    return switch (@typeInfo(@TypeOf(value))) {
-        .ComptimeInt, .Int => @intCast(value),
-        .Enum => @intFromEnum(value),
-        .Bool => @intFromBool(value),
-        .Struct => @intCast(@as(std.meta.Int(.unsigned, @bitSizeOf(@TypeOf(value))), @bitCast(value))),
+    return switch (@typeinfo(@TypeOf(value))) {
+        .ComptimeInt, .Int => @intcast(value),
+        .Enum => @intfromenum(value),
+        .Bool => @intfrombool(value),
+        .Struct => @intcast(@as(std.meta.Int(.unsigned, @bitsizeof(@TypeOf(value))), @bitcast(value))),
         else => unreachable,
     };
 }

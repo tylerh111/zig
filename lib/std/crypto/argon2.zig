@@ -95,7 +95,7 @@ pub const Params = struct {
     pub fn fromLimits(ops_limit: u32, mem_limit: usize) Self {
         const m = mem_limit / 1024;
         std.debug.assert(m <= max_int);
-        return .{ .t = ops_limit, .m = @as(u32, @intCast(m)), .p = 1 };
+        return .{ .t = ops_limit, .m = @as(u32, @intcast(m)), .p = 1 };
     }
 };
 
@@ -111,26 +111,26 @@ fn initHash(
     var tmp: [4]u8 = undefined;
     var b2 = Blake2b512.init(.{});
     mem.writeInt(u32, parameters[0..4], params.p, .little);
-    mem.writeInt(u32, parameters[4..8], @as(u32, @intCast(dk_len)), .little);
+    mem.writeInt(u32, parameters[4..8], @as(u32, @intcast(dk_len)), .little);
     mem.writeInt(u32, parameters[8..12], params.m, .little);
     mem.writeInt(u32, parameters[12..16], params.t, .little);
     mem.writeInt(u32, parameters[16..20], version, .little);
-    mem.writeInt(u32, parameters[20..24], @intFromEnum(mode), .little);
+    mem.writeInt(u32, parameters[20..24], @intfromenum(mode), .little);
     b2.update(&parameters);
-    mem.writeInt(u32, &tmp, @as(u32, @intCast(password.len)), .little);
+    mem.writeInt(u32, &tmp, @as(u32, @intcast(password.len)), .little);
     b2.update(&tmp);
     b2.update(password);
-    mem.writeInt(u32, &tmp, @as(u32, @intCast(salt.len)), .little);
+    mem.writeInt(u32, &tmp, @as(u32, @intcast(salt.len)), .little);
     b2.update(&tmp);
     b2.update(salt);
     const secret = params.secret orelse "";
     std.debug.assert(secret.len <= max_int);
-    mem.writeInt(u32, &tmp, @as(u32, @intCast(secret.len)), .little);
+    mem.writeInt(u32, &tmp, @as(u32, @intcast(secret.len)), .little);
     b2.update(&tmp);
     b2.update(secret);
     const ad = params.ad orelse "";
     std.debug.assert(ad.len <= max_int);
-    mem.writeInt(u32, &tmp, @as(u32, @intCast(ad.len)), .little);
+    mem.writeInt(u32, &tmp, @as(u32, @intcast(ad.len)), .little);
     b2.update(&tmp);
     b2.update(ad);
     b2.final(h0[0..Blake2b512.digest_length]);
@@ -140,7 +140,7 @@ fn initHash(
 fn blake2bLong(out: []u8, in: []const u8) void {
     const H = Blake2b512;
     var outlen_bytes: [4]u8 = undefined;
-    mem.writeInt(u32, &outlen_bytes, @as(u32, @intCast(out.len)), .little);
+    mem.writeInt(u32, &outlen_bytes, @as(u32, @intcast(out.len)), .little);
 
     var out_buf: [H.digest_length]u8 = undefined;
 
@@ -292,7 +292,7 @@ fn processSegment(
         in[2] = slice;
         in[3] = memory;
         in[4] = passes;
-        in[5] = @intFromEnum(mode);
+        in[5] = @intfromenum(mode);
     }
     var index: u32 = 0;
     if (n == 0 and slice == 0) {
@@ -448,7 +448,7 @@ fn indexAlpha(
     lane: u24,
     index: u32,
 ) u32 {
-    var ref_lane = @as(u32, @intCast(rand >> 32)) % threads;
+    var ref_lane = @as(u32, @intcast(rand >> 32)) % threads;
     if (n == 0 and slice == 0) {
         ref_lane = lane;
     }
@@ -470,7 +470,7 @@ fn indexAlpha(
     var p = @as(u64, @as(u32, @truncate(rand)));
     p = (p * p) >> 32;
     p = (p * m) >> 32;
-    return ref_lane * lanes + @as(u32, @intCast(((s + m - (p + 1)) % lanes)));
+    return ref_lane * lanes + @as(u32, @intcast(((s + m - (p + 1)) % lanes)));
 }
 
 /// Derives a key from the password, salt, and argon2 parameters.
@@ -538,7 +538,7 @@ const PhcFormatHasher = struct {
         try kdf(allocator, &hash, password, &salt, params, mode);
 
         return phc_format.serialize(HashResult{
-            .alg_id = @tagName(mode),
+            .alg_id = @tagname(mode),
             .alg_version = version,
             .m = params.m,
             .t = params.t,

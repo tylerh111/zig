@@ -781,7 +781,7 @@ pub fn addCases(cases: *tests.StackTracesContext) void {
         \\const std = @import("std");
         \\
         \\fn bar() void {
-        \\    std.debug.dumpCurrentStackTrace(@returnAddress());
+        \\    std.debug.dumpCurrentStackTrace(@returnaddress());
         \\}
         \\fn foo() void {
         \\    bar();

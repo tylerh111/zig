@@ -158,7 +158,7 @@ test "packed union initialized with a runtime value" {
 
     const timestamp: i64 = ID.value();
     const id = ID{ .fields = Fields{
-        .timestamp = @as(u50, @intCast(timestamp)),
+        .timestamp = @as(u50, @intcast(timestamp)),
         .random_bits = 420,
     } };
     try std.testing.expect((ID{ .value = id.value }).fields.timestamp == timestamp);

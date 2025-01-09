@@ -8,7 +8,7 @@ const testing = std.testing;
 
 const spec = @import("spec.zig");
 const Word = spec.Word;
-const DoubleWord = std.meta.Int(.unsigned, @bitSizeOf(Word) * 2);
+const DoubleWord = std.meta.Int(.unsigned, @bitsizeof(Word) * 2);
 const Log2Word = std.math.Log2Int(Word);
 
 const Opcode = spec.Opcode;
@@ -50,7 +50,7 @@ pub fn emitRaw(
 ) !void {
     const word_count = 1 + operand_words;
     try section.instructions.ensureUnusedCapacity(allocator, word_count);
-    section.writeWord((@as(Word, @intCast(word_count << 16))) | @intFromEnum(opcode));
+    section.writeWord((@as(Word, @intcast(word_count << 16))) | @intfromenum(opcode));
 }
 
 /// Write an entire instruction, including all operands
@@ -72,7 +72,7 @@ pub fn emit(
 ) !void {
     const word_count = instructionSize(opcode, operands);
     try section.instructions.ensureUnusedCapacity(allocator, word_count);
-    section.writeWord(@as(Word, @intCast(word_count << 16)) | @intFromEnum(opcode));
+    section.writeWord(@as(Word, @intcast(word_count << 16)) | @intfromenum(opcode));
     section.writeOperands(opcode.Operands(), operands);
 }
 
@@ -98,7 +98,7 @@ pub fn emitSpecConstantOp(
     section.writeOperand(spec.IdRef, operands.id_result);
     section.writeOperand(Opcode, opcode);
 
-    const fields = @typeInfo(opcode.Operands()).Struct.fields;
+    const fields = @typeinfo(opcode.Operands()).Struct.fields;
     // First 2 fields are always id_result_type and id_result.
     inline for (fields[2..]) |field| {
         section.writeOperand(field.type, @field(operands, field.name));
@@ -116,12 +116,12 @@ pub fn writeWords(section: *Section, words: []const Word) void {
 pub fn writeDoubleWord(section: *Section, dword: DoubleWord) void {
     section.writeWords(&.{
         @truncate(dword),
-        @truncate(dword >> @bitSizeOf(Word)),
+        @truncate(dword >> @bitsizeof(Word)),
     });
 }
 
 fn writeOperands(section: *Section, comptime Operands: type, operands: Operands) void {
-    const fields = switch (@typeInfo(Operands)) {
+    const fields = switch (@typeinfo(Operands)) {
         .Struct => |info| info.fields,
         .Void => return,
         else => unreachable,
@@ -134,7 +134,7 @@ fn writeOperands(section: *Section, comptime Operands: type, operands: Operands)
 
 pub fn writeOperand(section: *Section, comptime Operand: type, operand: Operand) void {
     switch (Operand) {
-        spec.IdResult => section.writeWord(@intFromEnum(operand)),
+        spec.IdResult => section.writeWord(@intfromenum(operand)),
 
         spec.LiteralInteger => section.writeWord(operand),
 
@@ -147,14 +147,14 @@ pub fn writeOperand(section: *Section, comptime Operand: type, operand: Operand)
         // TODO: Where this type is used (OpSpecConstantOp) is currently not correct in the spec json,
         // so it most likely needs to be altered into something that can actually describe the entire
         // instruction in which it is used.
-        spec.LiteralSpecConstantOpInteger => section.writeWord(@intFromEnum(operand.opcode)),
+        spec.LiteralSpecConstantOpInteger => section.writeWord(@intfromenum(operand.opcode)),
 
-        spec.PairLiteralIntegerIdRef => section.writeWords(&.{ operand.value, @enumFromInt(operand.label) }),
-        spec.PairIdRefLiteralInteger => section.writeWords(&.{ @intFromEnum(operand.target), operand.member }),
-        spec.PairIdRefIdRef => section.writeWords(&.{ @intFromEnum(operand[0]), @intFromEnum(operand[1]) }),
+        spec.PairLiteralIntegerIdRef => section.writeWords(&.{ operand.value, @enumfromint(operand.label) }),
+        spec.PairIdRefLiteralInteger => section.writeWords(&.{ @intfromenum(operand.target), operand.member }),
+        spec.PairIdRefIdRef => section.writeWords(&.{ @intfromenum(operand[0]), @intfromenum(operand[1]) }),
 
-        else => switch (@typeInfo(Operand)) {
-            .Enum => section.writeWord(@intFromEnum(operand)),
+        else => switch (@typeinfo(Operand)) {
+            .Enum => section.writeWord(@intfromenum(operand)),
             .Optional => |info| if (operand) |child| {
                 section.writeOperand(info.child, child);
             },
@@ -166,7 +166,7 @@ pub fn writeOperand(section: *Section, comptime Operand: type, operand: Operand)
             },
             .Struct => |info| {
                 if (info.layout == .@"packed") {
-                    section.writeWord(@as(Word, @bitCast(operand)));
+                    section.writeWord(@as(Word, @bitcast(operand)));
                 } else {
                     section.writeExtendedMask(Operand, operand);
                 }
@@ -182,12 +182,12 @@ fn writeString(section: *Section, str: []const u8) void {
     // See https://www.khronos.org/registry/spir-v/specs/unified1/SPIRV.html#Literal
     const zero_terminated_len = str.len + 1;
     var i: usize = 0;
-    while (i < zero_terminated_len) : (i += @sizeOf(Word)) {
+    while (i < zero_terminated_len) : (i += @sizeof(Word)) {
         var word: Word = 0;
 
         var j: usize = 0;
-        while (j < @sizeOf(Word) and i + j < str.len) : (j += 1) {
-            word |= @as(Word, str[i + j]) << @as(Log2Word, @intCast(j * @bitSizeOf(u8)));
+        while (j < @sizeof(Word) and i + j < str.len) : (j += 1) {
+            word |= @as(Word, str[i + j]) << @as(Log2Word, @intcast(j * @bitsizeof(u8)));
         }
 
         section.instructions.appendAssumeCapacity(word);
@@ -196,24 +196,24 @@ fn writeString(section: *Section, str: []const u8) void {
 
 fn writeContextDependentNumber(section: *Section, operand: spec.LiteralContextDependentNumber) void {
     switch (operand) {
-        .int32 => |int| section.writeWord(@bitCast(int)),
-        .uint32 => |int| section.writeWord(@bitCast(int)),
-        .int64 => |int| section.writeDoubleWord(@bitCast(int)),
-        .uint64 => |int| section.writeDoubleWord(@bitCast(int)),
-        .float32 => |float| section.writeWord(@bitCast(float)),
-        .float64 => |float| section.writeDoubleWord(@bitCast(float)),
+        .int32 => |int| section.writeWord(@bitcast(int)),
+        .uint32 => |int| section.writeWord(@bitcast(int)),
+        .int64 => |int| section.writeDoubleWord(@bitcast(int)),
+        .uint64 => |int| section.writeDoubleWord(@bitcast(int)),
+        .float32 => |float| section.writeWord(@bitcast(float)),
+        .float64 => |float| section.writeDoubleWord(@bitcast(float)),
     }
 }
 
 fn writeExtendedMask(section: *Section, comptime Operand: type, operand: Operand) void {
     var mask: Word = 0;
-    inline for (@typeInfo(Operand).Struct.fields, 0..) |field, bit| {
-        switch (@typeInfo(field.type)) {
+    inline for (@typeinfo(Operand).Struct.fields, 0..) |field, bit| {
+        switch (@typeinfo(field.type)) {
             .Optional => if (@field(operand, field.name) != null) {
-                mask |= 1 << @as(u5, @intCast(bit));
+                mask |= 1 << @as(u5, @intcast(bit));
             },
             .Bool => if (@field(operand, field.name)) {
-                mask |= 1 << @as(u5, @intCast(bit));
+                mask |= 1 << @as(u5, @intcast(bit));
             },
             else => unreachable,
         }
@@ -221,8 +221,8 @@ fn writeExtendedMask(section: *Section, comptime Operand: type, operand: Operand
 
     section.writeWord(mask);
 
-    inline for (@typeInfo(Operand).Struct.fields) |field| {
-        switch (@typeInfo(field.type)) {
+    inline for (@typeinfo(Operand).Struct.fields) |field| {
+        switch (@typeinfo(field.type)) {
             .Optional => |info| if (@field(operand, field.name)) |child| {
                 section.writeOperands(info.child, child);
             },
@@ -234,9 +234,9 @@ fn writeExtendedMask(section: *Section, comptime Operand: type, operand: Operand
 
 fn writeExtendedUnion(section: *Section, comptime Operand: type, operand: Operand) void {
     const tag = std.meta.activeTag(operand);
-    section.writeWord(@intFromEnum(tag));
+    section.writeWord(@intfromenum(tag));
 
-    inline for (@typeInfo(Operand).Union.fields) |field| {
+    inline for (@typeinfo(Operand).Union.fields) |field| {
         if (@field(Operand, field.name) == tag) {
             section.writeOperands(field.type, @field(operand, field.name));
             return;
@@ -250,7 +250,7 @@ fn instructionSize(comptime opcode: spec.Opcode, operands: opcode.Operands()) us
 }
 
 fn operandsSize(comptime Operands: type, operands: Operands) usize {
-    const fields = switch (@typeInfo(Operands)) {
+    const fields = switch (@typeinfo(Operands)) {
         .Struct => |info| info.fields,
         .Void => return 0,
         else => unreachable,
@@ -271,7 +271,7 @@ fn operandSize(comptime Operand: type, operand: Operand) usize {
         spec.LiteralExtInstInteger,
         => 1,
 
-        spec.LiteralString => std.math.divCeil(usize, operand.len + 1, @sizeOf(Word)) catch unreachable, // Add one for zero-terminator
+        spec.LiteralString => std.math.divCeil(usize, operand.len + 1, @sizeof(Word)) catch unreachable, // Add one for zero-terminator
 
         spec.LiteralContextDependentNumber => switch (operand) {
             .int32, .uint32, .float32 => 1,
@@ -288,7 +288,7 @@ fn operandSize(comptime Operand: type, operand: Operand) usize {
         spec.PairIdRefIdRef,
         => 2,
 
-        else => switch (@typeInfo(Operand)) {
+        else => switch (@typeinfo(Operand)) {
             .Enum => 1,
             .Optional => |info| if (operand) |child| operandSize(info.child, child) else 0,
             .Pointer => |info| blk: {
@@ -309,8 +309,8 @@ fn operandSize(comptime Operand: type, operand: Operand) usize {
 fn extendedMaskSize(comptime Operand: type, operand: Operand) usize {
     var total: usize = 0;
     var any_set = false;
-    inline for (@typeInfo(Operand).Struct.fields) |field| {
-        switch (@typeInfo(field.type)) {
+    inline for (@typeinfo(Operand).Struct.fields) |field| {
+        switch (@typeinfo(field.type)) {
             .Optional => |info| if (@field(operand, field.name)) |child| {
                 total += operandsSize(info.child, child);
                 any_set = true;
@@ -326,7 +326,7 @@ fn extendedMaskSize(comptime Operand: type, operand: Operand) usize {
 
 fn extendedUnionSize(comptime Operand: type, operand: Operand) usize {
     const tag = std.meta.activeTag(operand);
-    inline for (@typeInfo(Operand).Union.fields) |field| {
+    inline for (@typeinfo(Operand).Union.fields) |field| {
         if (@field(Operand, field.name) == tag) {
             // Add one for the tag itself.
             return 1 + operandsSize(field.type, @field(operand, field.name));
@@ -341,7 +341,7 @@ test "SPIR-V Section emit() - no operands" {
 
     try section.emit(std.testing.allocator, .OpNop, {});
 
-    try testing.expect(section.instructions.items[0] == (@as(Word, 1) << 16) | @intFromEnum(Opcode.OpNop));
+    try testing.expect(section.instructions.items[0] == (@as(Word, 1) << 16) | @intfromenum(Opcode.OpNop));
 }
 
 test "SPIR-V Section emit() - simple" {
@@ -349,12 +349,12 @@ test "SPIR-V Section emit() - simple" {
     defer section.deinit(std.testing.allocator);
 
     try section.emit(std.testing.allocator, .OpUndef, .{
-        .id_result_type = @enumFromInt(0),
-        .id_result = @enumFromInt(1),
+        .id_result_type = @enumfromint(0),
+        .id_result = @enumfromint(1),
     });
 
     try testing.expectEqualSlices(Word, &.{
-        (@as(Word, 3) << 16) | @intFromEnum(Opcode.OpUndef),
+        (@as(Word, 3) << 16) | @intfromenum(Opcode.OpUndef),
         0,
         1,
     }, section.instructions.items);
@@ -367,13 +367,13 @@ test "SPIR-V Section emit() - string" {
     try section.emit(std.testing.allocator, .OpSource, .{
         .source_language = .Unknown,
         .version = 123,
-        .file = @enumFromInt(256),
+        .file = @enumfromint(256),
         .source = "pub fn main() void {}",
     });
 
     try testing.expectEqualSlices(Word, &.{
-        (@as(Word, 10) << 16) | @intFromEnum(Opcode.OpSource),
-        @intFromEnum(spec.SourceLanguage.Unknown),
+        (@as(Word, 10) << 16) | @intfromenum(Opcode.OpSource),
+        @intfromenum(spec.SourceLanguage.Unknown),
         123,
         456,
         std.mem.bytesToValue(Word, "pub "),
@@ -392,8 +392,8 @@ test "SPIR-V Section emit() - extended mask" {
     defer section.deinit(std.testing.allocator);
 
     try section.emit(std.testing.allocator, .OpLoopMerge, .{
-        .merge_block = @enumFromInt(10),
-        .continue_target = @enumFromInt(20),
+        .merge_block = @enumfromint(10),
+        .continue_target = @enumfromint(20),
         .loop_control = .{
             .Unroll = true,
             .DependencyLength = .{
@@ -403,10 +403,10 @@ test "SPIR-V Section emit() - extended mask" {
     });
 
     try testing.expectEqualSlices(Word, &.{
-        (@as(Word, 5) << 16) | @intFromEnum(Opcode.OpLoopMerge),
+        (@as(Word, 5) << 16) | @intfromenum(Opcode.OpLoopMerge),
         10,
         20,
-        @as(Word, @bitCast(spec.LoopControl{ .Unroll = true, .DependencyLength = true })),
+        @as(Word, @bitcast(spec.LoopControl{ .Unroll = true, .DependencyLength = true })),
         2,
     }, section.instructions.items);
 }
@@ -416,16 +416,16 @@ test "SPIR-V Section emit() - extended union" {
     defer section.deinit(std.testing.allocator);
 
     try section.emit(std.testing.allocator, .OpExecutionMode, .{
-        .entry_point = @enumFromInt(888),
+        .entry_point = @enumfromint(888),
         .mode = .{
             .LocalSize = .{ .x_size = 4, .y_size = 8, .z_size = 16 },
         },
     });
 
     try testing.expectEqualSlices(Word, &.{
-        (@as(Word, 6) << 16) | @intFromEnum(Opcode.OpExecutionMode),
+        (@as(Word, 6) << 16) | @intfromenum(Opcode.OpExecutionMode),
         888,
-        @intFromEnum(spec.ExecutionMode.LocalSize),
+        @intfromenum(spec.ExecutionMode.LocalSize),
         4,
         8,
         16,

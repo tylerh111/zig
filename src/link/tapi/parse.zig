@@ -44,13 +44,13 @@ pub const Node = struct {
         if (self.tag != T.base_tag) {
             return null;
         }
-        return @fieldParentPtr("base", self);
+        return @fieldparentptr("base", self);
     }
 
     pub fn deinit(self: *Node, allocator: Allocator) void {
         switch (self.tag) {
             inline else => |tag| {
-                const parent: *tag.Type() = @fieldParentPtr("base", self);
+                const parent: *tag.Type() = @fieldparentptr("base", self);
                 parent.deinit(allocator);
                 allocator.destroy(parent);
             },
@@ -64,7 +64,7 @@ pub const Node = struct {
         writer: anytype,
     ) !void {
         switch (self.tag) {
-            inline else => |tag| return @as(*tag.Type(), @fieldParentPtr("base", self)).format(fmt, options, writer),
+            inline else => |tag| return @as(*tag.Type(), @fieldparentptr("base", self)).format(fmt, options, writer),
         }
     }
 
@@ -307,7 +307,7 @@ pub const Tree = struct {
             parser.eatCommentsAndSpace(&.{});
             const token = parser.token_it.next() orelse break;
 
-            log.debug("(main) next {s}@{d}", .{ @tagName(token.id), parser.token_it.pos - 1 });
+            log.debug("(main) next {s}@{d}", .{ @tagname(token.id), parser.token_it.pos - 1 });
 
             switch (token.id) {
                 .eof => break,
@@ -333,7 +333,7 @@ const Parser = struct {
         const pos = self.token_it.pos;
         const token = self.token_it.next() orelse return error.UnexpectedEof;
 
-        log.debug("  next {s}@{d}", .{ @tagName(token.id), pos });
+        log.debug("  next {s}@{d}", .{ @tagname(token.id), pos });
 
         switch (token.id) {
             .literal => if (self.eatToken(.map_value_ind, &.{ .new_line, .comment })) |_| {
@@ -371,7 +371,7 @@ const Parser = struct {
         node.base.tree = self.tree;
         node.base.start = self.token_it.pos;
 
-        log.debug("(doc) begin {s}@{d}", .{ @tagName(self.tree.tokens[node.base.start].id), node.base.start });
+        log.debug("(doc) begin {s}@{d}", .{ @tagname(self.tree.tokens[node.base.start].id), node.base.start });
 
         // Parse header
         const explicit_doc: bool = if (self.eatToken(.doc_start, &.{})) |doc_pos| explicit_doc: {
@@ -413,7 +413,7 @@ const Parser = struct {
             return error.UnexpectedToken;
         }
 
-        log.debug("(doc) end {s}@{d}", .{ @tagName(self.tree.tokens[node.base.end].id), node.base.end });
+        log.debug("(doc) end {s}@{d}", .{ @tagname(self.tree.tokens[node.base.end].id), node.base.end });
 
         return &node.base;
     }
@@ -433,7 +433,7 @@ const Parser = struct {
             node.values.deinit(self.allocator);
         }
 
-        log.debug("(map) begin {s}@{d}", .{ @tagName(self.tree.tokens[node.base.start].id), node.base.start });
+        log.debug("(map) begin {s}@{d}", .{ @tagname(self.tree.tokens[node.base.start].id), node.base.start });
 
         const col = self.getCol(node.base.start);
 
@@ -489,7 +489,7 @@ const Parser = struct {
 
         node.base.end = self.token_it.pos - 1;
 
-        log.debug("(map) end {s}@{d}", .{ @tagName(self.tree.tokens[node.base.end].id), node.base.end });
+        log.debug("(map) end {s}@{d}", .{ @tagname(self.tree.tokens[node.base.end].id), node.base.end });
 
         return &node.base;
     }
@@ -507,7 +507,7 @@ const Parser = struct {
             node.values.deinit(self.allocator);
         }
 
-        log.debug("(list) begin {s}@{d}", .{ @tagName(self.tree.tokens[node.base.start].id), node.base.start });
+        log.debug("(list) begin {s}@{d}", .{ @tagname(self.tree.tokens[node.base.start].id), node.base.start });
 
         while (true) {
             self.eatCommentsAndSpace(&.{});
@@ -520,7 +520,7 @@ const Parser = struct {
 
         node.base.end = self.token_it.pos - 1;
 
-        log.debug("(list) end {s}@{d}", .{ @tagName(self.tree.tokens[node.base.end].id), node.base.end });
+        log.debug("(list) end {s}@{d}", .{ @tagname(self.tree.tokens[node.base.end].id), node.base.end });
 
         return &node.base;
     }
@@ -538,7 +538,7 @@ const Parser = struct {
             node.values.deinit(self.allocator);
         }
 
-        log.debug("(list) begin {s}@{d}", .{ @tagName(self.tree.tokens[node.base.start].id), node.base.start });
+        log.debug("(list) begin {s}@{d}", .{ @tagname(self.tree.tokens[node.base.start].id), node.base.start });
 
         _ = try self.expectToken(.flow_seq_start, &.{});
 
@@ -555,7 +555,7 @@ const Parser = struct {
             try node.values.append(self.allocator, val);
         }
 
-        log.debug("(list) end {s}@{d}", .{ @tagName(self.tree.tokens[node.base.end].id), node.base.end });
+        log.debug("(list) end {s}@{d}", .{ @tagname(self.tree.tokens[node.base.end].id), node.base.end });
 
         return &node.base;
     }
@@ -614,7 +614,7 @@ const Parser = struct {
     fn eatCommentsAndSpace(self: *Parser, comptime exclusions: []const Token.Id) void {
         log.debug("eatCommentsAndSpace", .{});
         outer: while (self.token_it.next()) |token| {
-            log.debug("  (token '{s}')", .{@tagName(token.id)});
+            log.debug("  (token '{s}')", .{@tagname(token.id)});
             switch (token.id) {
                 .comment, .space, .new_line => |space| {
                     inline for (exclusions) |excl| {
@@ -633,7 +633,7 @@ const Parser = struct {
     }
 
     fn eatToken(self: *Parser, id: Token.Id, comptime exclusions: []const Token.Id) ?TokenIndex {
-        log.debug("eatToken('{s}')", .{@tagName(id)});
+        log.debug("eatToken('{s}')", .{@tagname(id)});
         self.eatCommentsAndSpace(exclusions);
         const pos = self.token_it.pos;
         const token = self.token_it.next() orelse return null;
@@ -648,7 +648,7 @@ const Parser = struct {
     }
 
     fn expectToken(self: *Parser, id: Token.Id, comptime exclusions: []const Token.Id) ParseError!TokenIndex {
-        log.debug("expectToken('{s}')", .{@tagName(id)});
+        log.debug("expectToken('{s}')", .{@tagname(id)});
         return self.eatToken(id, exclusions) orelse error.UnexpectedToken;
     }
 

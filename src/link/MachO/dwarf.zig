@@ -110,7 +110,7 @@ pub const InfoReader = struct {
             dwarf.FORM.data4, dwarf.FORM.ref4 => try p.readInt(u32),
             dwarf.FORM.data8, dwarf.FORM.ref8, dwarf.FORM.ref_sig8 => try p.readInt(u64),
             dwarf.FORM.udata, dwarf.FORM.ref_udata => try p.readULEB128(u64),
-            dwarf.FORM.sdata => @bitCast(try p.readILEB128(i64)),
+            dwarf.FORM.sdata => @bitcast(try p.readILEB128(i64)),
             else => return error.UnhandledConstantForm,
         };
     }
@@ -120,7 +120,7 @@ pub const InfoReader = struct {
             dwarf.FORM.strp => {
                 const off = try p.readOffset(cuh.format);
                 const off_u = math.cast(usize, off) orelse return error.Overflow;
-                return mem.sliceTo(@as([*:0]const u8, @ptrCast(p.strtab.ptr + off_u)), 0);
+                return mem.sliceTo(@as([*:0]const u8, @ptrcast(p.strtab.ptr + off_u)), 0);
             },
             dwarf.FORM.string => {
                 const start = p.pos;
@@ -148,9 +148,9 @@ pub const InfoReader = struct {
     }
 
     pub fn readInt(p: *InfoReader, comptime Int: type) !Int {
-        if (p.pos + @sizeOf(Int) > p.bytes.len) return error.Eof;
-        defer p.pos += @sizeOf(Int);
-        return mem.readInt(Int, p.bytes[p.pos..][0..@sizeOf(Int)], .little);
+        if (p.pos + @sizeof(Int) > p.bytes.len) return error.Eof;
+        defer p.pos += @sizeof(Int);
+        return mem.readInt(Int, p.bytes[p.pos..][0..@sizeof(Int)], .little);
     }
 
     pub fn readOffset(p: *InfoReader, dw_fmt: DwarfFormat) !u64 {

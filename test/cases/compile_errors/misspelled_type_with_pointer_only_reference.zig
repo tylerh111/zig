@@ -29,7 +29,7 @@ fn foo() void {
 }
 
 export fn entry() usize {
-    return @sizeOf(@TypeOf(foo));
+    return @sizeof(@TypeOf(foo));
 }
 
 // error

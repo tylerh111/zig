@@ -45,7 +45,7 @@ pub fn pop(self: *@This()) u1 {
 /// Standalone function for working with a fixed-size buffer.
 pub fn pushWithStateAssumeCapacity(buf: []u8, bit_len: *usize, b: u1) void {
     const byte_index = bit_len.* >> 3;
-    const bit_index = @as(u3, @intCast(bit_len.* & 7));
+    const bit_index = @as(u3, @intcast(bit_len.* & 7));
 
     buf[byte_index] &= ~(@as(u8, 1) << bit_index);
     buf[byte_index] |= @as(u8, b) << bit_index;
@@ -56,8 +56,8 @@ pub fn pushWithStateAssumeCapacity(buf: []u8, bit_len: *usize, b: u1) void {
 /// Standalone function for working with a fixed-size buffer.
 pub fn peekWithState(buf: []const u8, bit_len: usize) u1 {
     const byte_index = (bit_len - 1) >> 3;
-    const bit_index = @as(u3, @intCast((bit_len - 1) & 7));
-    return @as(u1, @intCast((buf[byte_index] >> bit_index) & 1));
+    const bit_index = @as(u3, @intcast((bit_len - 1) & 7));
+    return @as(u1, @intcast((buf[byte_index] >> bit_index) & 1));
 }
 
 /// Standalone function for working with a fixed-size buffer.

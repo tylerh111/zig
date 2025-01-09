@@ -23,7 +23,7 @@ pub fn Value(comptime T: type) type {
 
                 const addr: *anyopaque = self;
                 return switch (order) {
-                    .unordered, .monotonic => @compileError(@tagName(order) ++ " only applies to atomic loads and stores"),
+                    .unordered, .monotonic => @compileerror(@tagname(order) ++ " only applies to atomic loads and stores"),
                     .acquire => tsan.__tsan_acquire(addr),
                     .release => tsan.__tsan_release(addr),
                     .acq_rel, .seq_cst => {
@@ -37,67 +37,67 @@ pub fn Value(comptime T: type) type {
         }
 
         pub inline fn load(self: *const Self, comptime order: AtomicOrder) T {
-            return @atomicLoad(T, &self.raw, order);
+            return @atomicload(T, &self.raw, order);
         }
 
         pub inline fn store(self: *Self, value: T, comptime order: AtomicOrder) void {
-            @atomicStore(T, &self.raw, value, order);
+            @atomicstore(T, &self.raw, value, order);
         }
 
         pub inline fn swap(self: *Self, operand: T, comptime order: AtomicOrder) T {
-            return @atomicRmw(T, &self.raw, .Xchg, operand, order);
+            return @atomicrmw(T, &self.raw, .Xchg, operand, order);
         }
 
-        pub inline fn cmpxchgWeak(
+        pub inline fn cmpxchgweak(
             self: *Self,
             expected_value: T,
             new_value: T,
             comptime success_order: AtomicOrder,
             comptime fail_order: AtomicOrder,
         ) ?T {
-            return @cmpxchgWeak(T, &self.raw, expected_value, new_value, success_order, fail_order);
+            return @cmpxchgweak(T, &self.raw, expected_value, new_value, success_order, fail_order);
         }
 
-        pub inline fn cmpxchgStrong(
+        pub inline fn cmpxchgstrong(
             self: *Self,
             expected_value: T,
             new_value: T,
             comptime success_order: AtomicOrder,
             comptime fail_order: AtomicOrder,
         ) ?T {
-            return @cmpxchgStrong(T, &self.raw, expected_value, new_value, success_order, fail_order);
+            return @cmpxchgstrong(T, &self.raw, expected_value, new_value, success_order, fail_order);
         }
 
         pub inline fn fetchAdd(self: *Self, operand: T, comptime order: AtomicOrder) T {
-            return @atomicRmw(T, &self.raw, .Add, operand, order);
+            return @atomicrmw(T, &self.raw, .Add, operand, order);
         }
 
         pub inline fn fetchSub(self: *Self, operand: T, comptime order: AtomicOrder) T {
-            return @atomicRmw(T, &self.raw, .Sub, operand, order);
+            return @atomicrmw(T, &self.raw, .Sub, operand, order);
         }
 
         pub inline fn fetchMin(self: *Self, operand: T, comptime order: AtomicOrder) T {
-            return @atomicRmw(T, &self.raw, .Min, operand, order);
+            return @atomicrmw(T, &self.raw, .Min, operand, order);
         }
 
         pub inline fn fetchMax(self: *Self, operand: T, comptime order: AtomicOrder) T {
-            return @atomicRmw(T, &self.raw, .Max, operand, order);
+            return @atomicrmw(T, &self.raw, .Max, operand, order);
         }
 
         pub inline fn fetchAnd(self: *Self, operand: T, comptime order: AtomicOrder) T {
-            return @atomicRmw(T, &self.raw, .And, operand, order);
+            return @atomicrmw(T, &self.raw, .And, operand, order);
         }
 
         pub inline fn fetchNand(self: *Self, operand: T, comptime order: AtomicOrder) T {
-            return @atomicRmw(T, &self.raw, .Nand, operand, order);
+            return @atomicrmw(T, &self.raw, .Nand, operand, order);
         }
 
         pub inline fn fetchXor(self: *Self, operand: T, comptime order: AtomicOrder) T {
-            return @atomicRmw(T, &self.raw, .Xor, operand, order);
+            return @atomicrmw(T, &self.raw, .Xor, operand, order);
         }
 
         pub inline fn fetchOr(self: *Self, operand: T, comptime order: AtomicOrder) T {
-            return @atomicRmw(T, &self.raw, .Or, operand, order);
+            return @atomicrmw(T, &self.raw, .Or, operand, order);
         }
 
         pub inline fn rmw(
@@ -106,7 +106,7 @@ pub fn Value(comptime T: type) type {
             operand: T,
             comptime order: AtomicOrder,
         ) T {
-            return @atomicRmw(T, &self.raw, op, operand, order);
+            return @atomicrmw(T, &self.raw, op, operand, order);
         }
 
         const Bit = std.math.Log2Int(T);
@@ -117,7 +117,7 @@ pub fn Value(comptime T: type) type {
         pub inline fn bitSet(self: *Self, bit: Bit, comptime order: AtomicOrder) u1 {
             const mask = @as(T, 1) << bit;
             const value = self.fetchOr(mask, order);
-            return @intFromBool(value & mask != 0);
+            return @intfrombool(value & mask != 0);
         }
 
         /// Marked `inline` so that if `bit` is comptime-known, the instruction
@@ -126,7 +126,7 @@ pub fn Value(comptime T: type) type {
         pub inline fn bitReset(self: *Self, bit: Bit, comptime order: AtomicOrder) u1 {
             const mask = @as(T, 1) << bit;
             const value = self.fetchAnd(~mask, order);
-            return @intFromBool(value & mask != 0);
+            return @intfrombool(value & mask != 0);
         }
 
         /// Marked `inline` so that if `bit` is comptime-known, the instruction
@@ -135,7 +135,7 @@ pub fn Value(comptime T: type) type {
         pub inline fn bitToggle(self: *Self, bit: Bit, comptime order: AtomicOrder) u1 {
             const mask = @as(T, 1) << bit;
             const value = self.fetchXor(mask, order);
-            return @intFromBool(value & mask != 0);
+            return @intfrombool(value & mask != 0);
         }
     };
 }
@@ -199,8 +199,8 @@ test "Value.swap" {
     try testing.expectEqual(true, a.load(.seq_cst));
 
     var b = Value(?*u8).init(null);
-    try testing.expectEqual(@as(?*u8, null), b.swap(@as(?*u8, @ptrFromInt(@alignOf(u8))), .seq_cst));
-    try testing.expectEqual(@as(?*u8, @ptrFromInt(@alignOf(u8))), b.load(.seq_cst));
+    try testing.expectEqual(@as(?*u8, null), b.swap(@as(?*u8, @ptrfromint(@alignof(u8))), .seq_cst));
+    try testing.expectEqual(@as(?*u8, @ptrfromint(@alignof(u8))), b.load(.seq_cst));
 }
 
 test "Value.store" {
@@ -209,26 +209,26 @@ test "Value.store" {
     try testing.expectEqual(@as(usize, 10), x.load(.seq_cst));
 }
 
-test "Value.cmpxchgWeak" {
+test "Value.cmpxchgweak" {
     var x = Value(usize).init(0);
 
-    try testing.expectEqual(@as(?usize, 0), x.cmpxchgWeak(1, 0, .seq_cst, .seq_cst));
+    try testing.expectEqual(@as(?usize, 0), x.cmpxchgweak(1, 0, .seq_cst, .seq_cst));
     try testing.expectEqual(@as(usize, 0), x.load(.seq_cst));
 
-    while (x.cmpxchgWeak(0, 1, .seq_cst, .seq_cst)) |_| {}
+    while (x.cmpxchgweak(0, 1, .seq_cst, .seq_cst)) |_| {}
     try testing.expectEqual(@as(usize, 1), x.load(.seq_cst));
 
-    while (x.cmpxchgWeak(1, 0, .seq_cst, .seq_cst)) |_| {}
+    while (x.cmpxchgweak(1, 0, .seq_cst, .seq_cst)) |_| {}
     try testing.expectEqual(@as(usize, 0), x.load(.seq_cst));
 }
 
-test "Value.cmpxchgStrong" {
+test "Value.cmpxchgstrong" {
     var x = Value(usize).init(0);
-    try testing.expectEqual(@as(?usize, 0), x.cmpxchgStrong(1, 0, .seq_cst, .seq_cst));
+    try testing.expectEqual(@as(?usize, 0), x.cmpxchgstrong(1, 0, .seq_cst, .seq_cst));
     try testing.expectEqual(@as(usize, 0), x.load(.seq_cst));
-    try testing.expectEqual(@as(?usize, null), x.cmpxchgStrong(0, 1, .seq_cst, .seq_cst));
+    try testing.expectEqual(@as(?usize, null), x.cmpxchgstrong(0, 1, .seq_cst, .seq_cst));
     try testing.expectEqual(@as(usize, 1), x.load(.seq_cst));
-    try testing.expectEqual(@as(?usize, null), x.cmpxchgStrong(1, 0, .seq_cst, .seq_cst));
+    try testing.expectEqual(@as(?usize, null), x.cmpxchgstrong(1, 0, .seq_cst, .seq_cst));
     try testing.expectEqual(@as(usize, 0), x.load(.seq_cst));
 }
 
@@ -299,8 +299,8 @@ test "Value.fetchXor" {
 test "Value.bitSet" {
     var x = Value(usize).init(0);
 
-    for (0..@bitSizeOf(usize)) |bit_index| {
-        const bit = @as(std.math.Log2Int(usize), @intCast(bit_index));
+    for (0..@bitsizeof(usize)) |bit_index| {
+        const bit = @as(std.math.Log2Int(usize), @intcast(bit_index));
         const mask = @as(usize, 1) << bit;
 
         // setting the bit should change the bit
@@ -314,7 +314,7 @@ test "Value.bitSet" {
 
         // all the previous bits should have not changed (still be set)
         for (0..bit_index) |prev_bit_index| {
-            const prev_bit = @as(std.math.Log2Int(usize), @intCast(prev_bit_index));
+            const prev_bit = @as(std.math.Log2Int(usize), @intcast(prev_bit_index));
             const prev_mask = @as(usize, 1) << prev_bit;
             try testing.expect(x.load(.seq_cst) & prev_mask != 0);
         }
@@ -324,8 +324,8 @@ test "Value.bitSet" {
 test "Value.bitReset" {
     var x = Value(usize).init(0);
 
-    for (0..@bitSizeOf(usize)) |bit_index| {
-        const bit = @as(std.math.Log2Int(usize), @intCast(bit_index));
+    for (0..@bitsizeof(usize)) |bit_index| {
+        const bit = @as(std.math.Log2Int(usize), @intcast(bit_index));
         const mask = @as(usize, 1) << bit;
         x.raw |= mask;
 
@@ -340,7 +340,7 @@ test "Value.bitReset" {
 
         // all the previous bits should have not changed (still be reset)
         for (0..bit_index) |prev_bit_index| {
-            const prev_bit = @as(std.math.Log2Int(usize), @intCast(prev_bit_index));
+            const prev_bit = @as(std.math.Log2Int(usize), @intcast(prev_bit_index));
             const prev_mask = @as(usize, 1) << prev_bit;
             try testing.expect(x.load(.seq_cst) & prev_mask == 0);
         }
@@ -350,8 +350,8 @@ test "Value.bitReset" {
 test "Value.bitToggle" {
     var x = Value(usize).init(0);
 
-    for (0..@bitSizeOf(usize)) |bit_index| {
-        const bit = @as(std.math.Log2Int(usize), @intCast(bit_index));
+    for (0..@bitsizeof(usize)) |bit_index| {
+        const bit = @as(std.math.Log2Int(usize), @intcast(bit_index));
         const mask = @as(usize, 1) << bit;
 
         // toggling the bit should change the bit
@@ -365,7 +365,7 @@ test "Value.bitToggle" {
 
         // all the previous bits should have not changed (still be toggled back)
         for (0..bit_index) |prev_bit_index| {
-            const prev_bit = @as(std.math.Log2Int(usize), @intCast(prev_bit_index));
+            const prev_bit = @as(std.math.Log2Int(usize), @intcast(prev_bit_index));
             const prev_mask = @as(usize, 1) << prev_bit;
             try testing.expect(x.load(.seq_cst) & prev_mask == 0);
         }

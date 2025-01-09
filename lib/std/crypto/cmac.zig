@@ -8,7 +8,7 @@ pub const CmacAes128 = Cmac(crypto.core.aes.Aes128);
 /// NIST Special Publication 800-38B - The CMAC Mode for Authentication
 /// https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-38b.pdf
 pub fn Cmac(comptime BlockCipher: type) type {
-    const BlockCipherCtx = @typeInfo(@TypeOf(BlockCipher.initEnc)).Fn.return_type.?;
+    const BlockCipherCtx = @typeinfo(@TypeOf(BlockCipher.initEnc)).Fn.return_type.?;
     const Block = [BlockCipher.block.block_length]u8;
 
     return struct {
@@ -81,7 +81,7 @@ pub fn Cmac(comptime BlockCipher: type) type {
                 16 => (l_ << 1) ^ (0x87 & -%(l_ >> 127)), // mod x^128 + x^7 + x^2 + x + 1
                 32 => (l_ << 1) ^ (0x0425 & -%(l_ >> 255)), // mod x^256 + x^10 + x^5 + x^2 + 1
                 64 => (l_ << 1) ^ (0x0125 & -%(l_ >> 511)), // mod x^512 + x^8 + x^5 + x^2 + 1
-                else => @compileError("unsupported block length"),
+                else => @compileerror("unsupported block length"),
             };
             var l2: Block = undefined;
             mem.writeInt(Int, &l2, l_2, .big);

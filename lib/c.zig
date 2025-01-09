@@ -102,7 +102,7 @@ test "strncpy" {
     var s1: [9:0]u8 = undefined;
 
     s1[0] = 0;
-    _ = strncpy(&s1, "foobarbaz", @sizeOf(@TypeOf(s1)));
+    _ = strncpy(&s1, "foobarbaz", @sizeof(@TypeOf(s1)));
     try std.testing.expectEqualSlices(u8, "foobarbaz", std.mem.sliceTo(&s1, 0));
 }
 
@@ -191,7 +191,7 @@ test "strncmp" {
 
 // TODO we should be able to put this directly in std/linux/x86_64.zig but
 // it causes a segfault in release mode. this is a workaround of calling it
-// across .o file boundaries. fix comptime @ptrCast of nakedcc functions.
+// across .o file boundaries. fix comptime @ptrcast of nakedcc functions.
 fn clone() callconv(.Naked) void {
     switch (native_arch) {
         .x86 => {
@@ -549,6 +549,6 @@ fn clone() callconv(.Naked) void {
                 \\ restore
             );
         },
-        else => @compileError("Implement clone() for this arch."),
+        else => @compileerror("Implement clone() for this arch."),
     }
 }

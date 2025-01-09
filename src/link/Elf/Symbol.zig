@@ -129,13 +129,13 @@ pub fn address(symbol: Symbol, opts: struct { plt: bool = true }, elf_file: *Elf
                     mem.startsWith(u8, sym_name, ".eh_frame_seg") or
                     symbol.elfSym(elf_file).st_type() == elf.STT_SECTION)
                 {
-                    return @intCast(sh_addr);
+                    return @intcast(sh_addr);
                 }
 
                 if (mem.startsWith(u8, sym_name, "__FRAME_END__") or
                     mem.startsWith(u8, sym_name, "__EH_FRAME_LIST_END__"))
                 {
-                    return @intCast(sh_addr + sh_size);
+                    return @intcast(sh_addr + sh_size);
                 }
 
                 // TODO I think we potentially should error here
@@ -170,7 +170,7 @@ pub fn pltGotAddress(symbol: Symbol, elf_file: *Elf) i64 {
     const extras = symbol.extra(elf_file).?;
     const shdr = elf_file.shdrs.items[elf_file.plt_got_section_index.?];
     const cpu_arch = elf_file.getTarget().cpu.arch;
-    return @intCast(shdr.sh_addr + extras.plt_got * PltGotSection.entrySize(cpu_arch));
+    return @intcast(shdr.sh_addr + extras.plt_got * PltGotSection.entrySize(cpu_arch));
 }
 
 pub fn pltAddress(symbol: Symbol, elf_file: *Elf) i64 {
@@ -178,20 +178,20 @@ pub fn pltAddress(symbol: Symbol, elf_file: *Elf) i64 {
     const extras = symbol.extra(elf_file).?;
     const shdr = elf_file.shdrs.items[elf_file.plt_section_index.?];
     const cpu_arch = elf_file.getTarget().cpu.arch;
-    return @intCast(shdr.sh_addr + extras.plt * PltSection.entrySize(cpu_arch) + PltSection.preambleSize(cpu_arch));
+    return @intcast(shdr.sh_addr + extras.plt * PltSection.entrySize(cpu_arch) + PltSection.preambleSize(cpu_arch));
 }
 
 pub fn gotPltAddress(symbol: Symbol, elf_file: *Elf) i64 {
     if (!symbol.flags.has_plt) return 0;
     const extras = symbol.extra(elf_file).?;
     const shdr = elf_file.shdrs.items[elf_file.got_plt_section_index.?];
-    return @intCast(shdr.sh_addr + extras.plt * 8 + GotPltSection.preamble_size);
+    return @intcast(shdr.sh_addr + extras.plt * 8 + GotPltSection.preamble_size);
 }
 
 pub fn copyRelAddress(symbol: Symbol, elf_file: *Elf) i64 {
     if (!symbol.flags.has_copy_rel) return 0;
     const shdr = elf_file.shdrs.items[elf_file.copy_rel_section_index.?];
-    return @as(i64, @intCast(shdr.sh_addr)) + symbol.value;
+    return @as(i64, @intcast(shdr.sh_addr)) + symbol.value;
 }
 
 pub fn tlsGdAddress(symbol: Symbol, elf_file: *Elf) i64 {
@@ -266,7 +266,7 @@ pub fn addExtra(symbol: *Symbol, opts: AddExtraOpts, elf_file: *Elf) !void {
         symbol.extra_index = try elf_file.addSymbolExtra(.{});
     }
     var extras = symbol.extra(elf_file).?;
-    inline for (@typeInfo(@TypeOf(opts)).Struct.fields) |field| {
+    inline for (@typeinfo(@TypeOf(opts)).Struct.fields) |field| {
         if (@field(opts, field.name)) |x| {
             @field(extras, field.name) = x;
         }
@@ -293,12 +293,12 @@ pub fn setOutputSym(symbol: Symbol, elf_file: *Elf, out: *elf.Elf64_Sym) void {
         break :blk esym.st_bind();
     };
     const st_shndx: u16 = blk: {
-        if (symbol.flags.has_copy_rel) break :blk @intCast(elf_file.copy_rel_section_index.?);
+        if (symbol.flags.has_copy_rel) break :blk @intcast(elf_file.copy_rel_section_index.?);
         if (file_ptr == .shared_object or esym.st_shndx == elf.SHN_UNDEF) break :blk elf.SHN_UNDEF;
         if (elf_file.base.isRelocatable() and esym.st_shndx == elf.SHN_COMMON) break :blk elf.SHN_COMMON;
-        if (symbol.mergeSubsection(elf_file)) |msub| break :blk @intCast(msub.mergeSection(elf_file).output_section_index);
+        if (symbol.mergeSubsection(elf_file)) |msub| break :blk @intcast(msub.mergeSection(elf_file).output_section_index);
         if (symbol.atom(elf_file) == null and file_ptr != .linker_defined) break :blk elf.SHN_ABS;
-        break :blk @intCast(symbol.outputShndx() orelse elf.SHN_UNDEF);
+        break :blk @intcast(symbol.outputShndx() orelse elf.SHN_UNDEF);
     };
     const st_value = blk: {
         if (symbol.flags.has_copy_rel) break :blk symbol.address(.{}, elf_file);
@@ -315,7 +315,7 @@ pub fn setOutputSym(symbol: Symbol, elf_file: *Elf, out: *elf.Elf64_Sym) void {
     out.st_info = (st_bind << 4) | st_type;
     out.st_other = esym.st_other;
     out.st_shndx = st_shndx;
-    out.st_value = @intCast(st_value);
+    out.st_value = @intcast(st_value);
     out.st_size = esym.st_size;
 }
 
@@ -329,7 +329,7 @@ pub fn format(
     _ = unused_fmt_string;
     _ = options;
     _ = writer;
-    @compileError("do not format symbols directly");
+    @compileerror("do not format symbols directly");
 }
 
 const FormatContext = struct {
@@ -406,7 +406,7 @@ fn format2(
         try writer.print(" : {s}", .{&buf});
         if (symbol.flags.weak) try writer.writeAll(" : weak");
         switch (file_ptr) {
-            inline else => |x| try writer.print(" : {s}({d})", .{ @tagName(file_ptr), x.index }),
+            inline else => |x| try writer.print(" : {s}({d})", .{ @tagname(file_ptr), x.index }),
         }
     } else try writer.writeAll(" : unresolved");
 }

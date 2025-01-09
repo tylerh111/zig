@@ -47,7 +47,7 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
 
     const b = step.owner;
     const arena = b.allocator;
-    const fmt: *Fmt = @fieldParentPtr("step", step);
+    const fmt: *Fmt = @fieldparentptr("step", step);
 
     var argv: std.ArrayListUnmanaged([]const u8) = .{};
     try argv.ensureUnusedCapacity(arena, 2 + 1 + fmt.paths.len + 2 * fmt.exclude_paths.len);

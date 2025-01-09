@@ -1,5 +1,5 @@
 const x = 42;
-const y = @intFromPtr(&x);
+const y = @intfromptr(&x);
 pub export fn entry() void {
     _ = y;
 }

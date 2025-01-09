@@ -24,7 +24,7 @@ pub fn PackedIntIo(comptime Int: type, comptime endian: Endian) type {
     // mean the OS fatally kills the program. Thus, we use a larger container (MaxIo)
     // most of the time, but a smaller container (MinIo) when touching the last byte
     // of the memory.
-    const int_bits = @bitSizeOf(Int);
+    const int_bits = @bitsizeof(Int);
 
     // In the best case, this is the number of bytes we need to touch
     // to read or write a value, as bits.
@@ -65,32 +65,32 @@ pub fn PackedIntIo(comptime Int: type, comptime endian: Endian) type {
         }
 
         fn getBits(bytes: []const u8, comptime Container: type, bit_index: usize) Int {
-            const container_bits = @bitSizeOf(Container);
+            const container_bits = @bitsizeof(Container);
 
             const start_byte = bit_index / 8;
             const head_keep_bits = bit_index - (start_byte * 8);
             const tail_keep_bits = container_bits - (int_bits + head_keep_bits);
 
             //read bytes as container
-            const value_ptr: *align(1) const Container = @ptrCast(&bytes[start_byte]);
+            const value_ptr: *align(1) const Container = @ptrcast(&bytes[start_byte]);
             var value = value_ptr.*;
 
-            if (endian != native_endian) value = @byteSwap(value);
+            if (endian != native_endian) value = @byteswap(value);
 
             switch (endian) {
                 .big => {
-                    value <<= @intCast(head_keep_bits);
-                    value >>= @intCast(head_keep_bits);
-                    value >>= @intCast(tail_keep_bits);
+                    value <<= @intcast(head_keep_bits);
+                    value >>= @intcast(head_keep_bits);
+                    value >>= @intcast(tail_keep_bits);
                 },
                 .little => {
-                    value <<= @intCast(tail_keep_bits);
-                    value >>= @intCast(tail_keep_bits);
-                    value >>= @intCast(head_keep_bits);
+                    value <<= @intcast(tail_keep_bits);
+                    value >>= @intcast(tail_keep_bits);
+                    value >>= @intcast(head_keep_bits);
                 },
             }
 
-            return @bitCast(@as(UnInt, @truncate(value)));
+            return @bitcast(@as(UnInt, @truncate(value)));
         }
 
         /// Sets the integer at `index` to `val` within the packed data beginning
@@ -107,35 +107,35 @@ pub fn PackedIntIo(comptime Int: type, comptime endian: Endian) type {
         }
 
         fn setBits(bytes: []u8, comptime Container: type, bit_index: usize, int: Int) void {
-            const container_bits = @bitSizeOf(Container);
+            const container_bits = @bitsizeof(Container);
             const Shift = std.math.Log2Int(Container);
 
             const start_byte = bit_index / 8;
             const head_keep_bits = bit_index - (start_byte * 8);
             const tail_keep_bits = container_bits - (int_bits + head_keep_bits);
             const keep_shift: Shift = switch (endian) {
-                .big => @intCast(tail_keep_bits),
-                .little => @intCast(head_keep_bits),
+                .big => @intcast(tail_keep_bits),
+                .little => @intcast(head_keep_bits),
             };
 
             //position the bits where they need to be in the container
-            const value = @as(Container, @intCast(@as(UnInt, @bitCast(int)))) << keep_shift;
+            const value = @as(Container, @intcast(@as(UnInt, @bitcast(int)))) << keep_shift;
 
             //read existing bytes
-            const target_ptr: *align(1) Container = @ptrCast(&bytes[start_byte]);
+            const target_ptr: *align(1) Container = @ptrcast(&bytes[start_byte]);
             var target = target_ptr.*;
 
-            if (endian != native_endian) target = @byteSwap(target);
+            if (endian != native_endian) target = @byteswap(target);
 
             //zero the bits we want to replace in the existing bytes
-            const inv_mask = @as(Container, @intCast(std.math.maxInt(UnInt))) << keep_shift;
+            const inv_mask = @as(Container, @intcast(std.math.maxInt(UnInt))) << keep_shift;
             const mask = ~inv_mask;
             target &= mask;
 
             //merge the new value
             target |= value;
 
-            if (endian != native_endian) target = @byteSwap(target);
+            if (endian != native_endian) target = @byteswap(target);
 
             //save it back
             target_ptr.* = target;
@@ -155,7 +155,7 @@ pub fn PackedIntIo(comptime Int: type, comptime endian: Endian) type {
             if (length == 0) return PackedIntSliceEndian(Int, endian).init(new_bytes[0..0], 0);
 
             var new_slice = PackedIntSliceEndian(Int, endian).init(new_bytes, length);
-            new_slice.bit_offset = @intCast((bit_index - (start_byte * 8)));
+            new_slice.bit_offset = @intcast((bit_index - (start_byte * 8)));
             return new_slice;
         }
 
@@ -163,7 +163,7 @@ pub fn PackedIntIo(comptime Int: type, comptime endian: Endian) type {
         /// Slice will begin at `bit_offset` within `bytes` and the new length will be automatically
         /// calculated from `old_len` using the sizes of the current integer type and `NewInt`.
         pub fn sliceCast(bytes: []u8, comptime NewInt: type, comptime new_endian: Endian, bit_offset: u3, old_len: usize) PackedIntSliceEndian(NewInt, new_endian) {
-            const new_int_bits = @bitSizeOf(NewInt);
+            const new_int_bits = @bitsizeof(NewInt);
             const New = PackedIntSliceEndian(NewInt, new_endian);
 
             const total_bits = (old_len * int_bits);
@@ -193,7 +193,7 @@ pub fn PackedIntArray(comptime Int: type, comptime int_count: usize) type {
 /// than in a normal array. Elements are packed without storing any meta data.
 /// PackedIntArrayEndian(i3, 8) will occupy exactly 3 bytes of memory.
 pub fn PackedIntArrayEndian(comptime Int: type, comptime endian: Endian, comptime int_count: usize) type {
-    const int_bits = @bitSizeOf(Int);
+    const int_bits = @bitsizeof(Int);
     const total_bits = int_bits * int_count;
     const total_bytes = (total_bits + 7) / 8;
 
@@ -274,7 +274,7 @@ pub fn PackedIntSlice(comptime Int: type) type {
 
 /// A type representing a sub range of a PackedIntArrayEndian.
 pub fn PackedIntSliceEndian(comptime Int: type, comptime endian: Endian) type {
-    const int_bits = @bitSizeOf(Int);
+    const int_bits = @bitsizeof(Int);
     const Io = PackedIntIo(Int, endian);
 
     return struct {
@@ -343,13 +343,13 @@ pub fn PackedIntSliceEndian(comptime Int: type, comptime endian: Endian) type {
 }
 
 test "PackedIntArray" {
-    // TODO @setEvalBranchQuota generates panics in wasm32. Investigate.
+    // TODO @setevalbranchquota generates panics in wasm32. Investigate.
     if (builtin.target.cpu.arch == .wasm32) return error.SkipZigTest;
 
     // TODO: enable this test
     if (true) return error.SkipZigTest;
 
-    @setEvalBranchQuota(10000);
+    @setevalbranchquota(10000);
     const max_bits = 256;
     const int_count = 19;
 
@@ -361,7 +361,7 @@ test "PackedIntArray" {
 
         const PackedArray = PackedIntArray(I, int_count);
         const expected_bytes = ((bits * int_count) + 7) / 8;
-        try testing.expect(@sizeOf(PackedArray) == expected_bytes);
+        try testing.expect(@sizeof(PackedArray) == expected_bytes);
 
         var data: PackedArray = undefined;
 
@@ -398,7 +398,7 @@ test "PackedIntArray init" {
             const PackedArray = PackedIntArray(u3, 8);
             var packed_array = PackedArray.init([_]u3{ 0, 1, 2, 3, 4, 5, 6, 7 });
             var i: usize = 0;
-            while (i < packed_array.len) : (i += 1) try testing.expectEqual(@as(u3, @intCast(i)), packed_array.get(i));
+            while (i < packed_array.len) : (i += 1) try testing.expectEqual(@as(u3, @intcast(i)), packed_array.get(i));
         }
     };
     try S.doTheTest();
@@ -419,13 +419,13 @@ test "PackedIntArray initAllTo" {
 }
 
 test "PackedIntSlice" {
-    // TODO @setEvalBranchQuota generates panics in wasm32. Investigate.
+    // TODO @setevalbranchquota generates panics in wasm32. Investigate.
     if (builtin.target.cpu.arch == .wasm32) return error.SkipZigTest;
 
     // TODO enable this test
     if (true) return error.SkipZigTest;
 
-    @setEvalBranchQuota(10000);
+    @setevalbranchquota(10000);
     const max_bits = 256;
     const int_count = 19;
     const total_bits = max_bits * int_count;
@@ -479,7 +479,7 @@ test "PackedIntSlice of PackedInt(Array/Slice)" {
 
         var i: usize = 0;
         while (i < packed_array.len) : (i += 1) {
-            packed_array.set(i, @intCast(i % limit));
+            packed_array.set(i, @intcast(i % limit));
         }
 
         //slice of array
@@ -669,7 +669,7 @@ test "PackedIntArray at end of available memory" {
     const PackedArray = PackedIntArray(u3, 8);
 
     const Padded = struct {
-        _: [std.mem.page_size - @sizeOf(PackedArray)]u8,
+        _: [std.mem.page_size - @sizeof(PackedArray)]u8,
         p: PackedArray,
     };
 

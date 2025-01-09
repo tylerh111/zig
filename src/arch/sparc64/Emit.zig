@@ -70,7 +70,7 @@ pub fn emitMir(
 
     // Emit machine code
     for (mir_tags, 0..) |tag, index| {
-        const inst = @as(u32, @intCast(index));
+        const inst = @as(u32, @intcast(index));
         switch (tag) {
             .dbg_line => try emit.mirDbgLine(inst),
             .dbg_prologue_end => try emit.mirDebugPrologueEnd(),
@@ -296,7 +296,7 @@ fn mirConditionalBranch(emit: *Emit, inst: Mir.Inst.Index) !void {
         .bpcc => switch (tag) {
             .bpcc => {
                 const branch_predict_int = emit.mir.instructions.items(.data)[inst].branch_predict_int;
-                const offset = @as(i64, @intCast(emit.code_offset_mapping.get(branch_predict_int.inst).?)) - @as(i64, @intCast(emit.code.items.len));
+                const offset = @as(i64, @intcast(emit.code_offset_mapping.get(branch_predict_int.inst).?)) - @as(i64, @intcast(emit.code.items.len));
                 log.debug("mirConditionalBranch: {} offset={}", .{ inst, offset });
 
                 try emit.writeInstruction(
@@ -305,7 +305,7 @@ fn mirConditionalBranch(emit: *Emit, inst: Mir.Inst.Index) !void {
                         branch_predict_int.annul,
                         branch_predict_int.pt,
                         branch_predict_int.ccr,
-                        @as(i21, @intCast(offset)),
+                        @as(i21, @intcast(offset)),
                     ),
                 );
             },
@@ -314,7 +314,7 @@ fn mirConditionalBranch(emit: *Emit, inst: Mir.Inst.Index) !void {
         .bpr => switch (tag) {
             .bpr => {
                 const branch_predict_reg = emit.mir.instructions.items(.data)[inst].branch_predict_reg;
-                const offset = @as(i64, @intCast(emit.code_offset_mapping.get(branch_predict_reg.inst).?)) - @as(i64, @intCast(emit.code.items.len));
+                const offset = @as(i64, @intcast(emit.code_offset_mapping.get(branch_predict_reg.inst).?)) - @as(i64, @intcast(emit.code.items.len));
                 log.debug("mirConditionalBranch: {} offset={}", .{ inst, offset });
 
                 try emit.writeInstruction(
@@ -323,7 +323,7 @@ fn mirConditionalBranch(emit: *Emit, inst: Mir.Inst.Index) !void {
                         branch_predict_reg.annul,
                         branch_predict_reg.pt,
                         branch_predict_reg.rs1,
-                        @as(i18, @intCast(offset)),
+                        @as(i18, @intcast(offset)),
                     ),
                 );
             },
@@ -497,7 +497,7 @@ fn branchTarget(emit: *Emit, inst: Mir.Inst.Index) Mir.Inst.Index {
 }
 
 fn dbgAdvancePCAndLine(emit: *Emit, line: u32, column: u32) !void {
-    const delta_line = @as(i32, @intCast(line)) - @as(i32, @intCast(emit.prev_di_line));
+    const delta_line = @as(i32, @intcast(line)) - @as(i32, @intcast(emit.prev_di_line));
     const delta_pc: usize = emit.code.items.len - emit.prev_di_pc;
     switch (emit.debug_output) {
         .dwarf => |dbg_out| {
@@ -552,7 +552,7 @@ fn lowerBranches(emit: *Emit) !void {
     // TODO optimization opportunity: do this in codegen while
     // generating MIR
     for (mir_tags, 0..) |tag, index| {
-        const inst = @as(u32, @intCast(index));
+        const inst = @as(u32, @intcast(index));
         if (isBranch(tag)) {
             const target_inst = emit.branchTarget(inst);
 
@@ -597,7 +597,7 @@ fn lowerBranches(emit: *Emit) !void {
         var current_code_offset: usize = 0;
 
         for (mir_tags, 0..) |tag, index| {
-            const inst = @as(u32, @intCast(index));
+            const inst = @as(u32, @intcast(index));
 
             // If this instruction contained in the code offset
             // mapping (when it is a target of a branch or if it is a
@@ -612,7 +612,7 @@ fn lowerBranches(emit: *Emit) !void {
                 const target_inst = emit.branchTarget(inst);
                 if (target_inst < inst) {
                     const target_offset = emit.code_offset_mapping.get(target_inst).?;
-                    const offset = @as(i64, @intCast(target_offset)) - @as(i64, @intCast(current_code_offset));
+                    const offset = @as(i64, @intcast(target_offset)) - @as(i64, @intcast(current_code_offset));
                     const branch_type = emit.branch_types.getPtr(inst).?;
                     const optimal_branch_type = try emit.optimalBranchType(tag, offset);
                     if (branch_type.* != optimal_branch_type) {
@@ -631,7 +631,7 @@ fn lowerBranches(emit: *Emit) !void {
                 for (origin_list.items) |forward_branch_inst| {
                     const branch_tag = emit.mir.instructions.items(.tag)[forward_branch_inst];
                     const forward_branch_inst_offset = emit.code_offset_mapping.get(forward_branch_inst).?;
-                    const offset = @as(i64, @intCast(current_code_offset)) - @as(i64, @intCast(forward_branch_inst_offset));
+                    const offset = @as(i64, @intcast(current_code_offset)) - @as(i64, @intcast(forward_branch_inst_offset));
                     const branch_type = emit.branch_types.getPtr(forward_branch_inst).?;
                     const optimal_branch_type = try emit.optimalBranchType(branch_tag, offset);
                     if (branch_type.* != optimal_branch_type) {

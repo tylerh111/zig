@@ -511,7 +511,7 @@ pub const Tag = enum {
     overflow_result_requires_ptr,
 
     pub fn property(tag: Tag) Properties {
-        return named_data[@intFromEnum(tag)];
+        return named_data[@intfromenum(tag)];
     }
 
     const named_data = [_]Properties{

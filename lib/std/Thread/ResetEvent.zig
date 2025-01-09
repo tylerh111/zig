@@ -1,6 +1,6 @@
 //! ResetEvent is a thread-safe bool which can be set to true/false ("set"/"unset").
 //! It can also block threads until the "bool" is set with cancellation via timed waits.
-//! ResetEvent can be statically initialized and is at most `@sizeOf(u64)` large.
+//! ResetEvent can be statically initialized and is at most `@sizeof(u64)` large.
 
 const std = @import("../std.zig");
 const builtin = @import("builtin");
@@ -114,7 +114,7 @@ const FutexImpl = struct {
         // We avoid using any strict barriers until the end when we know the ResetEvent is set.
         var state = self.state.load(.monotonic);
         if (state == unset) {
-            state = self.state.cmpxchgStrong(state, waiting, .monotonic, .monotonic) orelse waiting;
+            state = self.state.cmpxchgstrong(state, waiting, .monotonic, .monotonic) orelse waiting;
         }
 
         // Wait until the ResetEvent is set since the state is waiting.

@@ -64,10 +64,10 @@ pub const Header = extern struct {
     }
 
     pub fn updateChecksum(self: *Header) !void {
-        const offset = @offsetOf(Header, "checksum");
+        const offset = @offsetof(Header, "checksum");
         var checksum: usize = 0;
         for (std.mem.asBytes(self), 0..) |val, i| {
-            checksum += if (i >= offset and i < offset + @sizeOf(@TypeOf(self.checksum)))
+            checksum += if (i >= offset and i < offset + @sizeof(@TypeOf(self.checksum)))
                 ' '
             else
                 val;
@@ -77,7 +77,7 @@ pub const Header = extern struct {
     }
 
     comptime {
-        assert(@sizeOf(Header) == 512);
+        assert(@sizeof(Header) == 512);
     }
 };
 

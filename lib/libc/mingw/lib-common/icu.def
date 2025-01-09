@@ -29,7 +29,7 @@ u_countChar32
 u_digit
 u_enumCharNames
 u_enumCharTypes
-u_errorName
+u_errorname
 u_foldCase
 u_forDigit
 u_formatMessage

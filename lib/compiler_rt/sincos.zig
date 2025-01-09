@@ -27,8 +27,8 @@ pub fn __sincosh(x: f16, r_sin: *f16, r_cos: *f16) callconv(.C) void {
     var big_sin: f32 = undefined;
     var big_cos: f32 = undefined;
     sincosf(x, &big_sin, &big_cos);
-    r_sin.* = @as(f16, @floatCast(big_sin));
-    r_cos.* = @as(f16, @floatCast(big_cos));
+    r_sin.* = @as(f16, @floatcast(big_sin));
+    r_cos.* = @as(f16, @floatcast(big_cos));
 }
 
 pub fn sincosf(x: f32, r_sin: *f32, r_cos: *f32) callconv(.C) void {
@@ -37,7 +37,7 @@ pub fn sincosf(x: f32, r_sin: *f32, r_cos: *f32) callconv(.C) void {
     const sc3pio2: f64 = 3.0 * math.pi / 2.0; // 0x4012D97C, 0x7F3321D2
     const sc4pio2: f64 = 4.0 * math.pi / 2.0; // 0x401921FB, 0x54442D18
 
-    const pre_ix = @as(u32, @bitCast(x));
+    const pre_ix = @as(u32, @bitcast(x));
     const sign = pre_ix >> 31 != 0;
     const ix = pre_ix & 0x7fffffff;
 
@@ -127,7 +127,7 @@ pub fn sincosf(x: f32, r_sin: *f32, r_cos: *f32) callconv(.C) void {
 }
 
 pub fn sincos(x: f64, r_sin: *f64, r_cos: *f64) callconv(.C) void {
-    const ix = @as(u32, @truncate(@as(u64, @bitCast(x)) >> 32)) & 0x7fffffff;
+    const ix = @as(u32, @truncate(@as(u64, @bitcast(x)) >> 32)) & 0x7fffffff;
 
     // |x| ~< pi/4
     if (ix <= 0x3fe921fb) {
@@ -183,8 +183,8 @@ pub fn __sincosx(x: f80, r_sin: *f80, r_cos: *f80) callconv(.C) void {
     var big_sin: f128 = undefined;
     var big_cos: f128 = undefined;
     sincosq(x, &big_sin, &big_cos);
-    r_sin.* = @as(f80, @floatCast(big_sin));
-    r_cos.* = @as(f80, @floatCast(big_cos));
+    r_sin.* = @as(f80, @floatcast(big_sin));
+    r_cos.* = @as(f80, @floatcast(big_cos));
 }
 
 pub fn sincosq(x: f128, r_sin: *f128, r_cos: *f128) callconv(.C) void {
@@ -192,23 +192,23 @@ pub fn sincosq(x: f128, r_sin: *f128, r_cos: *f128) callconv(.C) void {
     //return sincos_generic(f128, x, r_sin, r_cos);
     var small_sin: f64 = undefined;
     var small_cos: f64 = undefined;
-    sincos(@as(f64, @floatCast(x)), &small_sin, &small_cos);
+    sincos(@as(f64, @floatcast(x)), &small_sin, &small_cos);
     r_sin.* = small_sin;
     r_cos.* = small_cos;
 }
 
 pub fn sincosl(x: c_longdouble, r_sin: *c_longdouble, r_cos: *c_longdouble) callconv(.C) void {
-    switch (@typeInfo(c_longdouble).Float.bits) {
+    switch (@typeinfo(c_longdouble).Float.bits) {
         16 => return __sincosh(x, r_sin, r_cos),
         32 => return sincosf(x, r_sin, r_cos),
         64 => return sincos(x, r_sin, r_cos),
         80 => return __sincosx(x, r_sin, r_cos),
         128 => return sincosq(x, r_sin, r_cos),
-        else => @compileError("unreachable"),
+        else => @compileerror("unreachable"),
     }
 }
 
-pub const rem_pio2_generic = @compileError("TODO");
+pub const rem_pio2_generic = @compileerror("TODO");
 
 /// Ported from musl sincosl.c. Needs the following dependencies to be complete:
 /// * rem_pio2_generic ported from __rem_pio2l.c
@@ -216,9 +216,9 @@ pub const rem_pio2_generic = @compileError("TODO");
 /// * trig.cos_generic ported from __cosl.c
 inline fn sincos_generic(comptime F: type, x: F, r_sin: *F, r_cos: *F) void {
     const sc1pio4: F = 1.0 * math.pi / 4.0;
-    const bits = @typeInfo(F).Float.bits;
+    const bits = @typeinfo(F).Float.bits;
     const I = std.meta.Int(.unsigned, bits);
-    const ix = @as(I, @bitCast(x)) & (math.maxInt(I) >> 1);
+    const ix = @as(I, @bitcast(x)) & (math.maxInt(I) >> 1);
     const se: u16 = @truncate(ix >> (bits - 16));
 
     if (se == 0x7fff) {
@@ -228,7 +228,7 @@ inline fn sincos_generic(comptime F: type, x: F, r_sin: *F, r_cos: *F) void {
         return;
     }
 
-    if (@as(F, @bitCast(ix)) < sc1pio4) {
+    if (@as(F, @bitcast(ix)) < sc1pio4) {
         if (se < 0x3fff - math.floatFractionalBits(F) - 1) {
             // raise underflow if subnormal
             if (se == 0) {

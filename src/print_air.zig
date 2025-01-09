@@ -11,15 +11,15 @@ const InternPool = @import("InternPool.zig");
 
 pub fn write(stream: anytype, module: *Module, air: Air, liveness: ?Liveness) void {
     const instruction_bytes = air.instructions.len *
-        // Here we don't use @sizeOf(Air.Inst.Data) because it would include
+        // Here we don't use @sizeof(Air.Inst.Data) because it would include
         // the debug safety tag but we want to measure release size.
-        (@sizeOf(Air.Inst.Tag) + 8);
-    const extra_bytes = air.extra.len * @sizeOf(u32);
-    const tomb_bytes = if (liveness) |l| l.tomb_bits.len * @sizeOf(usize) else 0;
-    const liveness_extra_bytes = if (liveness) |l| l.extra.len * @sizeOf(u32) else 0;
+        (@sizeof(Air.Inst.Tag) + 8);
+    const extra_bytes = air.extra.len * @sizeof(u32);
+    const tomb_bytes = if (liveness) |l| l.tomb_bits.len * @sizeof(usize) else 0;
+    const liveness_extra_bytes = if (liveness) |l| l.extra.len * @sizeof(u32) else 0;
     const liveness_special_bytes = if (liveness) |l| l.special.count() * 8 else 0;
-    const total_bytes = @sizeOf(Air) + instruction_bytes + extra_bytes +
-        @sizeOf(Liveness) + liveness_extra_bytes +
+    const total_bytes = @sizeof(Air) + instruction_bytes + extra_bytes +
+        @sizeof(Liveness) + liveness_extra_bytes +
         liveness_special_bytes + tomb_bytes;
 
     // zig fmt: off
@@ -94,12 +94,12 @@ const Writer = struct {
     }
 
     fn writeInst(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const tag = w.air.instructions.items(.tag)[@intFromEnum(inst)];
+        const tag = w.air.instructions.items(.tag)[@intfromenum(inst)];
         try s.writeByteNTimes(' ', w.indent);
         try s.print("%{d}{c}= {s}(", .{
-            @intFromEnum(inst),
+            @intfromenum(inst),
             @as(u8, if (if (w.liveness) |liveness| liveness.isUnused(inst) else false) '!' else ' '),
-            @tagName(tag),
+            @tagname(tag),
         });
         switch (tag) {
             .add,
@@ -327,14 +327,14 @@ const Writer = struct {
     }
 
     fn writeBinOp(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const bin_op = w.air.instructions.items(.data)[@intFromEnum(inst)].bin_op;
+        const bin_op = w.air.instructions.items(.data)[@intfromenum(inst)].bin_op;
         try w.writeOperand(s, inst, 0, bin_op.lhs);
         try s.writeAll(", ");
         try w.writeOperand(s, inst, 1, bin_op.rhs);
     }
 
     fn writeUnOp(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const un_op = w.air.instructions.items(.data)[@intFromEnum(inst)].un_op;
+        const un_op = w.air.instructions.items(.data)[@intfromenum(inst)].un_op;
         try w.writeOperand(s, inst, 0, un_op);
     }
 
@@ -349,27 +349,27 @@ const Writer = struct {
     }
 
     fn writeTy(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const ty = w.air.instructions.items(.data)[@intFromEnum(inst)].ty;
+        const ty = w.air.instructions.items(.data)[@intfromenum(inst)].ty;
         try w.writeType(s, ty);
     }
 
     fn writeArg(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const arg = w.air.instructions.items(.data)[@intFromEnum(inst)].arg;
+        const arg = w.air.instructions.items(.data)[@intfromenum(inst)].arg;
         try w.writeType(s, arg.ty.toType());
         try s.print(", {d}", .{arg.src_index});
     }
 
     fn writeTyOp(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const ty_op = w.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+        const ty_op = w.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
         try w.writeType(s, ty_op.ty.toType());
         try s.writeAll(", ");
         try w.writeOperand(s, inst, 0, ty_op.operand);
     }
 
     fn writeBlock(w: *Writer, s: anytype, tag: Air.Inst.Tag, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const ty_pl = w.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
+        const ty_pl = w.air.instructions.items(.data)[@intfromenum(inst)].ty_pl;
         try w.writeType(s, ty_pl.ty.toType());
-        const body: []const Air.Inst.Index = @ptrCast(switch (tag) {
+        const body: []const Air.Inst.Index = @ptrcast(switch (tag) {
             inline .block, .dbg_inline_block => |comptime_tag| body: {
                 const extra = w.air.extraData(switch (comptime_tag) {
                     .block => Air.Block,
@@ -403,14 +403,14 @@ const Writer = struct {
         try s.writeAll("}");
 
         for (liveness_block.deaths) |operand| {
-            try s.print(" %{d}!", .{@intFromEnum(operand)});
+            try s.print(" %{d}!", .{@intfromenum(operand)});
         }
     }
 
     fn writeLoop(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const ty_pl = w.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
+        const ty_pl = w.air.instructions.items(.data)[@intfromenum(inst)].ty_pl;
         const extra = w.air.extraData(Air.Block, ty_pl.payload);
-        const body: []const Air.Inst.Index = @ptrCast(w.air.extra[extra.end..][0..extra.data.body_len]);
+        const body: []const Air.Inst.Index = @ptrcast(w.air.extra[extra.end..][0..extra.data.body_len]);
 
         try w.writeType(s, ty_pl.ty.toType());
         if (w.skip_body) return s.writeAll(", ...");
@@ -425,10 +425,10 @@ const Writer = struct {
 
     fn writeAggregateInit(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
         const mod = w.module;
-        const ty_pl = w.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
+        const ty_pl = w.air.instructions.items(.data)[@intfromenum(inst)].ty_pl;
         const vector_ty = ty_pl.ty.toType();
-        const len = @as(usize, @intCast(vector_ty.arrayLen(mod)));
-        const elements = @as([]const Air.Inst.Ref, @ptrCast(w.air.extra[ty_pl.payload..][0..len]));
+        const len = @as(usize, @intcast(vector_ty.arrayLen(mod)));
+        const elements = @as([]const Air.Inst.Ref, @ptrcast(w.air.extra[ty_pl.payload..][0..len]));
 
         try w.writeType(s, vector_ty);
         try s.writeAll(", [");
@@ -440,7 +440,7 @@ const Writer = struct {
     }
 
     fn writeUnionInit(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const ty_pl = w.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
+        const ty_pl = w.air.instructions.items(.data)[@intfromenum(inst)].ty_pl;
         const extra = w.air.extraData(Air.UnionInit, ty_pl.payload).data;
 
         try s.print("{d}, ", .{extra.field_index});
@@ -448,7 +448,7 @@ const Writer = struct {
     }
 
     fn writeStructField(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const ty_pl = w.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
+        const ty_pl = w.air.instructions.items(.data)[@intfromenum(inst)].ty_pl;
         const extra = w.air.extraData(Air.StructField, ty_pl.payload).data;
 
         try w.writeOperand(s, inst, 0, extra.struct_operand);
@@ -457,10 +457,10 @@ const Writer = struct {
 
     fn writeTyPlBin(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
         const data = w.air.instructions.items(.data);
-        const ty_pl = data[@intFromEnum(inst)].ty_pl;
+        const ty_pl = data[@intfromenum(inst)].ty_pl;
         const extra = w.air.extraData(Air.Bin, ty_pl.payload).data;
 
-        const inst_ty = data[@intFromEnum(inst)].ty_pl.ty.toType();
+        const inst_ty = data[@intfromenum(inst)].ty_pl.ty.toType();
         try w.writeType(s, inst_ty);
         try s.writeAll(", ");
         try w.writeOperand(s, inst, 0, extra.lhs);
@@ -469,7 +469,7 @@ const Writer = struct {
     }
 
     fn writeCmpxchg(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const ty_pl = w.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
+        const ty_pl = w.air.instructions.items(.data)[@intfromenum(inst)].ty_pl;
         const extra = w.air.extraData(Air.Cmpxchg, ty_pl.payload).data;
 
         try w.writeOperand(s, inst, 0, extra.ptr);
@@ -478,12 +478,12 @@ const Writer = struct {
         try s.writeAll(", ");
         try w.writeOperand(s, inst, 2, extra.new_value);
         try s.print(", {s}, {s}", .{
-            @tagName(extra.successOrder()), @tagName(extra.failureOrder()),
+            @tagname(extra.successOrder()), @tagname(extra.failureOrder()),
         });
     }
 
     fn writeMulAdd(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const pl_op = w.air.instructions.items(.data)[@intFromEnum(inst)].pl_op;
+        const pl_op = w.air.instructions.items(.data)[@intfromenum(inst)].pl_op;
         const extra = w.air.extraData(Air.Bin, pl_op.payload).data;
 
         try w.writeOperand(s, inst, 0, extra.lhs);
@@ -494,7 +494,7 @@ const Writer = struct {
     }
 
     fn writeShuffle(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const ty_pl = w.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
+        const ty_pl = w.air.instructions.items(.data)[@intfromenum(inst)].ty_pl;
         const extra = w.air.extraData(Air.Shuffle, ty_pl.payload).data;
 
         try w.writeOperand(s, inst, 0, extra.a);
@@ -505,7 +505,7 @@ const Writer = struct {
 
     fn writeSelect(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
         const mod = w.module;
-        const pl_op = w.air.instructions.items(.data)[@intFromEnum(inst)].pl_op;
+        const pl_op = w.air.instructions.items(.data)[@intfromenum(inst)].pl_op;
         const extra = w.air.extraData(Air.Bin, pl_op.payload).data;
 
         const elem_ty = w.typeOfIndex(inst).childType(mod);
@@ -519,24 +519,24 @@ const Writer = struct {
     }
 
     fn writeReduce(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const reduce = w.air.instructions.items(.data)[@intFromEnum(inst)].reduce;
+        const reduce = w.air.instructions.items(.data)[@intfromenum(inst)].reduce;
 
         try w.writeOperand(s, inst, 0, reduce.operand);
-        try s.print(", {s}", .{@tagName(reduce.operation)});
+        try s.print(", {s}", .{@tagname(reduce.operation)});
     }
 
     fn writeCmpVector(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const ty_pl = w.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
+        const ty_pl = w.air.instructions.items(.data)[@intfromenum(inst)].ty_pl;
         const extra = w.air.extraData(Air.VectorCmp, ty_pl.payload).data;
 
-        try s.print("{s}, ", .{@tagName(extra.compareOperator())});
+        try s.print("{s}, ", .{@tagname(extra.compareOperator())});
         try w.writeOperand(s, inst, 0, extra.lhs);
         try s.writeAll(", ");
         try w.writeOperand(s, inst, 1, extra.rhs);
     }
 
     fn writeVectorStoreElem(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const data = w.air.instructions.items(.data)[@intFromEnum(inst)].vector_store_elem;
+        const data = w.air.instructions.items(.data)[@intfromenum(inst)].vector_store_elem;
         const extra = w.air.extraData(Air.VectorCmp, data.payload).data;
 
         try w.writeOperand(s, inst, 0, data.vector_ptr);
@@ -547,24 +547,24 @@ const Writer = struct {
     }
 
     fn writeFence(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const atomic_order = w.air.instructions.items(.data)[@intFromEnum(inst)].fence;
+        const atomic_order = w.air.instructions.items(.data)[@intfromenum(inst)].fence;
 
-        try s.print("{s}", .{@tagName(atomic_order)});
+        try s.print("{s}", .{@tagname(atomic_order)});
     }
 
     fn writeAtomicLoad(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const atomic_load = w.air.instructions.items(.data)[@intFromEnum(inst)].atomic_load;
+        const atomic_load = w.air.instructions.items(.data)[@intfromenum(inst)].atomic_load;
 
         try w.writeOperand(s, inst, 0, atomic_load.ptr);
-        try s.print(", {s}", .{@tagName(atomic_load.order)});
+        try s.print(", {s}", .{@tagname(atomic_load.order)});
     }
 
     fn writePrefetch(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const prefetch = w.air.instructions.items(.data)[@intFromEnum(inst)].prefetch;
+        const prefetch = w.air.instructions.items(.data)[@intfromenum(inst)].prefetch;
 
         try w.writeOperand(s, inst, 0, prefetch.ptr);
         try s.print(", {s}, {d}, {s}", .{
-            @tagName(prefetch.rw), prefetch.locality, @tagName(prefetch.cache),
+            @tagname(prefetch.rw), prefetch.locality, @tagname(prefetch.cache),
         });
     }
 
@@ -574,25 +574,25 @@ const Writer = struct {
         inst: Air.Inst.Index,
         order: std.builtin.AtomicOrder,
     ) @TypeOf(s).Error!void {
-        const bin_op = w.air.instructions.items(.data)[@intFromEnum(inst)].bin_op;
+        const bin_op = w.air.instructions.items(.data)[@intfromenum(inst)].bin_op;
         try w.writeOperand(s, inst, 0, bin_op.lhs);
         try s.writeAll(", ");
         try w.writeOperand(s, inst, 1, bin_op.rhs);
-        try s.print(", {s}", .{@tagName(order)});
+        try s.print(", {s}", .{@tagname(order)});
     }
 
     fn writeAtomicRmw(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const pl_op = w.air.instructions.items(.data)[@intFromEnum(inst)].pl_op;
+        const pl_op = w.air.instructions.items(.data)[@intfromenum(inst)].pl_op;
         const extra = w.air.extraData(Air.AtomicRmw, pl_op.payload).data;
 
         try w.writeOperand(s, inst, 0, pl_op.operand);
         try s.writeAll(", ");
         try w.writeOperand(s, inst, 1, extra.operand);
-        try s.print(", {s}, {s}", .{ @tagName(extra.op()), @tagName(extra.ordering()) });
+        try s.print(", {s}, {s}", .{ @tagname(extra.op()), @tagname(extra.ordering()) });
     }
 
     fn writeFieldParentPtr(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const ty_pl = w.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
+        const ty_pl = w.air.instructions.items(.data)[@intfromenum(inst)].ty_pl;
         const extra = w.air.extraData(Air.FieldParentPtr, ty_pl.payload).data;
 
         try w.writeOperand(s, inst, 0, extra.field_ptr);
@@ -600,7 +600,7 @@ const Writer = struct {
     }
 
     fn writeAssembly(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const ty_pl = w.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
+        const ty_pl = w.air.instructions.items(.data)[@intfromenum(inst)].ty_pl;
         const extra = w.air.extraData(Air.Asm, ty_pl.payload);
         const is_volatile = @as(u1, @truncate(extra.data.flags >> 31)) != 0;
         const clobbers_len = @as(u31, @truncate(extra.data.flags));
@@ -614,9 +614,9 @@ const Writer = struct {
             try s.writeAll(", volatile");
         }
 
-        const outputs = @as([]const Air.Inst.Ref, @ptrCast(w.air.extra[extra_i..][0..extra.data.outputs_len]));
+        const outputs = @as([]const Air.Inst.Ref, @ptrcast(w.air.extra[extra_i..][0..extra.data.outputs_len]));
         extra_i += outputs.len;
-        const inputs = @as([]const Air.Inst.Ref, @ptrCast(w.air.extra[extra_i..][0..extra.data.inputs_len]));
+        const inputs = @as([]const Air.Inst.Ref, @ptrcast(w.air.extra[extra_i..][0..extra.data.inputs_len]));
         extra_i += inputs.len;
 
         for (outputs) |output| {
@@ -673,21 +673,21 @@ const Writer = struct {
     }
 
     fn writeDbgStmt(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const dbg_stmt = w.air.instructions.items(.data)[@intFromEnum(inst)].dbg_stmt;
+        const dbg_stmt = w.air.instructions.items(.data)[@intfromenum(inst)].dbg_stmt;
         try s.print("{d}:{d}", .{ dbg_stmt.line + 1, dbg_stmt.column + 1 });
     }
 
     fn writeDbgVar(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const pl_op = w.air.instructions.items(.data)[@intFromEnum(inst)].pl_op;
+        const pl_op = w.air.instructions.items(.data)[@intfromenum(inst)].pl_op;
         try w.writeOperand(s, inst, 0, pl_op.operand);
         const name = w.air.nullTerminatedString(pl_op.payload);
         try s.print(", \"{}\"", .{std.zig.fmtEscapes(name)});
     }
 
     fn writeCall(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const pl_op = w.air.instructions.items(.data)[@intFromEnum(inst)].pl_op;
+        const pl_op = w.air.instructions.items(.data)[@intfromenum(inst)].pl_op;
         const extra = w.air.extraData(Air.Call, pl_op.payload);
-        const args = @as([]const Air.Inst.Ref, @ptrCast(w.air.extra[extra.end..][0..extra.data.args_len]));
+        const args = @as([]const Air.Inst.Ref, @ptrcast(w.air.extra[extra.end..][0..extra.data.args_len]));
         try w.writeOperand(s, inst, 0, pl_op.operand);
         try s.writeAll(", [");
         for (args, 0..) |arg, i| {
@@ -698,16 +698,16 @@ const Writer = struct {
     }
 
     fn writeBr(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const br = w.air.instructions.items(.data)[@intFromEnum(inst)].br;
+        const br = w.air.instructions.items(.data)[@intfromenum(inst)].br;
         try w.writeInstIndex(s, br.block_inst, false);
         try s.writeAll(", ");
         try w.writeOperand(s, inst, 0, br.operand);
     }
 
     fn writeTry(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const pl_op = w.air.instructions.items(.data)[@intFromEnum(inst)].pl_op;
+        const pl_op = w.air.instructions.items(.data)[@intfromenum(inst)].pl_op;
         const extra = w.air.extraData(Air.Try, pl_op.payload);
-        const body: []const Air.Inst.Index = @ptrCast(w.air.extra[extra.end..][0..extra.data.body_len]);
+        const body: []const Air.Inst.Index = @ptrcast(w.air.extra[extra.end..][0..extra.data.body_len]);
         const liveness_condbr = if (w.liveness) |liveness|
             liveness.getCondBr(inst)
         else
@@ -723,7 +723,7 @@ const Writer = struct {
             try s.writeByteNTimes(' ', w.indent);
             for (liveness_condbr.else_deaths, 0..) |operand, i| {
                 if (i != 0) try s.writeAll(" ");
-                try s.print("%{d}!", .{@intFromEnum(operand)});
+                try s.print("%{d}!", .{@intfromenum(operand)});
             }
             try s.writeAll("\n");
         }
@@ -734,14 +734,14 @@ const Writer = struct {
         try s.writeAll("}");
 
         for (liveness_condbr.then_deaths) |operand| {
-            try s.print(" %{d}!", .{@intFromEnum(operand)});
+            try s.print(" %{d}!", .{@intfromenum(operand)});
         }
     }
 
     fn writeTryPtr(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const ty_pl = w.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
+        const ty_pl = w.air.instructions.items(.data)[@intfromenum(inst)].ty_pl;
         const extra = w.air.extraData(Air.TryPtr, ty_pl.payload);
-        const body: []const Air.Inst.Index = @ptrCast(w.air.extra[extra.end..][0..extra.data.body_len]);
+        const body: []const Air.Inst.Index = @ptrcast(w.air.extra[extra.end..][0..extra.data.body_len]);
         const liveness_condbr = if (w.liveness) |liveness|
             liveness.getCondBr(inst)
         else
@@ -760,7 +760,7 @@ const Writer = struct {
             try s.writeByteNTimes(' ', w.indent);
             for (liveness_condbr.else_deaths, 0..) |operand, i| {
                 if (i != 0) try s.writeAll(" ");
-                try s.print("%{d}!", .{@intFromEnum(operand)});
+                try s.print("%{d}!", .{@intfromenum(operand)});
             }
             try s.writeAll("\n");
         }
@@ -771,15 +771,15 @@ const Writer = struct {
         try s.writeAll("}");
 
         for (liveness_condbr.then_deaths) |operand| {
-            try s.print(" %{d}!", .{@intFromEnum(operand)});
+            try s.print(" %{d}!", .{@intfromenum(operand)});
         }
     }
 
     fn writeCondBr(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const pl_op = w.air.instructions.items(.data)[@intFromEnum(inst)].pl_op;
+        const pl_op = w.air.instructions.items(.data)[@intfromenum(inst)].pl_op;
         const extra = w.air.extraData(Air.CondBr, pl_op.payload);
-        const then_body: []const Air.Inst.Index = @ptrCast(w.air.extra[extra.end..][0..extra.data.then_body_len]);
-        const else_body: []const Air.Inst.Index = @ptrCast(w.air.extra[extra.end + then_body.len ..][0..extra.data.else_body_len]);
+        const then_body: []const Air.Inst.Index = @ptrcast(w.air.extra[extra.end..][0..extra.data.then_body_len]);
+        const else_body: []const Air.Inst.Index = @ptrcast(w.air.extra[extra.end + then_body.len ..][0..extra.data.else_body_len]);
         const liveness_condbr = if (w.liveness) |liveness|
             liveness.getCondBr(inst)
         else
@@ -795,7 +795,7 @@ const Writer = struct {
             try s.writeByteNTimes(' ', w.indent);
             for (liveness_condbr.then_deaths, 0..) |operand, i| {
                 if (i != 0) try s.writeAll(" ");
-                try s.print("%{d}!", .{@intFromEnum(operand)});
+                try s.print("%{d}!", .{@intfromenum(operand)});
             }
             try s.writeAll("\n");
         }
@@ -808,7 +808,7 @@ const Writer = struct {
             try s.writeByteNTimes(' ', w.indent);
             for (liveness_condbr.else_deaths, 0..) |operand, i| {
                 if (i != 0) try s.writeAll(" ");
-                try s.print("%{d}!", .{@intFromEnum(operand)});
+                try s.print("%{d}!", .{@intfromenum(operand)});
             }
             try s.writeAll("\n");
         }
@@ -821,7 +821,7 @@ const Writer = struct {
     }
 
     fn writeSwitchBr(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const pl_op = w.air.instructions.items(.data)[@intFromEnum(inst)].pl_op;
+        const pl_op = w.air.instructions.items(.data)[@intfromenum(inst)].pl_op;
         const switch_br = w.air.extraData(Air.SwitchBr, pl_op.payload);
         const liveness = if (w.liveness) |liveness|
             liveness.getSwitchBr(w.gpa, inst, switch_br.data.cases_len + 1) catch
@@ -843,8 +843,8 @@ const Writer = struct {
 
         while (case_i < switch_br.data.cases_len) : (case_i += 1) {
             const case = w.air.extraData(Air.SwitchBr.Case, extra_index);
-            const items = @as([]const Air.Inst.Ref, @ptrCast(w.air.extra[case.end..][0..case.data.items_len]));
-            const case_body: []const Air.Inst.Index = @ptrCast(w.air.extra[case.end + items.len ..][0..case.data.body_len]);
+            const items = @as([]const Air.Inst.Ref, @ptrcast(w.air.extra[case.end..][0..case.data.items_len]));
+            const case_body: []const Air.Inst.Index = @ptrcast(w.air.extra[case.end + items.len ..][0..case.data.body_len]);
             extra_index = case.end + case.data.items_len + case_body.len;
 
             try s.writeAll(", [");
@@ -860,7 +860,7 @@ const Writer = struct {
                 try s.writeByteNTimes(' ', w.indent);
                 for (deaths, 0..) |operand, i| {
                     if (i != 0) try s.writeAll(" ");
-                    try s.print("%{d}!", .{@intFromEnum(operand)});
+                    try s.print("%{d}!", .{@intfromenum(operand)});
                 }
                 try s.writeAll("\n");
             }
@@ -871,7 +871,7 @@ const Writer = struct {
             try s.writeAll("}");
         }
 
-        const else_body: []const Air.Inst.Index = @ptrCast(w.air.extra[extra_index..][0..switch_br.data.else_body_len]);
+        const else_body: []const Air.Inst.Index = @ptrcast(w.air.extra[extra_index..][0..switch_br.data.else_body_len]);
         if (else_body.len != 0) {
             try s.writeAll(", else => {\n");
             w.indent += 2;
@@ -881,7 +881,7 @@ const Writer = struct {
                 try s.writeByteNTimes(' ', w.indent);
                 for (deaths, 0..) |operand, i| {
                     if (i != 0) try s.writeAll(" ");
-                    try s.print("%{d}!", .{@intFromEnum(operand)});
+                    try s.print("%{d}!", .{@intfromenum(operand)});
                 }
                 try s.writeAll("\n");
             }
@@ -897,18 +897,18 @@ const Writer = struct {
     }
 
     fn writeWasmMemorySize(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const pl_op = w.air.instructions.items(.data)[@intFromEnum(inst)].pl_op;
+        const pl_op = w.air.instructions.items(.data)[@intfromenum(inst)].pl_op;
         try s.print("{d}", .{pl_op.payload});
     }
 
     fn writeWasmMemoryGrow(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const pl_op = w.air.instructions.items(.data)[@intFromEnum(inst)].pl_op;
+        const pl_op = w.air.instructions.items(.data)[@intfromenum(inst)].pl_op;
         try s.print("{d}, ", .{pl_op.payload});
         try w.writeOperand(s, inst, 0, pl_op.operand);
     }
 
     fn writeWorkDimension(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const pl_op = w.air.instructions.items(.data)[@intFromEnum(inst)].pl_op;
+        const pl_op = w.air.instructions.items(.data)[@intfromenum(inst)].pl_op;
         try s.print("{d}", .{pl_op.payload});
     }
 
@@ -922,13 +922,13 @@ const Writer = struct {
         const small_tomb_bits = Liveness.bpi - 1;
         const dies = if (w.liveness) |liveness| blk: {
             if (op_index < small_tomb_bits)
-                break :blk liveness.operandDies(inst, @as(Liveness.OperandInt, @intCast(op_index)));
+                break :blk liveness.operandDies(inst, @as(Liveness.OperandInt, @intcast(op_index)));
             var extra_index = liveness.special.get(inst).?;
             var tomb_op_index: usize = small_tomb_bits;
             while (true) {
                 const bits = liveness.extra[extra_index];
                 if (op_index < tomb_op_index + 31) {
-                    break :blk @as(u1, @truncate(bits >> @as(u5, @intCast(op_index - tomb_op_index)))) != 0;
+                    break :blk @as(u1, @truncate(bits >> @as(u5, @intcast(op_index - tomb_op_index)))) != 0;
                 }
                 if ((bits >> 31) != 0) break :blk false;
                 extra_index += 1;
@@ -944,7 +944,7 @@ const Writer = struct {
         operand: Air.Inst.Ref,
         dies: bool,
     ) @TypeOf(s).Error!void {
-        if (@intFromEnum(operand) < InternPool.static_len) {
+        if (@intfromenum(operand) < InternPool.static_len) {
             return s.print("@{}", .{operand});
         } else if (operand.toInterned()) |ip_index| {
             const mod = w.module;
@@ -965,7 +965,7 @@ const Writer = struct {
         dies: bool,
     ) @TypeOf(s).Error!void {
         _ = w;
-        try s.print("%{d}", .{@intFromEnum(inst)});
+        try s.print("%{d}", .{@intfromenum(inst)});
         if (dies) try s.writeByte('!');
     }
 

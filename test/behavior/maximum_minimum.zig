@@ -155,8 +155,8 @@ test "@min/max for floats" {
 test "@min/@max on lazy values" {
     const A = extern struct { u8_4: [4]u8 };
     const B = extern struct { u8_16: [16]u8 };
-    const size = @max(@sizeOf(A), @sizeOf(B));
-    try expect(size == @sizeOf(B));
+    const size = @max(@sizeof(A), @sizeof(B));
+    try expect(size == @sizeof(B));
 }
 
 test "@min/@max more than two arguments" {

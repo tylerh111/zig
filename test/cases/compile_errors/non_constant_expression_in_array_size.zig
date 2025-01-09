@@ -7,7 +7,7 @@ fn get() usize {
 }
 
 export fn entry() usize {
-    return @offsetOf(Foo, "y");
+    return @offsetof(Foo, "y");
 }
 
 // error

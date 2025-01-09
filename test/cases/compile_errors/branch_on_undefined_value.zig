@@ -1,7 +1,7 @@
 const x = if (undefined) true else false;
 
 export fn entry() usize {
-    return @sizeOf(@TypeOf(x));
+    return @sizeof(@TypeOf(x));
 }
 
 // error

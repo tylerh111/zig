@@ -2,7 +2,7 @@ const Foo = union(u32) {
     A: i32,
 };
 export fn entry() void {
-    const x = @typeInfo(Foo).Union.tag_type.?;
+    const x = @typeinfo(Foo).Union.tag_type.?;
     _ = x;
 }
 

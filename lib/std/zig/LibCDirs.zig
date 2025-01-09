@@ -178,10 +178,10 @@ pub fn detectFromBuilding(
             else => unreachable,
         }
     else
-        @tagName(target.cpu.arch);
-    const os_name = @tagName(target.os.tag);
+        @tagname(target.cpu.arch);
+    const os_name = @tagname(target.os.tag);
     // Musl's headers are ABI-agnostic and so they all have the "musl" ABI name.
-    const abi_name = if (target.abi.isMusl()) "musl" else @tagName(target.abi);
+    const abi_name = if (target.abi.isMusl()) "musl" else @tagname(target.abi);
     const arch_include_dir = try std.fmt.allocPrint(
         arena,
         "{s}" ++ s ++ "libc" ++ s ++ "include" ++ s ++ "{s}-{s}-{s}",

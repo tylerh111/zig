@@ -10,7 +10,7 @@ const Builder = @import("llvm/Builder.zig");
 const llvm = if (build_options.have_llvm)
     @import("llvm/bindings.zig")
 else
-    @compileError("LLVM unavailable");
+    @compileerror("LLVM unavailable");
 const link = @import("../link.zig");
 const Compilation = @import("../Compilation.zig");
 const build_options = @import("build_options");
@@ -432,7 +432,7 @@ const DataLayoutBuilder = struct {
                 (self.target.os.tag == .uefi or self.target.os.tag == .windows)) and
                 self.target.cpu.arch != .bpfeb and self.target.cpu.arch != .bpfel) continue;
             try writer.writeAll("-p");
-            if (info.llvm != .default) try writer.print("{d}", .{@intFromEnum(info.llvm)});
+            if (info.llvm != .default) try writer.print("{d}", .{@intfromenum(info.llvm)});
             try writer.print(":{d}:{d}", .{ size, abi });
             if (pref != abi or idx != size or self.target.cpu.arch == .hexagon) {
                 try writer.print(":{d}", .{pref});
@@ -573,13 +573,13 @@ const DataLayoutBuilder = struct {
             try self.typeAlignment(.vector, 16384, 128, 128, true, writer);
         }
         const alloca_addr_space = llvmAllocaAddressSpace(self.target);
-        if (alloca_addr_space != .default) try writer.print("-A{d}", .{@intFromEnum(alloca_addr_space)});
+        if (alloca_addr_space != .default) try writer.print("-A{d}", .{@intfromenum(alloca_addr_space)});
         const global_addr_space = llvmDefaultGlobalAddressSpace(self.target);
-        if (global_addr_space != .default) try writer.print("-G{d}", .{@intFromEnum(global_addr_space)});
+        if (global_addr_space != .default) try writer.print("-G{d}", .{@intfromenum(global_addr_space)});
         if (any_non_integral) {
             try writer.writeAll("-ni");
             for (addr_space_info) |info| if (info.non_integral)
-                try writer.print(":{d}", .{@intFromEnum(info.llvm)});
+                try writer.print(":{d}", .{@intfromenum(info.llvm)});
         }
     }
 
@@ -799,7 +799,7 @@ const DataLayoutBuilder = struct {
             pref = 8;
         }
         if (!force_abi and abi == default_abi and pref == default_pref) return;
-        try writer.print("-{c}", .{@tagName(kind)[0]});
+        try writer.print("-{c}", .{@tagname(kind)[0]});
         if (size != 0) try writer.print("{d}", .{size});
         try writer.print(":{d}", .{abi});
         if (pref != abi or force_pref) try writer.print(":{d}", .{pref});
@@ -1253,7 +1253,7 @@ pub const Object = struct {
                 var file = try std.fs.cwd().createFile(path, .{});
                 defer file.close();
 
-                const ptr: [*]const u8 = @ptrCast(bitcode.ptr);
+                const ptr: [*]const u8 = @ptrcast(bitcode.ptr);
                 try file.writeAll(ptr[0..(bitcode.len * 4)]);
             }
 
@@ -1264,7 +1264,7 @@ pub const Object = struct {
                 var file = try std.fs.cwd().createFileZ(path, .{});
                 defer file.close();
 
-                const ptr: [*]const u8 = @ptrCast(bitcode.ptr);
+                const ptr: [*]const u8 = @ptrcast(bitcode.ptr);
                 try file.writeAll(ptr[0..(bitcode.len * 4)]);
             }
 
@@ -1279,7 +1279,7 @@ pub const Object = struct {
             errdefer context.dispose();
 
             const bitcode_memory_buffer = llvm.MemoryBuffer.createMemoryBufferWithMemoryRange(
-                @ptrCast(bitcode.ptr),
+                @ptrcast(bitcode.ptr),
                 bitcode.len * 4,
                 "BitcodeBuffer",
                 llvm.Bool.False,
@@ -1642,7 +1642,7 @@ pub const Object = struct {
                             llvm_arg_i += 1;
                             const field_ptr = try wip.gepStruct(llvm_ty, arg_ptr, field_i, "");
                             const alignment =
-                                Builder.Alignment.fromByteUnits(@divExact(target.ptrBitWidth(), 8));
+                                Builder.Alignment.fromByteUnits(@divexact(target.ptrBitWidth(), 8));
                             _ = try wip.store(.normal, param, field_ptr, alignment);
                         }
 
@@ -2687,7 +2687,7 @@ pub const Object = struct {
                     if (!Type.fromInterned(field_ty).hasRuntimeBitsIgnoreComptime(mod)) continue;
 
                     const field_size = Type.fromInterned(field_ty).abiSize(mod);
-                    const field_align = mod.unionFieldNormalAlignment(union_type, @intCast(field_index));
+                    const field_align = mod.unionFieldNormalAlignment(union_type, @intcast(field_index));
 
                     const field_name = tag_type.names.get(ip)[field_index];
                     fields.appendAssumeCapacity(try o.builder.debugMemberType(
@@ -3118,7 +3118,7 @@ pub const Object = struct {
         const decl_ty = mod.intern_pool.typeOf(decl_val);
 
         const variable_index = try o.builder.addVariable(
-            try o.builder.strtabStringFmt("__anon_{d}", .{@intFromEnum(decl_val)}),
+            try o.builder.strtabStringFmt("__anon_{d}", .{@intfromenum(decl_val)}),
             try o.lowerType(Type.fromInterned(decl_ty)),
             llvm_addr_space,
         );
@@ -3197,7 +3197,7 @@ pub const Object = struct {
             .u80_type,
             .u128_type,
             .i128_type,
-            => |tag| @field(Builder.Type, "i" ++ @tagName(tag)[1 .. @tagName(tag).len - "_type".len]),
+            => |tag| @field(Builder.Type, "i" ++ @tagname(tag)[1 .. @tagname(tag).len - "_type".len]),
             .usize_type, .isize_type => try o.builder.intType(target.ptrBitWidth()),
             inline .c_char_type,
             .c_short_type,
@@ -3209,7 +3209,7 @@ pub const Object = struct {
             .c_longlong_type,
             .c_ulonglong_type,
             => |tag| try o.builder.intType(target.c_type_bit_size(
-                @field(std.Target.CType, @tagName(tag)["c_".len .. @tagName(tag).len - "_type".len]),
+                @field(std.Target.CType, @tagname(tag)["c_".len .. @tagname(tag).len - "_type".len]),
             )),
             .c_longdouble_type,
             .f16_type,
@@ -3417,7 +3417,7 @@ pub const Object = struct {
                                 try o.struct_field_map.put(o.gpa, .{
                                     .struct_ty = t.toIntern(),
                                     .field_index = field_index,
-                                }, @intCast(llvm_field_types.items.len));
+                                }, @intcast(llvm_field_types.items.len));
                             }
                             continue;
                         }
@@ -3425,7 +3425,7 @@ pub const Object = struct {
                         try o.struct_field_map.put(o.gpa, .{
                             .struct_ty = t.toIntern(),
                             .field_index = field_index,
-                        }, @intCast(llvm_field_types.items.len));
+                        }, @intcast(llvm_field_types.items.len));
                         try llvm_field_types.append(o.gpa, try o.lowerType(field_ty));
 
                         offset += field_ty.abiSize(mod);
@@ -3487,15 +3487,15 @@ pub const Object = struct {
                             if (offset != struct_size) {
                                 try o.struct_field_map.put(o.gpa, .{
                                     .struct_ty = t.toIntern(),
-                                    .field_index = @intCast(field_index),
-                                }, @intCast(llvm_field_types.items.len));
+                                    .field_index = @intcast(field_index),
+                                }, @intcast(llvm_field_types.items.len));
                             }
                             continue;
                         }
                         try o.struct_field_map.put(o.gpa, .{
                             .struct_ty = t.toIntern(),
-                            .field_index = @intCast(field_index),
-                        }, @intCast(llvm_field_types.items.len));
+                            .field_index = @intcast(field_index),
+                        }, @intcast(llvm_field_types.items.len));
                         try llvm_field_types.append(o.gpa, try o.lowerType(Type.fromInterned(field_ty)));
 
                         offset += Type.fromInterned(field_ty).abiSize(mod);
@@ -3518,7 +3518,7 @@ pub const Object = struct {
                     const layout = mod.getUnionLayout(union_obj);
 
                     if (union_obj.flagsPtr(ip).layout == .@"packed") {
-                        const int_ty = try o.builder.intType(@intCast(t.bitSize(mod)));
+                        const int_ty = try o.builder.intType(@intcast(t.bitSize(mod)));
                         try o.type_map.put(o.gpa, t.toIntern(), int_ty);
                         return int_ty;
                     }
@@ -3670,7 +3670,7 @@ pub const Object = struct {
             .abi_sized_int => {
                 const param_ty = Type.fromInterned(fn_info.param_types.get(ip)[it.zig_index - 1]);
                 try llvm_params.append(o.gpa, try o.builder.intType(
-                    @intCast(param_ty.abiSize(mod) * 8),
+                    @intcast(param_ty.abiSize(mod) * 8),
                 ));
             },
             .slice => {
@@ -3749,7 +3749,7 @@ pub const Object = struct {
 
                         running_int = try o.builder.binConst(.xor, running_int, shifted);
 
-                        const ty_bit_size: u16 = @intCast(Type.fromInterned(field_ty).bitSize(mod));
+                        const ty_bit_size: u16 = @intcast(Type.fromInterned(field_ty).bitSize(mod));
                         running_bits += ty_bit_size;
                     }
                     return running_int;
@@ -3791,15 +3791,15 @@ pub const Object = struct {
             else => unreachable,
         }
         const bits = ty.bitSize(mod);
-        const bytes: usize = @intCast(std.mem.alignForward(u64, bits, 8) / 8);
+        const bytes: usize = @intcast(std.mem.alignForward(u64, bits, 8) / 8);
 
         var stack = std.heap.stackFallback(32, o.gpa);
         const allocator = stack.get();
 
         const limbs = try allocator.alloc(
             std.math.big.Limb,
-            std.mem.alignForward(usize, bytes, @sizeOf(std.math.big.Limb)) /
-                @sizeOf(std.math.big.Limb),
+            std.mem.alignForward(usize, bytes, @sizeof(std.math.big.Limb)) /
+                @sizeof(std.math.big.Limb),
         );
         defer allocator.free(limbs);
         @memset(limbs, 0);
@@ -3946,13 +3946,13 @@ pub const Object = struct {
                 16 => if (backendSupportsF16(target))
                     try o.builder.halfConst(val.toFloat(f16, mod))
                 else
-                    try o.builder.intConst(.i16, @as(i16, @bitCast(val.toFloat(f16, mod)))),
+                    try o.builder.intConst(.i16, @as(i16, @bitcast(val.toFloat(f16, mod)))),
                 32 => try o.builder.floatConst(val.toFloat(f32, mod)),
                 64 => try o.builder.doubleConst(val.toFloat(f64, mod)),
                 80 => if (backendSupportsF80(target))
                     try o.builder.x86_fp80Const(val.toFloat(f80, mod))
                 else
-                    try o.builder.intConst(.i80, @as(i80, @bitCast(val.toFloat(f80, mod)))),
+                    try o.builder.intConst(.i80, @as(i80, @bitcast(val.toFloat(f80, mod)))),
                 128 => try o.builder.fp128Const(val.toFloat(f128, mod)),
                 else => unreachable,
             },
@@ -3965,7 +3965,7 @@ pub const Object = struct {
                 comptime assert(optional_layout_version == 3);
                 const payload_ty = ty.optionalChild(mod);
 
-                const non_null_bit = try o.builder.intConst(.i8, @intFromBool(opt.val != .none));
+                const non_null_bit = try o.builder.intConst(.i8, @intfrombool(opt.val != .none));
                 if (!payload_ty.hasRuntimeBitsIgnoreComptime(mod)) {
                     return non_null_bit;
                 }
@@ -4017,9 +4017,9 @@ pub const Object = struct {
                             fields: [Builder.expected_fields_len]Builder.Type,
                         };
                         var stack align(@max(
-                            @alignOf(std.heap.StackFallbackAllocator(0)),
-                            @alignOf(ExpectedContents),
-                        )) = std.heap.stackFallback(@sizeOf(ExpectedContents), o.gpa);
+                            @alignof(std.heap.StackFallbackAllocator(0)),
+                            @alignof(ExpectedContents),
+                        )) = std.heap.stackFallback(@sizeof(ExpectedContents), o.gpa);
                         const allocator = stack.get();
                         const vals = try allocator.alloc(Builder.Constant, elems.len);
                         defer allocator.free(vals);
@@ -4038,8 +4038,8 @@ pub const Object = struct {
                         ) else try o.builder.arrayConst(array_ty, vals);
                     },
                     .repeated_elem => |elem| {
-                        const len: usize = @intCast(array_type.len);
-                        const len_including_sentinel: usize = @intCast(array_type.lenIncludingSentinel());
+                        const len: usize = @intcast(array_type.len);
+                        const len_including_sentinel: usize = @intcast(array_type.lenIncludingSentinel());
                         const array_ty = try o.lowerType(ty);
                         const elem_ty = array_ty.childType(&o.builder);
 
@@ -4048,9 +4048,9 @@ pub const Object = struct {
                             fields: [Builder.expected_fields_len]Builder.Type,
                         };
                         var stack align(@max(
-                            @alignOf(std.heap.StackFallbackAllocator(0)),
-                            @alignOf(ExpectedContents),
-                        )) = std.heap.stackFallback(@sizeOf(ExpectedContents), o.gpa);
+                            @alignof(std.heap.StackFallbackAllocator(0)),
+                            @alignof(ExpectedContents),
+                        )) = std.heap.stackFallback(@sizeof(ExpectedContents), o.gpa);
                         const allocator = stack.get();
                         const vals = try allocator.alloc(Builder.Constant, len_including_sentinel);
                         defer allocator.free(vals);
@@ -4080,9 +4080,9 @@ pub const Object = struct {
                         .bytes, .elems => {
                             const ExpectedContents = [Builder.expected_fields_len]Builder.Constant;
                             var stack align(@max(
-                                @alignOf(std.heap.StackFallbackAllocator(0)),
-                                @alignOf(ExpectedContents),
-                            )) = std.heap.stackFallback(@sizeOf(ExpectedContents), o.gpa);
+                                @alignof(std.heap.StackFallbackAllocator(0)),
+                                @alignof(ExpectedContents),
+                            )) = std.heap.stackFallback(@sizeof(ExpectedContents), o.gpa);
                             const allocator = stack.get();
                             const vals = try allocator.alloc(Builder.Constant, vector_type.len);
                             defer allocator.free(vals);
@@ -4113,9 +4113,9 @@ pub const Object = struct {
                         fields: [Builder.expected_fields_len]Builder.Type,
                     };
                     var stack align(@max(
-                        @alignOf(std.heap.StackFallbackAllocator(0)),
-                        @alignOf(ExpectedContents),
-                    )) = std.heap.stackFallback(@sizeOf(ExpectedContents), o.gpa);
+                        @alignof(std.heap.StackFallbackAllocator(0)),
+                        @alignof(ExpectedContents),
+                    )) = std.heap.stackFallback(@sizeof(ExpectedContents), o.gpa);
                     const allocator = stack.get();
                     const vals = try allocator.alloc(Builder.Constant, llvm_len);
                     defer allocator.free(vals);
@@ -4185,7 +4185,7 @@ pub const Object = struct {
                         comptime assert(Type.packed_struct_layout_version == 2);
 
                         const bits = ty.bitSize(mod);
-                        const llvm_int_ty = try o.builder.intType(@intCast(bits));
+                        const llvm_int_ty = try o.builder.intType(@intcast(bits));
 
                         return o.lowerValueToInt(llvm_int_ty, arg_val);
                     }
@@ -4196,9 +4196,9 @@ pub const Object = struct {
                         fields: [Builder.expected_fields_len]Builder.Type,
                     };
                     var stack align(@max(
-                        @alignOf(std.heap.StackFallbackAllocator(0)),
-                        @alignOf(ExpectedContents),
-                    )) = std.heap.stackFallback(@sizeOf(ExpectedContents), o.gpa);
+                        @alignof(std.heap.StackFallbackAllocator(0)),
+                        @alignof(ExpectedContents),
+                    )) = std.heap.stackFallback(@sizeof(ExpectedContents), o.gpa);
                     const allocator = stack.get();
                     const vals = try allocator.alloc(Builder.Constant, llvm_len);
                     defer allocator.free(vals);
@@ -4283,7 +4283,7 @@ pub const Object = struct {
                     if (container_layout == .@"packed") {
                         if (!field_ty.hasRuntimeBits(mod)) return o.builder.intConst(union_ty, 0);
                         const bits = ty.bitSize(mod);
-                        const llvm_int_ty = try o.builder.intType(@intCast(bits));
+                        const llvm_int_ty = try o.builder.intType(@intcast(bits));
 
                         return o.lowerValueToInt(llvm_int_ty, arg_val);
                     }
@@ -4301,7 +4301,7 @@ pub const Object = struct {
                     const payload = try o.lowerValue(un.val);
                     const payload_ty = payload.typeOf(&o.builder);
                     if (payload_ty != union_ty.structFields(&o.builder)[
-                        @intFromBool(layout.tag_align.compare(.gte, layout.payload_align))
+                        @intfrombool(layout.tag_align.compare(.gte, layout.payload_align))
                     ]) need_unnamed = true;
                     const field_size = field_ty.abiSize(mod);
                     if (field_size == layout.payload_size) break :p payload;
@@ -4315,7 +4315,7 @@ pub const Object = struct {
                     assert(layout.tag_size == 0);
                     if (container_layout == .@"packed") {
                         const bits = ty.bitSize(mod);
-                        const llvm_int_ty = try o.builder.intType(@intCast(bits));
+                        const llvm_int_ty = try o.builder.intType(@intcast(bits));
 
                         return o.lowerValueToInt(llvm_int_ty, arg_val);
                     }
@@ -4406,12 +4406,12 @@ pub const Object = struct {
                         assert(agg_ty.isSlice(zcu));
                         break :off switch (field.index) {
                             Value.slice_ptr_index => 0,
-                            Value.slice_len_index => @divExact(zcu.getTarget().ptrBitWidth(), 8),
+                            Value.slice_len_index => @divexact(zcu.getTarget().ptrBitWidth(), 8),
                             else => unreachable,
                         };
                     },
                     .Struct, .Union => switch (agg_ty.containerLayout(zcu)) {
-                        .auto => agg_ty.structFieldOffset(@intCast(field.index), zcu),
+                        .auto => agg_ty.structFieldOffset(@intcast(field.index), zcu),
                         .@"extern", .@"packed" => unreachable,
                     },
                     else => unreachable,
@@ -4540,14 +4540,14 @@ pub const Object = struct {
             .Enum => ty.intTagType(mod),
             .Float => {
                 if (!is_rmw_xchg) return .none;
-                return o.builder.intType(@intCast(ty.abiSize(mod) * 8));
+                return o.builder.intType(@intcast(ty.abiSize(mod) * 8));
             },
             .Bool => return .i8,
             else => return .none,
         };
         const bit_count = int_ty.intInfo(mod).bits;
         if (!std.math.isPowerOfTwo(bit_count) or (bit_count % 8) != 0) {
-            return o.builder.intType(@intCast(int_ty.abiSize(mod) * 8));
+            return o.builder.intType(@intcast(int_ty.abiSize(mod) * 8));
         } else {
             return .none;
         }
@@ -4607,7 +4607,7 @@ pub const Object = struct {
     fn llvmFieldIndex(o: *Object, struct_ty: Type, field_index: usize) ?c_uint {
         return o.struct_field_map.get(.{
             .struct_ty = struct_ty.toIntern(),
-            .field_index = @intCast(field_index),
+            .field_index = @intcast(field_index),
         });
     }
 
@@ -4672,7 +4672,7 @@ pub const Object = struct {
         const bad_value_block = try wip.block(1, "BadValue");
         const tag_int_value = wip.arg(0);
         var wip_switch =
-            try wip.@"switch"(tag_int_value, bad_value_block, @intCast(enum_type.names.len));
+            try wip.@"switch"(tag_int_value, bad_value_block, @intcast(enum_type.names.len));
         defer wip_switch.finish(&wip);
 
         for (0..enum_type.names.len) |field_index| {
@@ -4693,7 +4693,7 @@ pub const Object = struct {
 
             const return_block = try wip.block(1, "Name");
             const this_tag_int_value = try o.lowerValue(
-                (try zcu.enumValueFieldIndex(enum_ty, @intCast(field_index))).toIntern(),
+                (try zcu.enumValueFieldIndex(enum_ty, @intcast(field_index))).toIntern(),
             );
             try wip_switch.addCase(this_tag_int_value, return_block, &wip);
 
@@ -4917,7 +4917,7 @@ pub const FuncGen = struct {
         for (body, 0..) |inst, i| {
             if (self.liveness.isUnused(inst) and !self.air.mustLower(inst, ip)) continue;
 
-            const val: Builder.Value = switch (air_tags[@intFromEnum(inst)]) {
+            const val: Builder.Value = switch (air_tags[@intfromenum(inst)]) {
                 // zig fmt: off
                 .add            => try self.airAdd(inst, .normal),
                 .add_optimized  => try self.airAdd(inst, .fast),
@@ -5255,9 +5255,9 @@ pub const FuncGen = struct {
     };
 
     fn airCall(self: *FuncGen, inst: Air.Inst.Index, modifier: std.builtin.CallModifier) !Builder.Value {
-        const pl_op = self.air.instructions.items(.data)[@intFromEnum(inst)].pl_op;
+        const pl_op = self.air.instructions.items(.data)[@intfromenum(inst)].pl_op;
         const extra = self.air.extraData(Air.Call, pl_op.payload);
-        const args: []const Air.Inst.Ref = @ptrCast(self.air.extra[extra.end..][0..extra.data.args_len]);
+        const args: []const Air.Inst.Ref = @ptrcast(self.air.extra[extra.end..][0..extra.data.args_len]);
         const o = self.dg.object;
         const mod = o.module;
         const ip = &mod.intern_pool;
@@ -5352,7 +5352,7 @@ pub const FuncGen = struct {
                 const arg = args[it.zig_index - 1];
                 const param_ty = self.typeOf(arg);
                 const llvm_arg = try self.resolveInst(arg);
-                const int_llvm_ty = try o.builder.intType(@intCast(param_ty.abiSize(mod) * 8));
+                const int_llvm_ty = try o.builder.intType(@intcast(param_ty.abiSize(mod) * 8));
 
                 if (isByRef(param_ty, mod)) {
                     const alignment = param_ty.abiAlignment(mod).toLlvm();
@@ -5392,7 +5392,7 @@ pub const FuncGen = struct {
                 try llvm_args.ensureUnusedCapacity(it.types_len);
                 for (llvm_types, 0..) |field_ty, i| {
                     const alignment =
-                        Builder.Alignment.fromByteUnits(@divExact(target.ptrBitWidth(), 8));
+                        Builder.Alignment.fromByteUnits(@divexact(target.ptrBitWidth(), 8));
                     const field_ptr = try self.wip.gepStruct(llvm_ty, arg_ptr, i, "");
                     const loaded = try self.wip.load(.normal, field_ty, field_ptr, alignment, "");
                     llvm_args.appendAssumeCapacity(loaded);
@@ -5434,7 +5434,7 @@ pub const FuncGen = struct {
                 }
 
                 const array_ty =
-                    try o.builder.arrayType(arr_len, try o.builder.intType(@intCast(elem_size)));
+                    try o.builder.arrayType(arr_len, try o.builder.intType(@intcast(elem_size)));
                 const loaded = try self.wip.load(.normal, array_ty, llvm_arg, alignment, "");
                 try llvm_args.append(loaded);
             },
@@ -5443,8 +5443,8 @@ pub const FuncGen = struct {
         {
             // Add argument attributes.
             it = iterateParamTypes(o, fn_info);
-            it.llvm_index += @intFromBool(sret);
-            it.llvm_index += @intFromBool(err_return_tracing);
+            it.llvm_index += @intfrombool(sret);
+            it.llvm_index += @intfrombool(err_return_tracing);
             while (try it.next()) |lowering| switch (lowering) {
                 .byval => {
                     const param_index = it.zig_index - 1;
@@ -5561,7 +5561,7 @@ pub const FuncGen = struct {
     fn buildSimplePanic(fg: *FuncGen, panic_id: Module.PanicId) !void {
         const o = fg.dg.object;
         const mod = o.module;
-        const msg_decl_index = mod.panic_messages[@intFromEnum(panic_id)].unwrap().?;
+        const msg_decl_index = mod.panic_messages[@intfromenum(panic_id)].unwrap().?;
         const msg_decl = mod.declPtr(msg_decl_index);
         const msg_len = msg_decl.typeOf(mod).childType(mod).arrayLen(mod);
         const msg_ptr = try o.lowerValue(msg_decl.val.toIntern());
@@ -5599,7 +5599,7 @@ pub const FuncGen = struct {
     fn airRet(self: *FuncGen, inst: Air.Inst.Index, safety: bool) !Builder.Value {
         const o = self.dg.object;
         const mod = o.module;
-        const un_op = self.air.instructions.items(.data)[@intFromEnum(inst)].un_op;
+        const un_op = self.air.instructions.items(.data)[@intfromenum(inst)].un_op;
         const ret_ty = self.typeOf(un_op);
 
         if (self.ret_ptr != .none) {
@@ -5704,7 +5704,7 @@ pub const FuncGen = struct {
     fn airRetLoad(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
         const o = self.dg.object;
         const mod = o.module;
-        const un_op = self.air.instructions.items(.data)[@intFromEnum(inst)].un_op;
+        const un_op = self.air.instructions.items(.data)[@intfromenum(inst)].un_op;
         const ptr_ty = self.typeOf(un_op);
         const ret_ty = ptr_ty.childType(mod);
         const fn_info = mod.typeToFunc(self.dg.decl.typeOf(mod)).?;
@@ -5732,7 +5732,7 @@ pub const FuncGen = struct {
 
     fn airCVaArg(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
         const o = self.dg.object;
-        const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+        const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
         const list = try self.resolveInst(ty_op.operand);
         const arg_ty = ty_op.ty.toType();
         const llvm_arg_ty = try o.lowerType(arg_ty);
@@ -5742,7 +5742,7 @@ pub const FuncGen = struct {
 
     fn airCVaCopy(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
         const o = self.dg.object;
-        const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+        const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
         const src_list = try self.resolveInst(ty_op.operand);
         const va_list_ty = ty_op.ty.toType();
         const llvm_va_list_ty = try o.lowerType(va_list_ty);
@@ -5759,7 +5759,7 @@ pub const FuncGen = struct {
     }
 
     fn airCVaEnd(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
-        const un_op = self.air.instructions.items(.data)[@intFromEnum(inst)].un_op;
+        const un_op = self.air.instructions.items(.data)[@intfromenum(inst)].un_op;
         const src_list = try self.resolveInst(un_op);
 
         _ = try self.wip.callIntrinsic(.normal, .none, .va_end, &.{}, &.{src_list}, "");
@@ -5788,7 +5788,7 @@ pub const FuncGen = struct {
         op: math.CompareOperator,
         fast: Builder.FastMathKind,
     ) !Builder.Value {
-        const bin_op = self.air.instructions.items(.data)[@intFromEnum(inst)].bin_op;
+        const bin_op = self.air.instructions.items(.data)[@intfromenum(inst)].bin_op;
         const lhs = try self.resolveInst(bin_op.lhs);
         const rhs = try self.resolveInst(bin_op.rhs);
         const operand_ty = self.typeOf(bin_op.lhs);
@@ -5797,7 +5797,7 @@ pub const FuncGen = struct {
     }
 
     fn airCmpVector(self: *FuncGen, inst: Air.Inst.Index, fast: Builder.FastMathKind) !Builder.Value {
-        const ty_pl = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
+        const ty_pl = self.air.instructions.items(.data)[@intfromenum(inst)].ty_pl;
         const extra = self.air.extraData(Air.VectorCmp, ty_pl.payload).data;
 
         const lhs = try self.resolveInst(extra.lhs);
@@ -5810,7 +5810,7 @@ pub const FuncGen = struct {
 
     fn airCmpLtErrorsLen(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
         const o = self.dg.object;
-        const un_op = self.air.instructions.items(.data)[@intFromEnum(inst)].un_op;
+        const un_op = self.air.instructions.items(.data)[@intfromenum(inst)].un_op;
         const operand = try self.resolveInst(un_op);
         const llvm_fn = try o.getCmpLtErrorsLenFunction();
         return self.wip.call(
@@ -5927,9 +5927,9 @@ pub const FuncGen = struct {
     }
 
     fn airBlock(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
-        const ty_pl = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
+        const ty_pl = self.air.instructions.items(.data)[@intfromenum(inst)].ty_pl;
         const extra = self.air.extraData(Air.Block, ty_pl.payload);
-        return self.lowerBlock(inst, null, @ptrCast(self.air.extra[extra.end..][0..extra.data.body_len]));
+        return self.lowerBlock(inst, null, @ptrcast(self.air.extra[extra.end..][0..extra.data.body_len]));
     }
 
     fn lowerBlock(
@@ -5977,19 +5977,19 @@ pub const FuncGen = struct {
                 break :ty raw_llvm_ty;
             };
 
-            parent_bb.ptr(&self.wip).incoming = @intCast(breaks.list.len);
+            parent_bb.ptr(&self.wip).incoming = @intcast(breaks.list.len);
             const phi = try self.wip.phi(llvm_ty, "");
             phi.finish(breaks.list.items(.val), breaks.list.items(.bb), &self.wip);
             return phi.toValue();
         } else {
-            parent_bb.ptr(&self.wip).incoming = @intCast(breaks.len);
+            parent_bb.ptr(&self.wip).incoming = @intcast(breaks.len);
             return .none;
         }
     }
 
     fn airBr(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
         const o = self.dg.object;
-        const branch = self.air.instructions.items(.data)[@intFromEnum(inst)].br;
+        const branch = self.air.instructions.items(.data)[@intfromenum(inst)].br;
         const block = self.blocks.get(branch.block_inst).?;
 
         // Add the values to the lists only if the break provides a value.
@@ -6007,11 +6007,11 @@ pub const FuncGen = struct {
     }
 
     fn airCondBr(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
-        const pl_op = self.air.instructions.items(.data)[@intFromEnum(inst)].pl_op;
+        const pl_op = self.air.instructions.items(.data)[@intfromenum(inst)].pl_op;
         const cond = try self.resolveInst(pl_op.operand);
         const extra = self.air.extraData(Air.CondBr, pl_op.payload);
-        const then_body: []const Air.Inst.Index = @ptrCast(self.air.extra[extra.end..][0..extra.data.then_body_len]);
-        const else_body: []const Air.Inst.Index = @ptrCast(self.air.extra[extra.end + then_body.len ..][0..extra.data.else_body_len]);
+        const then_body: []const Air.Inst.Index = @ptrcast(self.air.extra[extra.end..][0..extra.data.then_body_len]);
+        const else_body: []const Air.Inst.Index = @ptrcast(self.air.extra[extra.end + then_body.len ..][0..extra.data.else_body_len]);
 
         const then_block = try self.wip.block(1, "Then");
         const else_block = try self.wip.block(1, "Else");
@@ -6031,10 +6031,10 @@ pub const FuncGen = struct {
         const o = self.dg.object;
         const mod = o.module;
         const inst = body_tail[0];
-        const pl_op = self.air.instructions.items(.data)[@intFromEnum(inst)].pl_op;
+        const pl_op = self.air.instructions.items(.data)[@intfromenum(inst)].pl_op;
         const err_union = try self.resolveInst(pl_op.operand);
         const extra = self.air.extraData(Air.Try, pl_op.payload);
-        const body: []const Air.Inst.Index = @ptrCast(self.air.extra[extra.end..][0..extra.data.body_len]);
+        const body: []const Air.Inst.Index = @ptrcast(self.air.extra[extra.end..][0..extra.data.body_len]);
         const err_union_ty = self.typeOf(pl_op.operand);
         const payload_ty = self.typeOfIndex(inst);
         const can_elide_load = if (isByRef(payload_ty, mod)) self.canElideLoad(body_tail) else false;
@@ -6045,10 +6045,10 @@ pub const FuncGen = struct {
     fn airTryPtr(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
         const o = self.dg.object;
         const mod = o.module;
-        const ty_pl = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
+        const ty_pl = self.air.instructions.items(.data)[@intfromenum(inst)].ty_pl;
         const extra = self.air.extraData(Air.TryPtr, ty_pl.payload);
         const err_union_ptr = try self.resolveInst(extra.data.ptr);
-        const body: []const Air.Inst.Index = @ptrCast(self.air.extra[extra.end..][0..extra.data.body_len]);
+        const body: []const Air.Inst.Index = @ptrcast(self.air.extra[extra.end..][0..extra.data.body_len]);
         const err_union_ty = self.typeOf(extra.data.ptr).childType(mod);
         const is_unused = self.liveness.isUnused(inst);
         return lowerTry(self, err_union_ptr, body, err_union_ty, true, true, is_unused);
@@ -6128,7 +6128,7 @@ pub const FuncGen = struct {
 
     fn airSwitchBr(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
         const o = self.dg.object;
-        const pl_op = self.air.instructions.items(.data)[@intFromEnum(inst)].pl_op;
+        const pl_op = self.air.instructions.items(.data)[@intfromenum(inst)].pl_op;
         const cond = try self.resolveInst(pl_op.operand);
         const switch_br = self.air.extraData(Air.SwitchBr, pl_op.payload);
         const else_block = try self.wip.block(1, "Default");
@@ -6144,11 +6144,11 @@ pub const FuncGen = struct {
         while (case_i < switch_br.data.cases_len) : (case_i += 1) {
             const case = self.air.extraData(Air.SwitchBr.Case, extra_index);
             const items: []const Air.Inst.Ref =
-                @ptrCast(self.air.extra[case.end..][0..case.data.items_len]);
+                @ptrcast(self.air.extra[case.end..][0..case.data.items_len]);
             const case_body = self.air.extra[case.end + items.len ..][0..case.data.body_len];
             extra_index = case.end + case.data.items_len + case_body.len;
 
-            llvm_cases_len += @intCast(items.len);
+            llvm_cases_len += @intcast(items.len);
         }
 
         var wip_switch = try self.wip.@"switch"(cond_int, else_block, llvm_cases_len);
@@ -6159,11 +6159,11 @@ pub const FuncGen = struct {
         while (case_i < switch_br.data.cases_len) : (case_i += 1) {
             const case = self.air.extraData(Air.SwitchBr.Case, extra_index);
             const items: []const Air.Inst.Ref =
-                @ptrCast(self.air.extra[case.end..][0..case.data.items_len]);
-            const case_body: []const Air.Inst.Index = @ptrCast(self.air.extra[case.end + items.len ..][0..case.data.body_len]);
+                @ptrcast(self.air.extra[case.end..][0..case.data.items_len]);
+            const case_body: []const Air.Inst.Index = @ptrcast(self.air.extra[case.end + items.len ..][0..case.data.body_len]);
             extra_index = case.end + case.data.items_len + case_body.len;
 
-            const case_block = try self.wip.block(@intCast(items.len), "Case");
+            const case_block = try self.wip.block(@intcast(items.len), "Case");
 
             for (items) |item| {
                 const llvm_item = (try self.resolveInst(item)).toConst().?;
@@ -6179,7 +6179,7 @@ pub const FuncGen = struct {
         }
 
         self.wip.cursor = .{ .block = else_block };
-        const else_body: []const Air.Inst.Index = @ptrCast(self.air.extra[extra_index..][0..switch_br.data.else_body_len]);
+        const else_body: []const Air.Inst.Index = @ptrcast(self.air.extra[extra_index..][0..switch_br.data.else_body_len]);
         if (else_body.len != 0) {
             try self.genBodyDebugScope(null, else_body);
         } else {
@@ -6193,9 +6193,9 @@ pub const FuncGen = struct {
     fn airLoop(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
         const o = self.dg.object;
         const mod = o.module;
-        const ty_pl = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
+        const ty_pl = self.air.instructions.items(.data)[@intfromenum(inst)].ty_pl;
         const loop = self.air.extraData(Air.Block, ty_pl.payload);
-        const body: []const Air.Inst.Index = @ptrCast(self.air.extra[loop.end..][0..loop.data.body_len]);
+        const body: []const Air.Inst.Index = @ptrcast(self.air.extra[loop.end..][0..loop.data.body_len]);
         const loop_block = try self.wip.block(2, "Loop");
         _ = try self.wip.br(loop_block);
 
@@ -6217,7 +6217,7 @@ pub const FuncGen = struct {
     fn airArrayToSlice(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
         const o = self.dg.object;
         const mod = o.module;
-        const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+        const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
         const operand_ty = self.typeOf(ty_op.operand);
         const array_ty = operand_ty.childType(mod);
         const llvm_usize = try o.lowerType(Type.usize);
@@ -6235,7 +6235,7 @@ pub const FuncGen = struct {
     fn airFloatFromInt(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
         const o = self.dg.object;
         const mod = o.module;
-        const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+        const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
 
         const workaround_operand = try self.resolveInst(ty_op.operand);
         const operand_ty = self.typeOf(ty_op.operand);
@@ -6272,7 +6272,7 @@ pub const FuncGen = struct {
             "",
         );
 
-        const rt_int_bits = compilerRtIntBits(@intCast(operand_scalar_ty.bitSize(mod)));
+        const rt_int_bits = compilerRtIntBits(@intcast(operand_scalar_ty.bitSize(mod)));
         const rt_int_ty = try o.builder.intType(rt_int_bits);
         var extended = try self.wip.conv(
             if (is_signed_int) .signed else .unsigned,
@@ -6320,7 +6320,7 @@ pub const FuncGen = struct {
         const o = self.dg.object;
         const mod = o.module;
         const target = mod.getTarget();
-        const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+        const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
 
         const operand = try self.resolveInst(ty_op.operand);
         const operand_ty = self.typeOf(ty_op.operand);
@@ -6340,7 +6340,7 @@ pub const FuncGen = struct {
             );
         }
 
-        const rt_int_bits = compilerRtIntBits(@intCast(dest_scalar_ty.bitSize(mod)));
+        const rt_int_bits = compilerRtIntBits(@intcast(dest_scalar_ty.bitSize(mod)));
         const ret_ty = try o.builder.intType(rt_int_bits);
         const libc_ret_ty = if (rt_int_bits == 128 and (target.os.tag == .windows and target.cpu.arch == .x86_64)) b: {
             // On Windows x86-64, "ti" functions must use Vector(2, u64) instead of the standard
@@ -6407,7 +6407,7 @@ pub const FuncGen = struct {
     }
 
     fn airSliceField(self: *FuncGen, inst: Air.Inst.Index, index: u32) !Builder.Value {
-        const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+        const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
         const operand = try self.resolveInst(ty_op.operand);
         return self.wip.extractValue(operand, &.{index}, "");
     }
@@ -6415,7 +6415,7 @@ pub const FuncGen = struct {
     fn airPtrSliceFieldPtr(self: *FuncGen, inst: Air.Inst.Index, index: c_uint) !Builder.Value {
         const o = self.dg.object;
         const mod = o.module;
-        const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+        const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
         const slice_ptr = try self.resolveInst(ty_op.operand);
         const slice_ptr_ty = self.typeOf(ty_op.operand);
         const slice_llvm_ty = try o.lowerPtrElemTy(slice_ptr_ty.childType(mod));
@@ -6427,7 +6427,7 @@ pub const FuncGen = struct {
         const o = self.dg.object;
         const mod = o.module;
         const inst = body_tail[0];
-        const bin_op = self.air.instructions.items(.data)[@intFromEnum(inst)].bin_op;
+        const bin_op = self.air.instructions.items(.data)[@intfromenum(inst)].bin_op;
         const slice_ty = self.typeOf(bin_op.lhs);
         const slice = try self.resolveInst(bin_op.lhs);
         const index = try self.resolveInst(bin_op.rhs);
@@ -6449,7 +6449,7 @@ pub const FuncGen = struct {
     fn airSliceElemPtr(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
         const o = self.dg.object;
         const mod = o.module;
-        const ty_pl = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
+        const ty_pl = self.air.instructions.items(.data)[@intfromenum(inst)].ty_pl;
         const bin_op = self.air.extraData(Air.Bin, ty_pl.payload).data;
         const slice_ty = self.typeOf(bin_op.lhs);
 
@@ -6465,7 +6465,7 @@ pub const FuncGen = struct {
         const mod = o.module;
         const inst = body_tail[0];
 
-        const bin_op = self.air.instructions.items(.data)[@intFromEnum(inst)].bin_op;
+        const bin_op = self.air.instructions.items(.data)[@intfromenum(inst)].bin_op;
         const array_ty = self.typeOf(bin_op.lhs);
         const array_llvm_val = try self.resolveInst(bin_op.lhs);
         const rhs = try self.resolveInst(bin_op.rhs);
@@ -6496,7 +6496,7 @@ pub const FuncGen = struct {
         const o = self.dg.object;
         const mod = o.module;
         const inst = body_tail[0];
-        const bin_op = self.air.instructions.items(.data)[@intFromEnum(inst)].bin_op;
+        const bin_op = self.air.instructions.items(.data)[@intfromenum(inst)].bin_op;
         const ptr_ty = self.typeOf(bin_op.lhs);
         const elem_ty = ptr_ty.childType(mod);
         const llvm_elem_ty = try o.lowerPtrElemTy(elem_ty);
@@ -6520,7 +6520,7 @@ pub const FuncGen = struct {
     fn airPtrElemPtr(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
         const o = self.dg.object;
         const mod = o.module;
-        const ty_pl = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
+        const ty_pl = self.air.instructions.items(.data)[@intfromenum(inst)].ty_pl;
         const bin_op = self.air.extraData(Air.Bin, ty_pl.payload).data;
         const ptr_ty = self.typeOf(bin_op.lhs);
         const elem_ty = ptr_ty.childType(mod);
@@ -6541,7 +6541,7 @@ pub const FuncGen = struct {
     }
 
     fn airStructFieldPtr(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
-        const ty_pl = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
+        const ty_pl = self.air.instructions.items(.data)[@intfromenum(inst)].ty_pl;
         const struct_field = self.air.extraData(Air.StructField, ty_pl.payload).data;
         const struct_ptr = try self.resolveInst(struct_field.struct_operand);
         const struct_ptr_ty = self.typeOf(struct_field.struct_operand);
@@ -6553,7 +6553,7 @@ pub const FuncGen = struct {
         inst: Air.Inst.Index,
         field_index: u32,
     ) !Builder.Value {
-        const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+        const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
         const struct_ptr = try self.resolveInst(ty_op.operand);
         const struct_ptr_ty = self.typeOf(ty_op.operand);
         return self.fieldPtr(inst, struct_ptr, struct_ptr_ty, field_index);
@@ -6563,7 +6563,7 @@ pub const FuncGen = struct {
         const o = self.dg.object;
         const mod = o.module;
         const inst = body_tail[0];
-        const ty_pl = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
+        const ty_pl = self.air.instructions.items(.data)[@intfromenum(inst)].ty_pl;
         const struct_field = self.air.extraData(Air.StructField, ty_pl.payload).data;
         const struct_ty = self.typeOf(struct_field.struct_operand);
         const struct_llvm_val = try self.resolveInst(struct_field.struct_operand);
@@ -6584,12 +6584,12 @@ pub const FuncGen = struct {
                         const shifted_value = try self.wip.bin(.lshr, containing_int, shift_amt, "");
                         const elem_llvm_ty = try o.lowerType(field_ty);
                         if (field_ty.zigTypeTag(mod) == .Float or field_ty.zigTypeTag(mod) == .Vector) {
-                            const same_size_int = try o.builder.intType(@intCast(field_ty.bitSize(mod)));
+                            const same_size_int = try o.builder.intType(@intcast(field_ty.bitSize(mod)));
                             const truncated_int =
                                 try self.wip.cast(.trunc, shifted_value, same_size_int, "");
                             return self.wip.cast(.bitcast, truncated_int, elem_llvm_ty, "");
                         } else if (field_ty.isPtrAtRuntime(mod)) {
-                            const same_size_int = try o.builder.intType(@intCast(field_ty.bitSize(mod)));
+                            const same_size_int = try o.builder.intType(@intcast(field_ty.bitSize(mod)));
                             const truncated_int =
                                 try self.wip.cast(.trunc, shifted_value, same_size_int, "");
                             return self.wip.cast(.inttoptr, truncated_int, elem_llvm_ty, "");
@@ -6606,12 +6606,12 @@ pub const FuncGen = struct {
                     const containing_int = struct_llvm_val;
                     const elem_llvm_ty = try o.lowerType(field_ty);
                     if (field_ty.zigTypeTag(mod) == .Float or field_ty.zigTypeTag(mod) == .Vector) {
-                        const same_size_int = try o.builder.intType(@intCast(field_ty.bitSize(mod)));
+                        const same_size_int = try o.builder.intType(@intcast(field_ty.bitSize(mod)));
                         const truncated_int =
                             try self.wip.cast(.trunc, containing_int, same_size_int, "");
                         return self.wip.cast(.bitcast, truncated_int, elem_llvm_ty, "");
                     } else if (field_ty.isPtrAtRuntime(mod)) {
-                        const same_size_int = try o.builder.intType(@intCast(field_ty.bitSize(mod)));
+                        const same_size_int = try o.builder.intType(@intcast(field_ty.bitSize(mod)));
                         const truncated_int =
                             try self.wip.cast(.trunc, containing_int, same_size_int, "");
                         return self.wip.cast(.inttoptr, truncated_int, elem_llvm_ty, "");
@@ -6649,7 +6649,7 @@ pub const FuncGen = struct {
             .Union => {
                 const union_llvm_ty = try o.lowerType(struct_ty);
                 const layout = struct_ty.unionGetLayout(mod);
-                const payload_index = @intFromBool(layout.tag_align.compare(.gte, layout.payload_align));
+                const payload_index = @intfrombool(layout.tag_align.compare(.gte, layout.payload_align));
                 const field_ptr =
                     try self.wip.gepStruct(union_llvm_ty, struct_llvm_val, payload_index, "");
                 const payload_alignment = layout.payload_align.toLlvm();
@@ -6667,7 +6667,7 @@ pub const FuncGen = struct {
     fn airFieldParentPtr(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
         const o = self.dg.object;
         const mod = o.module;
-        const ty_pl = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
+        const ty_pl = self.air.instructions.items(.data)[@intfromenum(inst)].ty_pl;
         const extra = self.air.extraData(Air.FieldParentPtr, ty_pl.payload).data;
 
         const field_ptr = try self.resolveInst(extra.field_ptr);
@@ -6690,7 +6690,7 @@ pub const FuncGen = struct {
     }
 
     fn airNot(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
-        const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+        const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
         const operand = try self.resolveInst(ty_op.operand);
 
         return self.wip.not(operand, "");
@@ -6703,9 +6703,9 @@ pub const FuncGen = struct {
     }
 
     fn airDbgStmt(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
-        const dbg_stmt = self.air.instructions.items(.data)[@intFromEnum(inst)].dbg_stmt;
-        self.prev_dbg_line = @intCast(self.base_line + dbg_stmt.line + 1);
-        self.prev_dbg_column = @intCast(dbg_stmt.column + 1);
+        const dbg_stmt = self.air.instructions.items(.data)[@intfromenum(inst)].dbg_stmt;
+        self.prev_dbg_line = @intcast(self.base_line + dbg_stmt.line + 1);
+        self.prev_dbg_column = @intcast(dbg_stmt.column + 1);
 
         self.wip.debug_location = .{
             .location = .{
@@ -6720,15 +6720,15 @@ pub const FuncGen = struct {
     }
 
     fn airDbgInlineBlock(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
-        const ty_pl = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
+        const ty_pl = self.air.instructions.items(.data)[@intfromenum(inst)].ty_pl;
         const extra = self.air.extraData(Air.DbgInlineBlock, ty_pl.payload);
-        return self.lowerBlock(inst, extra.data.func, @ptrCast(self.air.extra[extra.end..][0..extra.data.body_len]));
+        return self.lowerBlock(inst, extra.data.func, @ptrcast(self.air.extra[extra.end..][0..extra.data.body_len]));
     }
 
     fn airDbgVarPtr(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
         const o = self.dg.object;
         const mod = o.module;
-        const pl_op = self.air.instructions.items(.data)[@intFromEnum(inst)].pl_op;
+        const pl_op = self.air.instructions.items(.data)[@intfromenum(inst)].pl_op;
         const operand = try self.resolveInst(pl_op.operand);
         const name = self.air.nullTerminatedString(pl_op.payload);
         const ptr_ty = self.typeOf(pl_op.operand);
@@ -6759,7 +6759,7 @@ pub const FuncGen = struct {
 
     fn airDbgVarVal(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
         const o = self.dg.object;
-        const pl_op = self.air.instructions.items(.data)[@intFromEnum(inst)].pl_op;
+        const pl_op = self.air.instructions.items(.data)[@intfromenum(inst)].pl_op;
         const operand = try self.resolveInst(pl_op.operand);
         const operand_ty = self.typeOf(pl_op.operand);
         const name = self.air.nullTerminatedString(pl_op.payload);
@@ -6830,15 +6830,15 @@ pub const FuncGen = struct {
         // this implementation feeds the inline assembly code directly to LLVM.
 
         const o = self.dg.object;
-        const ty_pl = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
+        const ty_pl = self.air.instructions.items(.data)[@intfromenum(inst)].ty_pl;
         const extra = self.air.extraData(Air.Asm, ty_pl.payload);
         const is_volatile = @as(u1, @truncate(extra.data.flags >> 31)) != 0;
         const clobbers_len: u31 = @truncate(extra.data.flags);
         var extra_i: usize = extra.end;
 
-        const outputs: []const Air.Inst.Ref = @ptrCast(self.air.extra[extra_i..][0..extra.data.outputs_len]);
+        const outputs: []const Air.Inst.Ref = @ptrcast(self.air.extra[extra_i..][0..extra.data.outputs_len]);
         extra_i += outputs.len;
-        const inputs: []const Air.Inst.Ref = @ptrCast(self.air.extra[extra_i..][0..extra.data.inputs_len]);
+        const inputs: []const Air.Inst.Ref = @ptrcast(self.air.extra[extra_i..][0..extra.data.inputs_len]);
         extra_i += inputs.len;
 
         var llvm_constraints: std.ArrayListUnmanaged(u8) = .{};
@@ -7184,7 +7184,7 @@ pub const FuncGen = struct {
             if (llvm_ret_indirect[i]) continue;
 
             const output_value = if (return_count > 1)
-                try self.wip.extractValue(call, &[_]u32{@intCast(llvm_ret_i)}, "")
+                try self.wip.extractValue(call, &[_]u32{@intcast(llvm_ret_i)}, "")
             else
                 call;
 
@@ -7211,7 +7211,7 @@ pub const FuncGen = struct {
     ) !Builder.Value {
         const o = self.dg.object;
         const mod = o.module;
-        const un_op = self.air.instructions.items(.data)[@intFromEnum(inst)].un_op;
+        const un_op = self.air.instructions.items(.data)[@intfromenum(inst)].un_op;
         const operand = try self.resolveInst(un_op);
         const operand_ty = self.typeOf(un_op);
         const optional_ty = if (operand_is_ptr) operand_ty.childType(mod) else operand_ty;
@@ -7255,7 +7255,7 @@ pub const FuncGen = struct {
     ) !Builder.Value {
         const o = self.dg.object;
         const mod = o.module;
-        const un_op = self.air.instructions.items(.data)[@intFromEnum(inst)].un_op;
+        const un_op = self.air.instructions.items(.data)[@intfromenum(inst)].un_op;
         const operand = try self.resolveInst(un_op);
         const operand_ty = self.typeOf(un_op);
         const err_union_ty = if (operand_is_ptr) operand_ty.childType(mod) else operand_ty;
@@ -7294,7 +7294,7 @@ pub const FuncGen = struct {
     fn airOptionalPayloadPtr(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
         const o = self.dg.object;
         const mod = o.module;
-        const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+        const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
         const operand = try self.resolveInst(ty_op.operand);
         const optional_ty = self.typeOf(ty_op.operand).childType(mod);
         const payload_ty = optional_ty.optionalChild(mod);
@@ -7315,7 +7315,7 @@ pub const FuncGen = struct {
 
         const o = self.dg.object;
         const mod = o.module;
-        const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+        const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
         const operand = try self.resolveInst(ty_op.operand);
         const optional_ty = self.typeOf(ty_op.operand).childType(mod);
         const payload_ty = optional_ty.optionalChild(mod);
@@ -7347,7 +7347,7 @@ pub const FuncGen = struct {
         const o = self.dg.object;
         const mod = o.module;
         const inst = body_tail[0];
-        const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+        const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
         const operand = try self.resolveInst(ty_op.operand);
         const optional_ty = self.typeOf(ty_op.operand);
         const payload_ty = self.typeOfIndex(inst);
@@ -7371,7 +7371,7 @@ pub const FuncGen = struct {
         const o = self.dg.object;
         const mod = o.module;
         const inst = body_tail[0];
-        const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+        const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
         const operand = try self.resolveInst(ty_op.operand);
         const operand_ty = self.typeOf(ty_op.operand);
         const err_union_ty = if (operand_is_ptr) operand_ty.childType(mod) else operand_ty;
@@ -7405,7 +7405,7 @@ pub const FuncGen = struct {
     ) !Builder.Value {
         const o = self.dg.object;
         const mod = o.module;
-        const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+        const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
         const operand = try self.resolveInst(ty_op.operand);
         const operand_ty = self.typeOf(ty_op.operand);
         const error_type = try o.errorIntType();
@@ -7438,7 +7438,7 @@ pub const FuncGen = struct {
     fn airErrUnionPayloadPtrSet(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
         const o = self.dg.object;
         const mod = o.module;
-        const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+        const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
         const operand = try self.resolveInst(ty_op.operand);
         const err_union_ty = self.typeOf(ty_op.operand).childType(mod);
 
@@ -7470,14 +7470,14 @@ pub const FuncGen = struct {
     }
 
     fn airSetErrReturnTrace(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
-        const un_op = self.air.instructions.items(.data)[@intFromEnum(inst)].un_op;
+        const un_op = self.air.instructions.items(.data)[@intfromenum(inst)].un_op;
         self.err_ret_trace = try self.resolveInst(un_op);
         return .none;
     }
 
     fn airSaveErrReturnTraceIndex(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
         const o = self.dg.object;
-        const ty_pl = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
+        const ty_pl = self.air.instructions.items(.data)[@intfromenum(inst)].ty_pl;
         const struct_ty = ty_pl.ty.toType();
         const field_index = ty_pl.payload;
 
@@ -7508,7 +7508,7 @@ pub const FuncGen = struct {
     ) bool {
         const air_tags = self.air.instructions.items(.tag);
         for (body_tail[1..]) |body_inst| {
-            switch (air_tags[@intFromEnum(body_inst)]) {
+            switch (air_tags[@intfromenum(body_inst)]) {
                 .ret => return true,
                 .dbg_stmt => continue,
                 else => return false,
@@ -7523,7 +7523,7 @@ pub const FuncGen = struct {
         const o = self.dg.object;
         const mod = o.module;
         const inst = body_tail[0];
-        const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+        const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
         const payload_ty = self.typeOf(ty_op.operand);
         const non_null_bit = try o.builder.intValue(.i8, 1);
         comptime assert(optional_layout_version == 3);
@@ -7556,7 +7556,7 @@ pub const FuncGen = struct {
         const o = self.dg.object;
         const mod = o.module;
         const inst = body_tail[0];
-        const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+        const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
         const err_un_ty = self.typeOfIndex(inst);
         const operand = try self.resolveInst(ty_op.operand);
         const payload_ty = self.typeOf(ty_op.operand);
@@ -7597,7 +7597,7 @@ pub const FuncGen = struct {
         const o = self.dg.object;
         const mod = o.module;
         const inst = body_tail[0];
-        const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+        const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
         const err_un_ty = self.typeOfIndex(inst);
         const payload_ty = err_un_ty.errorUnionPayload(mod);
         const operand = try self.resolveInst(ty_op.operand);
@@ -7635,7 +7635,7 @@ pub const FuncGen = struct {
 
     fn airWasmMemorySize(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
         const o = self.dg.object;
-        const pl_op = self.air.instructions.items(.data)[@intFromEnum(inst)].pl_op;
+        const pl_op = self.air.instructions.items(.data)[@intfromenum(inst)].pl_op;
         const index = pl_op.payload;
         const llvm_usize = try o.lowerType(Type.usize);
         return self.wip.callIntrinsic(.normal, .none, .@"wasm.memory.size", &.{llvm_usize}, &.{
@@ -7645,7 +7645,7 @@ pub const FuncGen = struct {
 
     fn airWasmMemoryGrow(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
         const o = self.dg.object;
-        const pl_op = self.air.instructions.items(.data)[@intFromEnum(inst)].pl_op;
+        const pl_op = self.air.instructions.items(.data)[@intfromenum(inst)].pl_op;
         const index = pl_op.payload;
         const llvm_isize = try o.lowerType(Type.isize);
         return self.wip.callIntrinsic(.normal, .none, .@"wasm.memory.grow", &.{llvm_isize}, &.{
@@ -7656,7 +7656,7 @@ pub const FuncGen = struct {
     fn airVectorStoreElem(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
         const o = self.dg.object;
         const mod = o.module;
-        const data = self.air.instructions.items(.data)[@intFromEnum(inst)].vector_store_elem;
+        const data = self.air.instructions.items(.data)[@intfromenum(inst)].vector_store_elem;
         const extra = self.air.extraData(Air.Bin, data.payload).data;
 
         const vector_ptr = try self.resolveInst(data.vector_ptr);
@@ -7678,7 +7678,7 @@ pub const FuncGen = struct {
     fn airMin(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
         const o = self.dg.object;
         const mod = o.module;
-        const bin_op = self.air.instructions.items(.data)[@intFromEnum(inst)].bin_op;
+        const bin_op = self.air.instructions.items(.data)[@intfromenum(inst)].bin_op;
         const lhs = try self.resolveInst(bin_op.lhs);
         const rhs = try self.resolveInst(bin_op.rhs);
         const inst_ty = self.typeOfIndex(inst);
@@ -7698,7 +7698,7 @@ pub const FuncGen = struct {
     fn airMax(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
         const o = self.dg.object;
         const mod = o.module;
-        const bin_op = self.air.instructions.items(.data)[@intFromEnum(inst)].bin_op;
+        const bin_op = self.air.instructions.items(.data)[@intfromenum(inst)].bin_op;
         const lhs = try self.resolveInst(bin_op.lhs);
         const rhs = try self.resolveInst(bin_op.rhs);
         const inst_ty = self.typeOfIndex(inst);
@@ -7717,7 +7717,7 @@ pub const FuncGen = struct {
 
     fn airSlice(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
         const o = self.dg.object;
-        const ty_pl = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
+        const ty_pl = self.air.instructions.items(.data)[@intfromenum(inst)].ty_pl;
         const bin_op = self.air.extraData(Air.Bin, ty_pl.payload).data;
         const ptr = try self.resolveInst(bin_op.lhs);
         const len = try self.resolveInst(bin_op.rhs);
@@ -7728,7 +7728,7 @@ pub const FuncGen = struct {
     fn airAdd(self: *FuncGen, inst: Air.Inst.Index, fast: Builder.FastMathKind) !Builder.Value {
         const o = self.dg.object;
         const mod = o.module;
-        const bin_op = self.air.instructions.items(.data)[@intFromEnum(inst)].bin_op;
+        const bin_op = self.air.instructions.items(.data)[@intfromenum(inst)].bin_op;
         const lhs = try self.resolveInst(bin_op.lhs);
         const rhs = try self.resolveInst(bin_op.rhs);
         const inst_ty = self.typeOfIndex(inst);
@@ -7747,7 +7747,7 @@ pub const FuncGen = struct {
         const o = fg.dg.object;
         const mod = o.module;
 
-        const bin_op = fg.air.instructions.items(.data)[@intFromEnum(inst)].bin_op;
+        const bin_op = fg.air.instructions.items(.data)[@intfromenum(inst)].bin_op;
         const lhs = try fg.resolveInst(bin_op.lhs);
         const rhs = try fg.resolveInst(bin_op.rhs);
         const inst_ty = fg.typeOfIndex(inst);
@@ -7784,7 +7784,7 @@ pub const FuncGen = struct {
     }
 
     fn airAddWrap(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
-        const bin_op = self.air.instructions.items(.data)[@intFromEnum(inst)].bin_op;
+        const bin_op = self.air.instructions.items(.data)[@intfromenum(inst)].bin_op;
         const lhs = try self.resolveInst(bin_op.lhs);
         const rhs = try self.resolveInst(bin_op.rhs);
 
@@ -7794,7 +7794,7 @@ pub const FuncGen = struct {
     fn airAddSat(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
         const o = self.dg.object;
         const mod = o.module;
-        const bin_op = self.air.instructions.items(.data)[@intFromEnum(inst)].bin_op;
+        const bin_op = self.air.instructions.items(.data)[@intfromenum(inst)].bin_op;
         const lhs = try self.resolveInst(bin_op.lhs);
         const rhs = try self.resolveInst(bin_op.rhs);
         const inst_ty = self.typeOfIndex(inst);
@@ -7814,7 +7814,7 @@ pub const FuncGen = struct {
     fn airSub(self: *FuncGen, inst: Air.Inst.Index, fast: Builder.FastMathKind) !Builder.Value {
         const o = self.dg.object;
         const mod = o.module;
-        const bin_op = self.air.instructions.items(.data)[@intFromEnum(inst)].bin_op;
+        const bin_op = self.air.instructions.items(.data)[@intfromenum(inst)].bin_op;
         const lhs = try self.resolveInst(bin_op.lhs);
         const rhs = try self.resolveInst(bin_op.rhs);
         const inst_ty = self.typeOfIndex(inst);
@@ -7825,7 +7825,7 @@ pub const FuncGen = struct {
     }
 
     fn airSubWrap(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
-        const bin_op = self.air.instructions.items(.data)[@intFromEnum(inst)].bin_op;
+        const bin_op = self.air.instructions.items(.data)[@intfromenum(inst)].bin_op;
         const lhs = try self.resolveInst(bin_op.lhs);
         const rhs = try self.resolveInst(bin_op.rhs);
 
@@ -7835,7 +7835,7 @@ pub const FuncGen = struct {
     fn airSubSat(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
         const o = self.dg.object;
         const mod = o.module;
-        const bin_op = self.air.instructions.items(.data)[@intFromEnum(inst)].bin_op;
+        const bin_op = self.air.instructions.items(.data)[@intfromenum(inst)].bin_op;
         const lhs = try self.resolveInst(bin_op.lhs);
         const rhs = try self.resolveInst(bin_op.rhs);
         const inst_ty = self.typeOfIndex(inst);
@@ -7855,7 +7855,7 @@ pub const FuncGen = struct {
     fn airMul(self: *FuncGen, inst: Air.Inst.Index, fast: Builder.FastMathKind) !Builder.Value {
         const o = self.dg.object;
         const mod = o.module;
-        const bin_op = self.air.instructions.items(.data)[@intFromEnum(inst)].bin_op;
+        const bin_op = self.air.instructions.items(.data)[@intfromenum(inst)].bin_op;
         const lhs = try self.resolveInst(bin_op.lhs);
         const rhs = try self.resolveInst(bin_op.rhs);
         const inst_ty = self.typeOfIndex(inst);
@@ -7866,7 +7866,7 @@ pub const FuncGen = struct {
     }
 
     fn airMulWrap(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
-        const bin_op = self.air.instructions.items(.data)[@intFromEnum(inst)].bin_op;
+        const bin_op = self.air.instructions.items(.data)[@intfromenum(inst)].bin_op;
         const lhs = try self.resolveInst(bin_op.lhs);
         const rhs = try self.resolveInst(bin_op.rhs);
 
@@ -7876,7 +7876,7 @@ pub const FuncGen = struct {
     fn airMulSat(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
         const o = self.dg.object;
         const mod = o.module;
-        const bin_op = self.air.instructions.items(.data)[@intFromEnum(inst)].bin_op;
+        const bin_op = self.air.instructions.items(.data)[@intfromenum(inst)].bin_op;
         const lhs = try self.resolveInst(bin_op.lhs);
         const rhs = try self.resolveInst(bin_op.rhs);
         const inst_ty = self.typeOfIndex(inst);
@@ -7894,7 +7894,7 @@ pub const FuncGen = struct {
     }
 
     fn airDivFloat(self: *FuncGen, inst: Air.Inst.Index, fast: Builder.FastMathKind) !Builder.Value {
-        const bin_op = self.air.instructions.items(.data)[@intFromEnum(inst)].bin_op;
+        const bin_op = self.air.instructions.items(.data)[@intfromenum(inst)].bin_op;
         const lhs = try self.resolveInst(bin_op.lhs);
         const rhs = try self.resolveInst(bin_op.rhs);
         const inst_ty = self.typeOfIndex(inst);
@@ -7905,7 +7905,7 @@ pub const FuncGen = struct {
     fn airDivTrunc(self: *FuncGen, inst: Air.Inst.Index, fast: Builder.FastMathKind) !Builder.Value {
         const o = self.dg.object;
         const mod = o.module;
-        const bin_op = self.air.instructions.items(.data)[@intFromEnum(inst)].bin_op;
+        const bin_op = self.air.instructions.items(.data)[@intfromenum(inst)].bin_op;
         const lhs = try self.resolveInst(bin_op.lhs);
         const rhs = try self.resolveInst(bin_op.rhs);
         const inst_ty = self.typeOfIndex(inst);
@@ -7921,7 +7921,7 @@ pub const FuncGen = struct {
     fn airDivFloor(self: *FuncGen, inst: Air.Inst.Index, fast: Builder.FastMathKind) !Builder.Value {
         const o = self.dg.object;
         const mod = o.module;
-        const bin_op = self.air.instructions.items(.data)[@intFromEnum(inst)].bin_op;
+        const bin_op = self.air.instructions.items(.data)[@intfromenum(inst)].bin_op;
         const lhs = try self.resolveInst(bin_op.lhs);
         const rhs = try self.resolveInst(bin_op.rhs);
         const inst_ty = self.typeOfIndex(inst);
@@ -7953,7 +7953,7 @@ pub const FuncGen = struct {
     fn airDivExact(self: *FuncGen, inst: Air.Inst.Index, fast: Builder.FastMathKind) !Builder.Value {
         const o = self.dg.object;
         const mod = o.module;
-        const bin_op = self.air.instructions.items(.data)[@intFromEnum(inst)].bin_op;
+        const bin_op = self.air.instructions.items(.data)[@intfromenum(inst)].bin_op;
         const lhs = try self.resolveInst(bin_op.lhs);
         const rhs = try self.resolveInst(bin_op.rhs);
         const inst_ty = self.typeOfIndex(inst);
@@ -7971,7 +7971,7 @@ pub const FuncGen = struct {
     fn airRem(self: *FuncGen, inst: Air.Inst.Index, fast: Builder.FastMathKind) !Builder.Value {
         const o = self.dg.object;
         const mod = o.module;
-        const bin_op = self.air.instructions.items(.data)[@intFromEnum(inst)].bin_op;
+        const bin_op = self.air.instructions.items(.data)[@intfromenum(inst)].bin_op;
         const lhs = try self.resolveInst(bin_op.lhs);
         const rhs = try self.resolveInst(bin_op.rhs);
         const inst_ty = self.typeOfIndex(inst);
@@ -7988,7 +7988,7 @@ pub const FuncGen = struct {
     fn airMod(self: *FuncGen, inst: Air.Inst.Index, fast: Builder.FastMathKind) !Builder.Value {
         const o = self.dg.object;
         const mod = o.module;
-        const bin_op = self.air.instructions.items(.data)[@intFromEnum(inst)].bin_op;
+        const bin_op = self.air.instructions.items(.data)[@intfromenum(inst)].bin_op;
         const lhs = try self.resolveInst(bin_op.lhs);
         const rhs = try self.resolveInst(bin_op.rhs);
         const inst_ty = self.typeOfIndex(inst);
@@ -8024,7 +8024,7 @@ pub const FuncGen = struct {
     fn airPtrAdd(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
         const o = self.dg.object;
         const mod = o.module;
-        const ty_pl = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
+        const ty_pl = self.air.instructions.items(.data)[@intfromenum(inst)].ty_pl;
         const bin_op = self.air.extraData(Air.Bin, ty_pl.payload).data;
         const ptr = try self.resolveInst(bin_op.lhs);
         const offset = try self.resolveInst(bin_op.rhs);
@@ -8046,7 +8046,7 @@ pub const FuncGen = struct {
     fn airPtrSub(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
         const o = self.dg.object;
         const mod = o.module;
-        const ty_pl = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
+        const ty_pl = self.air.instructions.items(.data)[@intfromenum(inst)].ty_pl;
         const bin_op = self.air.extraData(Air.Bin, ty_pl.payload).data;
         const ptr = try self.resolveInst(bin_op.lhs);
         const offset = try self.resolveInst(bin_op.rhs);
@@ -8074,7 +8074,7 @@ pub const FuncGen = struct {
     ) !Builder.Value {
         const o = self.dg.object;
         const mod = o.module;
-        const ty_pl = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
+        const ty_pl = self.air.instructions.items(.data)[@intfromenum(inst)].ty_pl;
         const extra = self.air.extraData(Air.Bin, ty_pl.payload).data;
 
         const lhs = try self.resolveInst(extra.lhs);
@@ -8355,18 +8355,18 @@ pub const FuncGen = struct {
             .neg => {
                 // In this case we can generate a softfloat negation by XORing the
                 // bits with a constant.
-                const int_ty = try o.builder.intType(@intCast(float_bits));
+                const int_ty = try o.builder.intType(@intcast(float_bits));
                 const cast_ty = try llvm_ty.changeScalar(int_ty, &o.builder);
                 const sign_mask = try o.builder.splatValue(
                     cast_ty,
-                    try o.builder.intConst(int_ty, @as(u128, 1) << @intCast(float_bits - 1)),
+                    try o.builder.intConst(int_ty, @as(u128, 1) << @intcast(float_bits - 1)),
                 );
                 const bitcasted_operand = try self.wip.cast(.bitcast, params[0], cast_ty, "");
                 const result = try self.wip.bin(.xor, bitcasted_operand, sign_mask, "");
                 return self.wip.cast(.bitcast, result, llvm_ty, "");
             },
             .add, .sub, .div, .mul => try o.builder.strtabStringFmt("__{s}{s}f3", .{
-                @tagName(op), compilerRtFloatAbbrev(float_bits),
+                @tagname(op), compilerRtFloatAbbrev(float_bits),
             }),
             .ceil,
             .cos,
@@ -8387,7 +8387,7 @@ pub const FuncGen = struct {
             .tan,
             .trunc,
             => try o.builder.strtabStringFmt("{s}{s}{s}", .{
-                libcFloatPrefix(float_bits), @tagName(op), libcFloatSuffix(float_bits),
+                libcFloatPrefix(float_bits), @tagname(op), libcFloatSuffix(float_bits),
             }),
         };
 
@@ -8414,7 +8414,7 @@ pub const FuncGen = struct {
     }
 
     fn airMulAdd(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
-        const pl_op = self.air.instructions.items(.data)[@intFromEnum(inst)].pl_op;
+        const pl_op = self.air.instructions.items(.data)[@intfromenum(inst)].pl_op;
         const extra = self.air.extraData(Air.Bin, pl_op.payload).data;
 
         const mulend1 = try self.resolveInst(extra.lhs);
@@ -8428,7 +8428,7 @@ pub const FuncGen = struct {
     fn airShlWithOverflow(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
         const o = self.dg.object;
         const mod = o.module;
-        const ty_pl = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
+        const ty_pl = self.air.instructions.items(.data)[@intfromenum(inst)].ty_pl;
         const extra = self.air.extraData(Air.Bin, ty_pl.payload).data;
 
         const lhs = try self.resolveInst(extra.lhs);
@@ -8475,21 +8475,21 @@ pub const FuncGen = struct {
     }
 
     fn airAnd(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
-        const bin_op = self.air.instructions.items(.data)[@intFromEnum(inst)].bin_op;
+        const bin_op = self.air.instructions.items(.data)[@intfromenum(inst)].bin_op;
         const lhs = try self.resolveInst(bin_op.lhs);
         const rhs = try self.resolveInst(bin_op.rhs);
         return self.wip.bin(.@"and", lhs, rhs, "");
     }
 
     fn airOr(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
-        const bin_op = self.air.instructions.items(.data)[@intFromEnum(inst)].bin_op;
+        const bin_op = self.air.instructions.items(.data)[@intfromenum(inst)].bin_op;
         const lhs = try self.resolveInst(bin_op.lhs);
         const rhs = try self.resolveInst(bin_op.rhs);
         return self.wip.bin(.@"or", lhs, rhs, "");
     }
 
     fn airXor(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
-        const bin_op = self.air.instructions.items(.data)[@intFromEnum(inst)].bin_op;
+        const bin_op = self.air.instructions.items(.data)[@intfromenum(inst)].bin_op;
         const lhs = try self.resolveInst(bin_op.lhs);
         const rhs = try self.resolveInst(bin_op.rhs);
         return self.wip.bin(.xor, lhs, rhs, "");
@@ -8498,7 +8498,7 @@ pub const FuncGen = struct {
     fn airShlExact(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
         const o = self.dg.object;
         const mod = o.module;
-        const bin_op = self.air.instructions.items(.data)[@intFromEnum(inst)].bin_op;
+        const bin_op = self.air.instructions.items(.data)[@intfromenum(inst)].bin_op;
 
         const lhs = try self.resolveInst(bin_op.lhs);
         const rhs = try self.resolveInst(bin_op.rhs);
@@ -8515,7 +8515,7 @@ pub const FuncGen = struct {
 
     fn airShl(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
         const o = self.dg.object;
-        const bin_op = self.air.instructions.items(.data)[@intFromEnum(inst)].bin_op;
+        const bin_op = self.air.instructions.items(.data)[@intfromenum(inst)].bin_op;
 
         const lhs = try self.resolveInst(bin_op.lhs);
         const rhs = try self.resolveInst(bin_op.rhs);
@@ -8529,7 +8529,7 @@ pub const FuncGen = struct {
     fn airShlSat(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
         const o = self.dg.object;
         const mod = o.module;
-        const bin_op = self.air.instructions.items(.data)[@intFromEnum(inst)].bin_op;
+        const bin_op = self.air.instructions.items(.data)[@intfromenum(inst)].bin_op;
 
         const lhs = try self.resolveInst(bin_op.lhs);
         const rhs = try self.resolveInst(bin_op.rhs);
@@ -8571,7 +8571,7 @@ pub const FuncGen = struct {
     fn airShr(self: *FuncGen, inst: Air.Inst.Index, is_exact: bool) !Builder.Value {
         const o = self.dg.object;
         const mod = o.module;
-        const bin_op = self.air.instructions.items(.data)[@intFromEnum(inst)].bin_op;
+        const bin_op = self.air.instructions.items(.data)[@intfromenum(inst)].bin_op;
 
         const lhs = try self.resolveInst(bin_op.lhs);
         const rhs = try self.resolveInst(bin_op.rhs);
@@ -8590,7 +8590,7 @@ pub const FuncGen = struct {
     fn airAbs(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
         const o = self.dg.object;
         const mod = o.module;
-        const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+        const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
         const operand = try self.resolveInst(ty_op.operand);
         const operand_ty = self.typeOf(ty_op.operand);
         const scalar_ty = operand_ty.scalarType(mod);
@@ -8612,7 +8612,7 @@ pub const FuncGen = struct {
     fn airIntCast(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
         const o = self.dg.object;
         const mod = o.module;
-        const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+        const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
         const dest_ty = self.typeOfIndex(inst);
         const dest_llvm_ty = try o.lowerType(dest_ty);
         const operand = try self.resolveInst(ty_op.operand);
@@ -8627,7 +8627,7 @@ pub const FuncGen = struct {
 
     fn airTrunc(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
         const o = self.dg.object;
-        const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+        const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
         const operand = try self.resolveInst(ty_op.operand);
         const dest_llvm_ty = try o.lowerType(self.typeOfIndex(inst));
         return self.wip.cast(.trunc, operand, dest_llvm_ty, "");
@@ -8636,7 +8636,7 @@ pub const FuncGen = struct {
     fn airFptrunc(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
         const o = self.dg.object;
         const mod = o.module;
-        const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+        const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
         const operand = try self.resolveInst(ty_op.operand);
         const operand_ty = self.typeOf(ty_op.operand);
         const dest_ty = self.typeOfIndex(inst);
@@ -8670,7 +8670,7 @@ pub const FuncGen = struct {
     fn airFpext(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
         const o = self.dg.object;
         const mod = o.module;
-        const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+        const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
         const operand = try self.resolveInst(ty_op.operand);
         const operand_ty = self.typeOf(ty_op.operand);
         const dest_ty = self.typeOfIndex(inst);
@@ -8709,7 +8709,7 @@ pub const FuncGen = struct {
 
     fn airIntFromPtr(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
         const o = self.dg.object;
-        const un_op = self.air.instructions.items(.data)[@intFromEnum(inst)].un_op;
+        const un_op = self.air.instructions.items(.data)[@intfromenum(inst)].un_op;
         const operand = try self.resolveInst(un_op);
         const ptr_ty = self.typeOf(un_op);
         const operand_ptr = try self.sliceOrArrayPtr(operand, ptr_ty);
@@ -8718,14 +8718,14 @@ pub const FuncGen = struct {
     }
 
     fn airBitCast(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
-        const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+        const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
         const operand_ty = self.typeOf(ty_op.operand);
         const inst_ty = self.typeOfIndex(inst);
         const operand = try self.resolveInst(ty_op.operand);
-        return self.bitCast(operand, operand_ty, inst_ty);
+        return self.bitcast(operand, operand_ty, inst_ty);
     }
 
-    fn bitCast(self: *FuncGen, operand: Builder.Value, operand_ty: Type, inst_ty: Type) !Builder.Value {
+    fn bitcast(self: *FuncGen, operand: Builder.Value, operand_ty: Type, inst_ty: Type) !Builder.Value {
         const o = self.dg.object;
         const mod = o.module;
         const operand_is_ref = isByRef(operand_ty, mod);
@@ -8835,7 +8835,7 @@ pub const FuncGen = struct {
     }
 
     fn airIntFromBool(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
-        const un_op = self.air.instructions.items(.data)[@intFromEnum(inst)].un_op;
+        const un_op = self.air.instructions.items(.data)[@intfromenum(inst)].un_op;
         const operand = try self.resolveInst(un_op);
         return operand;
     }
@@ -8851,7 +8851,7 @@ pub const FuncGen = struct {
         const inst_ty = self.typeOfIndex(inst);
         if (needDbgVarWorkaround(o)) return arg_val;
 
-        const src_index = self.air.instructions.items(.data)[@intFromEnum(inst)].arg.src_index;
+        const src_index = self.air.instructions.items(.data)[@intfromenum(inst)].arg.src_index;
         const func_index = self.dg.decl.getOwnedFunctionIndex();
         const func = mod.funcInfo(func_index);
         const lbrace_line = mod.declPtr(func.owner_decl).src_line + func.lbrace_line + 1;
@@ -8863,7 +8863,7 @@ pub const FuncGen = struct {
             self.scope,
             lbrace_line,
             try o.lowerDebugType(inst_ty),
-            @intCast(self.arg_index),
+            @intcast(self.arg_index),
         );
 
         const old_location = self.wip.debug_location;
@@ -8975,7 +8975,7 @@ pub const FuncGen = struct {
     fn airStore(self: *FuncGen, inst: Air.Inst.Index, safety: bool) !Builder.Value {
         const o = self.dg.object;
         const mod = o.module;
-        const bin_op = self.air.instructions.items(.data)[@intFromEnum(inst)].bin_op;
+        const bin_op = self.air.instructions.items(.data)[@intfromenum(inst)].bin_op;
         const dest_ptr = try self.resolveInst(bin_op.lhs);
         const ptr_ty = self.typeOf(bin_op.lhs);
         const operand_ty = ptr_ty.childType(mod);
@@ -9040,7 +9040,7 @@ pub const FuncGen = struct {
         const o = fg.dg.object;
         const mod = o.module;
         const inst = body_tail[0];
-        const ty_op = fg.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+        const ty_op = fg.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
         const ptr_ty = fg.typeOf(ty_op.operand);
         const ptr_info = ptr_ty.ptrInfo(mod);
         const ptr = try fg.resolveInst(ty_op.operand);
@@ -9086,7 +9086,7 @@ pub const FuncGen = struct {
     }
 
     fn airFence(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
-        const atomic_order = self.air.instructions.items(.data)[@intFromEnum(inst)].fence;
+        const atomic_order = self.air.instructions.items(.data)[@intfromenum(inst)].fence;
         const ordering = toLlvmAtomicOrdering(atomic_order);
         _ = try self.wip.fence(self.sync_scope, ordering);
         return .none;
@@ -9099,7 +9099,7 @@ pub const FuncGen = struct {
     ) !Builder.Value {
         const o = self.dg.object;
         const mod = o.module;
-        const ty_pl = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
+        const ty_pl = self.air.instructions.items(.data)[@intfromenum(inst)].ty_pl;
         const extra = self.air.extraData(Air.Cmpxchg, ty_pl.payload).data;
         const ptr = try self.resolveInst(extra.ptr);
         const ptr_ty = self.typeOf(extra.ptr);
@@ -9149,7 +9149,7 @@ pub const FuncGen = struct {
     fn airAtomicRmw(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
         const o = self.dg.object;
         const mod = o.module;
-        const pl_op = self.air.instructions.items(.data)[@intFromEnum(inst)].pl_op;
+        const pl_op = self.air.instructions.items(.data)[@intfromenum(inst)].pl_op;
         const extra = self.air.extraData(Air.AtomicRmw, pl_op.payload).data;
         const ptr = try self.resolveInst(pl_op.operand);
         const ptr_ty = self.typeOf(pl_op.operand);
@@ -9212,7 +9212,7 @@ pub const FuncGen = struct {
     fn airAtomicLoad(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
         const o = self.dg.object;
         const mod = o.module;
-        const atomic_load = self.air.instructions.items(.data)[@intFromEnum(inst)].atomic_load;
+        const atomic_load = self.air.instructions.items(.data)[@intfromenum(inst)].atomic_load;
         const ptr = try self.resolveInst(atomic_load.ptr);
         const ptr_ty = self.typeOf(atomic_load.ptr);
         const info = ptr_ty.ptrInfo(mod);
@@ -9259,7 +9259,7 @@ pub const FuncGen = struct {
     ) !Builder.Value {
         const o = self.dg.object;
         const mod = o.module;
-        const bin_op = self.air.instructions.items(.data)[@intFromEnum(inst)].bin_op;
+        const bin_op = self.air.instructions.items(.data)[@intfromenum(inst)].bin_op;
         const ptr_ty = self.typeOf(bin_op.lhs);
         const operand_ty = ptr_ty.childType(mod);
         if (!operand_ty.isFnOrHasRuntimeBitsIgnoreComptime(mod)) return .none;
@@ -9283,7 +9283,7 @@ pub const FuncGen = struct {
     fn airMemset(self: *FuncGen, inst: Air.Inst.Index, safety: bool) !Builder.Value {
         const o = self.dg.object;
         const mod = o.module;
-        const bin_op = self.air.instructions.items(.data)[@intFromEnum(inst)].bin_op;
+        const bin_op = self.air.instructions.items(.data)[@intfromenum(inst)].bin_op;
         const dest_slice = try self.resolveInst(bin_op.lhs);
         const ptr_ty = self.typeOf(bin_op.lhs);
         const elem_ty = self.typeOf(bin_op.rhs);
@@ -9343,7 +9343,7 @@ pub const FuncGen = struct {
 
         if (elem_abi_size == 1) {
             // In this case we can take advantage of LLVM's intrinsic.
-            const fill_byte = try self.bitCast(value, elem_ty, Type.u8);
+            const fill_byte = try self.bitcast(value, elem_ty, Type.u8);
             const len = try self.sliceOrArrayLenInBytes(dest_slice, ptr_ty);
 
             if (intrinsic_len0_traps) {
@@ -9436,7 +9436,7 @@ pub const FuncGen = struct {
     fn airMemcpy(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
         const o = self.dg.object;
         const mod = o.module;
-        const bin_op = self.air.instructions.items(.data)[@intFromEnum(inst)].bin_op;
+        const bin_op = self.air.instructions.items(.data)[@intfromenum(inst)].bin_op;
         const dest_slice = try self.resolveInst(bin_op.lhs);
         const dest_ptr_ty = self.typeOf(bin_op.lhs);
         const src_slice = try self.resolveInst(bin_op.rhs);
@@ -9489,7 +9489,7 @@ pub const FuncGen = struct {
     fn airSetUnionTag(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
         const o = self.dg.object;
         const mod = o.module;
-        const bin_op = self.air.instructions.items(.data)[@intFromEnum(inst)].bin_op;
+        const bin_op = self.air.instructions.items(.data)[@intfromenum(inst)].bin_op;
         const un_ty = self.typeOf(bin_op.lhs).childType(mod);
         const layout = un_ty.unionGetLayout(mod);
         if (layout.tag_size == 0) return .none;
@@ -9500,7 +9500,7 @@ pub const FuncGen = struct {
             _ = try self.wip.store(.normal, new_tag, union_ptr, .default);
             return .none;
         }
-        const tag_index = @intFromBool(layout.tag_align.compare(.lt, layout.payload_align));
+        const tag_index = @intfrombool(layout.tag_align.compare(.lt, layout.payload_align));
         const tag_field_ptr = try self.wip.gepStruct(try o.lowerType(un_ty), union_ptr, tag_index, "");
         // TODO alignment on this store
         _ = try self.wip.store(.normal, new_tag, tag_field_ptr, .default);
@@ -9510,7 +9510,7 @@ pub const FuncGen = struct {
     fn airGetUnionTag(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
         const o = self.dg.object;
         const mod = o.module;
-        const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+        const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
         const un_ty = self.typeOf(ty_op.operand);
         const layout = un_ty.unionGetLayout(mod);
         if (layout.tag_size == 0) return .none;
@@ -9519,19 +9519,19 @@ pub const FuncGen = struct {
             const llvm_un_ty = try o.lowerType(un_ty);
             if (layout.payload_size == 0)
                 return self.wip.load(.normal, llvm_un_ty, union_handle, .default, "");
-            const tag_index = @intFromBool(layout.tag_align.compare(.lt, layout.payload_align));
+            const tag_index = @intfrombool(layout.tag_align.compare(.lt, layout.payload_align));
             const tag_field_ptr = try self.wip.gepStruct(llvm_un_ty, union_handle, tag_index, "");
             const llvm_tag_ty = llvm_un_ty.structFields(&o.builder)[tag_index];
             return self.wip.load(.normal, llvm_tag_ty, tag_field_ptr, .default, "");
         } else {
             if (layout.payload_size == 0) return union_handle;
-            const tag_index = @intFromBool(layout.tag_align.compare(.lt, layout.payload_align));
+            const tag_index = @intfrombool(layout.tag_align.compare(.lt, layout.payload_align));
             return self.wip.extractValue(union_handle, &.{tag_index}, "");
         }
     }
 
     fn airUnaryOp(self: *FuncGen, inst: Air.Inst.Index, comptime op: FloatOp) !Builder.Value {
-        const un_op = self.air.instructions.items(.data)[@intFromEnum(inst)].un_op;
+        const un_op = self.air.instructions.items(.data)[@intfromenum(inst)].un_op;
         const operand = try self.resolveInst(un_op);
         const operand_ty = self.typeOf(un_op);
 
@@ -9539,7 +9539,7 @@ pub const FuncGen = struct {
     }
 
     fn airNeg(self: *FuncGen, inst: Air.Inst.Index, fast: Builder.FastMathKind) !Builder.Value {
-        const un_op = self.air.instructions.items(.data)[@intFromEnum(inst)].un_op;
+        const un_op = self.air.instructions.items(.data)[@intfromenum(inst)].un_op;
         const operand = try self.resolveInst(un_op);
         const operand_ty = self.typeOf(un_op);
 
@@ -9548,7 +9548,7 @@ pub const FuncGen = struct {
 
     fn airClzCtz(self: *FuncGen, inst: Air.Inst.Index, intrinsic: Builder.Intrinsic) !Builder.Value {
         const o = self.dg.object;
-        const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+        const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
         const inst_ty = self.typeOfIndex(inst);
         const operand_ty = self.typeOf(ty_op.operand);
         const operand = try self.resolveInst(ty_op.operand);
@@ -9566,7 +9566,7 @@ pub const FuncGen = struct {
 
     fn airBitOp(self: *FuncGen, inst: Air.Inst.Index, intrinsic: Builder.Intrinsic) !Builder.Value {
         const o = self.dg.object;
-        const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+        const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
         const inst_ty = self.typeOfIndex(inst);
         const operand_ty = self.typeOf(ty_op.operand);
         const operand = try self.resolveInst(ty_op.operand);
@@ -9585,7 +9585,7 @@ pub const FuncGen = struct {
     fn airByteSwap(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
         const o = self.dg.object;
         const mod = o.module;
-        const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+        const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
         const operand_ty = self.typeOf(ty_op.operand);
         var bits = operand_ty.intInfo(mod).bits;
         assert(bits % 8 == 0);
@@ -9597,7 +9597,7 @@ pub const FuncGen = struct {
         if (bits % 16 == 8) {
             // If not an even byte-multiple, we need zero-extend + shift-left 1 byte
             // The truncated result at the end will be the correct bswap
-            const scalar_ty = try o.builder.intType(@intCast(bits + 8));
+            const scalar_ty = try o.builder.intType(@intcast(bits + 8));
             if (operand_ty.zigTypeTag(mod) == .Vector) {
                 const vec_len = operand_ty.vectorLen(mod);
                 llvm_operand_ty = try o.builder.vectorType(.normal, vec_len, scalar_ty);
@@ -9620,15 +9620,15 @@ pub const FuncGen = struct {
         const o = self.dg.object;
         const mod = o.module;
         const ip = &mod.intern_pool;
-        const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+        const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
         const operand = try self.resolveInst(ty_op.operand);
         const error_set_ty = ty_op.ty.toType();
 
         const names = error_set_ty.errorSetNames(mod);
-        const valid_block = try self.wip.block(@intCast(names.len), "Valid");
+        const valid_block = try self.wip.block(@intcast(names.len), "Valid");
         const invalid_block = try self.wip.block(1, "Invalid");
         const end_block = try self.wip.block(2, "End");
-        var wip_switch = try self.wip.@"switch"(operand, invalid_block, @intCast(names.len));
+        var wip_switch = try self.wip.@"switch"(operand, invalid_block, @intcast(names.len));
         defer wip_switch.finish(&self.wip);
 
         for (0..names.len) |name_index| {
@@ -9650,7 +9650,7 @@ pub const FuncGen = struct {
 
     fn airIsNamedEnumValue(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
         const o = self.dg.object;
-        const un_op = self.air.instructions.items(.data)[@intFromEnum(inst)].un_op;
+        const un_op = self.air.instructions.items(.data)[@intfromenum(inst)].un_op;
         const operand = try self.resolveInst(un_op);
         const enum_ty = self.typeOf(un_op);
 
@@ -9700,15 +9700,15 @@ pub const FuncGen = struct {
         defer wip.deinit();
         wip.cursor = .{ .block = try wip.block(0, "Entry") };
 
-        const named_block = try wip.block(@intCast(enum_type.names.len), "Named");
+        const named_block = try wip.block(@intcast(enum_type.names.len), "Named");
         const unnamed_block = try wip.block(1, "Unnamed");
         const tag_int_value = wip.arg(0);
-        var wip_switch = try wip.@"switch"(tag_int_value, unnamed_block, @intCast(enum_type.names.len));
+        var wip_switch = try wip.@"switch"(tag_int_value, unnamed_block, @intcast(enum_type.names.len));
         defer wip_switch.finish(&wip);
 
         for (0..enum_type.names.len) |field_index| {
             const this_tag_int_value = try o.lowerValue(
-                (try zcu.enumValueFieldIndex(enum_ty, @intCast(field_index))).toIntern(),
+                (try zcu.enumValueFieldIndex(enum_ty, @intcast(field_index))).toIntern(),
             );
             try wip_switch.addCase(this_tag_int_value, named_block, &wip);
         }
@@ -9724,7 +9724,7 @@ pub const FuncGen = struct {
 
     fn airTagName(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
         const o = self.dg.object;
-        const un_op = self.air.instructions.items(.data)[@intFromEnum(inst)].un_op;
+        const un_op = self.air.instructions.items(.data)[@intfromenum(inst)].un_op;
         const operand = try self.resolveInst(un_op);
         const enum_ty = self.typeOf(un_op);
 
@@ -9742,7 +9742,7 @@ pub const FuncGen = struct {
 
     fn airErrorName(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
         const o = self.dg.object;
-        const un_op = self.air.instructions.items(.data)[@intFromEnum(inst)].un_op;
+        const un_op = self.air.instructions.items(.data)[@intfromenum(inst)].un_op;
         const operand = try self.resolveInst(un_op);
         const slice_ty = self.typeOfIndex(inst);
         const slice_llvm_ty = try o.lowerType(slice_ty);
@@ -9757,14 +9757,14 @@ pub const FuncGen = struct {
 
     fn airSplat(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
         const o = self.dg.object;
-        const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+        const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
         const scalar = try self.resolveInst(ty_op.operand);
         const vector_ty = self.typeOfIndex(inst);
         return self.wip.splatVector(try o.lowerType(vector_ty), scalar, "");
     }
 
     fn airSelect(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
-        const pl_op = self.air.instructions.items(.data)[@intFromEnum(inst)].pl_op;
+        const pl_op = self.air.instructions.items(.data)[@intfromenum(inst)].pl_op;
         const extra = self.air.extraData(Air.Bin, pl_op.payload).data;
         const pred = try self.resolveInst(pl_op.operand);
         const a = try self.resolveInst(extra.lhs);
@@ -9776,7 +9776,7 @@ pub const FuncGen = struct {
     fn airShuffle(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
         const o = self.dg.object;
         const mod = o.module;
-        const ty_pl = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
+        const ty_pl = self.air.instructions.items(.data)[@intfromenum(inst)].ty_pl;
         const extra = self.air.extraData(Air.Shuffle, ty_pl.payload).data;
         const a = try self.resolveInst(extra.a);
         const b = try self.resolveInst(extra.b);
@@ -9798,7 +9798,7 @@ pub const FuncGen = struct {
                 val.* = try o.builder.undefConst(.i32);
             } else {
                 const int = elem.toSignedInt(mod);
-                const unsigned: u32 = @intCast(if (int >= 0) int else ~int + a_len);
+                const unsigned: u32 = @intcast(if (int >= 0) int else ~int + a_len);
                 val.* = try o.builder.intConst(.i32, unsigned);
             }
         }
@@ -9887,7 +9887,7 @@ pub const FuncGen = struct {
         const mod = o.module;
         const target = mod.getTarget();
 
-        const reduce = self.air.instructions.items(.data)[@intFromEnum(inst)].reduce;
+        const reduce = self.air.instructions.items(.data)[@intfromenum(inst)].reduce;
         const operand = try self.resolveInst(reduce.operand);
         const operand_ty = self.typeOf(reduce.operand);
         const llvm_operand_ty = try o.lowerType(operand_ty);
@@ -9963,7 +9963,7 @@ pub const FuncGen = struct {
         const libc_fn =
             try self.getLibcFunction(fn_name, &.{ llvm_scalar_ty, llvm_scalar_ty }, llvm_scalar_ty);
         const init_val = switch (llvm_scalar_ty) {
-            .i16 => try o.builder.intValue(.i16, @as(i16, @bitCast(
+            .i16 => try o.builder.intValue(.i16, @as(i16, @bitcast(
                 @as(f16, switch (reduce.operation) {
                     .Min, .Max => std.math.nan(f16),
                     .Add => -0.0,
@@ -9971,7 +9971,7 @@ pub const FuncGen = struct {
                     else => unreachable,
                 }),
             ))),
-            .i80 => try o.builder.intValue(.i80, @as(i80, @bitCast(
+            .i80 => try o.builder.intValue(.i80, @as(i80, @bitcast(
                 @as(f80, switch (reduce.operation) {
                     .Min, .Max => std.math.nan(f80),
                     .Add => -0.0,
@@ -9979,7 +9979,7 @@ pub const FuncGen = struct {
                     else => unreachable,
                 }),
             ))),
-            .i128 => try o.builder.intValue(.i128, @as(i128, @bitCast(
+            .i128 => try o.builder.intValue(.i128, @as(i128, @bitcast(
                 @as(f128, switch (reduce.operation) {
                     .Min, .Max => std.math.nan(f128),
                     .Add => -0.0,
@@ -9996,10 +9996,10 @@ pub const FuncGen = struct {
         const o = self.dg.object;
         const mod = o.module;
         const ip = &mod.intern_pool;
-        const ty_pl = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
+        const ty_pl = self.air.instructions.items(.data)[@intfromenum(inst)].ty_pl;
         const result_ty = self.typeOfIndex(inst);
-        const len: usize = @intCast(result_ty.arrayLen(mod));
-        const elements: []const Air.Inst.Ref = @ptrCast(self.air.extra[ty_pl.payload..][0..len]);
+        const len: usize = @intcast(result_ty.arrayLen(mod));
+        const elements: []const Air.Inst.Ref = @ptrcast(self.air.extra[ty_pl.payload..][0..len]);
         const llvm_result_ty = try o.lowerType(result_ty);
 
         switch (result_ty.zigTypeTag(mod)) {
@@ -10017,7 +10017,7 @@ pub const FuncGen = struct {
                     const backing_int_ty = struct_type.backingIntType(ip).*;
                     assert(backing_int_ty != .none);
                     const big_bits = Type.fromInterned(backing_int_ty).bitSize(mod);
-                    const int_ty = try o.builder.intType(@intCast(big_bits));
+                    const int_ty = try o.builder.intType(@intcast(big_bits));
                     comptime assert(Type.packed_struct_layout_version == 2);
                     var running_int = try o.builder.intValue(int_ty, 0);
                     var running_bits: u16 = 0;
@@ -10025,7 +10025,7 @@ pub const FuncGen = struct {
                         if (!Type.fromInterned(field_ty).hasRuntimeBitsIgnoreComptime(mod)) continue;
 
                         const non_int_val = try self.resolveInst(elem);
-                        const ty_bit_size: u16 = @intCast(Type.fromInterned(field_ty).bitSize(mod));
+                        const ty_bit_size: u16 = @intcast(Type.fromInterned(field_ty).bitSize(mod));
                         const small_int_ty = try o.builder.intType(ty_bit_size);
                         const small_int_val = if (Type.fromInterned(field_ty).isPtrAtRuntime(mod))
                             try self.wip.cast(.ptrtoint, non_int_val, small_int_ty, "")
@@ -10116,7 +10116,7 @@ pub const FuncGen = struct {
         const o = self.dg.object;
         const mod = o.module;
         const ip = &mod.intern_pool;
-        const ty_pl = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
+        const ty_pl = self.air.instructions.items(.data)[@intfromenum(inst)].ty_pl;
         const extra = self.air.extraData(Air.UnionInit, ty_pl.payload).data;
         const union_ty = self.typeOfIndex(inst);
         const union_llvm_ty = try o.lowerType(union_ty);
@@ -10125,10 +10125,10 @@ pub const FuncGen = struct {
 
         if (union_obj.getLayout(ip) == .@"packed") {
             const big_bits = union_ty.bitSize(mod);
-            const int_llvm_ty = try o.builder.intType(@intCast(big_bits));
+            const int_llvm_ty = try o.builder.intType(@intcast(big_bits));
             const field_ty = Type.fromInterned(union_obj.field_types.get(ip)[extra.field_index]);
             const non_int_val = try self.resolveInst(extra.init);
-            const small_int_ty = try o.builder.intType(@intCast(field_ty.bitSize(mod)));
+            const small_int_ty = try o.builder.intType(@intcast(field_ty.bitSize(mod)));
             const small_int_val = if (field_ty.isPtrAtRuntime(mod))
                 try self.wip.cast(.ptrtoint, non_int_val, small_int_ty, "")
             else
@@ -10141,7 +10141,7 @@ pub const FuncGen = struct {
             const union_field_name = union_obj.loadTagType(ip).names.get(ip)[extra.field_index];
             const enum_field_index = tag_ty.enumFieldIndex(union_field_name, mod).?;
             const tag_val = try mod.enumValueFieldIndex(tag_ty, enum_field_index);
-            break :blk try tag_val.intFromEnum(tag_ty, mod);
+            break :blk try tag_val.intfromenum(tag_ty, mod);
         };
         if (layout.payload_size == 0) {
             if (layout.tag_size == 0) {
@@ -10213,14 +10213,14 @@ pub const FuncGen = struct {
         }
 
         {
-            const payload_index = @intFromBool(layout.tag_align.compare(.gte, layout.payload_align));
+            const payload_index = @intfrombool(layout.tag_align.compare(.gte, layout.payload_align));
             const indices: [3]Builder.Value = .{ usize_zero, try o.builder.intValue(.i32, payload_index), .@"0" };
             const len: usize = if (field_size == layout.payload_size) 2 else 3;
             const field_ptr = try self.wip.gep(.inbounds, llvm_union_ty, result_ptr, indices[0..len], "");
             try self.store(field_ptr, field_ptr_ty, llvm_payload, .none);
         }
         {
-            const tag_index = @intFromBool(layout.tag_align.compare(.lt, layout.payload_align));
+            const tag_index = @intfrombool(layout.tag_align.compare(.lt, layout.payload_align));
             const indices: [2]Builder.Value = .{ usize_zero, try o.builder.intValue(.i32, tag_index) };
             const field_ptr = try self.wip.gep(.inbounds, llvm_union_ty, result_ptr, &indices, "");
             const tag_ty = try o.lowerType(Type.fromInterned(union_obj.enum_tag_ty));
@@ -10236,17 +10236,17 @@ pub const FuncGen = struct {
 
     fn airPrefetch(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
         const o = self.dg.object;
-        const prefetch = self.air.instructions.items(.data)[@intFromEnum(inst)].prefetch;
+        const prefetch = self.air.instructions.items(.data)[@intfromenum(inst)].prefetch;
 
-        comptime assert(@intFromEnum(std.builtin.PrefetchOptions.Rw.read) == 0);
-        comptime assert(@intFromEnum(std.builtin.PrefetchOptions.Rw.write) == 1);
+        comptime assert(@intfromenum(std.builtin.PrefetchOptions.Rw.read) == 0);
+        comptime assert(@intfromenum(std.builtin.PrefetchOptions.Rw.write) == 1);
 
         // TODO these two asserts should be able to be comptime because the type is a u2
         assert(prefetch.locality >= 0);
         assert(prefetch.locality <= 3);
 
-        comptime assert(@intFromEnum(std.builtin.PrefetchOptions.Cache.instruction) == 0);
-        comptime assert(@intFromEnum(std.builtin.PrefetchOptions.Cache.data) == 1);
+        comptime assert(@intfromenum(std.builtin.PrefetchOptions.Cache.instruction) == 0);
+        comptime assert(@intfromenum(std.builtin.PrefetchOptions.Cache.data) == 1);
 
         // LLVM fails during codegen of instruction cache prefetchs for these architectures.
         // This is an LLVM bug as the prefetch intrinsic should be a noop if not supported
@@ -10286,7 +10286,7 @@ pub const FuncGen = struct {
 
     fn airAddrSpaceCast(self: *FuncGen, inst: Air.Inst.Index) !Builder.Value {
         const o = self.dg.object;
-        const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+        const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
         const inst_ty = self.typeOfIndex(inst);
         const operand = try self.resolveInst(ty_op.operand);
 
@@ -10312,7 +10312,7 @@ pub const FuncGen = struct {
         const target = o.module.getTarget();
         assert(target.cpu.arch == .amdgcn); // TODO is to port this function to other GPU architectures
 
-        const pl_op = self.air.instructions.items(.data)[@intFromEnum(inst)].pl_op;
+        const pl_op = self.air.instructions.items(.data)[@intfromenum(inst)].pl_op;
         const dimension = pl_op.payload;
         return self.amdgcnWorkIntrinsic(dimension, 0, "amdgcn.workitem.id");
     }
@@ -10322,7 +10322,7 @@ pub const FuncGen = struct {
         const target = o.module.getTarget();
         assert(target.cpu.arch == .amdgcn); // TODO is to port this function to other GPU architectures
 
-        const pl_op = self.air.instructions.items(.data)[@intFromEnum(inst)].pl_op;
+        const pl_op = self.air.instructions.items(.data)[@intfromenum(inst)].pl_op;
         const dimension = pl_op.payload;
         if (dimension >= 3) return .@"1";
 
@@ -10345,7 +10345,7 @@ pub const FuncGen = struct {
         const target = o.module.getTarget();
         assert(target.cpu.arch == .amdgcn); // TODO is to port this function to other GPU architectures
 
-        const pl_op = self.air.instructions.items(.data)[@intFromEnum(inst)].pl_op;
+        const pl_op = self.air.instructions.items(.data)[@intfromenum(inst)].pl_op;
         const dimension = pl_op.payload;
         return self.amdgcnWorkIntrinsic(dimension, 0, "amdgcn.workgroup.id");
     }
@@ -10482,7 +10482,7 @@ pub const FuncGen = struct {
 
                     // We have a pointer to a packed struct field that happens to be byte-aligned.
                     // Offset our operand pointer by the correct number of bytes.
-                    const byte_offset = @divExact(mod.structPackedFieldBitOffset(struct_type, field_index) + struct_ptr_ty_info.packed_offset.bit_offset, 8);
+                    const byte_offset = @divexact(mod.structPackedFieldBitOffset(struct_type, field_index) + struct_ptr_ty_info.packed_offset.bit_offset, 8);
                     if (byte_offset == 0) return struct_ptr;
                     const usize_ty = try o.lowerType(Type.usize);
                     const llvm_index = try o.builder.intValue(usize_ty, byte_offset);
@@ -10500,7 +10500,7 @@ pub const FuncGen = struct {
                         // the struct.
                         const llvm_index = try o.builder.intValue(
                             try o.lowerType(Type.usize),
-                            @intFromBool(struct_ty.hasRuntimeBitsIgnoreComptime(mod)),
+                            @intfrombool(struct_ty.hasRuntimeBitsIgnoreComptime(mod)),
                         );
                         return self.wip.gep(.inbounds, struct_llvm_ty, struct_ptr, &.{llvm_index}, "");
                     }
@@ -10509,7 +10509,7 @@ pub const FuncGen = struct {
             .Union => {
                 const layout = struct_ty.unionGetLayout(mod);
                 if (layout.payload_size == 0 or struct_ty.containerLayout(mod) == .@"packed") return struct_ptr;
-                const payload_index = @intFromBool(layout.tag_align.compare(.gte, layout.payload_align));
+                const payload_index = @intfrombool(layout.tag_align.compare(.gte, layout.payload_align));
                 const union_llvm_ty = try o.lowerType(struct_ty);
                 return self.wip.gepStruct(union_llvm_ty, struct_ptr, payload_index, "");
             },
@@ -10545,7 +10545,7 @@ pub const FuncGen = struct {
         }
 
         const load_llvm_ty = if (payload_ty.isAbiInt(mod))
-            try o.builder.intType(@intCast(abi_size * 8))
+            try o.builder.intType(@intcast(abi_size * 8))
         else
             payload_llvm_ty;
         const loaded = try fg.wip.load(access_kind, load_llvm_ty, payload_ptr, payload_alignment, "");
@@ -10627,7 +10627,7 @@ pub const FuncGen = struct {
             return self.loadTruncate(access_kind, elem_ty, ptr, ptr_alignment);
         }
 
-        const containing_int_ty = try o.builder.intType(@intCast(info.packed_offset.host_size * 8));
+        const containing_int_ty = try o.builder.intType(@intcast(info.packed_offset.host_size * 8));
         const containing_int =
             try self.wip.load(access_kind, containing_int_ty, ptr, ptr_alignment, "");
 
@@ -10640,20 +10640,20 @@ pub const FuncGen = struct {
             const result_align = elem_ty.abiAlignment(mod).toLlvm();
             const result_ptr = try self.buildAllocaWorkaround(elem_ty, result_align);
 
-            const same_size_int = try o.builder.intType(@intCast(elem_bits));
+            const same_size_int = try o.builder.intType(@intcast(elem_bits));
             const truncated_int = try self.wip.cast(.trunc, shifted_value, same_size_int, "");
             _ = try self.wip.store(.normal, truncated_int, result_ptr, result_align);
             return result_ptr;
         }
 
         if (elem_ty.zigTypeTag(mod) == .Float or elem_ty.zigTypeTag(mod) == .Vector) {
-            const same_size_int = try o.builder.intType(@intCast(elem_bits));
+            const same_size_int = try o.builder.intType(@intcast(elem_bits));
             const truncated_int = try self.wip.cast(.trunc, shifted_value, same_size_int, "");
             return self.wip.cast(.bitcast, truncated_int, elem_llvm_ty, "");
         }
 
         if (elem_ty.isPtrAtRuntime(mod)) {
-            const same_size_int = try o.builder.intType(@intCast(elem_bits));
+            const same_size_int = try o.builder.intType(@intcast(elem_bits));
             const truncated_int = try self.wip.cast(.trunc, shifted_value, same_size_int, "");
             return self.wip.cast(.inttoptr, truncated_int, elem_llvm_ty, "");
         }
@@ -10695,7 +10695,7 @@ pub const FuncGen = struct {
         }
 
         if (info.packed_offset.host_size != 0) {
-            const containing_int_ty = try o.builder.intType(@intCast(info.packed_offset.host_size * 8));
+            const containing_int_ty = try o.builder.intType(@intcast(info.packed_offset.host_size * 8));
             assert(ordering == .none);
             const containing_int =
                 try self.wip.load(access_kind, containing_int_ty, ptr, ptr_alignment, "");
@@ -10703,7 +10703,7 @@ pub const FuncGen = struct {
             const shift_amt = try o.builder.intConst(containing_int_ty, info.packed_offset.bit_offset);
             // Convert to equally-sized integer type in order to perform the bit
             // operations on the value to store
-            const value_bits_type = try o.builder.intType(@intCast(elem_bits));
+            const value_bits_type = try o.builder.intType(@intcast(elem_bits));
             const value_bits = if (elem_ty.isPtrAtRuntime(mod))
                 try self.wip.cast(.ptrtoint, elem, value_bits_type, "")
             else
@@ -11109,14 +11109,14 @@ fn lowerFnRetTy(o: *Object, fn_info: InternPool.Key.FuncType) Allocator.Error!Bu
 
                     assert(classes[0] == .direct and classes[1] == .none);
                     const scalar_type = wasm_c_abi.scalarType(return_type, mod);
-                    return o.builder.intType(@intCast(scalar_type.abiSize(mod) * 8));
+                    return o.builder.intType(@intcast(scalar_type.abiSize(mod) * 8));
                 },
                 .aarch64, .aarch64_be => {
                     switch (aarch64_c_abi.classifyType(return_type, mod)) {
                         .memory => return .void,
                         .float_array => return o.lowerType(return_type),
                         .byval => return o.lowerType(return_type),
-                        .integer => return o.builder.intType(@intCast(return_type.bitSize(mod))),
+                        .integer => return o.builder.intType(@intcast(return_type.bitSize(mod))),
                         .double_integer => return o.builder.arrayType(2, .i64),
                     }
                 },
@@ -11131,7 +11131,7 @@ fn lowerFnRetTy(o: *Object, fn_info: InternPool.Key.FuncType) Allocator.Error!Bu
                     switch (riscv_c_abi.classifyType(return_type, mod)) {
                         .memory => return .void,
                         .integer => {
-                            return o.builder.intType(@intCast(return_type.bitSize(mod)));
+                            return o.builder.intType(@intcast(return_type.bitSize(mod)));
                         },
                         .double_integer => {
                             return o.builder.structType(.normal, &.{ .i64, .i64 });
@@ -11170,7 +11170,7 @@ fn lowerWin64FnRetTy(o: *Object, fn_info: InternPool.Key.FuncType) Allocator.Err
             if (isScalar(mod, return_type)) {
                 return o.lowerType(return_type);
             } else {
-                return o.builder.intType(@intCast(return_type.abiSize(mod) * 8));
+                return o.builder.intType(@intcast(return_type.abiSize(mod) * 8));
             }
         },
         .win_i128 => return o.builder.vectorType(.normal, 2, .i64),
@@ -11245,7 +11245,7 @@ fn lowerSystemVFnRetTy(o: *Object, fn_info: InternPool.Key.FuncType) Allocator.E
                 const size: u64 = struct_type.size(ip).*;
                 assert((std.math.divCeil(u64, size, 8) catch unreachable) == types_index);
                 if (size % 8 > 0) {
-                    types_buffer[types_index - 1] = try o.builder.intType(@intCast(size % 8 * 8));
+                    types_buffer[types_index - 1] = try o.builder.intType(@intcast(size % 8 * 8));
                 }
             },
             else => {},
@@ -11554,7 +11554,7 @@ const ParamTypeIterator = struct {
                     assert((std.math.divCeil(u64, size, 8) catch unreachable) == types_index);
                     if (size % 8 > 0) {
                         types_buffer[types_index - 1] =
-                            try it.object.builder.intType(@intCast(size % 8 * 8));
+                            try it.object.builder.intType(@intcast(size % 8 * 8));
                     }
                 },
                 else => {},
@@ -11851,12 +11851,12 @@ fn buildAllocaInner(
 
 fn errUnionPayloadOffset(payload_ty: Type, mod: *Module) !u1 {
     const err_int_ty = try mod.errorIntType();
-    return @intFromBool(err_int_ty.abiAlignment(mod).compare(.gt, payload_ty.abiAlignment(mod)));
+    return @intfrombool(err_int_ty.abiAlignment(mod).compare(.gt, payload_ty.abiAlignment(mod)));
 }
 
 fn errUnionErrorOffset(payload_ty: Type, mod: *Module) !u1 {
     const err_int_ty = try mod.errorIntType();
-    return @intFromBool(err_int_ty.abiAlignment(mod).compare(.lte, payload_ty.abiAlignment(mod)));
+    return @intfrombool(err_int_ty.abiAlignment(mod).compare(.lte, payload_ty.abiAlignment(mod)));
 }
 
 /// Returns true for asm constraint (e.g. "=*m", "=r") if it accepts a memory location

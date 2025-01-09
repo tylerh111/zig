@@ -75,7 +75,7 @@ pub const Relocation = struct {
         _ = fmt;
         _ = options;
         try writer.print("{s} offset=0x{x:0>6} symbol={d}", .{
-            @tagName(self.relocation_type),
+            @tagname(self.relocation_type),
             self.offset,
             self.index,
         });
@@ -120,7 +120,7 @@ pub const Segment = struct {
     flags: u32,
 
     pub fn isTLS(segment: Segment) bool {
-        return segment.flags & @intFromEnum(Flags.WASM_SEG_FLAG_TLS) != 0;
+        return segment.flags & @intfromenum(Flags.WASM_SEG_FLAG_TLS) != 0;
     }
 
     /// Returns the name as how it will be output into the final object
@@ -208,7 +208,7 @@ pub const Feature = struct {
 
         /// From a given cpu feature, returns its linker feature
         pub fn fromCpuFeature(feature: std.Target.wasm.Feature) Tag {
-            return @as(Tag, @enumFromInt(@intFromEnum(feature)));
+            return @as(Tag, @enumfromint(@intfromenum(feature)));
         }
 
         pub fn format(tag: Tag, comptime fmt: []const u8, opt: std.fmt.FormatOptions, writer: anytype) !void {

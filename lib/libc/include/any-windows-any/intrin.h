@@ -551,12 +551,12 @@ extern "C" {
 #endif
 #endif
     __MACHINEIA64(__MINGW_EXTENSION void __setReg(int,unsigned __int64))
-    __MACHINEARMX(void _SmulAdd_SL_ACC(int,int))
-    __MACHINEARMX(void _SmulAddPack_2SW_ACC(int,int))
-    __MACHINEARMX(void _SmulAddLo_SW_ACC(int,int))
-    __MACHINEARMX(void _SmulAddHi_SW_ACC(int,int))
-    __MACHINEARMX(void _SmulAddHiLo_SW_ACC(int,int))
-    __MACHINEARMX(void _SmulAddLoHi_SW_ACC(int,int))
+    __MACHINEARMX(void _Smuladd_SL_ACC(int,int))
+    __MACHINEARMX(void _SmuladdPack_2SW_ACC(int,int))
+    __MACHINEARMX(void _SmuladdLo_SW_ACC(int,int))
+    __MACHINEARMX(void _SmuladdHi_SW_ACC(int,int))
+    __MACHINEARMX(void _SmuladdHiLo_SW_ACC(int,int))
+    __MACHINEARMX(void _SmuladdLoHi_SW_ACC(int,int))
     __MACHINEIA64(__MINGW_EXTENSION void __store128(void *,__int64,__int64))
     __MACHINEIA64(__MINGW_EXTENSION void __store128_rel(void *,__int64,__int64))
     __MACHINE(char *__cdecl _strset(char *,int))

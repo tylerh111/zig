@@ -17,12 +17,12 @@ pub const ParseFloatError = error{
 };
 
 pub fn parseFloat(comptime T: type, s: []const u8) ParseFloatError!T {
-    if (@typeInfo(T) != .Float) {
-        @compileError("Cannot parse a float into a non-floating point type.");
+    if (@typeinfo(T) != .Float) {
+        @compileerror("Cannot parse a float into a non-floating point type.");
     }
 
     if (T == f80) {
-        @compileError("TODO support parsing float to f80");
+        @compileerror("TODO support parsing float to f80");
     }
 
     if (s.len == 0) {
@@ -132,19 +132,19 @@ test parseFloat {
 
 test "nan and inf" {
     inline for ([_]type{ f16, f32, f64, f128 }) |T| {
-        const Z = std.meta.Int(.unsigned, @typeInfo(T).Float.bits);
+        const Z = std.meta.Int(.unsigned, @typeinfo(T).Float.bits);
 
-        try expectEqual(@as(Z, @bitCast(try parseFloat(T, "nAn"))), @as(Z, @bitCast(std.math.nan(T))));
+        try expectEqual(@as(Z, @bitcast(try parseFloat(T, "nAn"))), @as(Z, @bitcast(std.math.nan(T))));
         try expectEqual(try parseFloat(T, "inF"), std.math.inf(T));
         try expectEqual(try parseFloat(T, "-INF"), -std.math.inf(T));
     }
 }
 
 test "largest normals" {
-    try expectEqual(@as(u16, @bitCast(try parseFloat(f16, "65504"))), 0x7bff);
-    try expectEqual(@as(u32, @bitCast(try parseFloat(f32, "3.4028234664E38"))), 0x7f7f_ffff);
-    try expectEqual(@as(u64, @bitCast(try parseFloat(f64, "1.7976931348623157E308"))), 0x7fef_ffff_ffff_ffff);
-    try expectEqual(@as(u128, @bitCast(try parseFloat(f128, "1.1897314953572317650857593266280070162E4932"))), 0x7ffe_ffff_ffff_ffff_ffff_ffff_ffff_ffff);
+    try expectEqual(@as(u16, @bitcast(try parseFloat(f16, "65504"))), 0x7bff);
+    try expectEqual(@as(u32, @bitcast(try parseFloat(f32, "3.4028234664E38"))), 0x7f7f_ffff);
+    try expectEqual(@as(u64, @bitcast(try parseFloat(f64, "1.7976931348623157E308"))), 0x7fef_ffff_ffff_ffff);
+    try expectEqual(@as(u128, @bitcast(try parseFloat(f128, "1.1897314953572317650857593266280070162E4932"))), 0x7ffe_ffff_ffff_ffff_ffff_ffff_ffff_ffff);
 }
 
 test "#11169" {

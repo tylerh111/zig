@@ -25,7 +25,7 @@ pub fn BitReader32(comptime ReaderType: type) type {
 ///
 pub fn BitReader(comptime T: type, comptime ReaderType: type) type {
     assert(T == u32 or T == u64);
-    const t_bytes: usize = @sizeOf(T);
+    const t_bytes: usize = @sizeof(T);
     const Tshift = if (T == u64) u6 else u5;
 
     return struct {
@@ -70,8 +70,8 @@ pub fn BitReader(comptime T: type, comptime ReaderType: type) type {
             const bytes_read = self.forward_reader.readAll(buf[0..empty_bytes]) catch 0;
             if (bytes_read > 0) {
                 const u: T = std.mem.readInt(T, buf[0..t_bytes], .little);
-                self.bits |= u << @as(Tshift, @intCast(self.nbits));
-                self.nbits += 8 * @as(u8, @intCast(bytes_read));
+                self.bits |= u << @as(Tshift, @intcast(self.nbits));
+                self.nbits += 8 * @as(u8, @intcast(bytes_read));
                 return;
             }
 
@@ -114,14 +114,14 @@ pub fn BitReader(comptime T: type, comptime ReaderType: type) type {
             if (U == T) {
                 assert(how == 0);
                 assert(self.alignBits() == 0);
-                try self.fill(@bitSizeOf(T));
-                if (self.nbits != @bitSizeOf(T)) return error.EndOfStream;
+                try self.fill(@bitsizeof(T));
+                if (self.nbits != @bitsizeof(T)) return error.EndOfStream;
                 const v = self.bits;
                 self.nbits = 0;
                 self.bits = 0;
                 return v;
             }
-            const n: Tshift = @bitSizeOf(U);
+            const n: Tshift = @bitsizeof(U);
             switch (how) {
                 0 => { // `normal` read
                     try self.fill(n); // ensure that there are n bits in the buffer
@@ -142,22 +142,22 @@ pub fn BitReader(comptime T: type, comptime ReaderType: type) type {
                     try self.fill(n);
                     const u: U = @truncate(self.bits);
                     try self.shift(n);
-                    return @bitReverse(u);
+                    return @bitreverse(u);
                 },
                 (flag.peek | flag.reverse) => {
                     try self.fill(n);
-                    return @bitReverse(@as(U, @truncate(self.bits)));
+                    return @bitreverse(@as(U, @truncate(self.bits)));
                 },
                 (flag.buffered | flag.reverse) => {
                     const u: U = @truncate(self.bits);
                     try self.shift(n);
-                    return @bitReverse(u);
+                    return @bitreverse(u);
                 },
                 (flag.peek | flag.buffered) => {
                     return @truncate(self.bits);
                 },
                 (flag.peek | flag.buffered | flag.reverse) => {
-                    return @bitReverse(@as(U, @truncate(self.bits)));
+                    return @bitreverse(@as(U, @truncate(self.bits)));
                 },
             }
         }
@@ -195,7 +195,7 @@ pub fn BitReader(comptime T: type, comptime ReaderType: type) type {
 
         // Number of bits to align stream to the byte boundary.
         fn alignBits(self: *Self) u3 {
-            return @intCast(self.nbits & 0x7);
+            return @intcast(self.nbits & 0x7);
         }
 
         /// Align stream to the byte boundary.
@@ -321,7 +321,7 @@ test "shift/fill" {
     try testing.expectEqual(@as(u64, 0x00_50_40_30_20_10_80_70), br.bits);
     try testing.expectEqual(@as(u8, 8 * 7 + 4), br.nbits);
 
-    try br.shift(@intCast(br.nbits)); // clear buffer
+    try br.shift(@intcast(br.nbits)); // clear buffer
     try br.fill(8); // refill with the rest of the bytes
     try testing.expectEqual(@as(u64, 0x00_00_00_00_00_08_07_06), br.bits);
 }

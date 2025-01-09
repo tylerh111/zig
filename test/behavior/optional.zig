@@ -315,7 +315,7 @@ test "assigning to an unwrapped optional field in an inline loop" {
         _ = x;
         maybe_pos_arg = 0;
         if (maybe_pos_arg.? != 0) {
-            @compileError("bad");
+            @compileerror("bad");
         }
         maybe_pos_arg.? = 10;
     }
@@ -485,7 +485,7 @@ const NoReturn = struct {
     }
     fn testOrelse() u32 {
         loop() orelse return 123;
-        @compileError("bad");
+        @compileerror("bad");
     }
 };
 
@@ -495,7 +495,7 @@ test "optional of noreturn used with if" {
 
     NoReturn.a = 64;
     if (NoReturn.loop()) |_| {
-        @compileError("bad");
+        @compileerror("bad");
     } else {
         try expect(true);
     }
@@ -514,7 +514,7 @@ test "orelse on C pointer" {
 
     // TODO https://github.com/ziglang/zig/issues/6597
     const foo: [*c]const u8 = "hey";
-    const d = foo orelse @compileError("bad");
+    const d = foo orelse @compileerror("bad");
     try expectEqual([*c]const u8, @TypeOf(d));
 }
 
@@ -543,7 +543,7 @@ test "Optional slice size is optimized" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    try expect(@sizeOf(?[]u8) == @sizeOf([]u8));
+    try expect(@sizeof(?[]u8) == @sizeof([]u8));
     var a: ?[]const u8 = null;
     try expect(a == null);
     a = "hello";
@@ -562,7 +562,7 @@ test "Optional slice passed to function" {
             try std.testing.expectEqualStrings(a.?, "foo");
         }
         fn bar(a: ?[]allowzero const u8) !void {
-            try std.testing.expectEqualStrings(@ptrCast(a.?), "bar");
+            try std.testing.expectEqualStrings(@ptrcast(a.?), "bar");
         }
     };
     try S.foo("foo");

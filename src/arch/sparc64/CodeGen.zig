@@ -416,7 +416,7 @@ fn gen(self: *Self) !void {
                     .branch_predict_int = .{
                         .ccr = .xcc,
                         .cond = .al,
-                        .inst = @as(u32, @intCast(self.mir_instructions.len)),
+                        .inst = @as(u32, @intcast(self.mir_instructions.len)),
                     },
                 },
             });
@@ -503,7 +503,7 @@ fn genBody(self: *Self, body: []const Air.Inst.Index) InnerError!void {
         const old_air_bookkeeping = self.air_bookkeeping;
         try self.ensureProcessDeathCapacity(Liveness.bpi);
 
-        switch (air_tags[@intFromEnum(inst)]) {
+        switch (air_tags[@intfromenum(inst)]) {
             // zig fmt: off
             .ptr_add => try self.airPtrArithmetic(inst, .ptr_add),
             .ptr_sub => try self.airPtrArithmetic(inst, .ptr_sub),
@@ -739,21 +739,21 @@ fn genBody(self: *Self, body: []const Air.Inst.Index) InnerError!void {
 
         if (std.debug.runtime_safety) {
             if (self.air_bookkeeping < old_air_bookkeeping + 1) {
-                std.debug.panic("in codegen.zig, handling of AIR instruction %{d} ('{}') did not do proper bookkeeping. Look for a missing call to finishAir.", .{ inst, air_tags[@intFromEnum(inst)] });
+                std.debug.panic("in codegen.zig, handling of AIR instruction %{d} ('{}') did not do proper bookkeeping. Look for a missing call to finishAir.", .{ inst, air_tags[@intfromenum(inst)] });
             }
         }
     }
 }
 
 fn airAddSat(self: *Self, inst: Air.Inst.Index) !void {
-    const bin_op = self.air.instructions.items(.data)[@intFromEnum(inst)].bin_op;
+    const bin_op = self.air.instructions.items(.data)[@intfromenum(inst)].bin_op;
     const result: MCValue = if (self.liveness.isUnused(inst)) .dead else return self.fail("TODO implement add_sat for {}", .{self.target.cpu.arch});
     return self.finishAir(inst, result, .{ bin_op.lhs, bin_op.rhs, .none });
 }
 
 fn airAddSubWithOverflow(self: *Self, inst: Air.Inst.Index) !void {
-    const tag = self.air.instructions.items(.tag)[@intFromEnum(inst)];
-    const ty_pl = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
+    const tag = self.air.instructions.items(.tag)[@intfromenum(inst)];
+    const ty_pl = self.air.instructions.items(.data)[@intfromenum(inst)].ty_pl;
     const extra = self.air.extraData(Air.Bin, ty_pl.payload).data;
     const mod = self.bin_file.comp.module.?;
     const result: MCValue = if (self.liveness.isUnused(inst)) .dead else result: {
@@ -836,8 +836,8 @@ fn airAggregateInit(self: *Self, inst: Air.Inst.Index) !void {
     const mod = self.bin_file.comp.module.?;
     const vector_ty = self.typeOfIndex(inst);
     const len = vector_ty.vectorLen(mod);
-    const ty_pl = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
-    const elements = @as([]const Air.Inst.Ref, @ptrCast(self.air.extra[ty_pl.payload..][0..len]));
+    const ty_pl = self.air.instructions.items(.data)[@intfromenum(inst)].ty_pl;
+    const elements = @as([]const Air.Inst.Ref, @ptrcast(self.air.extra[ty_pl.payload..][0..len]));
     const result: MCValue = res: {
         if (self.liveness.isUnused(inst)) break :res MCValue.dead;
         return self.fail("TODO implement airAggregateInit for {}", .{self.target.cpu.arch});
@@ -861,19 +861,19 @@ fn airAlloc(self: *Self, inst: Air.Inst.Index) !void {
 }
 
 fn airArrayElemVal(self: *Self, inst: Air.Inst.Index) !void {
-    const bin_op = self.air.instructions.items(.data)[@intFromEnum(inst)].bin_op;
+    const bin_op = self.air.instructions.items(.data)[@intfromenum(inst)].bin_op;
     const result: MCValue = if (self.liveness.isUnused(inst)) .dead else return self.fail("TODO implement array_elem_val for {}", .{self.target.cpu.arch});
     return self.finishAir(inst, result, .{ bin_op.lhs, bin_op.rhs, .none });
 }
 
 fn airArrayToSlice(self: *Self, inst: Air.Inst.Index) !void {
     const mod = self.bin_file.comp.module.?;
-    const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+    const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
     const result: MCValue = if (self.liveness.isUnused(inst)) .dead else result: {
         const ptr_ty = self.typeOf(ty_op.operand);
         const ptr = try self.resolveInst(ty_op.operand);
         const array_ty = ptr_ty.childType(mod);
-        const array_len = @as(u32, @intCast(array_ty.arrayLen(mod)));
+        const array_len = @as(u32, @intcast(array_ty.arrayLen(mod)));
         const ptr_bytes = 8;
         const stack_offset = try self.allocMem(inst, ptr_bytes * 2, .@"8");
         try self.genSetStack(ptr_ty, stack_offset, ptr);
@@ -884,14 +884,14 @@ fn airArrayToSlice(self: *Self, inst: Air.Inst.Index) !void {
 }
 
 fn airAsm(self: *Self, inst: Air.Inst.Index) !void {
-    const ty_pl = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
+    const ty_pl = self.air.instructions.items(.data)[@intfromenum(inst)].ty_pl;
     const extra = self.air.extraData(Air.Asm, ty_pl.payload);
     const is_volatile = (extra.data.flags & 0x80000000) != 0;
     const clobbers_len = @as(u31, @truncate(extra.data.flags));
     var extra_i: usize = extra.end;
-    const outputs = @as([]const Air.Inst.Ref, @ptrCast(self.air.extra[extra_i .. extra_i + extra.data.outputs_len]));
+    const outputs = @as([]const Air.Inst.Ref, @ptrcast(self.air.extra[extra_i .. extra_i + extra.data.outputs_len]));
     extra_i += outputs.len;
-    const inputs = @as([]const Air.Inst.Ref, @ptrCast(self.air.extra[extra_i .. extra_i + extra.data.inputs_len]));
+    const inputs = @as([]const Air.Inst.Ref, @ptrcast(self.air.extra[extra_i .. extra_i + extra.data.inputs_len]));
     extra_i += inputs.len;
 
     const dead = !is_volatile and self.liveness.isUnused(inst);
@@ -1040,7 +1040,7 @@ fn airArg(self: *Self, inst: Air.Inst.Index) !void {
 }
 
 fn airAtomicLoad(self: *Self, inst: Air.Inst.Index) !void {
-    _ = self.air.instructions.items(.data)[@intFromEnum(inst)].atomic_load;
+    _ = self.air.instructions.items(.data)[@intfromenum(inst)].atomic_load;
 
     return self.fail("TODO implement airAtomicLoad for {}", .{
         self.target.cpu.arch,
@@ -1048,7 +1048,7 @@ fn airAtomicLoad(self: *Self, inst: Air.Inst.Index) !void {
 }
 
 fn airAtomicRmw(self: *Self, inst: Air.Inst.Index) !void {
-    _ = self.air.instructions.items(.data)[@intFromEnum(inst)].pl_op;
+    _ = self.air.instructions.items(.data)[@intfromenum(inst)].pl_op;
 
     return self.fail("TODO implement airAtomicRmw for {}", .{
         self.target.cpu.arch,
@@ -1056,7 +1056,7 @@ fn airAtomicRmw(self: *Self, inst: Air.Inst.Index) !void {
 }
 
 fn airBinOp(self: *Self, inst: Air.Inst.Index, tag: Air.Inst.Tag) !void {
-    const bin_op = self.air.instructions.items(.data)[@intFromEnum(inst)].bin_op;
+    const bin_op = self.air.instructions.items(.data)[@intfromenum(inst)].bin_op;
     const lhs = try self.resolveInst(bin_op.lhs);
     const rhs = try self.resolveInst(bin_op.rhs);
     const lhs_ty = self.typeOf(bin_op.lhs);
@@ -1073,14 +1073,14 @@ fn airBinOp(self: *Self, inst: Air.Inst.Index, tag: Air.Inst.Tag) !void {
 }
 
 fn airIntFromBool(self: *Self, inst: Air.Inst.Index) !void {
-    const un_op = self.air.instructions.items(.data)[@intFromEnum(inst)].un_op;
+    const un_op = self.air.instructions.items(.data)[@intfromenum(inst)].un_op;
     const operand = try self.resolveInst(un_op);
     const result: MCValue = if (self.liveness.isUnused(inst)) .dead else operand;
     return self.finishAir(inst, result, .{ un_op, .none, .none });
 }
 
 fn airPtrArithmetic(self: *Self, inst: Air.Inst.Index, tag: Air.Inst.Tag) !void {
-    const ty_pl = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
+    const ty_pl = self.air.instructions.items(.data)[@intfromenum(inst)].ty_pl;
     const bin_op = self.air.extraData(Air.Bin, ty_pl.payload).data;
     const lhs = try self.resolveInst(bin_op.lhs);
     const rhs = try self.resolveInst(bin_op.rhs);
@@ -1098,7 +1098,7 @@ fn airPtrArithmetic(self: *Self, inst: Air.Inst.Index, tag: Air.Inst.Tag) !void 
 }
 
 fn airBitCast(self: *Self, inst: Air.Inst.Index) !void {
-    const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+    const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
     const result = if (self.liveness.isUnused(inst)) .dead else result: {
         const operand = try self.resolveInst(ty_op.operand);
         if (self.reuseOperand(inst, ty_op.operand, 0, operand)) break :result operand;
@@ -1118,15 +1118,15 @@ fn airBitCast(self: *Self, inst: Air.Inst.Index) !void {
 }
 
 fn airBitReverse(self: *Self, inst: Air.Inst.Index) !void {
-    const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+    const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
     const result: MCValue = if (self.liveness.isUnused(inst)) .dead else return self.fail("TODO implement airBitReverse for {}", .{self.target.cpu.arch});
     return self.finishAir(inst, result, .{ ty_op.operand, .none, .none });
 }
 
 fn airBlock(self: *Self, inst: Air.Inst.Index) !void {
-    const ty_pl = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
+    const ty_pl = self.air.instructions.items(.data)[@intfromenum(inst)].ty_pl;
     const extra = self.air.extraData(Air.Block, ty_pl.payload);
-    try self.lowerBlock(inst, @ptrCast(self.air.extra[extra.end..][0..extra.data.body_len]));
+    try self.lowerBlock(inst, @ptrcast(self.air.extra[extra.end..][0..extra.data.body_len]));
 }
 
 fn lowerBlock(self: *Self, inst: Air.Inst.Index, body: []const Air.Inst.Index) !void {
@@ -1167,7 +1167,7 @@ fn lowerBlock(self: *Self, inst: Air.Inst.Index, body: []const Air.Inst.Index) !
 }
 
 fn airBr(self: *Self, inst: Air.Inst.Index) !void {
-    const branch = self.air.instructions.items(.data)[@intFromEnum(inst)].br;
+    const branch = self.air.instructions.items(.data)[@intfromenum(inst)].br;
     try self.br(branch.block_inst, branch.operand);
     return self.finishAir(inst, .dead, .{ branch.operand, .none, .none });
 }
@@ -1204,7 +1204,7 @@ fn airBreakpoint(self: *Self) !void {
 
 fn airByteSwap(self: *Self, inst: Air.Inst.Index) !void {
     const mod = self.bin_file.comp.module.?;
-    const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+    const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
 
     // We have hardware byteswapper in SPARCv9, don't let mainstream compilers mislead you.
     // That being said, the strategy to lower this is:
@@ -1235,19 +1235,19 @@ fn airByteSwap(self: *Self, inst: Air.Inst.Index) !void {
                 switch (operand) {
                     .immediate => |imm| {
                         const swapped = switch (int_info.bits) {
-                            16 => @byteSwap(@as(u16, @intCast(imm))),
-                            24 => @byteSwap(@as(u24, @intCast(imm))),
-                            32 => @byteSwap(@as(u32, @intCast(imm))),
-                            40 => @byteSwap(@as(u40, @intCast(imm))),
-                            48 => @byteSwap(@as(u48, @intCast(imm))),
-                            56 => @byteSwap(@as(u56, @intCast(imm))),
-                            64 => @byteSwap(@as(u64, @intCast(imm))),
+                            16 => @byteswap(@as(u16, @intcast(imm))),
+                            24 => @byteswap(@as(u24, @intcast(imm))),
+                            32 => @byteswap(@as(u32, @intcast(imm))),
+                            40 => @byteswap(@as(u40, @intcast(imm))),
+                            48 => @byteswap(@as(u48, @intcast(imm))),
+                            56 => @byteswap(@as(u56, @intcast(imm))),
+                            64 => @byteswap(@as(u64, @intcast(imm))),
                             else => return self.fail("TODO synthesize SPARCv9 byteswap for other integer sizes", .{}),
                         };
                         break :result .{ .immediate = swapped };
                     },
                     .register => |reg| {
-                        if (int_info.bits > 64 or @popCount(int_info.bits) != 1)
+                        if (int_info.bits > 64 or @popcount(int_info.bits) != 1)
                             return self.fail("TODO synthesize SPARCv9 byteswap for other integer sizes", .{});
 
                         const off = try self.allocMem(inst, abi_size, abi_align);
@@ -1258,7 +1258,7 @@ fn airByteSwap(self: *Self, inst: Air.Inst.Index) !void {
                         break :result .{ .register = reg };
                     },
                     .memory => {
-                        if (int_info.bits > 64 or @popCount(int_info.bits) != 1)
+                        if (int_info.bits > 64 or @popcount(int_info.bits) != 1)
                             return self.fail("TODO synthesize SPARCv9 byteswap for other integer sizes", .{});
 
                         const addr_reg = try self.copyToTmpRegister(operand_ty, operand);
@@ -1268,7 +1268,7 @@ fn airByteSwap(self: *Self, inst: Air.Inst.Index) !void {
                         break :result .{ .register = dst_reg };
                     },
                     .stack_offset => |off| {
-                        if (int_info.bits > 64 or @popCount(int_info.bits) != 1)
+                        if (int_info.bits > 64 or @popcount(int_info.bits) != 1)
                             return self.fail("TODO synthesize SPARCv9 byteswap for other integer sizes", .{});
 
                         const off_reg = try self.copyToTmpRegister(operand_ty, .{ .immediate = realStackOffset(off) });
@@ -1290,10 +1290,10 @@ fn airByteSwap(self: *Self, inst: Air.Inst.Index) !void {
 fn airCall(self: *Self, inst: Air.Inst.Index, modifier: std.builtin.CallModifier) !void {
     if (modifier == .always_tail) return self.fail("TODO implement tail calls for {}", .{self.target.cpu.arch});
 
-    const pl_op = self.air.instructions.items(.data)[@intFromEnum(inst)].pl_op;
+    const pl_op = self.air.instructions.items(.data)[@intfromenum(inst)].pl_op;
     const callee = pl_op.operand;
     const extra = self.air.extraData(Air.Call, pl_op.payload);
-    const args = @as([]const Air.Inst.Ref, @ptrCast(self.air.extra[extra.end .. extra.end + extra.data.args_len]));
+    const args = @as([]const Air.Inst.Ref, @ptrcast(self.air.extra[extra.end .. extra.end + extra.data.args_len]));
     const ty = self.typeOf(callee);
     const mod = self.bin_file.comp.module.?;
     const fn_ty = switch (ty.zigTypeTag(mod)) {
@@ -1347,7 +1347,7 @@ fn airCall(self: *Self, inst: Air.Inst.Index, modifier: std.builtin.CallModifier
                         const sym_index = try elf_file.zigObjectPtr().?.getOrCreateMetadataForDecl(elf_file, func.owner_decl);
                         const sym = elf_file.symbol(sym_index);
                         _ = try sym.getOrCreateZigGotEntry(sym_index, elf_file);
-                        break :blk @as(u32, @intCast(sym.zigGotAddress(elf_file)));
+                        break :blk @as(u32, @intcast(sym.zigGotAddress(elf_file)));
                     } else unreachable;
 
                     try self.genSetReg(Type.usize, .o7, .{ .memory = got_addr });
@@ -1420,13 +1420,13 @@ fn airCall(self: *Self, inst: Air.Inst.Index, modifier: std.builtin.CallModifier
 }
 
 fn airClz(self: *Self, inst: Air.Inst.Index) !void {
-    const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+    const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
     const result: MCValue = if (self.liveness.isUnused(inst)) .dead else return self.fail("TODO implement airClz for {}", .{self.target.cpu.arch});
     return self.finishAir(inst, result, .{ ty_op.operand, .none, .none });
 }
 
 fn airCmp(self: *Self, inst: Air.Inst.Index, op: math.CompareOperator) !void {
-    const bin_op = self.air.instructions.items(.data)[@intFromEnum(inst)].bin_op;
+    const bin_op = self.air.instructions.items(.data)[@intfromenum(inst)].bin_op;
     const mod = self.bin_file.comp.module.?;
     const result: MCValue = if (self.liveness.isUnused(inst)) .dead else result: {
         const lhs = try self.resolveInst(bin_op.lhs);
@@ -1483,7 +1483,7 @@ fn airCmp(self: *Self, inst: Air.Inst.Index, op: math.CompareOperator) !void {
 }
 
 fn airCmpLtErrorsLen(self: *Self, inst: Air.Inst.Index) !void {
-    const un_op = self.air.instructions.items(.data)[@intFromEnum(inst)].un_op;
+    const un_op = self.air.instructions.items(.data)[@intfromenum(inst)].un_op;
     const operand = try self.resolveInst(un_op);
     _ = operand;
     const result: MCValue = if (self.liveness.isUnused(inst)) .dead else return self.fail("TODO implement airCmpLtErrorsLen for {}", .{self.target.cpu.arch});
@@ -1491,7 +1491,7 @@ fn airCmpLtErrorsLen(self: *Self, inst: Air.Inst.Index) !void {
 }
 
 fn airCmpxchg(self: *Self, inst: Air.Inst.Index) !void {
-    const ty_pl = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
+    const ty_pl = self.air.instructions.items(.data)[@intfromenum(inst)].ty_pl;
     const extra = self.air.extraData(Air.Block, ty_pl.payload);
     _ = extra;
 
@@ -1501,11 +1501,11 @@ fn airCmpxchg(self: *Self, inst: Air.Inst.Index) !void {
 }
 
 fn airCondBr(self: *Self, inst: Air.Inst.Index) !void {
-    const pl_op = self.air.instructions.items(.data)[@intFromEnum(inst)].pl_op;
+    const pl_op = self.air.instructions.items(.data)[@intfromenum(inst)].pl_op;
     const condition = try self.resolveInst(pl_op.operand);
     const extra = self.air.extraData(Air.CondBr, pl_op.payload);
-    const then_body: []const Air.Inst.Index = @ptrCast(self.air.extra[extra.end..][0..extra.data.then_body_len]);
-    const else_body: []const Air.Inst.Index = @ptrCast(self.air.extra[extra.end + then_body.len ..][0..extra.data.else_body_len]);
+    const then_body: []const Air.Inst.Index = @ptrcast(self.air.extra[extra.end..][0..extra.data.then_body_len]);
+    const else_body: []const Air.Inst.Index = @ptrcast(self.air.extra[extra.end + then_body.len ..][0..extra.data.else_body_len]);
     const liveness_condbr = self.liveness.getCondBr(inst);
 
     // Here we emit a branch to the false section.
@@ -1647,23 +1647,23 @@ fn airCondBr(self: *Self, inst: Air.Inst.Index) !void {
 }
 
 fn airCtz(self: *Self, inst: Air.Inst.Index) !void {
-    const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+    const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
     const result: MCValue = if (self.liveness.isUnused(inst)) .dead else return self.fail("TODO implement airCtz for {}", .{self.target.cpu.arch});
     return self.finishAir(inst, result, .{ ty_op.operand, .none, .none });
 }
 
 fn airDbgInlineBlock(self: *Self, inst: Air.Inst.Index) !void {
     const mod = self.bin_file.comp.module.?;
-    const ty_pl = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
+    const ty_pl = self.air.instructions.items(.data)[@intfromenum(inst)].ty_pl;
     const extra = self.air.extraData(Air.DbgInlineBlock, ty_pl.payload);
     const func = mod.funcInfo(extra.data.func);
     // TODO emit debug info for function change
     _ = func;
-    try self.lowerBlock(inst, @ptrCast(self.air.extra[extra.end..][0..extra.data.body_len]));
+    try self.lowerBlock(inst, @ptrcast(self.air.extra[extra.end..][0..extra.data.body_len]));
 }
 
 fn airDbgStmt(self: *Self, inst: Air.Inst.Index) !void {
-    const dbg_stmt = self.air.instructions.items(.data)[@intFromEnum(inst)].dbg_stmt;
+    const dbg_stmt = self.air.instructions.items(.data)[@intfromenum(inst)].dbg_stmt;
 
     _ = try self.addInst(.{
         .tag = .dbg_line,
@@ -1679,7 +1679,7 @@ fn airDbgStmt(self: *Self, inst: Air.Inst.Index) !void {
 }
 
 fn airDbgVar(self: *Self, inst: Air.Inst.Index) !void {
-    const pl_op = self.air.instructions.items(.data)[@intFromEnum(inst)].pl_op;
+    const pl_op = self.air.instructions.items(.data)[@intfromenum(inst)].pl_op;
     const name = self.air.nullTerminatedString(pl_op.payload);
     const operand = pl_op.operand;
     // TODO emit debug info for this variable
@@ -1688,13 +1688,13 @@ fn airDbgVar(self: *Self, inst: Air.Inst.Index) !void {
 }
 
 fn airDiv(self: *Self, inst: Air.Inst.Index) !void {
-    const bin_op = self.air.instructions.items(.data)[@intFromEnum(inst)].bin_op;
+    const bin_op = self.air.instructions.items(.data)[@intfromenum(inst)].bin_op;
     const result: MCValue = if (self.liveness.isUnused(inst)) .dead else return self.fail("TODO implement div for {}", .{self.target.cpu.arch});
     return self.finishAir(inst, result, .{ bin_op.lhs, bin_op.rhs, .none });
 }
 
 fn airErrorName(self: *Self, inst: Air.Inst.Index) !void {
-    const un_op = self.air.instructions.items(.data)[@intFromEnum(inst)].un_op;
+    const un_op = self.air.instructions.items(.data)[@intfromenum(inst)].un_op;
     const operand = try self.resolveInst(un_op);
     const result: MCValue = if (self.liveness.isUnused(inst)) .dead else {
         _ = operand;
@@ -1704,14 +1704,14 @@ fn airErrorName(self: *Self, inst: Air.Inst.Index) !void {
 }
 
 fn airErrUnionPayloadPtrSet(self: *Self, inst: Air.Inst.Index) !void {
-    const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+    const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
     const result: MCValue = if (self.liveness.isUnused(inst)) .dead else return self.fail("TODO implement .errunion_payload_ptr_set for {}", .{self.target.cpu.arch});
     return self.finishAir(inst, result, .{ ty_op.operand, .none, .none });
 }
 
 fn airFence(self: *Self, inst: Air.Inst.Index) !void {
     // TODO weaken this as needed, currently this implements the strongest membar form
-    const fence = self.air.instructions.items(.data)[@intFromEnum(inst)].fence;
+    const fence = self.air.instructions.items(.data)[@intfromenum(inst)].fence;
     _ = fence;
 
     // membar #StoreStore | #LoadStore | #StoreLoad | #LoadLoad
@@ -1733,7 +1733,7 @@ fn airFence(self: *Self, inst: Air.Inst.Index) !void {
 }
 
 fn airIntFromFloat(self: *Self, inst: Air.Inst.Index) !void {
-    const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+    const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
     const result: MCValue = if (self.liveness.isUnused(inst)) .dead else return self.fail("TODO implement airIntFromFloat for {}", .{
         self.target.cpu.arch,
     });
@@ -1741,13 +1741,13 @@ fn airIntFromFloat(self: *Self, inst: Air.Inst.Index) !void {
 }
 
 fn airGetUnionTag(self: *Self, inst: Air.Inst.Index) !void {
-    const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+    const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
     const result: MCValue = if (self.liveness.isUnused(inst)) .dead else return self.fail("TODO implement airGetUnionTag for {}", .{self.target.cpu.arch});
     return self.finishAir(inst, result, .{ ty_op.operand, .none, .none });
 }
 
 fn airIntCast(self: *Self, inst: Air.Inst.Index) !void {
-    const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+    const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
     if (self.liveness.isUnused(inst))
         return self.finishAir(inst, .dead, .{ ty_op.operand, .none, .none });
 
@@ -1762,11 +1762,11 @@ fn airIntCast(self: *Self, inst: Air.Inst.Index) !void {
     if (info_a.bits == info_b.bits)
         return self.finishAir(inst, operand, .{ ty_op.operand, .none, .none });
 
-    return self.fail("TODO implement intCast for {}", .{self.target.cpu.arch});
+    return self.fail("TODO implement intcast for {}", .{self.target.cpu.arch});
 }
 
 fn airFloatFromInt(self: *Self, inst: Air.Inst.Index) !void {
-    const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+    const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
     const result: MCValue = if (self.liveness.isUnused(inst)) .dead else return self.fail("TODO implement airFloatFromInt for {}", .{
         self.target.cpu.arch,
     });
@@ -1774,7 +1774,7 @@ fn airFloatFromInt(self: *Self, inst: Air.Inst.Index) !void {
 }
 
 fn airIsErr(self: *Self, inst: Air.Inst.Index) !void {
-    const un_op = self.air.instructions.items(.data)[@intFromEnum(inst)].un_op;
+    const un_op = self.air.instructions.items(.data)[@intfromenum(inst)].un_op;
     const result: MCValue = if (self.liveness.isUnused(inst)) .dead else result: {
         const operand = try self.resolveInst(un_op);
         const ty = self.typeOf(un_op);
@@ -1784,7 +1784,7 @@ fn airIsErr(self: *Self, inst: Air.Inst.Index) !void {
 }
 
 fn airIsNonErr(self: *Self, inst: Air.Inst.Index) !void {
-    const un_op = self.air.instructions.items(.data)[@intFromEnum(inst)].un_op;
+    const un_op = self.air.instructions.items(.data)[@intfromenum(inst)].un_op;
     const result: MCValue = if (self.liveness.isUnused(inst)) .dead else result: {
         const operand = try self.resolveInst(un_op);
         const ty = self.typeOf(un_op);
@@ -1794,7 +1794,7 @@ fn airIsNonErr(self: *Self, inst: Air.Inst.Index) !void {
 }
 
 fn airIsNull(self: *Self, inst: Air.Inst.Index) !void {
-    const un_op = self.air.instructions.items(.data)[@intFromEnum(inst)].un_op;
+    const un_op = self.air.instructions.items(.data)[@intfromenum(inst)].un_op;
     const result: MCValue = if (self.liveness.isUnused(inst)) .dead else result: {
         const operand = try self.resolveInst(un_op);
         break :result try self.isNull(operand);
@@ -1803,7 +1803,7 @@ fn airIsNull(self: *Self, inst: Air.Inst.Index) !void {
 }
 
 fn airIsNonNull(self: *Self, inst: Air.Inst.Index) !void {
-    const un_op = self.air.instructions.items(.data)[@intFromEnum(inst)].un_op;
+    const un_op = self.air.instructions.items(.data)[@intfromenum(inst)].un_op;
     const result: MCValue = if (self.liveness.isUnused(inst)) .dead else result: {
         const operand = try self.resolveInst(un_op);
         break :result try self.isNonNull(operand);
@@ -1813,7 +1813,7 @@ fn airIsNonNull(self: *Self, inst: Air.Inst.Index) !void {
 
 fn airLoad(self: *Self, inst: Air.Inst.Index) !void {
     const mod = self.bin_file.comp.module.?;
-    const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+    const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
     const elem_ty = self.typeOfIndex(inst);
     const elem_size = elem_ty.abiSize(mod);
     const result: MCValue = result: {
@@ -1844,10 +1844,10 @@ fn airLoad(self: *Self, inst: Air.Inst.Index) !void {
 
 fn airLoop(self: *Self, inst: Air.Inst.Index) !void {
     // A loop is a setup to be able to jump back to the beginning.
-    const ty_pl = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
+    const ty_pl = self.air.instructions.items(.data)[@intfromenum(inst)].ty_pl;
     const loop = self.air.extraData(Air.Block, ty_pl.payload);
-    const body: []const Air.Inst.Index = @ptrCast(self.air.extra[loop.end .. loop.end + loop.data.body_len]);
-    const start = @as(u32, @intCast(self.mir_instructions.len));
+    const body: []const Air.Inst.Index = @ptrcast(self.air.extra[loop.end .. loop.end + loop.data.body_len]);
+    const start = @as(u32, @intcast(self.mir_instructions.len));
 
     try self.genBody(body);
     try self.jump(start);
@@ -1861,7 +1861,7 @@ fn airMemset(self: *Self, inst: Air.Inst.Index, safety: bool) !void {
     } else {
         // TODO if the value is undef, don't lower this instruction
     }
-    const pl_op = self.air.instructions.items(.data)[@intFromEnum(inst)].pl_op;
+    const pl_op = self.air.instructions.items(.data)[@intfromenum(inst)].pl_op;
     const extra = self.air.extraData(Air.Bin, pl_op.payload);
 
     const operand = pl_op.operand;
@@ -1875,8 +1875,8 @@ fn airMemset(self: *Self, inst: Air.Inst.Index, safety: bool) !void {
 }
 
 fn airMinMax(self: *Self, inst: Air.Inst.Index) !void {
-    const tag = self.air.instructions.items(.tag)[@intFromEnum(inst)];
-    const bin_op = self.air.instructions.items(.data)[@intFromEnum(inst)].bin_op;
+    const tag = self.air.instructions.items(.tag)[@intfromenum(inst)];
+    const bin_op = self.air.instructions.items(.data)[@intfromenum(inst)].bin_op;
     const lhs = try self.resolveInst(bin_op.lhs);
     const rhs = try self.resolveInst(bin_op.rhs);
     const lhs_ty = self.typeOf(bin_op.lhs);
@@ -1891,7 +1891,7 @@ fn airMinMax(self: *Self, inst: Air.Inst.Index) !void {
 }
 
 fn airMod(self: *Self, inst: Air.Inst.Index) !void {
-    const bin_op = self.air.instructions.items(.data)[@intFromEnum(inst)].bin_op;
+    const bin_op = self.air.instructions.items(.data)[@intfromenum(inst)].bin_op;
     const lhs = try self.resolveInst(bin_op.lhs);
     const rhs = try self.resolveInst(bin_op.rhs);
     const lhs_ty = self.typeOf(bin_op.lhs);
@@ -2029,14 +2029,14 @@ fn airMod(self: *Self, inst: Air.Inst.Index) !void {
 }
 
 fn airMulSat(self: *Self, inst: Air.Inst.Index) !void {
-    const bin_op = self.air.instructions.items(.data)[@intFromEnum(inst)].bin_op;
+    const bin_op = self.air.instructions.items(.data)[@intfromenum(inst)].bin_op;
     const result: MCValue = if (self.liveness.isUnused(inst)) .dead else return self.fail("TODO implement mul_sat for {}", .{self.target.cpu.arch});
     return self.finishAir(inst, result, .{ bin_op.lhs, bin_op.rhs, .none });
 }
 
 fn airMulWithOverflow(self: *Self, inst: Air.Inst.Index) !void {
-    //const tag = self.air.instructions.items(.tag)[@intFromEnum(inst)];
-    const ty_pl = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
+    //const tag = self.air.instructions.items(.tag)[@intfromenum(inst)];
+    const ty_pl = self.air.instructions.items(.data)[@intfromenum(inst)].ty_pl;
     const extra = self.air.extraData(Air.Bin, ty_pl.payload).data;
     const mod = self.bin_file.comp.module.?;
     const result: MCValue = if (self.liveness.isUnused(inst)) .dead else result: {
@@ -2101,7 +2101,7 @@ fn airMulWithOverflow(self: *Self, inst: Air.Inst.Index) !void {
 }
 
 fn airNot(self: *Self, inst: Air.Inst.Index) !void {
-    const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+    const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
     const mod = self.bin_file.comp.module.?;
     const result: MCValue = if (self.liveness.isUnused(inst)) .dead else result: {
         const operand = try self.resolveInst(ty_op.operand);
@@ -2197,54 +2197,54 @@ fn airNot(self: *Self, inst: Air.Inst.Index) !void {
 }
 
 fn airOptionalPayload(self: *Self, inst: Air.Inst.Index) !void {
-    const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+    const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
     const result: MCValue = if (self.liveness.isUnused(inst)) .dead else return self.fail("TODO implement .optional_payload for {}", .{self.target.cpu.arch});
     return self.finishAir(inst, result, .{ ty_op.operand, .none, .none });
 }
 
 fn airOptionalPayloadPtr(self: *Self, inst: Air.Inst.Index) !void {
-    const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+    const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
     const result: MCValue = if (self.liveness.isUnused(inst)) .dead else return self.fail("TODO implement .optional_payload_ptr for {}", .{self.target.cpu.arch});
     return self.finishAir(inst, result, .{ ty_op.operand, .none, .none });
 }
 
 fn airOptionalPayloadPtrSet(self: *Self, inst: Air.Inst.Index) !void {
-    const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+    const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
     const result: MCValue = if (self.liveness.isUnused(inst)) .dead else return self.fail("TODO implement .optional_payload_ptr_set for {}", .{self.target.cpu.arch});
     return self.finishAir(inst, result, .{ ty_op.operand, .none, .none });
 }
 
 fn airPopcount(self: *Self, inst: Air.Inst.Index) !void {
-    const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+    const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
     const result: MCValue = if (self.liveness.isUnused(inst)) .dead else return self.fail("TODO implement airPopcount for {}", .{self.target.cpu.arch});
     return self.finishAir(inst, result, .{ ty_op.operand, .none, .none });
 }
 
 fn airPrefetch(self: *Self, inst: Air.Inst.Index) !void {
-    const prefetch = self.air.instructions.items(.data)[@intFromEnum(inst)].prefetch;
+    const prefetch = self.air.instructions.items(.data)[@intfromenum(inst)].prefetch;
     // TODO Emit a PREFETCH/IPREFETCH as necessary, see A.7 and A.42
     return self.finishAir(inst, MCValue.dead, .{ prefetch.ptr, .none, .none });
 }
 
 fn airPtrElemVal(self: *Self, inst: Air.Inst.Index) !void {
     const is_volatile = false; // TODO
-    const bin_op = self.air.instructions.items(.data)[@intFromEnum(inst)].bin_op;
+    const bin_op = self.air.instructions.items(.data)[@intfromenum(inst)].bin_op;
     const result: MCValue = if (!is_volatile and self.liveness.isUnused(inst)) .dead else return self.fail("TODO implement ptr_elem_val for {}", .{self.target.cpu.arch});
     return self.finishAir(inst, result, .{ bin_op.lhs, bin_op.rhs, .none });
 }
 
 fn airPtrElemPtr(self: *Self, inst: Air.Inst.Index) !void {
-    const ty_pl = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
+    const ty_pl = self.air.instructions.items(.data)[@intfromenum(inst)].ty_pl;
     const extra = self.air.extraData(Air.Bin, ty_pl.payload).data;
     const result: MCValue = if (self.liveness.isUnused(inst)) .dead else return self.fail("TODO implement ptr_elem_ptr for {}", .{self.target.cpu.arch});
     return self.finishAir(inst, result, .{ extra.lhs, extra.rhs, .none });
 }
 
 fn airPtrSliceLenPtr(self: *Self, inst: Air.Inst.Index) !void {
-    const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+    const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
     const result: MCValue = if (self.liveness.isUnused(inst)) .dead else result: {
         const ptr_bits = self.target.ptrBitWidth();
-        const ptr_bytes = @divExact(ptr_bits, 8);
+        const ptr_bytes = @divexact(ptr_bits, 8);
         const mcv = try self.resolveInst(ty_op.operand);
         switch (mcv) {
             .dead, .unreach, .none => unreachable,
@@ -2258,7 +2258,7 @@ fn airPtrSliceLenPtr(self: *Self, inst: Air.Inst.Index) !void {
 }
 
 fn airPtrSlicePtrPtr(self: *Self, inst: Air.Inst.Index) !void {
-    const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+    const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
     const result: MCValue = if (self.liveness.isUnused(inst)) .dead else result: {
         const mcv = try self.resolveInst(ty_op.operand);
         switch (mcv) {
@@ -2273,13 +2273,13 @@ fn airPtrSlicePtrPtr(self: *Self, inst: Air.Inst.Index) !void {
 }
 
 fn airIntFromPtr(self: *Self, inst: Air.Inst.Index) !void {
-    const un_op = self.air.instructions.items(.data)[@intFromEnum(inst)].un_op;
+    const un_op = self.air.instructions.items(.data)[@intfromenum(inst)].un_op;
     const result = try self.resolveInst(un_op);
     return self.finishAir(inst, result, .{ un_op, .none, .none });
 }
 
 fn airRem(self: *Self, inst: Air.Inst.Index) !void {
-    const bin_op = self.air.instructions.items(.data)[@intFromEnum(inst)].bin_op;
+    const bin_op = self.air.instructions.items(.data)[@intfromenum(inst)].bin_op;
     const lhs = try self.resolveInst(bin_op.lhs);
     const rhs = try self.resolveInst(bin_op.rhs);
     const lhs_ty = self.typeOf(bin_op.lhs);
@@ -2287,7 +2287,7 @@ fn airRem(self: *Self, inst: Air.Inst.Index) !void {
 
     // TODO add safety check
 
-    // result = lhs - @divTrunc(lhs, rhs) * rhs
+    // result = lhs - @divtrunc(lhs, rhs) * rhs
     const result: MCValue = if (self.liveness.isUnused(inst)) blk: {
         break :blk .dead;
     } else blk: {
@@ -2300,14 +2300,14 @@ fn airRem(self: *Self, inst: Air.Inst.Index) !void {
 }
 
 fn airRet(self: *Self, inst: Air.Inst.Index) !void {
-    const un_op = self.air.instructions.items(.data)[@intFromEnum(inst)].un_op;
+    const un_op = self.air.instructions.items(.data)[@intfromenum(inst)].un_op;
     const operand = try self.resolveInst(un_op);
     try self.ret(operand);
     return self.finishAir(inst, .dead, .{ un_op, .none, .none });
 }
 
 fn airRetLoad(self: *Self, inst: Air.Inst.Index) !void {
-    const un_op = self.air.instructions.items(.data)[@intFromEnum(inst)].un_op;
+    const un_op = self.air.instructions.items(.data)[@intfromenum(inst)].un_op;
     const ptr = try self.resolveInst(un_op);
     _ = ptr;
     return self.fail("TODO implement airRetLoad for {}", .{self.target.cpu.arch});
@@ -2320,19 +2320,19 @@ fn airRetPtr(self: *Self, inst: Air.Inst.Index) !void {
 }
 
 fn airSetUnionTag(self: *Self, inst: Air.Inst.Index) !void {
-    const bin_op = self.air.instructions.items(.data)[@intFromEnum(inst)].bin_op;
+    const bin_op = self.air.instructions.items(.data)[@intfromenum(inst)].bin_op;
     _ = bin_op;
     return self.fail("TODO implement airSetUnionTag for {}", .{self.target.cpu.arch});
 }
 
 fn airShlSat(self: *Self, inst: Air.Inst.Index) !void {
-    const bin_op = self.air.instructions.items(.data)[@intFromEnum(inst)].bin_op;
+    const bin_op = self.air.instructions.items(.data)[@intfromenum(inst)].bin_op;
     const result: MCValue = if (self.liveness.isUnused(inst)) .dead else return self.fail("TODO implement shl_sat for {}", .{self.target.cpu.arch});
     return self.finishAir(inst, result, .{ bin_op.lhs, bin_op.rhs, .none });
 }
 
 fn airShlWithOverflow(self: *Self, inst: Air.Inst.Index) !void {
-    const ty_pl = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
+    const ty_pl = self.air.instructions.items(.data)[@intfromenum(inst)].ty_pl;
     const extra = self.air.extraData(Air.Bin, ty_pl.payload).data;
     const mod = self.bin_file.comp.module.?;
     const result: MCValue = if (self.liveness.isUnused(inst)) .dead else result: {
@@ -2422,7 +2422,7 @@ fn airShlWithOverflow(self: *Self, inst: Air.Inst.Index) !void {
 }
 
 fn airSlice(self: *Self, inst: Air.Inst.Index) !void {
-    const ty_pl = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
+    const ty_pl = self.air.instructions.items(.data)[@intfromenum(inst)].ty_pl;
     const bin_op = self.air.extraData(Air.Bin, ty_pl.payload).data;
     const result: MCValue = if (self.liveness.isUnused(inst)) .dead else result: {
         const ptr = try self.resolveInst(bin_op.lhs);
@@ -2441,7 +2441,7 @@ fn airSlice(self: *Self, inst: Air.Inst.Index) !void {
 fn airSliceElemVal(self: *Self, inst: Air.Inst.Index) !void {
     const mod = self.bin_file.comp.module.?;
     const is_volatile = false; // TODO
-    const bin_op = self.air.instructions.items(.data)[@intFromEnum(inst)].bin_op;
+    const bin_op = self.air.instructions.items(.data)[@intfromenum(inst)].bin_op;
 
     if (!is_volatile and self.liveness.isUnused(inst)) return self.finishAir(inst, .dead, .{ bin_op.lhs, bin_op.rhs, .none });
     const result: MCValue = result: {
@@ -2483,10 +2483,10 @@ fn airSliceElemVal(self: *Self, inst: Air.Inst.Index) !void {
 }
 
 fn airSliceLen(self: *Self, inst: Air.Inst.Index) !void {
-    const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+    const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
     const result: MCValue = if (self.liveness.isUnused(inst)) .dead else result: {
         const ptr_bits = self.target.ptrBitWidth();
-        const ptr_bytes = @divExact(ptr_bits, 8);
+        const ptr_bytes = @divexact(ptr_bits, 8);
         const mcv = try self.resolveInst(ty_op.operand);
         switch (mcv) {
             .dead, .unreach, .none => unreachable,
@@ -2504,7 +2504,7 @@ fn airSliceLen(self: *Self, inst: Air.Inst.Index) !void {
 }
 
 fn airSlicePtr(self: *Self, inst: Air.Inst.Index) !void {
-    const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+    const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
     const result: MCValue = if (self.liveness.isUnused(inst)) .dead else result: {
         const mcv = try self.resolveInst(ty_op.operand);
         switch (mcv) {
@@ -2523,7 +2523,7 @@ fn airSlicePtr(self: *Self, inst: Air.Inst.Index) !void {
 }
 
 fn airSplat(self: *Self, inst: Air.Inst.Index) !void {
-    const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+    const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
     const result: MCValue = if (self.liveness.isUnused(inst)) .dead else return self.fail("TODO implement airSplat for {}", .{self.target.cpu.arch});
     return self.finishAir(inst, result, .{ ty_op.operand, .none, .none });
 }
@@ -2534,7 +2534,7 @@ fn airStore(self: *Self, inst: Air.Inst.Index, safety: bool) !void {
     } else {
         // TODO if the value is undef, don't lower this instruction
     }
-    const bin_op = self.air.instructions.items(.data)[@intFromEnum(inst)].bin_op;
+    const bin_op = self.air.instructions.items(.data)[@intfromenum(inst)].bin_op;
     const ptr = try self.resolveInst(bin_op.lhs);
     const value = try self.resolveInst(bin_op.rhs);
     const ptr_ty = self.typeOf(bin_op.lhs);
@@ -2546,20 +2546,20 @@ fn airStore(self: *Self, inst: Air.Inst.Index, safety: bool) !void {
 }
 
 fn airStructFieldPtr(self: *Self, inst: Air.Inst.Index) !void {
-    const ty_pl = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
+    const ty_pl = self.air.instructions.items(.data)[@intfromenum(inst)].ty_pl;
     const extra = self.air.extraData(Air.StructField, ty_pl.payload).data;
     const result = try self.structFieldPtr(inst, extra.struct_operand, extra.field_index);
     return self.finishAir(inst, result, .{ extra.struct_operand, .none, .none });
 }
 
 fn airStructFieldPtrIndex(self: *Self, inst: Air.Inst.Index, index: u8) !void {
-    const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+    const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
     const result = try self.structFieldPtr(inst, ty_op.operand, index);
     return self.finishAir(inst, result, .{ ty_op.operand, .none, .none });
 }
 
 fn airStructFieldVal(self: *Self, inst: Air.Inst.Index) !void {
-    const ty_pl = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
+    const ty_pl = self.air.instructions.items(.data)[@intfromenum(inst)].ty_pl;
     const extra = self.air.extraData(Air.StructField, ty_pl.payload).data;
     const operand = extra.struct_operand;
     const index = extra.field_index;
@@ -2567,7 +2567,7 @@ fn airStructFieldVal(self: *Self, inst: Air.Inst.Index) !void {
         const mod = self.bin_file.comp.module.?;
         const mcv = try self.resolveInst(operand);
         const struct_ty = self.typeOf(operand);
-        const struct_field_offset = @as(u32, @intCast(struct_ty.structFieldOffset(index, mod)));
+        const struct_field_offset = @as(u32, @intcast(struct_ty.structFieldOffset(index, mod)));
 
         switch (mcv) {
             .dead, .unreach => unreachable,
@@ -2629,7 +2629,7 @@ fn airStructFieldVal(self: *Self, inst: Air.Inst.Index) !void {
 }
 
 fn airSubSat(self: *Self, inst: Air.Inst.Index) !void {
-    const bin_op = self.air.instructions.items(.data)[@intFromEnum(inst)].bin_op;
+    const bin_op = self.air.instructions.items(.data)[@intfromenum(inst)].bin_op;
     const result: MCValue = if (self.liveness.isUnused(inst)) .dead else return self.fail("TODO implement sub_sat for {}", .{self.target.cpu.arch});
     return self.finishAir(inst, result, .{ bin_op.lhs, bin_op.rhs, .none });
 }
@@ -2640,7 +2640,7 @@ fn airSwitch(self: *Self, inst: Air.Inst.Index) !void {
 }
 
 fn airTagName(self: *Self, inst: Air.Inst.Index) !void {
-    const un_op = self.air.instructions.items(.data)[@intFromEnum(inst)].un_op;
+    const un_op = self.air.instructions.items(.data)[@intfromenum(inst)].un_op;
     const operand = try self.resolveInst(un_op);
     const result: MCValue = if (self.liveness.isUnused(inst)) .dead else {
         _ = operand;
@@ -2650,7 +2650,7 @@ fn airTagName(self: *Self, inst: Air.Inst.Index) !void {
 }
 
 fn airTrunc(self: *Self, inst: Air.Inst.Index) !void {
-    const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+    const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
     const operand = try self.resolveInst(ty_op.operand);
     const operand_ty = self.typeOf(ty_op.operand);
     const dest_ty = self.typeOfIndex(inst);
@@ -2663,9 +2663,9 @@ fn airTrunc(self: *Self, inst: Air.Inst.Index) !void {
 }
 
 fn airTry(self: *Self, inst: Air.Inst.Index) !void {
-    const pl_op = self.air.instructions.items(.data)[@intFromEnum(inst)].pl_op;
+    const pl_op = self.air.instructions.items(.data)[@intfromenum(inst)].pl_op;
     const extra = self.air.extraData(Air.Try, pl_op.payload);
-    const body: []const Air.Inst.Index = @ptrCast(self.air.extra[extra.end..][0..extra.data.body_len]);
+    const body: []const Air.Inst.Index = @ptrcast(self.air.extra[extra.end..][0..extra.data.body_len]);
     const result: MCValue = result: {
         const error_union_ty = self.typeOf(pl_op.operand);
         const error_union = try self.resolveInst(pl_op.operand);
@@ -2681,7 +2681,7 @@ fn airTry(self: *Self, inst: Air.Inst.Index) !void {
 }
 
 fn airUnaryMath(self: *Self, inst: Air.Inst.Index) !void {
-    const un_op = self.air.instructions.items(.data)[@intFromEnum(inst)].un_op;
+    const un_op = self.air.instructions.items(.data)[@intfromenum(inst)].un_op;
     const result: MCValue = if (self.liveness.isUnused(inst))
         .dead
     else
@@ -2690,7 +2690,7 @@ fn airUnaryMath(self: *Self, inst: Air.Inst.Index) !void {
 }
 
 fn airUnionInit(self: *Self, inst: Air.Inst.Index) !void {
-    const ty_pl = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
+    const ty_pl = self.air.instructions.items(.data)[@intfromenum(inst)].ty_pl;
     const extra = self.air.extraData(Air.UnionInit, ty_pl.payload).data;
     _ = extra;
     return self.fail("TODO implement airUnionInit for {}", .{self.target.cpu.arch});
@@ -2698,7 +2698,7 @@ fn airUnionInit(self: *Self, inst: Air.Inst.Index) !void {
 
 fn airUnwrapErrErr(self: *Self, inst: Air.Inst.Index) !void {
     const mod = self.bin_file.comp.module.?;
-    const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+    const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
     const result: MCValue = if (self.liveness.isUnused(inst)) .dead else result: {
         const error_union_ty = self.typeOf(ty_op.operand);
         const payload_ty = error_union_ty.errorUnionPayload(mod);
@@ -2712,7 +2712,7 @@ fn airUnwrapErrErr(self: *Self, inst: Air.Inst.Index) !void {
 
 fn airUnwrapErrPayload(self: *Self, inst: Air.Inst.Index) !void {
     const mod = self.bin_file.comp.module.?;
-    const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+    const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
     const result: MCValue = if (self.liveness.isUnused(inst)) .dead else result: {
         const error_union_ty = self.typeOf(ty_op.operand);
         const payload_ty = error_union_ty.errorUnionPayload(mod);
@@ -2726,7 +2726,7 @@ fn airUnwrapErrPayload(self: *Self, inst: Air.Inst.Index) !void {
 /// E to E!T
 fn airWrapErrUnionErr(self: *Self, inst: Air.Inst.Index) !void {
     const mod = self.bin_file.comp.module.?;
-    const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+    const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
     const result: MCValue = if (self.liveness.isUnused(inst)) .dead else result: {
         const error_union_ty = ty_op.ty.toType();
         const payload_ty = error_union_ty.errorUnionPayload(mod);
@@ -2740,14 +2740,14 @@ fn airWrapErrUnionErr(self: *Self, inst: Air.Inst.Index) !void {
 
 /// T to E!T
 fn airWrapErrUnionPayload(self: *Self, inst: Air.Inst.Index) !void {
-    const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+    const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
     const result: MCValue = if (self.liveness.isUnused(inst)) .dead else return self.fail("TODO implement wrap errunion payload for {}", .{self.target.cpu.arch});
     return self.finishAir(inst, result, .{ ty_op.operand, .none, .none });
 }
 
 fn airWrapOptional(self: *Self, inst: Air.Inst.Index) !void {
     const mod = self.bin_file.comp.module.?;
-    const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+    const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
     const result: MCValue = if (self.liveness.isUnused(inst)) .dead else result: {
         const optional_ty = self.typeOfIndex(inst);
 
@@ -2765,7 +2765,7 @@ fn airWrapOptional(self: *Self, inst: Air.Inst.Index) !void {
 fn addInst(self: *Self, inst: Mir.Inst) error{OutOfMemory}!Mir.Inst.Index {
     const gpa = self.gpa;
     try self.mir_instructions.ensureUnusedCapacity(gpa, 1);
-    const result_index: Mir.Inst.Index = @intCast(self.mir_instructions.len);
+    const result_index: Mir.Inst.Index = @intcast(self.mir_instructions.len);
     self.mir_instructions.appendAssumeCapacity(inst);
     return result_index;
 }
@@ -2773,7 +2773,7 @@ fn addInst(self: *Self, inst: Mir.Inst) error{OutOfMemory}!Mir.Inst.Index {
 fn allocMem(self: *Self, inst: Air.Inst.Index, abi_size: u32, abi_align: Alignment) !u32 {
     self.stack_align = self.stack_align.max(abi_align);
     // TODO find a free slot instead of always appending
-    const offset: u32 = @intCast(abi_align.forward(self.next_stack_offset) + abi_size);
+    const offset: u32 = @intcast(abi_align.forward(self.next_stack_offset) + abi_size);
     self.next_stack_offset = offset;
     if (self.next_stack_offset > self.max_end_stack)
         self.max_end_stack = self.next_stack_offset;
@@ -3196,7 +3196,7 @@ fn binOpImmediate(
                 .is_imm = true,
                 .rd = dest_reg,
                 .rs1 = lhs_reg,
-                .rs2_or_imm = .{ .imm = @as(u12, @intCast(rhs.immediate)) },
+                .rs2_or_imm = .{ .imm = @as(u12, @intcast(rhs.immediate)) },
             },
         },
         .sll,
@@ -3207,7 +3207,7 @@ fn binOpImmediate(
                 .is_imm = true,
                 .rd = dest_reg,
                 .rs1 = lhs_reg,
-                .rs2_or_imm = .{ .imm = @as(u5, @intCast(rhs.immediate)) },
+                .rs2_or_imm = .{ .imm = @as(u5, @intcast(rhs.immediate)) },
             },
         },
         .sllx,
@@ -3218,14 +3218,14 @@ fn binOpImmediate(
                 .is_imm = true,
                 .rd = dest_reg,
                 .rs1 = lhs_reg,
-                .rs2_or_imm = .{ .imm = @as(u6, @intCast(rhs.immediate)) },
+                .rs2_or_imm = .{ .imm = @as(u6, @intcast(rhs.immediate)) },
             },
         },
         .cmp => .{
             .arithmetic_2op = .{
                 .is_imm = true,
                 .rs1 = lhs_reg,
-                .rs2_or_imm = .{ .imm = @as(u12, @intCast(rhs.immediate)) },
+                .rs2_or_imm = .{ .imm = @as(u12, @intcast(rhs.immediate)) },
             },
         },
         else => unreachable,
@@ -3524,7 +3524,7 @@ fn errUnionPayload(self: *Self, error_union_mcv: MCValue, error_union_ty: Type) 
         return MCValue.none;
     }
 
-    const payload_offset = @as(u32, @intCast(errUnionPayloadOffset(payload_ty, mod)));
+    const payload_offset = @as(u32, @intcast(errUnionPayloadOffset(payload_ty, mod)));
     switch (error_union_mcv) {
         .register => return self.fail("TODO errUnionPayload for registers", .{}),
         .stack_offset => |off| {
@@ -3586,7 +3586,7 @@ fn finishAir(self: *Self, inst: Air.Inst.Index, result: MCValue, operands: [Live
 
 fn genArgDbgInfo(self: Self, inst: Air.Inst.Index, mcv: MCValue) !void {
     const mod = self.bin_file.comp.module.?;
-    const arg = self.air.instructions.items(.data)[@intFromEnum(inst)].arg;
+    const arg = self.air.instructions.items(.data)[@intfromenum(inst)].arg;
     const ty = arg.ty.toType();
     const owner_decl = mod.funcOwnerDeclIndex(self.func_index);
     const name = mod.getParamName(self.func_index, arg.src_index);
@@ -3653,7 +3653,7 @@ fn genInlineMemcpy(
         .data = .{ .branch_predict_reg = .{
             .cond = .ne_zero,
             .rs1 = len,
-            .inst = @as(u32, @intCast(self.mir_instructions.len - 2)),
+            .inst = @as(u32, @intcast(self.mir_instructions.len - 2)),
         } },
     });
 
@@ -3984,7 +3984,7 @@ fn genSetStack(self: *Self, ty: Type, stack_offset: u32, mcv: MCValue) InnerErro
             try self.genSetStack(wrapped_ty, stack_offset, .{ .register = rwo.reg });
 
             const overflow_bit_ty = ty.structFieldType(1, mod);
-            const overflow_bit_offset = @as(u32, @intCast(ty.structFieldOffset(1, mod)));
+            const overflow_bit_offset = @as(u32, @intcast(ty.structFieldOffset(1, mod)));
             const cond_reg = try self.register_manager.allocReg(null, gp);
 
             // TODO handle floating point CCRs
@@ -4394,7 +4394,7 @@ fn minMax(
 }
 
 fn parseRegName(name: []const u8) ?Register {
-    if (@hasDecl(Register, "parseRegName")) {
+    if (@hasdecl(Register, "parseRegName")) {
         return Register.parseRegName(name);
     }
     return std.meta.stringToEnum(Register, name);
@@ -4403,8 +4403,8 @@ fn parseRegName(name: []const u8) ?Register {
 fn performReloc(self: *Self, inst: Mir.Inst.Index) !void {
     const tag = self.mir_instructions.items(.tag)[inst];
     switch (tag) {
-        .bpcc => self.mir_instructions.items(.data)[inst].branch_predict_int.inst = @intCast(self.mir_instructions.len),
-        .bpr => self.mir_instructions.items(.data)[inst].branch_predict_reg.inst = @intCast(self.mir_instructions.len),
+        .bpcc => self.mir_instructions.items(.data)[inst].branch_predict_int.inst = @intcast(self.mir_instructions.len),
+        .bpr => self.mir_instructions.items(.data)[inst].branch_predict_reg.inst = @intcast(self.mir_instructions.len),
         else => unreachable,
     }
 }
@@ -4485,7 +4485,7 @@ fn resolveCallingConventionValues(self: *Self, fn_ty: Type, role: RegisterView) 
             };
 
             for (fn_info.param_types.get(ip), result.args) |ty, *result_arg| {
-                const param_size = @as(u32, @intCast(Type.fromInterned(ty).abiSize(mod)));
+                const param_size = @as(u32, @intcast(Type.fromInterned(ty).abiSize(mod)));
                 if (param_size <= 8) {
                     if (next_register < argument_registers.len) {
                         result_arg.* = .{ .register = argument_registers[next_register] };
@@ -4517,7 +4517,7 @@ fn resolveCallingConventionValues(self: *Self, fn_ty: Type, role: RegisterView) 
             } else if (!ret_ty.hasRuntimeBits(mod)) {
                 result.return_value = .{ .none = {} };
             } else {
-                const ret_ty_size = @as(u32, @intCast(ret_ty.abiSize(mod)));
+                const ret_ty_size = @as(u32, @intcast(ret_ty.abiSize(mod)));
                 // The callee puts the return values in %i0-%i3, which becomes %o0-%o3 inside the caller.
                 if (ret_ty_size <= 8) {
                     result.return_value = switch (role) {
@@ -4698,7 +4698,7 @@ fn structFieldPtr(self: *Self, inst: Air.Inst.Index, operand: Air.Inst.Ref, inde
         const mcv = try self.resolveInst(operand);
         const ptr_ty = self.typeOf(operand);
         const struct_ty = ptr_ty.childType(mod);
-        const struct_field_offset = @as(u32, @intCast(struct_ty.structFieldOffset(index, mod)));
+        const struct_field_offset = @as(u32, @intcast(struct_ty.structFieldOffset(index, mod)));
         switch (mcv) {
             .ptr_stack_offset => |off| {
                 break :result MCValue{ .ptr_stack_offset = off - struct_field_offset };
@@ -4756,7 +4756,7 @@ fn trunc(
         defer if (lock) |reg| self.register_manager.unlockReg(reg);
 
         const dest_reg = if (maybe_inst) |inst| blk: {
-            const ty_op = self.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
+            const ty_op = self.air.instructions.items(.data)[@intfromenum(inst)].ty_op;
 
             if (operand == .register and self.reuseOperand(inst, ty_op.operand, 0, operand)) {
                 break :blk operand_reg;
@@ -4793,7 +4793,7 @@ fn truncRegister(
                         .is_imm = true,
                         .rd = dest_reg,
                         .rs1 = operand_reg,
-                        .rs2_or_imm = .{ .imm = @as(u6, @intCast(64 - int_bits)) },
+                        .rs2_or_imm = .{ .imm = @as(u6, @intcast(64 - int_bits)) },
                     },
                 },
             });
@@ -4807,7 +4807,7 @@ fn truncRegister(
                         .is_imm = true,
                         .rd = dest_reg,
                         .rs1 = dest_reg,
-                        .rs2_or_imm = .{ .imm = @as(u6, @intCast(int_bits)) },
+                        .rs2_or_imm = .{ .imm = @as(u6, @intcast(int_bits)) },
                     },
                 },
             });

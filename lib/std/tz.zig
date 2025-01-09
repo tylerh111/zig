@@ -60,7 +60,7 @@ pub const Tz = struct {
         if (legacy_header.version != 0 and legacy_header.version != '2' and legacy_header.version != '3') return error.BadVersion;
 
         if (builtin.target.cpu.arch.endian() != std.builtin.Endian.big) {
-            std.mem.byteSwapAllFields(@TypeOf(legacy_header.counts), &legacy_header.counts);
+            std.mem.byteswapAllFields(@TypeOf(legacy_header.counts), &legacy_header.counts);
         }
 
         if (legacy_header.version == 0) {
@@ -74,7 +74,7 @@ pub const Tz = struct {
             if (!std.mem.eql(u8, &header.magic, "TZif")) return error.BadHeader;
             if (header.version != '2' and header.version != '3') return error.BadVersion;
             if (builtin.target.cpu.arch.endian() != std.builtin.Endian.big) {
-                std.mem.byteSwapAllFields(@TypeOf(header.counts), &header.counts);
+                std.mem.byteswapAllFields(@TypeOf(header.counts), &header.counts);
             }
 
             return parseBlock(allocator, reader, header, false);
@@ -155,8 +155,8 @@ pub const Tz = struct {
             if (corr > std.math.maxInt(i16)) return error.Malformed; // Unreasonably large correction
 
             leapseconds[i] = .{
-                .occurrence = @as(i48, @intCast(occur)),
-                .correction = @as(i16, @intCast(corr)),
+                .occurrence = @as(i48, @intcast(occur)),
+                .correction = @as(i16, @intcast(corr)),
             };
         }
 
@@ -214,7 +214,7 @@ pub const Tz = struct {
 };
 
 test "slim" {
-    const data = @embedFile("tz/asia_tokyo.tzif");
+    const data = @embedfile("tz/asia_tokyo.tzif");
     var in_stream = std.io.fixedBufferStream(data);
 
     var tz = try std.Tz.parse(std.testing.allocator, in_stream.reader());
@@ -227,7 +227,7 @@ test "slim" {
 }
 
 test "fat" {
-    const data = @embedFile("tz/antarctica_davis.tzif");
+    const data = @embedfile("tz/antarctica_davis.tzif");
     var in_stream = std.io.fixedBufferStream(data);
 
     var tz = try std.Tz.parse(std.testing.allocator, in_stream.reader());
@@ -240,7 +240,7 @@ test "fat" {
 
 test "legacy" {
     // Taken from Slackware 8.0, from 2001
-    const data = @embedFile("tz/europe_vatican.tzif");
+    const data = @embedfile("tz/europe_vatican.tzif");
     var in_stream = std.io.fixedBufferStream(data);
 
     var tz = try std.Tz.parse(std.testing.allocator, in_stream.reader());

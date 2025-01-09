@@ -352,7 +352,7 @@ pub const XxHash32 = struct {
 
     fn finalize(unfinished: u32, byte_count: usize, partial: anytype) u32 {
         std.debug.assert(partial.len < 16);
-        var acc = unfinished +% @as(u32, @intCast(byte_count)) +% @as(u32, @intCast(partial.len));
+        var acc = unfinished +% @as(u32, @intcast(byte_count)) +% @as(u32, @intcast(partial.len));
 
         switch (partial.len) {
             inline 0, 1, 2, 3 => |count| {
@@ -460,23 +460,23 @@ pub const XxHash3 = struct {
     }
 
     inline fn fold(a: u64, b: u64) u64 {
-        const wide: [2]u64 = @bitCast(@as(u128, a) *% b);
+        const wide: [2]u64 = @bitcast(@as(u128, a) *% b);
         return wide[0] ^ wide[1];
     }
 
     inline fn swap(x: anytype) @TypeOf(x) {
-        return if (native_endian == .big) @byteSwap(x) else x;
+        return if (native_endian == .big) @byteswap(x) else x;
     }
 
     inline fn disableAutoVectorization(x: anytype) void {
-        if (!@inComptime()) asm volatile (""
+        if (!@incomptime()) asm volatile (""
             :
             : [x] "r" (x),
         );
     }
 
     inline fn mix16(seed: u64, input: []const u8, secret: []const u8) u64 {
-        const blk: [4]u64 = @bitCast([_][16]u8{ input[0..16].*, secret[0..16].* });
+        const blk: [4]u64 = @bitcast([_][16]u8{ input[0..16].*, secret[0..16].* });
         disableAutoVectorization(seed);
 
         return fold(
@@ -530,20 +530,20 @@ pub const XxHash3 = struct {
         fn accumulate(noalias self: *Accumulator, blocks: []align(1) const Block) void {
             const secret = std.mem.bytesAsSlice(u64, self.secret[self.consumed * 8 ..]);
             for (blocks, secret[0..blocks.len]) |*input_block, *secret_block| {
-                @prefetch(@as([*]const u8, @ptrCast(input_block)) + 320, .{});
-                round(&self.state, input_block, @ptrCast(secret_block));
+                @prefetch(@as([*]const u8, @ptrcast(input_block)) + 320, .{});
+                round(&self.state, input_block, @ptrcast(secret_block));
             }
         }
 
         fn scramble(self: *Accumulator) void {
-            const secret_block: Block = @bitCast(self.secret[192 - @sizeOf(Block) .. 192].*);
+            const secret_block: Block = @bitcast(self.secret[192 - @sizeof(Block) .. 192].*);
             self.state ^= self.state >> @splat(47);
             self.state ^= swap(secret_block);
             self.state *%= @as(Block, @splat(XxHash32.prime_1));
         }
 
         fn consume(noalias self: *Accumulator, input_blocks: []align(1) const Block) void {
-            const blocks_per_scramble = 1024 / @sizeOf(Block);
+            const blocks_per_scramble = 1024 / @sizeof(Block);
             std.debug.assert(self.consumed <= blocks_per_scramble);
 
             var blocks = input_blocks;
@@ -562,10 +562,10 @@ pub const XxHash3 = struct {
         }
 
         fn digest(noalias self: *Accumulator, total_len: u64, noalias last_block: *align(1) const Block) u64 {
-            const secret_block = self.secret[192 - @sizeOf(Block) - 7 ..][0..@sizeOf(Block)];
-            round(&self.state, last_block, @ptrCast(secret_block));
+            const secret_block = self.secret[192 - @sizeof(Block) - 7 ..][0..@sizeof(Block)];
+            round(&self.state, last_block, @ptrcast(secret_block));
 
-            const merge_block: Block = @bitCast(self.secret[11 .. 11 + @sizeOf(Block)].*);
+            const merge_block: Block = @bitcast(self.secret[11 .. 11 + @sizeof(Block)].*);
             self.state ^= swap(merge_block);
 
             var result = XxHash64.prime_1 *% total_len;
@@ -587,7 +587,7 @@ pub const XxHash3 = struct {
         if (input.len > 3) return hash8(seed, input, secret);
         if (input.len > 0) return hash3(seed, input, secret);
 
-        const flip: [2]u64 = @bitCast(secret[56..72].*);
+        const flip: [2]u64 = @bitcast(secret[56..72].*);
         const key = swap(flip[0]) ^ swap(flip[1]);
         return avalanche(.h64, seed ^ key);
     }
@@ -596,8 +596,8 @@ pub const XxHash3 = struct {
         @setCold(true);
         std.debug.assert(input.len > 0 and input.len < 4);
 
-        const flip: [2]u32 = @bitCast(secret[0..8].*);
-        const blk: u32 = @bitCast([_]u8{
+        const flip: [2]u32 = @bitcast(secret[0..8].*);
+        const blk: u32 = @bitcast([_]u8{
             input[input.len - 1],
             @truncate(input.len),
             input[0],
@@ -612,13 +612,13 @@ pub const XxHash3 = struct {
         @setCold(true);
         std.debug.assert(input.len >= 4 and input.len <= 8);
 
-        const flip: [2]u64 = @bitCast(secret[8..24].*);
-        const blk: [2]u32 = @bitCast([_][4]u8{
+        const flip: [2]u64 = @bitcast(secret[8..24].*);
+        const blk: [2]u32 = @bitcast([_][4]u8{
             input[0..4].*,
             input[input.len - 4 ..][0..4].*,
         });
 
-        const mixed = seed ^ (@as(u64, @byteSwap(@as(u32, @truncate(seed)))) << 32);
+        const mixed = seed ^ (@as(u64, @byteswap(@as(u32, @truncate(seed)))) << 32);
         const key = (swap(flip[0]) ^ swap(flip[1])) -% mixed;
         const combined = (@as(u64, swap(blk[0])) << 32) +% swap(blk[1]);
         return avalanche(.{ .rrmxmx = input.len }, key ^ combined);
@@ -628,15 +628,15 @@ pub const XxHash3 = struct {
         @setCold(true);
         std.debug.assert(input.len > 8 and input.len <= 16);
 
-        const flip: [4]u64 = @bitCast(secret[24..56].*);
-        const blk: [2]u64 = @bitCast([_][8]u8{
+        const flip: [4]u64 = @bitcast(secret[24..56].*);
+        const blk: [2]u64 = @bitcast([_][8]u8{
             input[0..8].*,
             input[input.len - 8 ..][0..8].*,
         });
 
         const lo = swap(blk[0]) ^ ((swap(flip[0]) ^ swap(flip[1])) +% seed);
         const hi = swap(blk[1]) ^ ((swap(flip[2]) ^ swap(flip[3])) -% seed);
-        const combined = @as(u64, input.len) +% @byteSwap(lo) +% hi +% fold(lo, hi);
+        const combined = @as(u64, input.len) +% @byteswap(lo) +% hi +% fold(lo, hi);
         return avalanche(.h3, combined);
     }
 
@@ -679,12 +679,12 @@ pub const XxHash3 = struct {
         @setCold(true);
         std.debug.assert(input.len >= 240);
 
-        const block_count = ((input.len - 1) / @sizeOf(Block)) * @sizeOf(Block);
-        const last_block = input[input.len - @sizeOf(Block) ..][0..@sizeOf(Block)];
+        const block_count = ((input.len - 1) / @sizeof(Block)) * @sizeof(Block);
+        const last_block = input[input.len - @sizeof(Block) ..][0..@sizeof(Block)];
 
         var acc = Accumulator.init(seed);
         acc.consume(std.mem.bytesAsSlice(Block, input[0..block_count]));
-        return acc.digest(input.len, @ptrCast(last_block));
+        return acc.digest(input.len, @ptrcast(last_block));
     }
 
     // Public API - Streaming
@@ -722,15 +722,15 @@ pub const XxHash3 = struct {
 
         // The input isn't small enough to fit in the buffer. Consume it directly.
         if (consumable.len > self.buffer.len) {
-            const block_count = ((consumable.len - 1) / @sizeOf(Block)) * @sizeOf(Block);
+            const block_count = ((consumable.len - 1) / @sizeof(Block)) * @sizeof(Block);
             self.accumulator.consume(std.mem.bytesAsSlice(Block, consumable[0..block_count]));
             consumable = consumable[block_count..];
 
             // In case we consume all remaining input, write the last block to end of the buffer
             // to populate the last_block_copy in final() similar to hashLong()'s last_block.
             @memcpy(
-                self.buffer[self.buffer.len - @sizeOf(Block) .. self.buffer.len],
-                (consumable.ptr - @sizeOf(Block))[0..@sizeOf(Block)],
+                self.buffer[self.buffer.len - @sizeof(Block) .. self.buffer.len],
+                (consumable.ptr - @sizeof(Block))[0..@sizeof(Block)],
             );
         }
 
@@ -751,19 +751,19 @@ pub const XxHash3 = struct {
 
         // Make a copy of the Accumulator state in case `self` needs to update() / be used later.
         var accumulator_copy = self.accumulator;
-        var last_block_copy: [@sizeOf(Block)]u8 = undefined;
+        var last_block_copy: [@sizeof(Block)]u8 = undefined;
 
         // Digest the last block onthe Accumulator copy.
         return accumulator_copy.digest(self.total_len, last_block: {
-            if (self.buffered >= @sizeOf(Block)) {
-                const block_count = ((self.buffered - 1) / @sizeOf(Block)) * @sizeOf(Block);
+            if (self.buffered >= @sizeof(Block)) {
+                const block_count = ((self.buffered - 1) / @sizeof(Block)) * @sizeof(Block);
                 accumulator_copy.consume(std.mem.bytesAsSlice(Block, self.buffer[0..block_count]));
-                break :last_block @ptrCast(self.buffer[self.buffered - @sizeOf(Block) ..][0..@sizeOf(Block)]);
+                break :last_block @ptrcast(self.buffer[self.buffered - @sizeof(Block) ..][0..@sizeof(Block)]);
             } else {
-                const remaining = @sizeOf(Block) - self.buffered;
+                const remaining = @sizeof(Block) - self.buffered;
                 @memcpy(last_block_copy[0..remaining], self.buffer[self.buffer.len - remaining ..][0..remaining]);
                 @memcpy(last_block_copy[remaining..][0..self.buffered], self.buffer[0..self.buffered]);
-                break :last_block @ptrCast(&last_block_copy);
+                break :last_block @ptrcast(&last_block_copy);
             }
         });
     }
@@ -821,7 +821,7 @@ test "xxhash3 smhasher" {
         }
     };
     try Test.do();
-    @setEvalBranchQuota(75000);
+    @setevalbranchquota(75000);
     comptime try Test.do();
 }
 
@@ -834,7 +834,7 @@ test "xxhash3 iterative api" {
         }
     };
     try Test.do();
-    @setEvalBranchQuota(30000);
+    @setevalbranchquota(30000);
     comptime try Test.do();
 }
 
@@ -856,7 +856,7 @@ test "xxhash64 smhasher" {
         }
     };
     try Test.do();
-    @setEvalBranchQuota(75000);
+    @setevalbranchquota(75000);
     comptime try Test.do();
 }
 
@@ -867,7 +867,7 @@ test "xxhash64 iterative api" {
         }
     };
     try Test.do();
-    @setEvalBranchQuota(30000);
+    @setevalbranchquota(30000);
     comptime try Test.do();
 }
 
@@ -890,7 +890,7 @@ test "xxhash32 smhasher" {
         }
     };
     try Test.do();
-    @setEvalBranchQuota(75000);
+    @setevalbranchquota(75000);
     comptime try Test.do();
 }
 
@@ -901,6 +901,6 @@ test "xxhash32 iterative api" {
         }
     };
     try Test.do();
-    @setEvalBranchQuota(30000);
+    @setevalbranchquota(30000);
     comptime try Test.do();
 }

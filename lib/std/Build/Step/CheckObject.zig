@@ -237,7 +237,7 @@ const ComputeCompareExpected = struct {
     ) !void {
         if (fmt.len != 0) std.fmt.invalidFmtError(fmt, value);
         _ = options;
-        try writer.print("{s} ", .{@tagName(value.op)});
+        try writer.print("{s} ", .{@tagname(value.op)});
         switch (value.value) {
             .variable => |name| try writer.writeAll(name),
             .literal => |x| try writer.print("{x}", .{x}),
@@ -262,7 +262,7 @@ const Check = struct {
 
     fn dumpSection(allocator: Allocator, name: [:0]const u8) Check {
         var check = Check.create(allocator, .dump_section);
-        const off: u32 = @intCast(check.data.items.len);
+        const off: u32 = @intcast(check.data.items.len);
         check.data.writer().print("{s}\x00", .{name}) catch @panic("OOM");
         check.payload = .{ .dump_section = off };
         return check;
@@ -554,7 +554,7 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
     _ = prog_node;
     const b = step.owner;
     const gpa = b.allocator;
-    const check_object: *CheckObject = @fieldParentPtr("step", step);
+    const check_object: *CheckObject = @fieldparentptr("step", step);
 
     const src_path = check_object.source.getPath2(b, step);
     const contents = fs.cwd().readFileAllocOptions(
@@ -562,9 +562,9 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
         src_path,
         check_object.max_bytes,
         null,
-        @alignOf(u64),
+        @alignof(u64),
         null,
-    ) catch |err| return step.fail("unable to read '{s}': {s}", .{ src_path, @errorName(err) });
+    ) catch |err| return step.fail("unable to read '{s}': {s}", .{ src_path, @errorname(err) });
 
     var vars = std.StringHashMap(u64).init(gpa);
     for (check_object.checks.items) |chk| {
@@ -734,14 +734,14 @@ const MachODumper = struct {
                     },
                     .SYMTAB => {
                         const lc = cmd.cast(macho.symtab_command).?;
-                        const symtab = @as([*]align(1) const macho.nlist_64, @ptrCast(ctx.data.ptr + lc.symoff))[0..lc.nsyms];
+                        const symtab = @as([*]align(1) const macho.nlist_64, @ptrcast(ctx.data.ptr + lc.symoff))[0..lc.nsyms];
                         const strtab = ctx.data[lc.stroff..][0..lc.strsize];
                         try ctx.symtab.appendUnalignedSlice(ctx.gpa, symtab);
                         try ctx.strtab.appendSlice(ctx.gpa, strtab);
                     },
                     .DYSYMTAB => {
                         const lc = cmd.cast(macho.dysymtab_command).?;
-                        const indexes = @as([*]align(1) const u32, @ptrCast(ctx.data.ptr + lc.indirectsymoff))[0..lc.nindirectsyms];
+                        const indexes = @as([*]align(1) const u32, @ptrcast(ctx.data.ptr + lc.indirectsymoff))[0..lc.nindirectsyms];
                         try ctx.indsymtab.appendUnalignedSlice(ctx.gpa, indexes);
                     },
                     .LOAD_DYLIB,
@@ -759,11 +759,11 @@ const MachODumper = struct {
 
         fn getString(ctx: ObjectContext, off: u32) [:0]const u8 {
             assert(off < ctx.strtab.items.len);
-            return mem.sliceTo(@as([*:0]const u8, @ptrCast(ctx.strtab.items.ptr + off)), 0);
+            return mem.sliceTo(@as([*:0]const u8, @ptrcast(ctx.strtab.items.ptr + off)), 0);
         }
 
         fn getLoadCommandIterator(ctx: ObjectContext) macho.LoadCommandIterator {
-            const data = ctx.data[@sizeOf(macho.mach_header_64)..][0..ctx.header.sizeofcmds];
+            const data = ctx.data[@sizeof(macho.mach_header_64)..][0..ctx.header.sizeofcmds];
             return .{ .ncmds = ctx.header.ncmds, .buffer = data };
         }
 
@@ -863,7 +863,7 @@ const MachODumper = struct {
                 \\LC {d}
                 \\cmd {s}
                 \\cmdsize {d}
-            , .{ index, @tagName(lc.cmd()), lc.cmdsize() });
+            , .{ index, @tagname(lc.cmd()), lc.cmdsize() });
 
             switch (lc.cmd()) {
                 .SEGMENT_64 => {
@@ -1034,7 +1034,7 @@ const MachODumper = struct {
                         \\sdk {d}.{d}.{d}
                         \\ntools {d}
                     , .{
-                        @tagName(blc.platform),
+                        @tagname(blc.platform),
                         blc.minos >> 16,
                         @as(u8, @truncate(blc.minos >> 8)),
                         @as(u8, @truncate(blc.minos)),
@@ -1046,8 +1046,8 @@ const MachODumper = struct {
                     for (lc.getBuildVersionTools()) |tool| {
                         try writer.writeByte('\n');
                         switch (tool.tool) {
-                            .CLANG, .SWIFT, .LD, .LLD, .ZIG => try writer.print("tool {s}\n", .{@tagName(tool.tool)}),
-                            else => |x| try writer.print("tool {d}\n", .{@intFromEnum(x)}),
+                            .CLANG, .SWIFT, .LD, .LLD, .ZIG => try writer.print("tool {s}\n", .{@tagname(tool.tool)}),
+                            else => |x| try writer.print("tool {d}\n", .{@intfromenum(x)}),
                         }
                         try writer.print(
                             \\version {d}.{d}.{d}
@@ -1126,7 +1126,7 @@ const MachODumper = struct {
                     if (sym.ext()) try writer.writeAll(" external");
                     try writer.print(" {s}\n", .{sym_name});
                 } else if (sym.undf()) {
-                    const ordinal = @divFloor(@as(i16, @bitCast(sym.n_desc)), macho.N_SYMBOL_RESOLVER);
+                    const ordinal = @divfloor(@as(i16, @bitcast(sym.n_desc)), macho.N_SYMBOL_RESOLVER);
                     const import_name = blk: {
                         if (ordinal <= 0) {
                             if (ordinal == macho.BIND_SPECIAL_DYLIB_SELF)
@@ -1137,7 +1137,7 @@ const MachODumper = struct {
                                 break :blk "flat lookup";
                             unreachable;
                         }
-                        const full_path = ctx.imports.items[@as(u16, @bitCast(ordinal)) - 1];
+                        const full_path = ctx.imports.items[@as(u16, @bitcast(ordinal)) - 1];
                         const basename = fs.path.basename(full_path);
                         assert(basename.len > 0);
                         const ext = mem.lastIndexOfScalar(u8, basename, '.') orelse basename.len;
@@ -1190,7 +1190,7 @@ const MachODumper = struct {
                 const end = if (i + 1 >= sects.len) ctx.indsymtab.items.len else sects[i + 1].reserved1;
                 const entry_size = blk: {
                     if (mem.eql(u8, sect.sectName(), "__stubs")) break :blk sect.reserved2;
-                    break :blk @sizeOf(u64);
+                    break :blk @sizeof(u64);
                 };
 
                 try writer.print("{s},{s}\n", .{ sect.segName(), sect.sectName() });
@@ -1232,7 +1232,7 @@ const MachODumper = struct {
                         offset = try std.leb.readULEB128(u64, reader);
                     },
                     macho.REBASE_OPCODE_ADD_ADDR_IMM_SCALED => {
-                        offset += imm * @sizeOf(u64);
+                        offset += imm * @sizeof(u64);
                     },
                     macho.REBASE_OPCODE_ADD_ADDR_ULEB => {
                         const addend = try std.leb.readULEB128(u64, reader);
@@ -1243,7 +1243,7 @@ const MachODumper = struct {
                         const seg = ctx.segments.items[seg_id.?];
                         const addr = seg.vmaddr + offset;
                         try rebases.append(addr);
-                        offset += addend + @sizeOf(u64);
+                        offset += addend + @sizeof(u64);
                     },
                     macho.REBASE_OPCODE_DO_REBASE_IMM_TIMES,
                     macho.REBASE_OPCODE_DO_REBASE_ULEB_TIMES,
@@ -1270,7 +1270,7 @@ const MachODumper = struct {
                         while (count < ntimes) : (count += 1) {
                             const addr = base_addr + offset;
                             try rebases.append(addr);
-                            offset += skip + @sizeOf(u64);
+                            offset += skip + @sizeof(u64);
                         }
                     },
                     else => break,
@@ -1373,7 +1373,7 @@ const MachODumper = struct {
                     },
                     macho.BIND_OPCODE_ADD_ADDR_ULEB => {
                         const x = try std.leb.readULEB128(u64, reader);
-                        offset = @intCast(@as(i64, @intCast(offset)) + @as(i64, @bitCast(x)));
+                        offset = @intcast(@as(i64, @intcast(offset)) + @as(i64, @bitcast(x)));
                     },
                     macho.BIND_OPCODE_DO_BIND,
                     macho.BIND_OPCODE_DO_BIND_ADD_ADDR_ULEB,
@@ -1390,7 +1390,7 @@ const MachODumper = struct {
                                 add_addr = try std.leb.readULEB128(u64, reader);
                             },
                             macho.BIND_OPCODE_DO_BIND_ADD_ADDR_IMM_SCALED => {
-                                add_addr = imm * @sizeOf(u64);
+                                add_addr = imm * @sizeof(u64);
                             },
                             macho.BIND_OPCODE_DO_BIND_ULEB_TIMES_SKIPPING_ULEB => {
                                 count = try std.leb.readULEB128(u64, reader);
@@ -1402,7 +1402,7 @@ const MachODumper = struct {
                         const seg = ctx.segments.items[seg_id.?];
                         var i: u64 = 0;
                         while (i < count) : (i += 1) {
-                            const addr: u64 = @intCast(@as(i64, @intCast(seg.vmaddr + offset)));
+                            const addr: u64 = @intcast(@as(i64, @intcast(seg.vmaddr + offset)));
                             try bindings.append(.{
                                 .address = addr,
                                 .addend = addend,
@@ -1410,7 +1410,7 @@ const MachODumper = struct {
                                 .ordinal = ordinal,
                                 .name = try ctx.gpa.dupe(u8, name_buf.items),
                             });
-                            offset += skip + @sizeOf(u64) + add_addr;
+                            offset += skip + @sizeof(u64) + add_addr;
                         }
                     },
                     else => break,
@@ -1482,7 +1482,7 @@ const MachODumper = struct {
                     if (byte == 0) break;
                 }
 
-                const str = @as([*:0]const u8, @ptrCast(it.data.ptr + it.pos))[0..count :0];
+                const str = @as([*:0]const u8, @ptrcast(it.data.ptr + it.pos))[0..count :0];
                 it.pos += count + 1;
                 return str;
             }
@@ -1603,7 +1603,7 @@ const MachODumper = struct {
 
     fn parseAndDumpObject(step: *Step, check: Check, bytes: []const u8) ![]const u8 {
         const gpa = step.owner.allocator;
-        const hdr = @as(*align(1) const macho.mach_header_64, @ptrCast(bytes.ptr)).*;
+        const hdr = @as(*align(1) const macho.mach_header_64, @ptrcast(bytes.ptr)).*;
         if (hdr.magic != macho.MH_MAGIC_64) {
             return error.InvalidMagicNumber;
         }
@@ -1688,7 +1688,7 @@ const MachODumper = struct {
             },
 
             .dump_section => {
-                const name = mem.sliceTo(@as([*:0]const u8, @ptrCast(check.data.items.ptr + check.payload.dump_section)), 0);
+                const name = mem.sliceTo(@as([*:0]const u8, @ptrcast(check.data.items.ptr + check.payload.dump_section)), 0);
                 const sep_index = mem.indexOfScalar(u8, name, ',') orelse
                     return step.fail("invalid section name: {s}", .{name});
                 const segname = name[0..sep_index];
@@ -1698,7 +1698,7 @@ const MachODumper = struct {
                 try ctx.dumpSection(sect, writer);
             },
 
-            else => return step.fail("invalid check kind for MachO file format: {s}", .{@tagName(check.kind)}),
+            else => return step.fail("invalid check kind for MachO file format: {s}", .{@tagname(check.kind)}),
         }
 
         return output.toOwnedSlice();
@@ -1808,8 +1808,8 @@ const ElfDumper = struct {
                 .p64 => try reader.readInt(u64, .big),
             };
             const ptr_size: usize = switch (ptr_width) {
-                .p32 => @sizeOf(u32),
-                .p64 => @sizeOf(u64),
+                .p32 => @sizeof(u32),
+                .p64 => @sizeof(u64),
             };
             const strtab_off = (num + 1) * ptr_size;
             const strtab_len = raw.len - strtab_off;
@@ -1823,7 +1823,7 @@ const ElfDumper = struct {
                     .p32 => try reader.readInt(u32, .big),
                     .p64 => try reader.readInt(u64, .big),
                 };
-                const name = mem.sliceTo(@as([*:0]const u8, @ptrCast(strtab.ptr + stroff)), 0);
+                const name = mem.sliceTo(@as([*:0]const u8, @ptrcast(strtab.ptr + stroff)), 0);
                 stroff += name.len + 1;
                 ctx.symtab.appendAssumeCapacity(.{ .off = off, .name = name });
             }
@@ -1832,10 +1832,10 @@ const ElfDumper = struct {
         fn dumpSymtab(ctx: ArchiveContext, writer: anytype) !void {
             var files = std.AutoHashMap(usize, []const u8).init(ctx.gpa);
             defer files.deinit();
-            try files.ensureUnusedCapacity(@intCast(ctx.objects.items.len));
+            try files.ensureUnusedCapacity(@intcast(ctx.objects.items.len));
 
             for (ctx.objects.items) |object| {
-                files.putAssumeCapacityNoClobber(object.off - @sizeOf(elf.ar_hdr), object.name);
+                files.putAssumeCapacityNoClobber(object.off - @sizeof(elf.ar_hdr), object.name);
             }
 
             var symbols = std.AutoArrayHashMap(usize, std.ArrayList([]const u8)).init(ctx.gpa);
@@ -1847,7 +1847,7 @@ const ElfDumper = struct {
             }
 
             for (ctx.symtab.items) |entry| {
-                const gop = try symbols.getOrPut(@intCast(entry.off));
+                const gop = try symbols.getOrPut(@intcast(entry.off));
                 if (!gop.found_existing) {
                     gop.value_ptr.* = std.ArrayList([]const u8).init(ctx.gpa);
                 }
@@ -1874,7 +1874,7 @@ const ElfDumper = struct {
 
         fn getString(ctx: ArchiveContext, off: u32) []const u8 {
             assert(off < ctx.strtab.len);
-            const name = mem.sliceTo(@as([*:'\n']const u8, @ptrCast(ctx.strtab.ptr + off)), 0);
+            const name = mem.sliceTo(@as([*:'\n']const u8, @ptrcast(ctx.strtab.ptr + off)), 0);
             return name[0 .. name.len - 1];
         }
 
@@ -1894,8 +1894,8 @@ const ElfDumper = struct {
             return error.InvalidMagicNumber;
         }
 
-        const shdrs = @as([*]align(1) const elf.Elf64_Shdr, @ptrCast(bytes.ptr + hdr.e_shoff))[0..hdr.e_shnum];
-        const phdrs = @as([*]align(1) const elf.Elf64_Phdr, @ptrCast(bytes.ptr + hdr.e_phoff))[0..hdr.e_phnum];
+        const shdrs = @as([*]align(1) const elf.Elf64_Shdr, @ptrcast(bytes.ptr + hdr.e_shoff))[0..hdr.e_shnum];
+        const phdrs = @as([*]align(1) const elf.Elf64_Phdr, @ptrcast(bytes.ptr + hdr.e_phoff))[0..hdr.e_phnum];
 
         var ctx = ObjectContext{
             .gpa = gpa,
@@ -1910,8 +1910,8 @@ const ElfDumper = struct {
         for (ctx.shdrs, 0..) |shdr, i| switch (shdr.sh_type) {
             elf.SHT_SYMTAB, elf.SHT_DYNSYM => {
                 const raw = ctx.getSectionContents(i);
-                const nsyms = @divExact(raw.len, @sizeOf(elf.Elf64_Sym));
-                const symbols = @as([*]align(1) const elf.Elf64_Sym, @ptrCast(raw.ptr))[0..nsyms];
+                const nsyms = @divexact(raw.len, @sizeof(elf.Elf64_Sym));
+                const symbols = @as([*]align(1) const elf.Elf64_Sym, @ptrcast(raw.ptr))[0..nsyms];
                 const strings = ctx.getSectionContents(shdr.sh_link);
 
                 switch (shdr.sh_type) {
@@ -1957,12 +1957,12 @@ const ElfDumper = struct {
             } else return step.fail("no .dynamic section found", .{}),
 
             .dump_section => {
-                const name = mem.sliceTo(@as([*:0]const u8, @ptrCast(check.data.items.ptr + check.payload.dump_section)), 0);
+                const name = mem.sliceTo(@as([*:0]const u8, @ptrcast(check.data.items.ptr + check.payload.dump_section)), 0);
                 const shndx = ctx.getSectionByName(name) orelse return step.fail("no '{s}' section found", .{name});
                 try ctx.dumpSection(shndx, writer);
             },
 
-            else => return step.fail("invalid check kind for ELF file format: {s}", .{@tagName(check.kind)}),
+            else => return step.fail("invalid check kind for ELF file format: {s}", .{@tagname(check.kind)}),
         }
 
         return output.toOwnedSlice();
@@ -1980,7 +1980,7 @@ const ElfDumper = struct {
 
         fn dumpHeader(ctx: ObjectContext, writer: anytype) !void {
             try writer.writeAll("header\n");
-            try writer.print("type {s}\n", .{@tagName(ctx.hdr.e_type)});
+            try writer.print("type {s}\n", .{@tagname(ctx.hdr.e_type)});
             try writer.print("entry {x}\n", .{ctx.hdr.e_entry});
         }
 
@@ -2044,13 +2044,13 @@ const ElfDumper = struct {
             const shdr = ctx.shdrs[shndx];
             const strtab = ctx.getSectionContents(shdr.sh_link);
             const data = ctx.getSectionContents(shndx);
-            const nentries = @divExact(data.len, @sizeOf(elf.Elf64_Dyn));
-            const entries = @as([*]align(1) const elf.Elf64_Dyn, @ptrCast(data.ptr))[0..nentries];
+            const nentries = @divexact(data.len, @sizeof(elf.Elf64_Dyn));
+            const entries = @as([*]align(1) const elf.Elf64_Dyn, @ptrcast(data.ptr))[0..nentries];
 
             try writer.writeAll(ElfDumper.dynamic_section_label ++ "\n");
 
             for (entries) |entry| {
-                const key = @as(u64, @bitCast(entry.d_tag));
+                const key = @as(u64, @bitcast(entry.d_tag));
                 const value = entry.d_val;
 
                 const key_str = switch (key) {
@@ -2096,7 +2096,7 @@ const ElfDumper = struct {
                     elf.DT_RPATH,
                     elf.DT_RUNPATH,
                     => {
-                        const name = getString(strtab, @intCast(value));
+                        const name = getString(strtab, @intcast(value));
                         try writer.print(" {s}", .{name});
                     },
 
@@ -2249,8 +2249,8 @@ const ElfDumper = struct {
                     try writer.print(" {s}", .{sym_bind});
                 }
 
-                const sym_vis = @as(elf.STV, @enumFromInt(sym.st_other));
-                try writer.print(" {s}", .{@tagName(sym_vis)});
+                const sym_vis = @as(elf.STV, @enumfromint(sym.st_other));
+                try writer.print(" {s}", .{@tagname(sym_vis)});
 
                 const sym_name = switch (sym.st_type()) {
                     elf.STT_SECTION => ctx.getSectionName(sym.st_shndx),
@@ -2301,7 +2301,7 @@ const ElfDumper = struct {
 
     fn getString(strtab: []const u8, off: u32) []const u8 {
         assert(off < strtab.len);
-        return mem.sliceTo(@as([*:0]const u8, @ptrCast(strtab.ptr + off)), 0);
+        return mem.sliceTo(@as([*:0]const u8, @ptrcast(strtab.ptr + off)), 0);
     }
 
     fn fmtShType(sh_type: u32) std.fmt.Formatter(formatShType) {
@@ -2419,7 +2419,7 @@ const WasmDumper = struct {
                 } else |_| {} // reached end of stream
             },
 
-            else => return step.fail("invalid check kind for Wasm file format: {s}", .{@tagName(check.kind)}),
+            else => return step.fail("invalid check kind for Wasm file format: {s}", .{@tagname(check.kind)}),
         }
 
         return output.toOwnedSlice();
@@ -2437,7 +2437,7 @@ const WasmDumper = struct {
         try writer.print(
             \\Section {s}
             \\size {d}
-        , .{ @tagName(section), data.len });
+        , .{ @tagname(section), data.len });
 
         switch (section) {
             .type,
@@ -2525,7 +2525,7 @@ const WasmDumper = struct {
                         \\module {s}
                         \\name {s}
                         \\kind {s}
-                    , .{ module_name, name, @tagName(kind) });
+                    , .{ module_name, name, @tagname(kind) });
                     try writer.writeByte('\n');
                     switch (kind) {
                         .function => {
@@ -2587,7 +2587,7 @@ const WasmDumper = struct {
                         \\name {s}
                         \\kind {s}
                         \\index {d}
-                    , .{ name, @tagName(kind), index });
+                    , .{ name, @tagname(kind), index });
                     try writer.writeByte('\n');
                 }
             },
@@ -2633,7 +2633,7 @@ const WasmDumper = struct {
         const tag = std.meta.intToEnum(E, byte) catch {
             return step.fail("invalid wasm type value '{d}'", .{byte});
         };
-        try writer.print("type {s}\n", .{@tagName(tag)});
+        try writer.print("type {s}\n", .{@tagname(tag)});
         return tag;
     }
 
@@ -2655,8 +2655,8 @@ const WasmDumper = struct {
         switch (opcode) {
             .i32_const => try writer.print("i32.const {x}\n", .{try std.leb.readILEB128(i32, reader)}),
             .i64_const => try writer.print("i64.const {x}\n", .{try std.leb.readILEB128(i64, reader)}),
-            .f32_const => try writer.print("f32.const {x}\n", .{@as(f32, @bitCast(try reader.readInt(u32, .little)))}),
-            .f64_const => try writer.print("f64.const {x}\n", .{@as(f64, @bitCast(try reader.readInt(u64, .little)))}),
+            .f32_const => try writer.print("f32.const {x}\n", .{@as(f32, @bitcast(try reader.readInt(u32, .little)))}),
+            .f64_const => try writer.print("f64.const {x}\n", .{@as(f64, @bitcast(try reader.readInt(u64, .little)))}),
             .global_get => try writer.print("global.get {x}\n", .{try std.leb.readULEB128(u32, reader)}),
             else => unreachable,
         }
@@ -2713,7 +2713,7 @@ const WasmDumper = struct {
                     return step.fail("TODO implement parseDumpNames for local subsections", .{});
                 },
 
-                else => |t| return step.fail("invalid subsection type: {s}", .{@tagName(t)}),
+                else => |t| return step.fail("invalid subsection type: {s}", .{@tagname(t)}),
             }
         }
     }

@@ -39,7 +39,7 @@ pub const SimplifiedFontPackage = extern struct {
     number_of_wide_glyphs: u16,
 
     pub fn getNarrowGlyphs(self: *SimplifiedFontPackage) []NarrowGlyph {
-        return @as([*]NarrowGlyph, @ptrCast(@alignCast(@as([*]u8, @ptrCast(self)) + @sizeOf(SimplifiedFontPackage))))[0..self.number_of_narrow_glyphs];
+        return @as([*]NarrowGlyph, @ptrcast(@aligncast(@as([*]u8, @ptrcast(self)) + @sizeof(SimplifiedFontPackage))))[0..self.number_of_narrow_glyphs];
     }
 };
 

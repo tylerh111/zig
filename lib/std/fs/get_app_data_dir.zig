@@ -51,7 +51,7 @@ pub fn getAppDataDir(allocator: mem.Allocator, appname: []const u8) GetAppDataDi
                 else => return error.AppDataDirUnavailable,
             }
         },
-        else => @compileError("Unsupported OS"),
+        else => @compileerror("Unsupported OS"),
     }
 }
 

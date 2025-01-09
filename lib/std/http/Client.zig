@@ -108,7 +108,7 @@ pub const ConnectionPool = struct {
         pool.mutex.lock();
         defer pool.mutex.unlock();
 
-        const node: *Node = @fieldParentPtr("data", connection);
+        const node: *Node = @fieldparentptr("data", connection);
 
         pool.used.remove(node);
 
@@ -223,7 +223,7 @@ pub const Connection = struct {
     pub fn readvDirectTls(conn: *Connection, buffers: []std.posix.iovec) ReadError!usize {
         return conn.tls_client.readv(conn.stream, buffers) catch |err| {
             // https://github.com/ziglang/zig/issues/2473
-            if (mem.startsWith(u8, @errorName(err), "TlsAlert")) return error.TlsAlert;
+            if (mem.startsWith(u8, @errorname(err), "TlsAlert")) return error.TlsAlert;
 
             switch (err) {
                 error.TlsConnectionTruncated, error.TlsRecordOverflow, error.TlsDecodeError, error.TlsBadRecordMac, error.TlsBadLength, error.TlsIllegalParameter, error.TlsUnexpectedMessage => return error.TlsFailure,
@@ -258,7 +258,7 @@ pub const Connection = struct {
         const nread = try conn.readvDirect(&iovecs);
         if (nread == 0) return error.EndOfStream;
         conn.read_start = 0;
-        conn.read_end = @intCast(nread);
+        conn.read_end = @intcast(nread);
     }
 
     /// Returns the current slice of buffered data.
@@ -278,7 +278,7 @@ pub const Connection = struct {
 
         if (available_read > available_buffer) { // partially read buffered data
             @memcpy(buffer[0..available_buffer], conn.read_buf[conn.read_start..conn.read_end][0..available_buffer]);
-            conn.read_start += @intCast(available_buffer);
+            conn.read_start += @intcast(available_buffer);
 
             return available_buffer;
         } else if (available_read > 0) { // fully read buffered data
@@ -296,7 +296,7 @@ pub const Connection = struct {
 
         if (nread > buffer.len) {
             conn.read_start = 0;
-            conn.read_end = @intCast(nread - buffer.len);
+            conn.read_end = @intcast(nread - buffer.len);
             return buffer.len;
         }
 
@@ -350,7 +350,7 @@ pub const Connection = struct {
         }
 
         @memcpy(conn.write_buf[conn.write_end..][0..buffer.len], buffer);
-        conn.write_end += @intCast(buffer.len);
+        conn.write_end += @intcast(buffer.len);
 
         return buffer.len;
     }
@@ -471,7 +471,7 @@ pub const Response = struct {
             else => return error.HttpHeadersInvalid,
         };
         if (first_line[8] != ' ') return error.HttpHeadersInvalid;
-        const status: http.Status = @enumFromInt(parseInt3(first_line[9..12]));
+        const status: http.Status = @enumfromint(parseInt3(first_line[9..12]));
         const reason = mem.trimLeft(u8, first_line[12..], " ");
 
         res.version = version;
@@ -589,7 +589,7 @@ pub const Response = struct {
     }
 
     inline fn int64(array: *const [8]u8) u64 {
-        return @bitCast(array.*);
+        return @bitcast(array.*);
     }
 
     fn parseInt3(text: *const [3]u8) u10 {
@@ -740,13 +740,13 @@ pub const Request = struct {
             switch (rb.*) {
                 .not_allowed => unreachable,
                 .unhandled => unreachable,
-                _ => rb.* = @enumFromInt(@intFromEnum(rb.*) - 1),
+                _ => rb.* = @enumfromint(@intfromenum(rb.*) - 1),
             }
         }
 
         pub fn remaining(rb: RedirectBehavior) u16 {
             assert(rb != .unhandled);
-            return @intFromEnum(rb);
+            return @intfromenum(rb);
         }
     };
 
@@ -843,7 +843,7 @@ pub const Request = struct {
             }, w);
         }
         try w.writeByte(' ');
-        try w.writeAll(@tagName(req.version));
+        try w.writeAll(@tagname(req.version));
         try w.writeAll("\r\n");
 
         if (try emitOverridableHeader("host: ", req.headers.host, w)) {
@@ -856,7 +856,7 @@ pub const Request = struct {
             if (req.uri.user != null or req.uri.password != null) {
                 try w.writeAll("authorization: ");
                 const authorization = try connection.allocWriteBuffer(
-                    @intCast(basic_authorization.valueLengthFromUri(req.uri)),
+                    @intcast(basic_authorization.valueLengthFromUri(req.uri)),
                 );
                 assert(basic_authorization.value(req.uri, authorization).len == authorization.len);
                 try w.writeAll("\r\n");
@@ -988,7 +988,7 @@ pub const Request = struct {
                 try connection.fill();
 
                 const nchecked = try req.response.parser.checkCompleteHead(connection.peek());
-                connection.drop(@intCast(nchecked));
+                connection.drop(@intcast(nchecked));
 
                 if (req.response.parser.state.isContent()) break;
             }
@@ -1118,7 +1118,7 @@ pub const Request = struct {
             try req.connection.?.fill();
 
             const nchecked = try req.response.parser.checkCompleteHead(req.connection.?.peek());
-            req.connection.?.drop(@intCast(nchecked));
+            req.connection.?.drop(@intcast(nchecked));
         }
 
         return 0;
@@ -1288,7 +1288,7 @@ pub const basic_authorization = struct {
         stream.bytes_written = 0;
         try stream.writer().print("{password}", .{uri.password orelse Uri.Component.empty});
         const password_len = stream.bytes_written;
-        return valueLength(@intCast(user_len), @intCast(password_len));
+        return valueLength(@intcast(user_len), @intcast(password_len));
     }
 
     pub fn value(uri: Uri, out: []u8) []u8 {
@@ -1547,7 +1547,7 @@ pub const RequestOptions = struct {
     ///
     /// This will only follow redirects for repeatable requests (ie. with no
     /// payload or the server has acknowledged the payload).
-    redirect_behavior: Request.RedirectBehavior = @enumFromInt(3),
+    redirect_behavior: Request.RedirectBehavior = @enumfromint(3),
 
     /// Externally-owned memory used to store the server's entire HTTP header.
     /// `error.HttpHeadersOversize` is returned from read() when a
@@ -1623,7 +1623,7 @@ pub fn open(
     var server_header = std.heap.FixedBufferAllocator.init(options.server_header_buffer);
     const protocol, const valid_uri = try validateUri(uri, server_header.allocator());
 
-    if (protocol == .tls and @atomicLoad(bool, &client.next_https_rescan_certs, .acquire)) {
+    if (protocol == .tls and @atomicload(bool, &client.next_https_rescan_certs, .acquire)) {
         if (disable_tls) unreachable;
 
         client.ca_bundle_mutex.lock();
@@ -1632,7 +1632,7 @@ pub fn open(
         if (client.next_https_rescan_certs) {
             client.ca_bundle.rescan(client.allocator) catch
                 return error.CertificateBundleLoadFailure;
-            @atomicStore(bool, &client.next_https_rescan_certs, false, .release);
+            @atomicstore(bool, &client.next_https_rescan_certs, false, .release);
         }
     }
 
@@ -1724,7 +1724,7 @@ pub fn fetch(client: *Client, options: FetchOptions) !FetchResult {
     var req = try open(client, method, uri, .{
         .server_header_buffer = options.server_header_buffer orelse &server_header_buffer,
         .redirect_behavior = options.redirect_behavior orelse
-            if (options.payload == null) @enumFromInt(3) else .unhandled,
+            if (options.payload == null) @enumfromint(3) else .unhandled,
         .headers = options.headers,
         .extra_headers = options.extra_headers,
         .privileged_headers = options.privileged_headers,

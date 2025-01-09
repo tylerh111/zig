@@ -8,14 +8,14 @@ pub const MemoryPoolError = error{OutOfMemory};
 /// Use this when you need to allocate a lot of objects of the same type,
 /// because It outperforms general purpose allocators.
 pub fn MemoryPool(comptime Item: type) type {
-    return MemoryPoolAligned(Item, @alignOf(Item));
+    return MemoryPoolAligned(Item, @alignof(Item));
 }
 
 /// A memory pool that can allocate objects of a single type very quickly.
 /// Use this when you need to allocate a lot of objects of the same type,
 /// because It outperforms general purpose allocators.
 pub fn MemoryPoolAligned(comptime Item: type, comptime alignment: u29) type {
-    if (@alignOf(Item) == alignment) {
+    if (@alignof(Item) == alignment) {
         return MemoryPoolExtra(Item, .{});
     } else {
         return MemoryPoolExtra(Item, .{ .alignment = alignment });
@@ -39,15 +39,15 @@ pub fn MemoryPoolExtra(comptime Item: type, comptime pool_options: Options) type
         const Pool = @This();
 
         /// Size of the memory pool items. This is not necessarily the same
-        /// as `@sizeOf(Item)` as the pool also uses the items for internal means.
-        pub const item_size = @max(@sizeOf(Node), @sizeOf(Item));
+        /// as `@sizeof(Item)` as the pool also uses the items for internal means.
+        pub const item_size = @max(@sizeof(Node), @sizeof(Item));
 
         // This needs to be kept in sync with Node.
-        const node_alignment = @alignOf(*anyopaque);
+        const node_alignment = @alignof(*anyopaque);
 
         /// Alignment of the memory pool items. This is not necessarily the same
-        /// as `@alignOf(Item)` as the pool also uses the items for internal means.
-        pub const item_alignment = @max(node_alignment, pool_options.alignment orelse @alignOf(Item));
+        /// as `@alignof(Item)` as the pool also uses the items for internal means.
+        pub const item_alignment = @max(node_alignment, pool_options.alignment orelse @alignof(Item));
 
         const Node = struct {
             next: ?*align(item_alignment) @This(),
@@ -73,7 +73,7 @@ pub fn MemoryPoolExtra(comptime Item: type, comptime pool_options: Options) type
             var i: usize = 0;
             while (i < initial_size) : (i += 1) {
                 const raw_mem = try pool.allocNew();
-                const free_node = @as(NodePtr, @ptrCast(raw_mem));
+                const free_node = @as(NodePtr, @ptrcast(raw_mem));
                 free_node.* = Node{
                     .next = pool.free_list,
                 };
@@ -117,11 +117,11 @@ pub fn MemoryPoolExtra(comptime Item: type, comptime pool_options: Options) type
                 pool.free_list = item.next;
                 break :blk item;
             } else if (pool_options.growable)
-                @as(NodePtr, @ptrCast(try pool.allocNew()))
+                @as(NodePtr, @ptrcast(try pool.allocNew()))
             else
                 return error.OutOfMemory;
 
-            const ptr = @as(ItemPtr, @ptrCast(node));
+            const ptr = @as(ItemPtr, @ptrcast(node));
             ptr.* = undefined;
             return ptr;
         }
@@ -131,7 +131,7 @@ pub fn MemoryPoolExtra(comptime Item: type, comptime pool_options: Options) type
         pub fn destroy(pool: *Pool, ptr: ItemPtr) void {
             ptr.* = undefined;
 
-            const node = @as(NodePtr, @ptrCast(ptr));
+            const node = @as(NodePtr, @ptrcast(ptr));
             node.* = Node{
                 .next = pool.free_list,
             };

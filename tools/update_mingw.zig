@@ -25,13 +25,13 @@ pub fn main() !void {
     // in zig's installation.
 
     var dest_crt_dir = std.fs.cwd().openDir(dest_mingw_crt_path, .{ .iterate = true }) catch |err| {
-        std.log.err("unable to open directory '{s}': {s}", .{ dest_mingw_crt_path, @errorName(err) });
+        std.log.err("unable to open directory '{s}': {s}", .{ dest_mingw_crt_path, @errorname(err) });
         std.process.exit(1);
     };
     defer dest_crt_dir.close();
 
     var src_crt_dir = std.fs.cwd().openDir(src_mingw_crt_path, .{ .iterate = true }) catch |err| {
-        std.log.err("unable to open directory '{s}': {s}", .{ src_mingw_crt_path, @errorName(err) });
+        std.log.err("unable to open directory '{s}': {s}", .{ src_mingw_crt_path, @errorname(err) });
         std.process.exit(1);
     };
     defer src_crt_dir.close();
@@ -57,7 +57,7 @@ pub fn main() !void {
                     }
                 },
                 else => {
-                    std.log.err("unable to copy {s}: {s}", .{ entry.path, @errorName(err) });
+                    std.log.err("unable to copy {s}: {s}", .{ entry.path, @errorname(err) });
                     fail = true;
                 },
             };
@@ -101,7 +101,7 @@ pub fn main() !void {
                 continue;
 
             src_crt_dir.copyFile(entry.path, dest_crt_dir, entry.path, .{}) catch |err| {
-                std.log.err("unable to copy {s}: {s}", .{ entry.path, @errorName(err) });
+                std.log.err("unable to copy {s}: {s}", .{ entry.path, @errorname(err) });
                 fail = true;
             };
         }

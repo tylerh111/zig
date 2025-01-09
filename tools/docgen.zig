@@ -269,7 +269,7 @@ fn parseError(tokenizer: *Tokenizer, token: Token, comptime fmt: []const u8, arg
 
 fn assertToken(tokenizer: *Tokenizer, token: Token, id: Token.Id) !void {
     if (token.id != id) {
-        return parseError(tokenizer, token, "expected {s}, found {s}", .{ @tagName(id), @tagName(token.id) });
+        return parseError(tokenizer, token, "expected {s}, found {s}", .{ @tagname(id), @tagname(token.id) });
     }
 }
 
@@ -920,7 +920,7 @@ fn tokenizeAndPrint(
 }
 
 fn printSourceBlock(allocator: Allocator, docgen_tokenizer: *Tokenizer, out: anytype, syntax_block: SyntaxBlock) !void {
-    const source_type = @tagName(syntax_block.source_type);
+    const source_type = @tagname(syntax_block.source_type);
 
     try out.print("<figure><figcaption class=\"{s}-cap\"><cite class=\"file\">{s}</cite></figcaption><pre>", .{ source_type, syntax_block.name });
     switch (syntax_block.source_type) {
@@ -1007,7 +1007,7 @@ fn genHtml(
             },
             .Builtin => |tok| {
                 try out.writeAll("<figure><figcaption class=\"zig-cap\"><cite>@import(\"builtin\")</cite></figcaption><pre>");
-                const builtin_code = @embedFile("builtin"); // 😎
+                const builtin_code = @embedfile("builtin"); // 😎
                 try tokenizeAndPrintRaw(allocator, tokenizer, out, tok, builtin_code);
                 try out.writeAll("</pre></figure>");
             },
@@ -1046,7 +1046,7 @@ fn genHtml(
 
                 const contents = code_dir.readFileAlloc(allocator, out_basename, std.math.maxInt(u32)) catch |err| {
                     return parseError(tokenizer, code.token, "unable to open '{s}': {s}", .{
-                        out_basename, @errorName(err),
+                        out_basename, @errorname(err),
                     });
                 };
                 defer allocator.free(contents);

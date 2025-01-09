@@ -210,7 +210,7 @@ pub fn isCygwinPty(file: File) bool {
     {
         var io_status: windows.IO_STATUS_BLOCK = undefined;
         var device_info: windows.FILE_FS_DEVICE_INFORMATION = undefined;
-        const rc = windows.ntdll.NtQueryVolumeInformationFile(handle, &io_status, &device_info, @sizeOf(windows.FILE_FS_DEVICE_INFORMATION), .FileFsDeviceInformation);
+        const rc = windows.ntdll.NtQueryVolumeInformationFile(handle, &io_status, &device_info, @sizeof(windows.FILE_FS_DEVICE_INFORMATION), .FileFsDeviceInformation);
         switch (rc) {
             .SUCCESS => {},
             else => return false,
@@ -218,7 +218,7 @@ pub fn isCygwinPty(file: File) bool {
         if (device_info.DeviceType != windows.FILE_DEVICE_NAMED_PIPE) return false;
     }
 
-    const name_bytes_offset = @offsetOf(windows.FILE_NAME_INFO, "FileName");
+    const name_bytes_offset = @offsetof(windows.FILE_NAME_INFO, "FileName");
     // `NAME_MAX` UTF-16 code units (2 bytes each)
     // This buffer may not be long enough to handle *all* possible paths
     // (PATH_MAX_WIDE would be necessary for that), but because we only care
@@ -226,17 +226,17 @@ pub fn isCygwinPty(file: File) bool {
     // we can use this smaller buffer and just return false on any error from
     // NtQueryInformationFile.
     const num_name_bytes = windows.MAX_PATH * 2;
-    var name_info_bytes align(@alignOf(windows.FILE_NAME_INFO)) = [_]u8{0} ** (name_bytes_offset + num_name_bytes);
+    var name_info_bytes align(@alignof(windows.FILE_NAME_INFO)) = [_]u8{0} ** (name_bytes_offset + num_name_bytes);
 
     var io_status_block: windows.IO_STATUS_BLOCK = undefined;
-    const rc = windows.ntdll.NtQueryInformationFile(handle, &io_status_block, &name_info_bytes, @intCast(name_info_bytes.len), .FileNameInformation);
+    const rc = windows.ntdll.NtQueryInformationFile(handle, &io_status_block, &name_info_bytes, @intcast(name_info_bytes.len), .FileNameInformation);
     switch (rc) {
         .SUCCESS => {},
         .INVALID_PARAMETER => unreachable,
         else => return false,
     }
 
-    const name_info: *const windows.FILE_NAME_INFO = @ptrCast(&name_info_bytes);
+    const name_info: *const windows.FILE_NAME_INFO = @ptrcast(&name_info_bytes);
     const name_bytes = name_info_bytes[name_bytes_offset .. name_bytes_offset + name_info.FileNameLength];
     const name_wide = std.mem.bytesAsSlice(u16, name_bytes);
     // The name we get from NtQueryInformationFile will be prefixed with a '\', e.g. \msys-1888ae32e00d56aa-pty0-to-master
@@ -398,7 +398,7 @@ pub const Stat = struct {
         const ctime = st.ctime();
         return .{
             .inode = st.ino,
-            .size = @bitCast(st.size),
+            .size = @bitcast(st.size),
             .mode = st.mode,
             .kind = k: {
                 const m = st.mode & posix.S.IFMT;
@@ -429,7 +429,7 @@ pub const Stat = struct {
     pub fn fromWasi(st: std.os.wasi.filestat_t) Stat {
         return .{
             .inode = st.ino,
-            .size = @bitCast(st.size),
+            .size = @bitcast(st.size),
             .mode = 0,
             .kind = switch (st.filetype) {
                 .BLOCK_DEVICE => .block_device,
@@ -456,7 +456,7 @@ pub fn stat(self: File) StatError!Stat {
     if (builtin.os.tag == .windows) {
         var io_status_block: windows.IO_STATUS_BLOCK = undefined;
         var info: windows.FILE_ALL_INFORMATION = undefined;
-        const rc = windows.ntdll.NtQueryInformationFile(self.handle, &io_status_block, &info, @sizeOf(windows.FILE_ALL_INFORMATION), .FileAllInformation);
+        const rc = windows.ntdll.NtQueryInformationFile(self.handle, &io_status_block, &info, @sizeof(windows.FILE_ALL_INFORMATION), .FileAllInformation);
         switch (rc) {
             .SUCCESS => {},
             // Buffer overflow here indicates that there is more information available than was able to be stored in the buffer
@@ -469,11 +469,11 @@ pub fn stat(self: File) StatError!Stat {
         }
         return .{
             .inode = info.InternalInformation.IndexNumber,
-            .size = @as(u64, @bitCast(info.StandardInformation.EndOfFile)),
+            .size = @as(u64, @bitcast(info.StandardInformation.EndOfFile)),
             .mode = 0,
             .kind = if (info.BasicInformation.FileAttributes & windows.FILE_ATTRIBUTE_REPARSE_POINT != 0) reparse_point: {
                 var tag_info: windows.FILE_ATTRIBUTE_TAG_INFO = undefined;
-                const tag_rc = windows.ntdll.NtQueryInformationFile(self.handle, &io_status_block, &tag_info, @sizeOf(windows.FILE_ATTRIBUTE_TAG_INFO), .FileAttributeTagInformation);
+                const tag_rc = windows.ntdll.NtQueryInformationFile(self.handle, &io_status_block, &tag_info, @sizeof(windows.FILE_ATTRIBUTE_TAG_INFO), .FileAttributeTagInformation);
                 switch (tag_rc) {
                     .SUCCESS => {},
                     // INFO_LENGTH_MISMATCH and ACCESS_DENIED are the only documented possible errors
@@ -611,7 +611,7 @@ pub const PermissionsUnix = struct {
     /// Returns `true` if the chosen class has the selected permission.
     /// This method is only available on Unix platforms.
     pub fn unixHas(self: Self, class: Class, permission: Permission) bool {
-        const mask = @as(Mode, @intFromEnum(permission)) << @as(u3, @intFromEnum(class)) * 3;
+        const mask = @as(Mode, @intfromenum(permission)) << @as(u3, @intfromenum(class)) * 3;
         return self.mode & mask != 0;
     }
 
@@ -622,7 +622,7 @@ pub const PermissionsUnix = struct {
         write: ?bool = null,
         execute: ?bool = null,
     }) void {
-        const shift = @as(u3, @intFromEnum(class)) * 3;
+        const shift = @as(u3, @intfromenum(class)) * 3;
         if (permissions.read) |r| {
             if (r) {
                 self.mode |= @as(Mode, 0o4) << shift;
@@ -673,7 +673,7 @@ pub fn setPermissions(self: File, permissions: Permissions) SetPermissionsError!
                 self.handle,
                 &io_status_block,
                 &info,
-                @sizeOf(windows.FILE_BASIC_INFORMATION),
+                @sizeof(windows.FILE_BASIC_INFORMATION),
                 .FileBasicInformation,
             );
             switch (rc) {
@@ -683,7 +683,7 @@ pub fn setPermissions(self: File, permissions: Permissions) SetPermissionsError!
                 else => return windows.unexpectedStatus(rc),
             }
         },
-        .wasi => @compileError("Unsupported OS"), // Wasi filesystem does not *yet* support chmod
+        .wasi => @compileerror("Unsupported OS"), // Wasi filesystem does not *yet* support chmod
         else => {
             try self.chmod(permissions.inner.mode);
         },
@@ -746,7 +746,7 @@ pub const MetadataUnix = struct {
 
     /// Returns the size of the file
     pub fn size(self: Self) u64 {
-        return @intCast(self.stat.size);
+        return @intcast(self.stat.size);
     }
 
     /// Returns a `Permissions` struct, representing the permissions on the file
@@ -803,7 +803,7 @@ pub const MetadataUnix = struct {
     /// Returns the time the file was created in nanoseconds since UTC 1970-01-01.
     /// Returns null if this is not supported by the OS or filesystem
     pub fn created(self: Self) ?i128 {
-        if (!@hasDecl(@TypeOf(self.stat), "birthtime")) return null;
+        if (!@hasdecl(@TypeOf(self.stat), "birthtime")) return null;
         const birthtime = self.stat.birthtime();
 
         // If the filesystem doesn't support this the value *should* be:
@@ -814,7 +814,7 @@ pub const MetadataUnix = struct {
             .freebsd => if (birthtime.tv_sec == -1 and birthtime.tv_nsec == 0) return null,
             .netbsd, .openbsd => if (birthtime.tv_sec == 0 and birthtime.tv_nsec == 0) return null,
             .macos => {},
-            else => @compileError("Creation time detection not implemented for OS"),
+            else => @compileerror("Creation time detection not implemented for OS"),
         }
 
         return @as(i128, birthtime.tv_sec) * std.time.ns_per_s + birthtime.tv_nsec;
@@ -971,7 +971,7 @@ pub fn metadata(self: File) MetadataError!Metadata {
                 var io_status_block: windows.IO_STATUS_BLOCK = undefined;
                 var info: windows.FILE_ALL_INFORMATION = undefined;
 
-                const rc = windows.ntdll.NtQueryInformationFile(self.handle, &io_status_block, &info, @sizeOf(windows.FILE_ALL_INFORMATION), .FileAllInformation);
+                const rc = windows.ntdll.NtQueryInformationFile(self.handle, &io_status_block, &info, @sizeof(windows.FILE_ALL_INFORMATION), .FileAllInformation);
                 switch (rc) {
                     .SUCCESS => {},
                     // Buffer overflow here indicates that there is more information available than was able to be stored in the buffer
@@ -986,7 +986,7 @@ pub fn metadata(self: File) MetadataError!Metadata {
                 const reparse_tag: windows.DWORD = reparse_blk: {
                     if (info.BasicInformation.FileAttributes & windows.FILE_ATTRIBUTE_REPARSE_POINT != 0) {
                         var tag_info: windows.FILE_ATTRIBUTE_TAG_INFO = undefined;
-                        const tag_rc = windows.ntdll.NtQueryInformationFile(self.handle, &io_status_block, &tag_info, @sizeOf(windows.FILE_ATTRIBUTE_TAG_INFO), .FileAttributeTagInformation);
+                        const tag_rc = windows.ntdll.NtQueryInformationFile(self.handle, &io_status_block, &tag_info, @sizeof(windows.FILE_ATTRIBUTE_TAG_INFO), .FileAttributeTagInformation);
                         switch (tag_rc) {
                             .SUCCESS => {},
                             // INFO_LENGTH_MISMATCH and ACCESS_DENIED are the only documented possible errors
@@ -1003,7 +1003,7 @@ pub fn metadata(self: File) MetadataError!Metadata {
                 break :blk .{
                     .attributes = info.BasicInformation.FileAttributes,
                     .reparse_tag = reparse_tag,
-                    ._size = @as(u64, @bitCast(info.StandardInformation.EndOfFile)),
+                    ._size = @as(u64, @bitcast(info.StandardInformation.EndOfFile)),
                     .access_time = windows.fromSysTime(info.BasicInformation.LastAccessTime),
                     .modified_time = windows.fromSysTime(info.BasicInformation.LastWriteTime),
                     .creation_time = windows.fromSysTime(info.BasicInformation.CreationTime),
@@ -1022,16 +1022,16 @@ pub fn metadata(self: File) MetadataError!Metadata {
                     .NOSYS => {
                         const st = try posix.fstat(self.handle);
 
-                        stx.mode = @as(u16, @intCast(st.mode));
+                        stx.mode = @as(u16, @intcast(st.mode));
 
                         // Hacky conversion from timespec to statx_timestamp
                         stx.atime = std.mem.zeroes(l.statx_timestamp);
                         stx.atime.tv_sec = st.atim.tv_sec;
-                        stx.atime.tv_nsec = @as(u32, @intCast(st.atim.tv_nsec)); // Guaranteed to succeed (tv_nsec is always below 10^9)
+                        stx.atime.tv_nsec = @as(u32, @intcast(st.atim.tv_nsec)); // Guaranteed to succeed (tv_nsec is always below 10^9)
 
                         stx.mtime = std.mem.zeroes(l.statx_timestamp);
                         stx.mtime.tv_sec = st.mtim.tv_sec;
-                        stx.mtime.tv_nsec = @as(u32, @intCast(st.mtim.tv_nsec));
+                        stx.mtime.tv_nsec = @as(u32, @intcast(st.mtim.tv_nsec));
 
                         stx.mask = l.STATX_BASIC_STATS | l.STATX_MTIME;
                     },
@@ -1072,11 +1072,11 @@ pub fn updateTimes(
     }
     const times = [2]posix.timespec{
         posix.timespec{
-            .tv_sec = math.cast(isize, @divFloor(atime, std.time.ns_per_s)) orelse maxInt(isize),
+            .tv_sec = math.cast(isize, @divfloor(atime, std.time.ns_per_s)) orelse maxInt(isize),
             .tv_nsec = math.cast(isize, @mod(atime, std.time.ns_per_s)) orelse maxInt(isize),
         },
         posix.timespec{
-            .tv_sec = math.cast(isize, @divFloor(mtime, std.time.ns_per_s)) orelse maxInt(isize),
+            .tv_sec = math.cast(isize, @divfloor(mtime, std.time.ns_per_s)) orelse maxInt(isize),
             .tv_nsec = math.cast(isize, @mod(mtime, std.time.ns_per_s)) orelse maxInt(isize),
         },
     };
@@ -1087,7 +1087,7 @@ pub fn updateTimes(
 /// On success, caller owns returned buffer.
 /// If the file is larger than `max_bytes`, returns `error.FileTooBig`.
 pub fn readToEndAlloc(self: File, allocator: Allocator, max_bytes: usize) ![]u8 {
-    return self.readToEndAllocOptions(allocator, max_bytes, null, @alignOf(u8), null);
+    return self.readToEndAllocOptions(allocator, max_bytes, null, @alignof(u8), null);
 }
 
 /// Reads all the bytes from the current position to the end of the file.
@@ -1110,7 +1110,7 @@ pub fn readToEndAllocOptions(
     // The file size returned by stat is used as hint to set the buffer
     // size. If the reported size is zero, as it happens on Linux for files
     // in /proc, a small buffer is allocated instead.
-    const initial_cap = (if (size > 0) size else 1024) + @intFromBool(optional_sentinel != null);
+    const initial_cap = (if (size > 0) size else 1024) + @intfrombool(optional_sentinel != null);
     var array_list = try std.ArrayListAligned(u8, alignment).initCapacity(allocator, initial_cap);
     defer array_list.deinit();
 
@@ -1519,7 +1519,7 @@ fn writeFileAllSendfile(self: File, in_file: File, args: WriteFileOptions) posix
             amt = try posix.sendfile(out_fd, in_fd, offset + off, count - off, zero_iovec, trailers, flags);
             off += amt;
         }
-        amt = @as(usize, @intCast(off - count));
+        amt = @as(usize, @intcast(off - count));
     }
     var i: usize = 0;
     while (i < trailers.len) {
@@ -1593,7 +1593,7 @@ pub fn lock(file: File, l: Lock) LockError!void {
             &range_len,
             null,
             windows.FALSE, // non-blocking=false
-            @intFromBool(exclusive),
+            @intfrombool(exclusive),
         ) catch |err| switch (err) {
             error.WouldBlock => unreachable, // non-blocking=false
             else => |e| return e,
@@ -1660,7 +1660,7 @@ pub fn tryLock(file: File, l: Lock) LockError!bool {
             &range_len,
             null,
             windows.TRUE, // non-blocking=true
-            @intFromBool(exclusive),
+            @intfrombool(exclusive),
         ) catch |err| switch (err) {
             error.WouldBlock => return false,
             else => |e| return e,

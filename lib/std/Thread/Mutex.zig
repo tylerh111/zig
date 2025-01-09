@@ -1,6 +1,6 @@
 //! Mutex is a synchronization primitive which enforces atomic access to a shared region of code known as the "critical section".
 //! It does this by blocking ensuring only one thread is in the critical section at any given point in time by blocking the others.
-//! Mutex can be statically initialized and is at most `@sizeOf(u64)` large.
+//! Mutex can be statically initialized and is at most `@sizeof(u64)` large.
 //! Use `lock()` or `tryLock()` to enter the critical section and `unlock()` to leave it.
 //!
 //! Example:
@@ -175,7 +175,7 @@ const FutexImpl = struct {
 
         // Acquire barrier ensures grabbing the lock happens before the critical section
         // and that the previous lock holder's critical section happens before we grab the lock.
-        return self.state.cmpxchgWeak(unlocked, locked, .acquire, .monotonic) == null;
+        return self.state.cmpxchgweak(unlocked, locked, .acquire, .monotonic) == null;
     }
 
     fn lockSlow(self: *@This()) void {
@@ -236,12 +236,12 @@ const NonAtomicCounter = struct {
     value: [2]u64 = [_]u64{ 0, 0 },
 
     fn get(self: NonAtomicCounter) u128 {
-        return @as(u128, @bitCast(self.value));
+        return @as(u128, @bitcast(self.value));
     }
 
     fn inc(self: *NonAtomicCounter) void {
-        for (@as([2]u64, @bitCast(self.get() + 1)), 0..) |v, i| {
-            @as(*volatile u64, @ptrCast(&self.value[i])).* = v;
+        for (@as([2]u64, @bitcast(self.get() + 1)), 0..) |v, i| {
+            @as(*volatile u64, @ptrcast(&self.value[i])).* = v;
         }
     }
 };

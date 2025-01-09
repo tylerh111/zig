@@ -16,7 +16,7 @@ pub fn atan(z: anytype) Complex(@TypeOf(z.re, z.im)) {
     return switch (T) {
         f32 => atan32(z),
         f64 => atan64(z),
-        else => @compileError("atan not implemented for " ++ @typeName(z)),
+        else => @compileerror("atan not implemented for " ++ @typename(z)),
     };
 }
 
@@ -32,7 +32,7 @@ fn redupif32(x: f32) f32 {
         t -= 0.5;
     }
 
-    const u = @as(f32, @floatFromInt(@as(i32, @intFromFloat(t))));
+    const u = @as(f32, @floatfromint(@as(i32, @intfromfloat(t))));
     return ((x - u * DP1) - u * DP2) - t * DP3;
 }
 
@@ -81,7 +81,7 @@ fn redupif64(x: f64) f64 {
         t -= 0.5;
     }
 
-    const u = @as(f64, @floatFromInt(@as(i64, @intFromFloat(t))));
+    const u = @as(f64, @floatfromint(@as(i64, @intfromfloat(t))));
     return ((x - u * DP1) - u * DP2) - t * DP3;
 }
 

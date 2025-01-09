@@ -49,25 +49,25 @@ pub usingnamespace switch (native_os) {
 
 pub const pthread_mutex_t = switch (native_os) {
     .linux, .minix => extern struct {
-        data: [data_len]u8 align(@alignOf(usize)) = [_]u8{0} ** data_len,
+        data: [data_len]u8 align(@alignof(usize)) = [_]u8{0} ** data_len,
 
         const data_len = switch (native_abi) {
-            .musl, .musleabi, .musleabihf => if (@sizeOf(usize) == 8) 40 else 24,
+            .musl, .musleabi, .musleabihf => if (@sizeof(usize) == 8) 40 else 24,
             .gnu, .gnuabin32, .gnuabi64, .gnueabi, .gnueabihf, .gnux32 => switch (native_arch) {
                 .aarch64 => 48,
                 .x86_64 => if (native_abi == .gnux32) 40 else 32,
                 .mips64, .powerpc64, .powerpc64le, .sparc64 => 40,
-                else => if (@sizeOf(usize) == 8) 40 else 24,
+                else => if (@sizeof(usize) == 8) 40 else 24,
             },
-            .android => if (@sizeOf(usize) == 8) 40 else 4,
-            else => @compileError("unsupported ABI"),
+            .android => if (@sizeof(usize) == 8) 40 else 4,
+            else => @compileerror("unsupported ABI"),
         };
     },
     .macos, .ios, .tvos, .watchos, .visionos => extern struct {
         sig: c_long = 0x32AAABA7,
         data: [data_len]u8 = [_]u8{0} ** data_len,
 
-        const data_len = if (@sizeOf(usize) == 8) 56 else 40;
+        const data_len = if (@sizeof(usize) == 8) 56 else 40;
     },
     .freebsd, .kfreebsd, .dragonfly, .openbsd => extern struct {
         inner: ?*anyopaque = null,
@@ -101,22 +101,22 @@ pub const pthread_mutex_t = switch (native_os) {
         data: u64 = 0,
     },
     .fuchsia => extern struct {
-        data: [40]u8 align(@alignOf(usize)) = [_]u8{0} ** 40,
+        data: [40]u8 align(@alignof(usize)) = [_]u8{0} ** 40,
     },
     .emscripten => extern struct {
         data: [24]u8 align(4) = [_]u8{0} ** 24,
     },
-    else => @compileError("target libc does not have pthread_mutex_t"),
+    else => @compileerror("target libc does not have pthread_mutex_t"),
 };
 
 pub const pthread_cond_t = switch (native_os) {
     .linux => extern struct {
-        data: [48]u8 align(@alignOf(usize)) = [_]u8{0} ** 48,
+        data: [48]u8 align(@alignof(usize)) = [_]u8{0} ** 48,
     },
     .macos, .ios, .tvos, .watchos, .visionos => extern struct {
         sig: c_long = 0x3CB0B1BB,
         data: [data_len]u8 = [_]u8{0} ** data_len,
-        const data_len = if (@sizeOf(usize) == 8) 40 else 24;
+        const data_len = if (@sizeof(usize) == 8) 40 else 24;
     },
     .freebsd, .kfreebsd, .dragonfly, .openbsd => extern struct {
         inner: ?*anyopaque = null,
@@ -146,24 +146,24 @@ pub const pthread_cond_t = switch (native_os) {
         data: u64 = 0,
     },
     .fuchsia, .minix, .emscripten => extern struct {
-        data: [48]u8 align(@alignOf(usize)) = [_]u8{0} ** 48,
+        data: [48]u8 align(@alignof(usize)) = [_]u8{0} ** 48,
     },
-    else => @compileError("target libc does not have pthread_cond_t"),
+    else => @compileerror("target libc does not have pthread_cond_t"),
 };
 
 pub const pthread_rwlock_t = switch (native_os) {
     .linux => switch (native_abi) {
-        .android => switch (@sizeOf(usize)) {
+        .android => switch (@sizeof(usize)) {
             4 => extern struct {
-                data: [40]u8 align(@alignOf(usize)) = [_]u8{0} ** 40,
+                data: [40]u8 align(@alignof(usize)) = [_]u8{0} ** 40,
             },
             8 => extern struct {
-                data: [56]u8 align(@alignOf(usize)) = [_]u8{0} ** 56,
+                data: [56]u8 align(@alignof(usize)) = [_]u8{0} ** 56,
             },
-            else => @compileError("impossible pointer size"),
+            else => @compileerror("impossible pointer size"),
         },
         else => extern struct {
-            data: [56]u8 align(@alignOf(usize)) = [_]u8{0} ** 56,
+            data: [56]u8 align(@alignof(usize)) = [_]u8{0} ** 56,
         },
     },
     .macos, .ios, .tvos, .watchos, .visionos => extern struct {
@@ -200,12 +200,12 @@ pub const pthread_rwlock_t = switch (native_os) {
         writercv: pthread_cond_t = .{},
     },
     .fuchsia => extern struct {
-        size: [56]u8 align(@alignOf(usize)) = [_]u8{0} ** 56,
+        size: [56]u8 align(@alignof(usize)) = [_]u8{0} ** 56,
     },
     .emscripten => extern struct {
         size: [32]u8 align(4) = [_]u8{0} ** 32,
     },
-    else => @compileError("target libc does not have pthread_rwlock_t"),
+    else => @compileerror("target libc does not have pthread_rwlock_t"),
 };
 
 pub const AT = switch (native_os) {
@@ -287,7 +287,7 @@ pub const AT = switch (native_os) {
         /// Magic value that specify the use of the current working directory
         /// to determine the target of relative file paths in the openat() and
         /// similar syscalls.
-        pub const FDCWD: c.fd_t = @bitCast(@as(u32, 0xffd19553));
+        pub const FDCWD: c.fd_t = @bitcast(@as(u32, 0xffd19553));
         /// Do not follow symbolic links
         pub const SYMLINK_NOFOLLOW = 0x1000;
         /// Follow symbolic link
@@ -323,7 +323,7 @@ pub const AT = switch (native_os) {
         pub const FDCWD: c.fd_t = if (builtin.link_libc) -2 else 3;
     },
 
-    else => @compileError("target libc does not have AT"),
+    else => @compileerror("target libc does not have AT"),
 };
 
 pub const O = switch (native_os) {
@@ -535,7 +535,7 @@ pub const O = switch (native_os) {
         TMPFILE: bool = false,
         _: u9 = 0,
     },
-    else => @compileError("target libc does not have O"),
+    else => @compileerror("target libc does not have O"),
 };
 
 pub const MAP = switch (native_os) {
@@ -674,11 +674,11 @@ pub const MAP = switch (native_os) {
         @"32BIT": bool = false,
         _: u12 = 0,
     },
-    else => @compileError("target libc does not have MAP"),
+    else => @compileerror("target libc does not have MAP"),
 };
 
 /// Used by libc to communicate failure. Not actually part of the underlying syscall.
-pub const MAP_FAILED: *anyopaque = @ptrFromInt(std.math.maxInt(usize));
+pub const MAP_FAILED: *anyopaque = @ptrfromint(std.math.maxInt(usize));
 
 pub const cc_t = u8;
 
@@ -779,7 +779,7 @@ pub const V = switch (native_os) {
         LNEXT,
         EOL2,
     },
-    else => @compileError("target libc does not have cc_t"),
+    else => @compileerror("target libc does not have cc_t"),
 };
 
 pub const NCCS = switch (native_os) {
@@ -788,7 +788,7 @@ pub const NCCS = switch (native_os) {
     .haiku => 11,
     .solaris, .illumos => 19,
     .emscripten, .wasi => 32,
-    else => @compileError("target libc does not have NCCS"),
+    else => @compileerror("target libc does not have NCCS"),
 };
 
 pub const termios = switch (native_os) {
@@ -838,7 +838,7 @@ pub const termios = switch (native_os) {
         ispeed: speed_t,
         ospeed: speed_t,
     },
-    else => @compileError("target libc does not have termios"),
+    else => @compileerror("target libc does not have termios"),
 };
 
 pub const tc_iflag_t = switch (native_os) {
@@ -948,7 +948,7 @@ pub const tc_iflag_t = switch (native_os) {
         IUTF8: bool = false,
         _: u17 = 0,
     },
-    else => @compileError("target libc does not have tc_iflag_t"),
+    else => @compileerror("target libc does not have tc_iflag_t"),
 };
 
 pub const tc_oflag_t = switch (native_os) {
@@ -1039,7 +1039,7 @@ pub const tc_oflag_t = switch (native_os) {
         FFDLY: u1 = 0,
         _: u16 = 0,
     },
-    else => @compileError("target libc does not have tc_oflag_t"),
+    else => @compileerror("target libc does not have tc_oflag_t"),
 };
 
 pub const CSIZE = switch (native_os) {
@@ -1181,7 +1181,7 @@ pub const tc_cflag_t = switch (native_os) {
         CLOCAL: bool = false,
         _: u20 = 0,
     },
-    else => @compileError("target libc does not have tc_cflag_t"),
+    else => @compileerror("target libc does not have tc_cflag_t"),
 };
 
 pub const tc_lflag_t = switch (native_os) {
@@ -1307,7 +1307,7 @@ pub const tc_lflag_t = switch (native_os) {
         IEXTEN: bool = false,
         _: u16 = 0,
     },
-    else => @compileError("target libc does not have tc_lflag_t"),
+    else => @compileerror("target libc does not have tc_lflag_t"),
 };
 
 pub const speed_t = switch (native_os) {
@@ -1489,7 +1489,7 @@ pub const speed_t = switch (native_os) {
         B3500000 = 0o0010016,
         B4000000 = 0o0010017,
     },
-    else => @compileError("target libc does not have speed_t"),
+    else => @compileerror("target libc does not have speed_t"),
 };
 
 pub const whence_t = if (native_os == .wasi) std.os.wasi.whence_t else c_int;
@@ -1564,7 +1564,7 @@ pub const readdir = switch (native_os) {
         .x86_64 => private.@"readdir$INODE64",
         else => private.readdir,
     },
-    .windows => @compileError("not available"),
+    .windows => @compileerror("not available"),
     else => private.readdir,
 };
 
@@ -1896,7 +1896,7 @@ pub extern "c" fn setlogmask(maskpri: c_int) c_int;
 pub extern "c" fn if_nametoindex([*:0]const u8) c_int;
 
 pub const getcontext = if (builtin.target.isAndroid())
-    @compileError("android bionic libc does not implement getcontext")
+    @compileerror("android bionic libc does not implement getcontext")
 else if (native_os == .linux and builtin.target.isMusl())
     linux.getcontext
 else

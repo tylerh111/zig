@@ -39,11 +39,11 @@ pub const Edwards25519 = struct {
         const vxx = x.sq().mul(v);
         const has_m_root = vxx.sub(u).isZero();
         const has_p_root = vxx.add(u).isZero();
-        if ((@intFromBool(has_m_root) | @intFromBool(has_p_root)) == 0) { // best-effort to avoid two conditional branches
+        if ((@intfrombool(has_m_root) | @intfrombool(has_p_root)) == 0) { // best-effort to avoid two conditional branches
             return error.InvalidEncoding;
         }
-        x.cMov(x.mul(Fe.sqrtm1), 1 - @intFromBool(has_m_root));
-        x.cMov(x.neg(), @intFromBool(x.isNegative()) ^ (s[31] >> 7));
+        x.cMov(x.mul(Fe.sqrtm1), 1 - @intfrombool(has_m_root));
+        x.cMov(x.neg(), @intfrombool(x.isNegative()) ^ (s[31] >> 7));
         const t = x.mul(y);
         return Edwards25519{ .x = x, .y = y, .z = z, .t = t };
     }
@@ -52,7 +52,7 @@ pub const Edwards25519 = struct {
     pub fn toBytes(p: Edwards25519) [encoded_length]u8 {
         const zi = p.z.invert();
         var s = p.y.mul(zi).toBytes();
-        s[31] ^= @as(u8, @intFromBool(p.x.mul(zi).isNegative())) << 7;
+        s[31] ^= @as(u8, @intfrombool(p.x.mul(zi).isNegative())) << 7;
         return s;
     }
 
@@ -238,9 +238,9 @@ pub const Edwards25519 = struct {
         while (true) : (pos -= 1) {
             const slot = e[pos];
             if (slot > 0) {
-                q = q.add(pc[@as(usize, @intCast(slot))]);
+                q = q.add(pc[@as(usize, @intcast(slot))]);
             } else if (slot < 0) {
-                q = q.sub(pc[@as(usize, @intCast(-slot))]);
+                q = q.sub(pc[@as(usize, @intcast(-slot))]);
             }
             if (pos == 0) break;
             q = q.dbl().dbl().dbl().dbl();
@@ -281,7 +281,7 @@ pub const Edwards25519 = struct {
     }
 
     const basePointPc = pc: {
-        @setEvalBranchQuota(10000);
+        @setevalbranchquota(10000);
         break :pc precompute(Edwards25519.basePoint, 15);
     };
 
@@ -331,15 +331,15 @@ pub const Edwards25519 = struct {
         while (true) : (pos -= 1) {
             const slot1 = e1[pos];
             if (slot1 > 0) {
-                q = q.add(pc1[@as(usize, @intCast(slot1))]);
+                q = q.add(pc1[@as(usize, @intcast(slot1))]);
             } else if (slot1 < 0) {
-                q = q.sub(pc1[@as(usize, @intCast(-slot1))]);
+                q = q.sub(pc1[@as(usize, @intcast(-slot1))]);
             }
             const slot2 = e2[pos];
             if (slot2 > 0) {
-                q = q.add(pc2[@as(usize, @intCast(slot2))]);
+                q = q.add(pc2[@as(usize, @intcast(slot2))]);
             } else if (slot2 < 0) {
-                q = q.sub(pc2[@as(usize, @intCast(-slot2))]);
+                q = q.sub(pc2[@as(usize, @intcast(-slot2))]);
             }
             if (pos == 0) break;
             q = q.dbl().dbl().dbl().dbl();
@@ -374,9 +374,9 @@ pub const Edwards25519 = struct {
             for (es, 0..) |e, i| {
                 const slot = e[pos];
                 if (slot > 0) {
-                    q = q.add(pcs[i][@as(usize, @intCast(slot))]);
+                    q = q.add(pcs[i][@as(usize, @intcast(slot))]);
                 } else if (slot < 0) {
-                    q = q.sub(pcs[i][@as(usize, @intCast(-slot))]);
+                    q = q.sub(pcs[i][@as(usize, @intcast(-slot))]);
                 }
             }
             if (pos == 0) break;
@@ -417,7 +417,7 @@ pub const Edwards25519 = struct {
 
         // yed = (x-1)/(x+1) or 1 if the denominator is 0
         var yed = x_plus_one_y_inv.mul(y).mul(x_minus_one);
-        yed.cMov(Fe.one, @intFromBool(x_plus_one_y_inv.isZero()));
+        yed.cMov(Fe.one, @intfrombool(x_plus_one_y_inv.isZero()));
 
         return Edwards25519{
             .x = xed,
@@ -438,9 +438,9 @@ pub const Edwards25519 = struct {
         const not_square = !gx1.isSquare();
 
         // gx1 not a square => x = -x1-A
-        x.cMov(x.neg(), @intFromBool(not_square));
+        x.cMov(x.neg(), @intfrombool(not_square));
         x2 = Fe.zero;
-        x2.cMov(Fe.edwards25519a, @intFromBool(not_square));
+        x2.cMov(Fe.edwards25519a, @intfrombool(not_square));
         x = x.sub(x2);
 
         // We have y = sqrt(gx1) or sqrt(gx2) with gx2 = gx1*(A+x1)/(-x1)
@@ -456,7 +456,7 @@ pub const Edwards25519 = struct {
 
         const y_sign = !elr.not_square;
         const y_neg = elr.y.neg();
-        elr.y.cMov(y_neg, @intFromBool(elr.y.isNegative()) ^ @intFromBool(y_sign));
+        elr.y.cMov(y_neg, @intfrombool(elr.y.isNegative()) ^ @intfrombool(y_sign));
         return montToEd(elr.x, elr.y).clearCofactor();
     }
 
@@ -475,7 +475,7 @@ pub const Edwards25519 = struct {
         }
         const empty_block = [_]u8{0} ** H.block_length;
         var t = [3]u8{ 0, n * h_l, 0 };
-        var xctx_len_u8 = [1]u8{@as(u8, @intCast(xctx.len))};
+        var xctx_len_u8 = [1]u8{@as(u8, @intcast(xctx.len))};
         var st = H.init(.{});
         st.update(empty_block[0..]);
         st.update(s);
@@ -534,7 +534,7 @@ pub const Edwards25519 = struct {
         const elr = elligator2(Fe.fromBytes(s));
         var p = montToEd(elr.x, elr.y);
         const p_neg = p.neg();
-        p.cMov(p_neg, @intFromBool(p.x.isNegative()) ^ x_sign);
+        p.cMov(p_neg, @intfrombool(p.x.isNegative()) ^ x_sign);
         return p.clearCofactor();
     }
 };

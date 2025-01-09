@@ -97,8 +97,8 @@ pub fn spawnWg(pool: *Pool, wait_group: *WaitGroup, comptime func: anytype, args
         wait_group: *WaitGroup,
 
         fn runFn(runnable: *Runnable) void {
-            const run_node: *RunQueue.Node = @fieldParentPtr("data", runnable);
-            const closure: *@This() = @alignCast(@fieldParentPtr("run_node", run_node));
+            const run_node: *RunQueue.Node = @fieldparentptr("data", runnable);
+            const closure: *@This() = @aligncast(@fieldparentptr("run_node", run_node));
             @call(.auto, func, closure.arguments);
             closure.wait_group.finish();
 
@@ -147,8 +147,8 @@ pub fn spawn(pool: *Pool, comptime func: anytype, args: anytype) !void {
         run_node: RunQueue.Node = .{ .data = .{ .runFn = runFn } },
 
         fn runFn(runnable: *Runnable) void {
-            const run_node: *RunQueue.Node = @fieldParentPtr("data", runnable);
-            const closure: *@This() = @alignCast(@fieldParentPtr("run_node", run_node));
+            const run_node: *RunQueue.Node = @fieldparentptr("data", runnable);
+            const closure: *@This() = @aligncast(@fieldparentptr("run_node", run_node));
             @call(.auto, func, closure.arguments);
 
             // The thread pool's allocator is protected by the mutex.

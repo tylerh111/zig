@@ -277,11 +277,11 @@ pub fn next(self: *Tokenizer) ?Token {
 }
 
 fn errorPosition(comptime id: std.meta.Tag(Token), index: usize, bytes: []const u8) Token {
-    return @unionInit(Token, @tagName(id), .{ .index = index, .bytes = bytes });
+    return @unioninit(Token, @tagname(id), .{ .index = index, .bytes = bytes });
 }
 
 fn errorIllegalChar(comptime id: std.meta.Tag(Token), index: usize, char: u8) Token {
-    return @unionInit(Token, @tagName(id), .{ .index = index, .char = char });
+    return @unioninit(Token, @tagname(id), .{ .index = index, .char = char });
 }
 
 fn finishTarget(must_resolve: bool, bytes: []const u8) Token {
@@ -977,7 +977,7 @@ fn depTokenizer(input: []const u8, expect: []const u8) !void {
         if (i != 0) try buffer.appendSlice("\n");
         switch (token) {
             .target, .prereq => |bytes| {
-                try buffer.appendSlice(@tagName(token));
+                try buffer.appendSlice(@tagname(token));
                 try buffer.appendSlice(" = {");
                 for (bytes) |b| {
                     try buffer.append(printable_char_tab[b]);

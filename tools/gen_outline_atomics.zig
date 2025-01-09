@@ -31,7 +31,7 @@ pub fn main() !void {
         \\/// It is intentionally not exported in order to make the machine code that
         \\/// uses it a statically predicted direct branch rather than using the PLT,
         \\/// which ARM is concerned would have too much overhead.
-        \\var __aarch64_have_lse_atomics: u8 = @intFromBool(always_has_lse);
+        \\var __aarch64_have_lse_atomics: u8 = @intfrombool(always_has_lse);
         \\
         \\
     );
@@ -45,7 +45,7 @@ pub fn main() !void {
                 if (n == .sixteen and op != .cas) continue;
 
                 const name = try std.fmt.allocPrint(arena, "__aarch64_{s}{d}_{s}", .{
-                    @tagName(op), n.toBytes(), @tagName(order),
+                    @tagname(op), n.toBytes(), @tagname(order),
                 });
                 try writeFunction(arena, w, name, op, n, order);
                 try footer.writer().print("    @export({s}, .{{ .name = \"{s}\", .linkage = linkage }});\n", .{
@@ -84,7 +84,7 @@ fn writeFunction(
     try w.writeAll(fn_sig);
     try w.writeAll(
         \\
-        \\    @setRuntimeSafety(false);
+        \\    @setruntimesafety(false);
         \\    asm volatile (
         \\
     );
@@ -144,11 +144,11 @@ const N = enum(u8) {
     }
 
     fn register(n: N) []const u8 {
-        return if (@intFromEnum(n) < 8) "w" else "x";
+        return if (@intfromenum(n) < 8) "w" else "x";
     }
 
     fn toBytes(n: N) u8 {
-        return @intFromEnum(n);
+        return @intfromenum(n);
     }
 
     fn toBits(n: N) u8 {
@@ -212,7 +212,7 @@ fn generateCas(arena: Allocator, n: N, order: Ordering) ![]const u8 {
 
     const reg = n.register();
 
-    if (@intFromEnum(n) < 16) {
+    if (@intfromenum(n) < 16) {
         const cas = try std.fmt.allocPrint(arena, ".inst 0x08a07c41 + {s} + {s}", .{ s_def.b, o_def.m });
         const ldxr = try std.fmt.allocPrint(arena, "ld{s}xr{s}", .{ o_def.a, s_def.s });
         const stxr = try std.fmt.allocPrint(arena, "st{s}xr{s}", .{ o_def.l, s_def.s });

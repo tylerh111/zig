@@ -42,7 +42,7 @@ private:
 
   static void frameUnwind(A &addressSpace, Registers_x86 &registers);
   static void framelessUnwind(A &addressSpace,
-                              typename A::pint_t returnAddressLocation,
+                              typename A::pint_t returnaddressLocation,
                               Registers_x86 &registers);
   static int
       stepWithCompactEncodingEBPFrame(compact_unwind_encoding_t compactEncoding,
@@ -248,12 +248,12 @@ void CompactUnwinder_x86<A>::frameUnwind(A &addressSpace,
 
 template <typename A>
 void CompactUnwinder_x86<A>::framelessUnwind(
-    A &addressSpace, typename A::pint_t returnAddressLocation,
+    A &addressSpace, typename A::pint_t returnaddressLocation,
     Registers_x86 &registers) {
   // return address is on stack after last saved register
-  registers.setIP(addressSpace.get32(returnAddressLocation));
+  registers.setIP(addressSpace.get32(returnaddressLocation));
   // old esp is before return address
-  registers.setSP((uint32_t)returnAddressLocation + 4);
+  registers.setSP((uint32_t)returnaddressLocation + 4);
 }
 #endif // _LIBUNWIND_TARGET_I386
 
@@ -273,7 +273,7 @@ private:
   typename A::pint_t pint_t;
 
   static void frameUnwind(A &addressSpace, Registers_x86_64 &registers);
-  static void framelessUnwind(A &addressSpace, uint64_t returnAddressLocation,
+  static void framelessUnwind(A &addressSpace, uint64_t returnaddressLocation,
                               Registers_x86_64 &registers);
   static int
       stepWithCompactEncodingRBPFrame(compact_unwind_encoding_t compactEncoding,
@@ -479,12 +479,12 @@ void CompactUnwinder_x86_64<A>::frameUnwind(A &addressSpace,
 
 template <typename A>
 void CompactUnwinder_x86_64<A>::framelessUnwind(A &addressSpace,
-                                                uint64_t returnAddressLocation,
+                                                uint64_t returnaddressLocation,
                                                 Registers_x86_64 &registers) {
   // return address is on stack after last saved register
-  registers.setIP(addressSpace.get64(returnAddressLocation));
+  registers.setIP(addressSpace.get64(returnaddressLocation));
   // old esp is before return address
-  registers.setSP(returnAddressLocation + 8);
+  registers.setSP(returnaddressLocation + 8);
 }
 #endif // _LIBUNWIND_TARGET_X86_64
 

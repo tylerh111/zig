@@ -261,7 +261,7 @@ test "arguments to comptime parameters generated in comptime blocks" {
         }
 
         fn foo(comptime x: i32) void {
-            if (x != 42) @compileError("bad");
+            if (x != 42) @compileerror("bad");
         }
     };
     S.foo(S.fortyTwo());
@@ -374,11 +374,11 @@ test "Enum constructed by @Type passed as generic argument" {
             alive: bool,
         });
         fn foo(comptime a: E, b: u32) !void {
-            try expect(@intFromEnum(a) == b);
+            try expect(@intfromenum(a) == b);
         }
     };
-    inline for (@typeInfo(S.E).Enum.fields, 0..) |_, i| {
-        try S.foo(@as(S.E, @enumFromInt(i)), i);
+    inline for (@typeinfo(S.E).Enum.fields, 0..) |_, i| {
+        try S.foo(@as(S.E, @enumfromint(i)), i);
     }
 }
 
@@ -462,13 +462,13 @@ test "non-anytype generic parameters provide result type" {
     var rt_u32: u32 = 0x10000222;
     _ = .{ &rt_u16, &rt_u32 };
 
-    try S.f(u8, @intCast(rt_u16));
-    try S.f(u8, @intCast(123));
+    try S.f(u8, @intcast(rt_u16));
+    try S.f(u8, @intcast(123));
 
     try S.g(rt_u16, @truncate(rt_u32));
     try S.g(rt_u16, @truncate(0x10000222));
 
-    try comptime S.f(u8, @intCast(123));
+    try comptime S.f(u8, @intcast(123));
     try comptime S.g(@as(u16, undefined), @truncate(0x99990222));
 }
 
@@ -585,11 +585,11 @@ test "generic function pointer can be called" {
 
 test "value returned from comptime function is comptime known" {
     const S = struct {
-        fn fields(comptime T: type) switch (@typeInfo(T)) {
+        fn fields(comptime T: type) switch (@typeinfo(T)) {
             .Struct => []const std.builtin.Type.StructField,
             else => unreachable,
         } {
-            return switch (@typeInfo(T)) {
+            return switch (@typeinfo(T)) {
                 .Struct => |info| info.fields,
                 else => unreachable,
             };
@@ -597,7 +597,7 @@ test "value returned from comptime function is comptime known" {
     };
     const fields_list = S.fields(@TypeOf(.{}));
     if (fields_list.len != 0)
-        @compileError("Argument count mismatch");
+        @compileerror("Argument count mismatch");
 }
 
 test "registers get overwritten when ignoring return" {
@@ -610,7 +610,7 @@ test "registers get overwritten when ignoring return" {
             return 42;
         }
         fn write(fd: usize, a: [*]const u8, len: usize) usize {
-            return syscall4(.WRITE, fd, @intFromPtr(a), len);
+            return syscall4(.WRITE, fd, @intfromptr(a), len);
         }
         fn syscall4(_: enum { WRITE }, _: usize, _: usize, _: usize) usize {
             return 23;

@@ -22,7 +22,7 @@ pub fn tanh(x: anytype) @TypeOf(x) {
     return switch (T) {
         f32 => tanh32(x),
         f64 => tanh64(x),
-        else => @compileError("tanh not implemented for " ++ @typeName(T)),
+        else => @compileerror("tanh not implemented for " ++ @typename(T)),
     };
 }
 
@@ -30,9 +30,9 @@ pub fn tanh(x: anytype) @TypeOf(x) {
 //         = (exp(2x) - 1) / (exp(2x) - 1 + 2)
 //         = (1 - exp(-2x)) / (exp(-2x) - 1 + 2)
 fn tanh32(x: f32) f32 {
-    const u = @as(u32, @bitCast(x));
+    const u = @as(u32, @bitcast(x));
     const ux = u & 0x7FFFFFFF;
-    const ax = @as(f32, @bitCast(ux));
+    const ax = @as(f32, @bitcast(ux));
     const sign = (u >> 31) != 0;
 
     var t: f32 = undefined;
@@ -67,10 +67,10 @@ fn tanh32(x: f32) f32 {
 }
 
 fn tanh64(x: f64) f64 {
-    const u = @as(u64, @bitCast(x));
+    const u = @as(u64, @bitcast(x));
     const ux = u & 0x7FFFFFFFFFFFFFFF;
-    const w = @as(u32, @intCast(ux >> 32));
-    const ax = @as(f64, @bitCast(ux));
+    const w = @as(u32, @intcast(ux >> 32));
+    const ax = @as(f64, @bitcast(ux));
     const sign = (u >> 63) != 0;
 
     var t: f64 = undefined;
@@ -97,7 +97,7 @@ fn tanh64(x: f64) f64 {
     }
     // |x| is subnormal
     else {
-        mem.doNotOptimizeAway(@as(f32, @floatCast(ax)));
+        mem.doNotOptimizeAway(@as(f32, @floatcast(ax)));
         t = ax;
     }
 

@@ -1,7 +1,7 @@
-pub const panic = @compileError("");
+pub const panic = @compileerror("");
 
 pub export fn entry() usize {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     var u: usize = 0;
     {
         u += 1;

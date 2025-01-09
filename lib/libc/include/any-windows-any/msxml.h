@@ -1069,7 +1069,7 @@ IXMLDOMDocument : public IXMLDOMNode
         IXMLDOMEntityReference **entityRef) = 0;
 
     virtual HRESULT STDMETHODCALLTYPE getElementsByTagName(
-        BSTR tagName,
+        BSTR tagname,
         IXMLDOMNodeList **resultList) = 0;
 
     virtual HRESULT STDMETHODCALLTYPE createNode(
@@ -1403,7 +1403,7 @@ typedef struct IXMLDOMDocumentVtbl {
 
     HRESULT (STDMETHODCALLTYPE *getElementsByTagName)(
         IXMLDOMDocument *This,
-        BSTR tagName,
+        BSTR tagname,
         IXMLDOMNodeList **resultList);
 
     HRESULT (STDMETHODCALLTYPE *createNode)(
@@ -1559,7 +1559,7 @@ interface IXMLDOMDocument {
 #define IXMLDOMDocument_createProcessingInstruction(This,target,data,pi) (This)->lpVtbl->createProcessingInstruction(This,target,data,pi)
 #define IXMLDOMDocument_createAttribute(This,name,attribute) (This)->lpVtbl->createAttribute(This,name,attribute)
 #define IXMLDOMDocument_createEntityReference(This,name,entityRef) (This)->lpVtbl->createEntityReference(This,name,entityRef)
-#define IXMLDOMDocument_getElementsByTagName(This,tagName,resultList) (This)->lpVtbl->getElementsByTagName(This,tagName,resultList)
+#define IXMLDOMDocument_getElementsByTagName(This,tagname,resultList) (This)->lpVtbl->getElementsByTagName(This,tagname,resultList)
 #define IXMLDOMDocument_createNode(This,Type,name,namespaceURI,node) (This)->lpVtbl->createNode(This,Type,name,namespaceURI,node)
 #define IXMLDOMDocument_nodeFromID(This,idString,node) (This)->lpVtbl->nodeFromID(This,idString,node)
 #define IXMLDOMDocument_load(This,xmlSource,isSuccessful) (This)->lpVtbl->load(This,xmlSource,isSuccessful)
@@ -1750,8 +1750,8 @@ static __WIDL_INLINE HRESULT IXMLDOMDocument_createAttribute(IXMLDOMDocument* Th
 static __WIDL_INLINE HRESULT IXMLDOMDocument_createEntityReference(IXMLDOMDocument* This,BSTR name,IXMLDOMEntityReference **entityRef) {
     return This->lpVtbl->createEntityReference(This,name,entityRef);
 }
-static __WIDL_INLINE HRESULT IXMLDOMDocument_getElementsByTagName(IXMLDOMDocument* This,BSTR tagName,IXMLDOMNodeList **resultList) {
-    return This->lpVtbl->getElementsByTagName(This,tagName,resultList);
+static __WIDL_INLINE HRESULT IXMLDOMDocument_getElementsByTagName(IXMLDOMDocument* This,BSTR tagname,IXMLDOMNodeList **resultList) {
+    return This->lpVtbl->getElementsByTagName(This,tagname,resultList);
 }
 static __WIDL_INLINE HRESULT IXMLDOMDocument_createNode(IXMLDOMDocument* This,VARIANT Type,BSTR name,BSTR namespaceURI,IXMLDOMNode **node) {
     return This->lpVtbl->createNode(This,Type,name,namespaceURI,node);
@@ -3619,8 +3619,8 @@ DEFINE_GUID(IID_IXMLDOMElement, 0x2933bf86, 0x7b36, 0x11d2, 0xb2,0x0e, 0x00,0xc0
 MIDL_INTERFACE("2933bf86-7b36-11d2-b20e-00c04f983e60")
 IXMLDOMElement : public IXMLDOMNode
 {
-    virtual HRESULT STDMETHODCALLTYPE get_tagName(
-        BSTR *tagName) = 0;
+    virtual HRESULT STDMETHODCALLTYPE get_tagname(
+        BSTR *tagname) = 0;
 
     virtual HRESULT STDMETHODCALLTYPE getAttribute(
         BSTR name,
@@ -3646,7 +3646,7 @@ IXMLDOMElement : public IXMLDOMNode
         IXMLDOMAttribute **attributeNode) = 0;
 
     virtual HRESULT STDMETHODCALLTYPE getElementsByTagName(
-        BSTR tagName,
+        BSTR tagname,
         IXMLDOMNodeList **resultList) = 0;
 
     virtual HRESULT STDMETHODCALLTYPE normalize(
@@ -3859,9 +3859,9 @@ typedef struct IXMLDOMElementVtbl {
         VARIANT outputObject);
 
     /*** IXMLDOMElement methods ***/
-    HRESULT (STDMETHODCALLTYPE *get_tagName)(
+    HRESULT (STDMETHODCALLTYPE *get_tagname)(
         IXMLDOMElement *This,
-        BSTR *tagName);
+        BSTR *tagname);
 
     HRESULT (STDMETHODCALLTYPE *getAttribute)(
         IXMLDOMElement *This,
@@ -3894,7 +3894,7 @@ typedef struct IXMLDOMElementVtbl {
 
     HRESULT (STDMETHODCALLTYPE *getElementsByTagName)(
         IXMLDOMElement *This,
-        BSTR tagName,
+        BSTR tagname,
         IXMLDOMNodeList **resultList);
 
     HRESULT (STDMETHODCALLTYPE *normalize)(
@@ -3956,14 +3956,14 @@ interface IXMLDOMElement {
 #define IXMLDOMElement_get_baseName(This,nameString) (This)->lpVtbl->get_baseName(This,nameString)
 #define IXMLDOMElement_transformNodeToObject(This,stylesheet,outputObject) (This)->lpVtbl->transformNodeToObject(This,stylesheet,outputObject)
 /*** IXMLDOMElement methods ***/
-#define IXMLDOMElement_get_tagName(This,tagName) (This)->lpVtbl->get_tagName(This,tagName)
+#define IXMLDOMElement_get_tagname(This,tagname) (This)->lpVtbl->get_tagname(This,tagname)
 #define IXMLDOMElement_getAttribute(This,name,value) (This)->lpVtbl->getAttribute(This,name,value)
 #define IXMLDOMElement_setAttribute(This,name,value) (This)->lpVtbl->setAttribute(This,name,value)
 #define IXMLDOMElement_removeAttribute(This,name) (This)->lpVtbl->removeAttribute(This,name)
 #define IXMLDOMElement_getAttributeNode(This,name,attributeNode) (This)->lpVtbl->getAttributeNode(This,name,attributeNode)
 #define IXMLDOMElement_setAttributeNode(This,DOMAttribute,attributeNode) (This)->lpVtbl->setAttributeNode(This,DOMAttribute,attributeNode)
 #define IXMLDOMElement_removeAttributeNode(This,DOMAttribute,attributeNode) (This)->lpVtbl->removeAttributeNode(This,DOMAttribute,attributeNode)
-#define IXMLDOMElement_getElementsByTagName(This,tagName,resultList) (This)->lpVtbl->getElementsByTagName(This,tagName,resultList)
+#define IXMLDOMElement_getElementsByTagName(This,tagname,resultList) (This)->lpVtbl->getElementsByTagName(This,tagname,resultList)
 #define IXMLDOMElement_normalize(This) (This)->lpVtbl->normalize(This)
 #else
 /*** IUnknown methods ***/
@@ -4099,8 +4099,8 @@ static __WIDL_INLINE HRESULT IXMLDOMElement_transformNodeToObject(IXMLDOMElement
     return This->lpVtbl->transformNodeToObject(This,stylesheet,outputObject);
 }
 /*** IXMLDOMElement methods ***/
-static __WIDL_INLINE HRESULT IXMLDOMElement_get_tagName(IXMLDOMElement* This,BSTR *tagName) {
-    return This->lpVtbl->get_tagName(This,tagName);
+static __WIDL_INLINE HRESULT IXMLDOMElement_get_tagname(IXMLDOMElement* This,BSTR *tagname) {
+    return This->lpVtbl->get_tagname(This,tagname);
 }
 static __WIDL_INLINE HRESULT IXMLDOMElement_getAttribute(IXMLDOMElement* This,BSTR name,VARIANT *value) {
     return This->lpVtbl->getAttribute(This,name,value);
@@ -4120,8 +4120,8 @@ static __WIDL_INLINE HRESULT IXMLDOMElement_setAttributeNode(IXMLDOMElement* Thi
 static __WIDL_INLINE HRESULT IXMLDOMElement_removeAttributeNode(IXMLDOMElement* This,IXMLDOMAttribute *DOMAttribute,IXMLDOMAttribute **attributeNode) {
     return This->lpVtbl->removeAttributeNode(This,DOMAttribute,attributeNode);
 }
-static __WIDL_INLINE HRESULT IXMLDOMElement_getElementsByTagName(IXMLDOMElement* This,BSTR tagName,IXMLDOMNodeList **resultList) {
-    return This->lpVtbl->getElementsByTagName(This,tagName,resultList);
+static __WIDL_INLINE HRESULT IXMLDOMElement_getElementsByTagName(IXMLDOMElement* This,BSTR tagname,IXMLDOMNodeList **resultList) {
+    return This->lpVtbl->getElementsByTagName(This,tagname,resultList);
 }
 static __WIDL_INLINE HRESULT IXMLDOMElement_normalize(IXMLDOMElement* This) {
     return This->lpVtbl->normalize(This);
@@ -8929,10 +8929,10 @@ DEFINE_GUID(IID_IXMLElement, 0x3f7f31ac, 0xe15f, 0x11d0, 0x9c,0x25, 0x00,0xc0,0x
 MIDL_INTERFACE("3f7f31ac-e15f-11d0-9c25-00c04fc99c8e")
 IXMLElement : public IDispatch
 {
-    virtual HRESULT STDMETHODCALLTYPE get_tagName(
+    virtual HRESULT STDMETHODCALLTYPE get_tagname(
         BSTR *p) = 0;
 
-    virtual HRESULT STDMETHODCALLTYPE put_tagName(
+    virtual HRESULT STDMETHODCALLTYPE put_tagname(
         BSTR p) = 0;
 
     virtual HRESULT STDMETHODCALLTYPE get_parent(
@@ -9020,11 +9020,11 @@ typedef struct IXMLElementVtbl {
         UINT *puArgErr);
 
     /*** IXMLElement methods ***/
-    HRESULT (STDMETHODCALLTYPE *get_tagName)(
+    HRESULT (STDMETHODCALLTYPE *get_tagname)(
         IXMLElement *This,
         BSTR *p);
 
-    HRESULT (STDMETHODCALLTYPE *put_tagName)(
+    HRESULT (STDMETHODCALLTYPE *put_tagname)(
         IXMLElement *This,
         BSTR p);
 
@@ -9091,8 +9091,8 @@ interface IXMLElement {
 #define IXMLElement_GetIDsOfNames(This,riid,rgszNames,cNames,lcid,rgDispId) (This)->lpVtbl->GetIDsOfNames(This,riid,rgszNames,cNames,lcid,rgDispId)
 #define IXMLElement_Invoke(This,dispIdMember,riid,lcid,wFlags,pDispParams,pVarResult,pExcepInfo,puArgErr) (This)->lpVtbl->Invoke(This,dispIdMember,riid,lcid,wFlags,pDispParams,pVarResult,pExcepInfo,puArgErr)
 /*** IXMLElement methods ***/
-#define IXMLElement_get_tagName(This,p) (This)->lpVtbl->get_tagName(This,p)
-#define IXMLElement_put_tagName(This,p) (This)->lpVtbl->put_tagName(This,p)
+#define IXMLElement_get_tagname(This,p) (This)->lpVtbl->get_tagname(This,p)
+#define IXMLElement_put_tagname(This,p) (This)->lpVtbl->put_tagname(This,p)
 #define IXMLElement_get_parent(This,parent) (This)->lpVtbl->get_parent(This,parent)
 #define IXMLElement_setAttribute(This,strPropertyName,PropertyValue) (This)->lpVtbl->setAttribute(This,strPropertyName,PropertyValue)
 #define IXMLElement_getAttribute(This,strPropertyName,PropertyValue) (This)->lpVtbl->getAttribute(This,strPropertyName,PropertyValue)
@@ -9128,11 +9128,11 @@ static __WIDL_INLINE HRESULT IXMLElement_Invoke(IXMLElement* This,DISPID dispIdM
     return This->lpVtbl->Invoke(This,dispIdMember,riid,lcid,wFlags,pDispParams,pVarResult,pExcepInfo,puArgErr);
 }
 /*** IXMLElement methods ***/
-static __WIDL_INLINE HRESULT IXMLElement_get_tagName(IXMLElement* This,BSTR *p) {
-    return This->lpVtbl->get_tagName(This,p);
+static __WIDL_INLINE HRESULT IXMLElement_get_tagname(IXMLElement* This,BSTR *p) {
+    return This->lpVtbl->get_tagname(This,p);
 }
-static __WIDL_INLINE HRESULT IXMLElement_put_tagName(IXMLElement* This,BSTR p) {
-    return This->lpVtbl->put_tagName(This,p);
+static __WIDL_INLINE HRESULT IXMLElement_put_tagname(IXMLElement* This,BSTR p) {
+    return This->lpVtbl->put_tagname(This,p);
 }
 static __WIDL_INLINE HRESULT IXMLElement_get_parent(IXMLElement* This,IXMLElement **parent) {
     return This->lpVtbl->get_parent(This,parent);
@@ -9455,10 +9455,10 @@ DEFINE_GUID(IID_IXMLElement2, 0x2b8de2ff, 0x8d2d, 0x11d1, 0xb2,0xfc, 0x00,0xc0,0
 MIDL_INTERFACE("2b8de2ff-8d2d-11d1-b2fc-00c04fd915a9")
 IXMLElement2 : public IDispatch
 {
-    virtual HRESULT STDMETHODCALLTYPE get_tagName(
+    virtual HRESULT STDMETHODCALLTYPE get_tagname(
         BSTR *p) = 0;
 
-    virtual HRESULT STDMETHODCALLTYPE put_tagName(
+    virtual HRESULT STDMETHODCALLTYPE put_tagname(
         BSTR p) = 0;
 
     virtual HRESULT STDMETHODCALLTYPE get_parent(
@@ -9549,11 +9549,11 @@ typedef struct IXMLElement2Vtbl {
         UINT *puArgErr);
 
     /*** IXMLElement2 methods ***/
-    HRESULT (STDMETHODCALLTYPE *get_tagName)(
+    HRESULT (STDMETHODCALLTYPE *get_tagname)(
         IXMLElement2 *This,
         BSTR *p);
 
-    HRESULT (STDMETHODCALLTYPE *put_tagName)(
+    HRESULT (STDMETHODCALLTYPE *put_tagname)(
         IXMLElement2 *This,
         BSTR p);
 
@@ -9624,8 +9624,8 @@ interface IXMLElement2 {
 #define IXMLElement2_GetIDsOfNames(This,riid,rgszNames,cNames,lcid,rgDispId) (This)->lpVtbl->GetIDsOfNames(This,riid,rgszNames,cNames,lcid,rgDispId)
 #define IXMLElement2_Invoke(This,dispIdMember,riid,lcid,wFlags,pDispParams,pVarResult,pExcepInfo,puArgErr) (This)->lpVtbl->Invoke(This,dispIdMember,riid,lcid,wFlags,pDispParams,pVarResult,pExcepInfo,puArgErr)
 /*** IXMLElement2 methods ***/
-#define IXMLElement2_get_tagName(This,p) (This)->lpVtbl->get_tagName(This,p)
-#define IXMLElement2_put_tagName(This,p) (This)->lpVtbl->put_tagName(This,p)
+#define IXMLElement2_get_tagname(This,p) (This)->lpVtbl->get_tagname(This,p)
+#define IXMLElement2_put_tagname(This,p) (This)->lpVtbl->put_tagname(This,p)
 #define IXMLElement2_get_parent(This,ppParent) (This)->lpVtbl->get_parent(This,ppParent)
 #define IXMLElement2_setAttribute(This,strPropertyName,PropertyValue) (This)->lpVtbl->setAttribute(This,strPropertyName,PropertyValue)
 #define IXMLElement2_getAttribute(This,strPropertyName,PropertyValue) (This)->lpVtbl->getAttribute(This,strPropertyName,PropertyValue)
@@ -9662,11 +9662,11 @@ static __WIDL_INLINE HRESULT IXMLElement2_Invoke(IXMLElement2* This,DISPID dispI
     return This->lpVtbl->Invoke(This,dispIdMember,riid,lcid,wFlags,pDispParams,pVarResult,pExcepInfo,puArgErr);
 }
 /*** IXMLElement2 methods ***/
-static __WIDL_INLINE HRESULT IXMLElement2_get_tagName(IXMLElement2* This,BSTR *p) {
-    return This->lpVtbl->get_tagName(This,p);
+static __WIDL_INLINE HRESULT IXMLElement2_get_tagname(IXMLElement2* This,BSTR *p) {
+    return This->lpVtbl->get_tagname(This,p);
 }
-static __WIDL_INLINE HRESULT IXMLElement2_put_tagName(IXMLElement2* This,BSTR p) {
-    return This->lpVtbl->put_tagName(This,p);
+static __WIDL_INLINE HRESULT IXMLElement2_put_tagname(IXMLElement2* This,BSTR p) {
+    return This->lpVtbl->put_tagname(This,p);
 }
 static __WIDL_INLINE HRESULT IXMLElement2_get_parent(IXMLElement2* This,IXMLElement2 **ppParent) {
     return This->lpVtbl->get_parent(This,ppParent);

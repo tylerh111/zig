@@ -2,10 +2,10 @@ const std = @import("std");
 const builtin = @import("builtin");
 
 const TestEnum = enum { TestEnumValue };
-const tag_name = @tagName(TestEnum.TestEnumValue);
+const tag_name = @tagname(TestEnum.TestEnumValue);
 const ptr_tag_name: [*:0]const u8 = tag_name;
 
-test "@tagName() returns a string literal" {
+test "@tagname() returns a string literal" {
     if (builtin.zig_backend == .stage2_aarch64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
 
@@ -15,10 +15,10 @@ test "@tagName() returns a string literal" {
 }
 
 const TestError = error{TestErrorCode};
-const error_name = @errorName(TestError.TestErrorCode);
+const error_name = @errorname(TestError.TestErrorCode);
 const ptr_error_name: [*:0]const u8 = error_name;
 
-test "@errorName() returns a string literal" {
+test "@errorname() returns a string literal" {
     if (builtin.zig_backend == .stage2_aarch64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
 
@@ -28,10 +28,10 @@ test "@errorName() returns a string literal" {
 }
 
 const TestType = struct {};
-const type_name = @typeName(TestType);
+const type_name = @typename(TestType);
 const ptr_type_name: [*:0]const u8 = type_name;
 
-test "@typeName() returns a string literal" {
+test "@typename() returns a string literal" {
     if (builtin.zig_backend == .stage2_aarch64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
@@ -41,11 +41,11 @@ test "@typeName() returns a string literal" {
     try std.testing.expect(std.mem.eql(u8, "behavior.string_literals.TestType", ptr_type_name[0..type_name.len]));
 }
 
-const actual_contents = @embedFile("file_to_embed.txt");
+const actual_contents = @embedfile("file_to_embed.txt");
 const ptr_actual_contents: [*:0]const u8 = actual_contents;
 const expected_contents = "hello zig\n";
 
-test "@embedFile() returns a string literal" {
+test "@embedfile() returns a string literal" {
     if (builtin.zig_backend == .stage2_aarch64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;

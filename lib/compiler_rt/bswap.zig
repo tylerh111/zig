@@ -21,7 +21,7 @@ comptime {
 // 00 00 00 ff << 3*8 (rightmost byte)
 
 inline fn bswapXi2(comptime T: type, a: T) T {
-    switch (@bitSizeOf(T)) {
+    switch (@bitsizeof(T)) {
         32 => {
             // zig fmt: off
             return (((a & 0xff000000) >> 24)

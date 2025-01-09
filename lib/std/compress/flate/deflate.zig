@@ -252,7 +252,7 @@ fn Deflate(comptime container: Container, comptime WriterType: type, comptime Bl
 
                 const new_len = self.win.match(prev_pos, pos, len);
                 if (new_len > len) {
-                    match = Token.initMatch(@intCast(distance), new_len);
+                    match = Token.initMatch(@intcast(distance), new_len);
                     if (new_len >= self.level.nice) {
                         // The match is good enough that we don't try to find a better one.
                         return match;
@@ -613,28 +613,28 @@ test "file tokenization" {
         tokens_count: [levels.len]usize = .{0} ** levels.len,
     }{
         .{
-            .data = @embedFile("testdata/rfc1951.txt"),
+            .data = @embedfile("testdata/rfc1951.txt"),
             .tokens_count = .{ 7675, 7672, 7599, 7594, 7598, 7599 },
         },
 
         .{
-            .data = @embedFile("testdata/block_writer/huffman-null-max.input"),
+            .data = @embedfile("testdata/block_writer/huffman-null-max.input"),
             .tokens_count = .{ 257, 257, 257, 257, 257, 257 },
         },
         .{
-            .data = @embedFile("testdata/block_writer/huffman-pi.input"),
+            .data = @embedfile("testdata/block_writer/huffman-pi.input"),
             .tokens_count = .{ 2570, 2564, 2564, 2564, 2564, 2564 },
         },
         .{
-            .data = @embedFile("testdata/block_writer/huffman-text.input"),
+            .data = @embedfile("testdata/block_writer/huffman-text.input"),
             .tokens_count = .{ 235, 234, 234, 234, 234, 234 },
         },
         .{
-            .data = @embedFile("testdata/fuzz/roundtrip1.input"),
+            .data = @embedfile("testdata/fuzz/roundtrip1.input"),
             .tokens_count = .{ 333, 331, 331, 331, 331, 331 },
         },
         .{
-            .data = @embedFile("testdata/fuzz/roundtrip2.input"),
+            .data = @embedfile("testdata/fuzz/roundtrip2.input"),
             .tokens_count = .{ 334, 334, 334, 334, 334, 334 },
         },
     };

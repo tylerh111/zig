@@ -28,91 +28,91 @@ pub const featureSetHasAny = CpuFeature.feature_set_fns(Feature).featureSetHasAn
 pub const featureSetHasAll = CpuFeature.feature_set_fns(Feature).featureSetHasAll;
 
 pub const all_features = blk: {
-    const len = @typeInfo(Feature).Enum.fields.len;
+    const len = @typeinfo(Feature).Enum.fields.len;
     std.debug.assert(len <= CpuFeature.Set.needed_bit_count);
     var result: [len]CpuFeature = undefined;
-    result[@intFromEnum(Feature.@"32bit")] = .{
+    result[@intfromenum(Feature.@"32bit")] = .{
         .llvm_name = "32bit",
         .description = "LA32 Basic Integer and Privilege Instruction Set",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.@"64bit")] = .{
+    result[@intfromenum(Feature.@"64bit")] = .{
         .llvm_name = "64bit",
         .description = "LA64 Basic Integer and Privilege Instruction Set",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.auto_vec)] = .{
+    result[@intfromenum(Feature.auto_vec)] = .{
         .llvm_name = "auto-vec",
         .description = "Experimental auto vectorization",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.d)] = .{
+    result[@intfromenum(Feature.d)] = .{
         .llvm_name = "d",
         .description = "'D' (Double-Precision Floating-Point)",
         .dependencies = featureSet(&[_]Feature{
             .f,
         }),
     };
-    result[@intFromEnum(Feature.f)] = .{
+    result[@intfromenum(Feature.f)] = .{
         .llvm_name = "f",
         .description = "'F' (Single-Precision Floating-Point)",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.frecipe)] = .{
+    result[@intfromenum(Feature.frecipe)] = .{
         .llvm_name = "frecipe",
         .description = "Support frecipe.{s/d} and frsqrte.{s/d} instructions.",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.la_global_with_abs)] = .{
+    result[@intfromenum(Feature.la_global_with_abs)] = .{
         .llvm_name = "la-global-with-abs",
         .description = "Expand la.global as la.abs",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.la_global_with_pcrel)] = .{
+    result[@intfromenum(Feature.la_global_with_pcrel)] = .{
         .llvm_name = "la-global-with-pcrel",
         .description = "Expand la.global as la.pcrel",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.la_local_with_abs)] = .{
+    result[@intfromenum(Feature.la_local_with_abs)] = .{
         .llvm_name = "la-local-with-abs",
         .description = "Expand la.local as la.abs",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.lasx)] = .{
+    result[@intfromenum(Feature.lasx)] = .{
         .llvm_name = "lasx",
         .description = "'LASX' (Loongson Advanced SIMD Extension)",
         .dependencies = featureSet(&[_]Feature{
             .lsx,
         }),
     };
-    result[@intFromEnum(Feature.lbt)] = .{
+    result[@intfromenum(Feature.lbt)] = .{
         .llvm_name = "lbt",
         .description = "'LBT' (Loongson Binary Translation Extension)",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.lsx)] = .{
+    result[@intfromenum(Feature.lsx)] = .{
         .llvm_name = "lsx",
         .description = "'LSX' (Loongson SIMD Extension)",
         .dependencies = featureSet(&[_]Feature{
             .d,
         }),
     };
-    result[@intFromEnum(Feature.lvz)] = .{
+    result[@intfromenum(Feature.lvz)] = .{
         .llvm_name = "lvz",
         .description = "'LVZ' (Loongson Virtualization Extension)",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.relax)] = .{
+    result[@intfromenum(Feature.relax)] = .{
         .llvm_name = "relax",
         .description = "Enable Linker relaxation",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.ual)] = .{
+    result[@intfromenum(Feature.ual)] = .{
         .llvm_name = "ual",
         .description = "Allow memory accesses to be unaligned",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    const ti = @typeInfo(Feature);
+    const ti = @typeinfo(Feature);
     for (&result, 0..) |*elem, i| {
         elem.index = i;
         elem.name = ti.Enum.fields[i].name;

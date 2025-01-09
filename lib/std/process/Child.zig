@@ -112,7 +112,7 @@ pub const ResourceUsageStatistics = struct {
         switch (native_os) {
             .linux => {
                 if (rus.rusage) |ru| {
-                    return @as(usize, @intCast(ru.maxrss)) * 1024;
+                    return @as(usize, @intcast(ru.maxrss)) * 1024;
                 } else {
                     return null;
                 }
@@ -127,7 +127,7 @@ pub const ResourceUsageStatistics = struct {
             .macos, .ios => {
                 if (rus.rusage) |ru| {
                     // Darwin oddly reports in bytes instead of kilobytes.
-                    return @as(usize, @intCast(ru.maxrss));
+                    return @as(usize, @intcast(ru.maxrss));
                 } else {
                     return null;
                 }
@@ -233,7 +233,7 @@ pub fn setUserName(self: *ChildProcess, name: []const u8) !void {
 /// After spawning the `id` is available.
 pub fn spawn(self: *ChildProcess) SpawnError!void {
     if (!process.can_spawn) {
-        @compileError("the target operating system cannot spawn processes");
+        @compileerror("the target operating system cannot spawn processes");
     }
 
     if (native_os == .windows) {
@@ -504,7 +504,7 @@ fn cleanupAfterWait(self: *ChildProcess, status: u32) !Term {
             // has a value greater than 0
             if ((fd[0].revents & posix.POLL.IN) != 0) {
                 const err_int = try readIntFd(err_pipe[0]);
-                return @as(SpawnError, @errorCast(@errorFromInt(err_int)));
+                return @as(SpawnError, @errorcast(@errorfromint(err_int)));
             }
         } else {
             // Write maxInt(ErrInt) to the write end of the err_pipe. This is after
@@ -517,7 +517,7 @@ fn cleanupAfterWait(self: *ChildProcess, status: u32) !Term {
             // Here we potentially return the fork child's error from the parent
             // pid.
             if (err_int != maxInt(ErrInt)) {
-                return @as(SpawnError, @errorCast(@errorFromInt(err_int)));
+                return @as(SpawnError, @errorcast(@errorfromint(err_int)));
             }
         }
     }
@@ -625,12 +625,12 @@ fn spawnPosix(self: *ChildProcess) SpawnError!void {
         } else if (builtin.output_mode == .Exe) {
             // Then we have Zig start code and this works.
             // TODO type-safety for null-termination of `os.environ`.
-            break :m (try process.createEnvironFromExisting(arena, @ptrCast(std.os.environ.ptr), .{
+            break :m (try process.createEnvironFromExisting(arena, @ptrcast(std.os.environ.ptr), .{
                 .zig_progress_fd = prog_fd,
             })).ptr;
         } else {
             // TODO come up with a solution for this.
-            @compileError("missing std lib enhancement: ChildProcess implementation has no way to collect the environment variables to forward to the child process");
+            @compileerror("missing std lib enhancement: ChildProcess implementation has no way to collect the environment variables to forward to the child process");
         }
     };
 
@@ -681,7 +681,7 @@ fn spawnPosix(self: *ChildProcess) SpawnError!void {
     }
 
     // we are the parent
-    const pid: i32 = @intCast(pid_result);
+    const pid: i32 = @intcast(pid_result);
     if (self.stdin_behavior == .Pipe) {
         self.stdin = .{ .handle = stdin_pipe[1] };
     } else {
@@ -720,7 +720,7 @@ fn spawnPosix(self: *ChildProcess) SpawnError!void {
 
 fn spawnWindows(self: *ChildProcess) SpawnError!void {
     var saAttr = windows.SECURITY_ATTRIBUTES{
-        .nLength = @sizeOf(windows.SECURITY_ATTRIBUTES),
+        .nLength = @sizeof(windows.SECURITY_ATTRIBUTES),
         .bInheritHandle = windows.TRUE,
         .lpSecurityDescriptor = null,
     };
@@ -812,7 +812,7 @@ fn spawnWindows(self: *ChildProcess) SpawnError!void {
     };
 
     var siStartInfo = windows.STARTUPINFOW{
-        .cb = @sizeOf(windows.STARTUPINFOW),
+        .cb = @sizeof(windows.STARTUPINFOW),
         .hStdError = g_hChildStd_ERR_Wr,
         .hStdOutput = g_hChildStd_OUT_Wr,
         .hStdInput = g_hChildStd_IN_Rd,
@@ -1008,7 +1008,7 @@ fn destroyPipe(pipe: [2]posix.fd_t) void {
 // Child of fork calls this to report an error to the fork parent.
 // Then the child exits.
 fn forkChildErrReport(fd: i32, err: ChildProcess.SpawnError) noreturn {
-    writeIntFd(fd, @as(ErrInt, @intFromError(err))) catch {};
+    writeIntFd(fd, @as(ErrInt, @intfromerror(err))) catch {};
     // If we're linking libc, some naughty applications may have registered atexit handlers
     // which we really do not want to run in the fork child. I caught LLVM doing this and
     // it caused a deadlock instead of doing an exit syscall. In the words of Avril Lavigne,
@@ -1022,15 +1022,15 @@ fn forkChildErrReport(fd: i32, err: ChildProcess.SpawnError) noreturn {
 
 fn writeIntFd(fd: i32, value: ErrInt) !void {
     const file: File = .{ .handle = fd };
-    file.writer().writeInt(u64, @intCast(value), .little) catch return error.SystemResources;
+    file.writer().writeInt(u64, @intcast(value), .little) catch return error.SystemResources;
 }
 
 fn readIntFd(fd: i32) !ErrInt {
     const file: File = .{ .handle = fd };
-    return @intCast(file.reader().readInt(u64, .little) catch return error.SystemResources);
+    return @intcast(file.reader().readInt(u64, .little) catch return error.SystemResources);
 }
 
-const ErrInt = std.meta.Int(.unsigned, @sizeOf(anyerror) * 8);
+const ErrInt = std.meta.Int(.unsigned, @sizeof(anyerror) * 8);
 
 /// Expects `app_buf` to contain exactly the app name, and `dir_buf` to contain exactly the dir path.
 /// After return, `app_buf` will always contain exactly the app name and `dir_buf` will always contain exactly the dir path.
@@ -1094,14 +1094,14 @@ fn windowsCreateProcessPathExt(
 
     // This 2048 is arbitrary, we just want it to be large enough to get multiple FILE_DIRECTORY_INFORMATION entries
     // returned per NtQueryDirectoryFile call.
-    var file_information_buf: [2048]u8 align(@alignOf(windows.FILE_DIRECTORY_INFORMATION)) = undefined;
-    const file_info_maximum_single_entry_size = @sizeOf(windows.FILE_DIRECTORY_INFORMATION) + (windows.NAME_MAX * 2);
+    var file_information_buf: [2048]u8 align(@alignof(windows.FILE_DIRECTORY_INFORMATION)) = undefined;
+    const file_info_maximum_single_entry_size = @sizeof(windows.FILE_DIRECTORY_INFORMATION) + (windows.NAME_MAX * 2);
     if (file_information_buf.len < file_info_maximum_single_entry_size) {
-        @compileError("file_information_buf must be large enough to contain at least one maximum size FILE_DIRECTORY_INFORMATION entry");
+        @compileerror("file_information_buf must be large enough to contain at least one maximum size FILE_DIRECTORY_INFORMATION entry");
     }
     var io_status: windows.IO_STATUS_BLOCK = undefined;
 
-    const num_supported_pathext = @typeInfo(CreateProcessSupportedExtension).Enum.fields.len;
+    const num_supported_pathext = @typeinfo(CreateProcessSupportedExtension).Enum.fields.len;
     var pathext_seen = [_]bool{false} ** num_supported_pathext;
     var any_pathext_seen = false;
     var unappended_exists = false;
@@ -1116,7 +1116,7 @@ fn windowsCreateProcessPathExt(
         var app_name_unicode_string = windows.UNICODE_STRING{
             .Length = app_name_len_bytes,
             .MaximumLength = app_name_len_bytes,
-            .Buffer = @constCast(app_name_wildcard.ptr),
+            .Buffer = @constcast(app_name_wildcard.ptr),
         };
         const rc = windows.ntdll.NtQueryDirectoryFile(
             dir.fd,
@@ -1151,7 +1151,7 @@ fn windowsCreateProcessPathExt(
         while (it.next()) |info| {
             // Skip directories
             if (info.FileAttributes & windows.FILE_ATTRIBUTE_DIRECTORY != 0) continue;
-            const filename = @as([*]u16, @ptrCast(&info.FileName))[0 .. info.FileNameLength / 2];
+            const filename = @as([*]u16, @ptrcast(&info.FileName))[0 .. info.FileNameLength / 2];
             // Because all results start with the app_name since we're using the wildcard `app_name*`,
             // if the length is equal to app_name then this is an exact match
             if (filename.len == app_name_len) {
@@ -1159,7 +1159,7 @@ fn windowsCreateProcessPathExt(
                 //       fails to spawn, in which case we still want to try the PATHEXT appended versions.
                 unappended_exists = true;
             } else if (windowsCreateProcessSupportsExtension(filename[app_name_len..])) |pathext_ext| {
-                pathext_seen[@intFromEnum(pathext_ext)] = true;
+                pathext_seen[@intfromenum(pathext_ext)] = true;
                 any_pathext_seen = true;
             }
         }
@@ -1224,7 +1224,7 @@ fn windowsCreateProcessPathExt(
     var ext_it = mem.tokenizeScalar(u16, pathext, ';');
     while (ext_it.next()) |ext| {
         const ext_enum = windowsCreateProcessSupportsExtension(ext) orelse continue;
-        if (!pathext_seen[@intFromEnum(ext_enum)]) continue;
+        if (!pathext_seen[@intfromenum(ext_enum)]) continue;
 
         dir_buf.shrinkRetainingCapacity(dir_path_len);
         if (dir_path_len != 0) switch (dir_buf.items[dir_buf.items.len - 1]) {
@@ -1302,7 +1302,7 @@ fn windowsCreateProcess(
         null,
         windows.TRUE,
         windows.CREATE_UNICODE_ENVIRONMENT,
-        @as(?*anyopaque, @ptrCast(envp_ptr)),
+        @as(?*anyopaque, @ptrcast(envp_ptr)),
         cwd_ptr,
         lpStartupInfo,
         lpProcessInformation,
@@ -1524,7 +1524,7 @@ fn windowsCmdExePath(allocator: mem.Allocator) error{ OutOfMemory, Unexpected }!
     while (true) {
         const unused_slice = buf.unusedCapacitySlice();
         // TODO: Get the system directory from PEB.ReadOnlyStaticServerData
-        const len = windows.kernel32.GetSystemDirectoryW(@ptrCast(unused_slice), @intCast(unused_slice.len));
+        const len = windows.kernel32.GetSystemDirectoryW(@ptrcast(unused_slice), @intcast(unused_slice.len));
         if (len == 0) {
             switch (windows.kernel32.GetLastError()) {
                 else => |err| return windows.unexpectedError(err),

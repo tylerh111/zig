@@ -12,9 +12,9 @@ pub fn isNan(x: anytype) bool {
 ///       this is tracked by https://github.com/ziglang/zig/issues/14366
 pub fn isSignalNan(x: anytype) bool {
     const T = @TypeOf(x);
-    const U = meta.Int(.unsigned, @bitSizeOf(T));
+    const U = meta.Int(.unsigned, @bitsizeof(T));
     const quiet_signal_bit_mask = 1 << (math.floatFractionalBits(T) - 1);
-    return isNan(x) and (@as(U, @bitCast(x)) & quiet_signal_bit_mask == 0);
+    return isNan(x) and (@as(U, @bitcast(x)) & quiet_signal_bit_mask == 0);
 }
 
 test isNan {

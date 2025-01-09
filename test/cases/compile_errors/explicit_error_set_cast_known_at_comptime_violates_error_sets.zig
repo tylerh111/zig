@@ -2,7 +2,7 @@ const Set1 = error{ A, B };
 const Set2 = error{ A, C };
 comptime {
     const x = Set1.B;
-    const y: Set2 = @errorCast(x);
+    const y: Set2 = @errorcast(x);
     _ = y;
 }
 

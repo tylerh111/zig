@@ -48,7 +48,7 @@ pub const File = union(enum) {
         assert(file == .object or file == .zig_object);
 
         for (file.getSymbols(), 0..) |sym_index, i| {
-            const nlist_idx = @as(Symbol.Index, @intCast(i));
+            const nlist_idx = @as(Symbol.Index, @intcast(i));
             const nlist = switch (file) {
                 .object => |x| x.symtab.items(.nlist)[nlist_idx],
                 .zig_object => |x| x.symtab.items(.nlist)[nlist_idx],
@@ -83,7 +83,7 @@ pub const File = union(enum) {
         assert(file == .object or file == .zig_object);
 
         for (file.getSymbols(), 0..) |sym_index, i| {
-            const nlist_idx = @as(Symbol.Index, @intCast(i));
+            const nlist_idx = @as(Symbol.Index, @intcast(i));
             const nlist = switch (file) {
                 .object => |x| x.symtab.items(.nlist)[nlist_idx],
                 .zig_object => |x| x.symtab.items(.nlist)[nlist_idx],

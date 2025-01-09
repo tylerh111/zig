@@ -140,7 +140,7 @@ pub fn Zipper(comptime Writer: type) type {
         ) !FileStore {
             const writer = self.counting_writer.writer();
 
-            const file_offset: u64 = @intCast(self.counting_writer.bytes_written);
+            const file_offset: u64 = @intcast(self.counting_writer.bytes_written);
             const crc32 = std.hash.Crc32.hash(opt.content);
 
             {
@@ -153,8 +153,8 @@ pub fn Zipper(comptime Writer: type) type {
                     .last_modification_date = 0,
                     .crc32 = crc32,
                     .compressed_size = 0,
-                    .uncompressed_size = @intCast(opt.content.len),
-                    .filename_len = @intCast(opt.name.len),
+                    .uncompressed_size = @intcast(opt.content.len),
+                    .filename_len = @intcast(opt.name.len),
                     .extra_len = 0,
                 };
                 try writer.writeStructEndian(hdr, .little);
@@ -165,14 +165,14 @@ pub fn Zipper(comptime Writer: type) type {
             switch (opt.compression) {
                 .store => {
                     try writer.writeAll(opt.content);
-                    compressed_size = @intCast(opt.content.len);
+                    compressed_size = @intcast(opt.content.len);
                 },
                 .deflate => {
                     const offset = self.counting_writer.bytes_written;
                     var fbs = std.io.fixedBufferStream(opt.content);
                     try std.compress.flate.deflate.compress(.raw, fbs.reader(), writer, .{});
                     std.debug.assert(fbs.pos == opt.content.len);
-                    compressed_size = @intCast(self.counting_writer.bytes_written - offset);
+                    compressed_size = @intcast(self.counting_writer.bytes_written - offset);
                 },
                 else => unreachable,
             }
@@ -208,14 +208,14 @@ pub fn Zipper(comptime Writer: type) type {
                 .last_modification_date = 0,
                 .crc32 = store.crc32,
                 .compressed_size = store.compressed_size,
-                .uncompressed_size = @intCast(store.uncompressed_size),
-                .filename_len = @intCast(opt.name.len),
+                .uncompressed_size = @intcast(store.uncompressed_size),
+                .filename_len = @intcast(opt.name.len),
                 .extra_len = 0,
                 .comment_len = 0,
                 .disk_number = 0,
                 .internal_file_attributes = 0,
                 .external_file_attributes = 0,
-                .local_file_header_offset = @intCast(store.file_offset),
+                .local_file_header_offset = @intcast(store.file_offset),
             };
             try self.counting_writer.writer().writeStructEndian(hdr, .little);
             try self.counting_writer.writer().writeAll(opt.name);
@@ -230,21 +230,21 @@ pub fn Zipper(comptime Writer: type) type {
                 const end64_off = cd_end;
                 const fixed: zip.EndRecord64 = .{
                     .signature = zip.end_record64_sig,
-                    .end_record_size = @sizeOf(zip.EndRecord64) - 12,
+                    .end_record_size = @sizeof(zip.EndRecord64) - 12,
                     .version_made_by = 0,
                     .version_needed_to_extract = 45,
                     .disk_number = 0,
                     .central_directory_disk_number = 0,
-                    .record_count_disk = @intCast(self.central_count),
-                    .record_count_total = @intCast(self.central_count),
-                    .central_directory_size = @intCast(cd_end - cd_offset),
-                    .central_directory_offset = @intCast(cd_offset),
+                    .record_count_disk = @intcast(self.central_count),
+                    .record_count_total = @intcast(self.central_count),
+                    .central_directory_size = @intcast(cd_end - cd_offset),
+                    .central_directory_offset = @intcast(cd_offset),
                 };
                 try self.counting_writer.writer().writeStructEndian(fixed, .little);
                 const locator: zip.EndLocator64 = .{
                     .signature = if (zip64.locator_sig) |s| s else zip.end_locator64_sig,
                     .zip64_disk_count = if (zip64.locator_zip64_disk_count) |c| c else 0,
-                    .record_file_offset = if (zip64.locator_record_file_offset) |o| o else @intCast(end64_off),
+                    .record_file_offset = if (zip64.locator_record_file_offset) |o| o else @intcast(end64_off),
                     .total_disk_count = if (zip64.locator_total_disk_count) |c| c else 1,
                 };
                 try self.counting_writer.writer().writeStructEndian(locator, .little);
@@ -253,11 +253,11 @@ pub fn Zipper(comptime Writer: type) type {
                 .signature = if (opt.sig) |s| s else zip.end_record_sig,
                 .disk_number = if (opt.disk_number) |n| n else 0,
                 .central_directory_disk_number = if (opt.central_directory_disk_number) |n| n else 0,
-                .record_count_disk = if (opt.record_count_disk) |c| c else @intCast(self.central_count),
-                .record_count_total = if (opt.record_count_total) |c| c else @intCast(self.central_count),
-                .central_directory_size = if (opt.central_directory_size) |s| s else @intCast(cd_end - cd_offset),
-                .central_directory_offset = if (opt.central_directory_offset) |o| o else @intCast(cd_offset),
-                .comment_len = if (opt.comment_len) |l| l else (if (opt.comment) |c| @as(u16, @intCast(c.len)) else 0),
+                .record_count_disk = if (opt.record_count_disk) |c| c else @intcast(self.central_count),
+                .record_count_total = if (opt.record_count_total) |c| c else @intcast(self.central_count),
+                .central_directory_size = if (opt.central_directory_size) |s| s else @intcast(cd_end - cd_offset),
+                .central_directory_offset = if (opt.central_directory_offset) |o| o else @intcast(cd_offset),
+                .comment_len = if (opt.comment_len) |l| l else (if (opt.comment) |c| @as(u16, @intcast(c.len)) else 0),
             };
             try self.counting_writer.writer().writeStructEndian(hdr, .little);
             if (opt.comment) |c|

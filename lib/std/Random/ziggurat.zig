@@ -23,11 +23,11 @@ pub fn next_f64(random: Random, comptime tables: ZigTable) f64 {
             if (tables.is_symmetric) {
                 // Generate a value in the range [2, 4) and scale into [-1, 1)
                 const repr = ((0x3ff + 1) << 52) | (bits >> 12);
-                break :blk @as(f64, @bitCast(repr)) - 3.0;
+                break :blk @as(f64, @bitcast(repr)) - 3.0;
             } else {
                 // Generate a value in the range [1, 2) and scale into (0, 1)
                 const repr = (0x3ff << 52) | (bits >> 12);
-                break :blk @as(f64, @bitCast(repr)) - (1.0 - math.floatEps(f64) / 2.0);
+                break :blk @as(f64, @bitcast(repr)) - (1.0 - math.floatEps(f64) / 2.0);
             }
         };
 
@@ -97,7 +97,7 @@ pub fn ZigTableGen(
 
 // N(0, 1)
 pub const NormDist = blk: {
-    @setEvalBranchQuota(30000);
+    @setevalbranchquota(30000);
     break :blk ZigTableGen(true, norm_r, norm_v, norm_f, norm_f_inv, norm_zero_case);
 };
 
@@ -138,7 +138,7 @@ test "normal dist sanity" {
 
 // Exp(1)
 pub const ExpDist = blk: {
-    @setEvalBranchQuota(30000);
+    @setevalbranchquota(30000);
     break :blk ZigTableGen(false, exp_r, exp_v, exp_f, exp_f_inv, exp_zero_case);
 };
 

@@ -220,7 +220,7 @@ fn testDeadStripDylibs(b: *Build, opts: Options) *Step {
         exe.dead_strip_dylibs = true;
 
         const run = addRunArtifact(exe);
-        run.expectExitCode(@as(u8, @bitCast(@as(i8, -2))));
+        run.expectExitCode(@as(u8, @bitcast(@as(i8, -2))));
         test_step.dependOn(&run.step);
     }
 

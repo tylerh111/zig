@@ -257,7 +257,7 @@ pub fn decodeFrameArrayList(
 /// Returns the frame checksum corresponding to the data fed into `hasher`
 pub fn computeChecksum(hasher: *std.hash.XxHash64) u32 {
     const hash = hasher.final();
-    return @as(u32, @intCast(hash & 0xFFFFFFFF));
+    return @as(u32, @intcast(hash & 0xFFFFFFFF));
 }
 
 const FrameError = error{
@@ -395,7 +395,7 @@ pub const FrameContext = struct {
         const window_size = if (window_size_raw > window_size_max)
             return error.WindowTooLarge
         else
-            @as(usize, @intCast(window_size_raw));
+            @as(usize, @intcast(window_size_raw));
 
         const should_compute_checksum =
             frame_header.descriptor.content_checksum_flag and verify_checksum;
@@ -582,7 +582,7 @@ pub fn frameWindowSize(header: ZstandardHeader) ?u64 {
         const exponent = (descriptor & 0b11111000) >> 3;
         const mantissa = descriptor & 0b00000111;
         const window_log = 10 + exponent;
-        const window_base = @as(u64, 1) << @as(u6, @intCast(window_log));
+        const window_base = @as(u64, 1) << @as(u6, @intcast(window_log));
         const window_add = (window_base / 8) * mantissa;
         return window_base + window_add;
     } else return header.content_size;
@@ -596,7 +596,7 @@ pub fn frameWindowSize(header: ZstandardHeader) ?u64 {
 pub fn decodeZstandardHeader(
     source: anytype,
 ) (@TypeOf(source).Error || error{ EndOfStream, ReservedBitSet })!ZstandardHeader {
-    const descriptor = @as(ZstandardHeader.Descriptor, @bitCast(try source.readByte()));
+    const descriptor = @as(ZstandardHeader.Descriptor, @bitcast(try source.readByte()));
 
     if (descriptor.reserved) return error.ReservedBitSet;
 

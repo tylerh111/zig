@@ -38,10 +38,10 @@ pub fn initMetadata(self: *DebugSymbols, macho_file: *MachO) !void {
     try self.strtab.append(self.allocator, 0);
 
     {
-        self.dwarf_segment_cmd_index = @as(u8, @intCast(self.segments.items.len));
+        self.dwarf_segment_cmd_index = @as(u8, @intcast(self.segments.items.len));
 
         const page_size = macho_file.getPageSize();
-        const off = @as(u64, @intCast(page_size));
+        const off = @as(u64, @intcast(page_size));
         const ideal_size: u16 = 200 + 128 + 160 + 250;
         const needed_size = mem.alignForward(u64, padToIdeal(ideal_size), page_size);
 
@@ -52,7 +52,7 @@ pub fn initMetadata(self: *DebugSymbols, macho_file: *MachO) !void {
             .vmsize = needed_size,
             .fileoff = off,
             .filesize = needed_size,
-            .cmdsize = @sizeOf(macho.segment_command_64),
+            .cmdsize = @sizeof(macho.segment_command_64),
         });
     }
 
@@ -62,12 +62,12 @@ pub fn initMetadata(self: *DebugSymbols, macho_file: *MachO) !void {
     self.debug_aranges_section_index = try self.allocateSection("__debug_aranges", 160, 4);
     self.debug_line_section_index = try self.allocateSection("__debug_line", 250, 0);
 
-    self.linkedit_segment_cmd_index = @as(u8, @intCast(self.segments.items.len));
+    self.linkedit_segment_cmd_index = @as(u8, @intcast(self.segments.items.len));
     try self.segments.append(self.allocator, .{
         .segname = makeStaticString("__LINKEDIT"),
         .maxprot = macho.PROT.READ,
         .initprot = macho.PROT.READ,
-        .cmdsize = @sizeOf(macho.segment_command_64),
+        .cmdsize = @sizeof(macho.segment_command_64),
     });
 }
 
@@ -76,7 +76,7 @@ fn allocateSection(self: *DebugSymbols, sectname: []const u8, size: u64, alignme
     var sect = macho.section_64{
         .sectname = makeStaticString(sectname),
         .segname = segment.segname,
-        .size = @as(u32, @intCast(size)),
+        .size = @as(u32, @intcast(size)),
         .@"align" = alignment,
     };
     const alignment_pow_2 = try math.powi(u32, 2, alignment);
@@ -89,11 +89,11 @@ fn allocateSection(self: *DebugSymbols, sectname: []const u8, size: u64, alignme
         off + size,
     });
 
-    sect.offset = @as(u32, @intCast(off));
+    sect.offset = @as(u32, @intcast(off));
 
-    const index = @as(u8, @intCast(self.sections.items.len));
+    const index = @as(u8, @intcast(self.sections.items.len));
     try self.sections.append(self.allocator, sect);
-    segment.cmdsize += @sizeOf(macho.section_64);
+    segment.cmdsize += @sizeof(macho.section_64);
     segment.nsects += 1;
 
     return index;
@@ -130,7 +130,7 @@ pub fn growSection(
             if (amt != existing_size) return error.InputOutput;
         }
 
-        sect.offset = @as(u32, @intCast(new_offset));
+        sect.offset = @as(u32, @intcast(new_offset));
     }
 
     sect.size = needed_size;
@@ -315,7 +315,7 @@ fn writeLoadCommands(self: *DebugSymbols, macho_file: *MachO) !struct { usize, u
 
     assert(stream.pos == needed_size);
 
-    try self.file.pwriteAll(buffer, @sizeOf(macho.mach_header_64));
+    try self.file.pwriteAll(buffer, @sizeof(macho.mach_header_64));
 
     return .{ ncmds, buffer.len };
 }
@@ -336,8 +336,8 @@ fn writeHeader(self: *DebugSymbols, macho_file: *MachO, ncmds: usize, sizeofcmds
         else => return error.UnsupportedCpuArchitecture,
     }
 
-    header.ncmds = @intCast(ncmds);
-    header.sizeofcmds = @intCast(sizeofcmds);
+    header.ncmds = @intcast(ncmds);
+    header.sizeofcmds = @intcast(sizeofcmds);
 
     log.debug("writing Mach-O header {}", .{header});
 
@@ -364,7 +364,7 @@ fn writeLinkeditSegmentData(self: *DebugSymbols, macho_file: *MachO) !void {
 
     var off = math.cast(u32, seg.fileoff) orelse return error.Overflow;
     off = try self.writeSymtab(off, macho_file);
-    off = mem.alignForward(u32, off, @alignOf(u64));
+    off = mem.alignForward(u32, off, @alignof(u64));
     off = try self.writeStrtab(off);
     seg.filesize = off - seg.fileoff;
 
@@ -401,7 +401,7 @@ pub fn writeSymtab(self: *DebugSymbols, off: u32, macho_file: *MachO) !u32 {
 
     try self.file.pwriteAll(mem.sliceAsBytes(self.symtab.items), cmd.symoff);
 
-    return off + cmd.nsyms * @sizeOf(macho.nlist_64);
+    return off + cmd.nsyms * @sizeof(macho.nlist_64);
 }
 
 pub fn writeStrtab(self: *DebugSymbols, off: u32) !u32 {
@@ -414,8 +414,8 @@ pub fn writeStrtab(self: *DebugSymbols, off: u32) !u32 {
 pub fn getSectionIndexes(self: *DebugSymbols, segment_index: u8) struct { start: u8, end: u8 } {
     var start: u8 = 0;
     const nsects = for (self.segments.items, 0..) |seg, i| {
-        if (i == segment_index) break @as(u8, @intCast(seg.nsects));
-        start += @as(u8, @intCast(seg.nsects));
+        if (i == segment_index) break @as(u8, @intcast(seg.nsects));
+        start += @as(u8, @intcast(seg.nsects));
     } else 0;
     return .{ .start = start, .end = start + nsects };
 }

@@ -88,7 +88,7 @@ pub fn main() !void {
                     const next_arg = args[i];
                     seed = std.fmt.parseUnsigned(u32, next_arg, 0) catch |err| {
                         fatal("unable to parse seed '{s}' as 32-bit integer: {s}", .{
-                            next_arg, @errorName(err),
+                            next_arg, @errorname(err),
                         });
                     };
                 } else {
@@ -132,7 +132,7 @@ pub fn main() !void {
             .interesting => {},
             .boring, .unknown => |t| {
                 fatal("interestingness check returned {s} for unmodified input\n", .{
-                    @tagName(t),
+                    @tagname(t),
                 });
             },
         }
@@ -182,7 +182,7 @@ pub fn main() !void {
             const this_set = transformations.items[start_index..][0..subset_size];
             std.debug.print("trying {d} random transformations: ", .{subset_size});
             for (this_set[0..@min(this_set.len, 20)]) |t| {
-                std.debug.print("{s} ", .{@tagName(t)});
+                std.debug.print("{s} ", .{@tagname(t)});
             }
             std.debug.print("\n", .{});
             try transformationsToFixups(gpa, arena, root_source_file_path, this_set, &fixups);
@@ -207,7 +207,7 @@ pub fn main() !void {
 
                 if (zir.hasCompileErrors()) {
                     more_fixups.clearRetainingCapacity();
-                    const payload_index = zir.extra[@intFromEnum(Zir.ExtraIndex.compile_errors)];
+                    const payload_index = zir.extra[@intfromenum(Zir.ExtraIndex.compile_errors)];
                     assert(payload_index != 0);
                     const header = zir.extraData(Zir.Inst.CompileErrors, payload_index);
                     var extra_index = header.end;
@@ -238,7 +238,7 @@ pub fn main() !void {
 
             const interestingness = try runCheck(arena, interestingness_argv.items);
             std.debug.print("{d} random transformations: {s}. {d}/{d}\n", .{
-                subset_size, @tagName(interestingness), start_index, transformations.items.len,
+                subset_size, @tagname(interestingness), start_index, transformations.items.len,
             });
             switch (interestingness) {
                 .interesting => {
@@ -406,7 +406,7 @@ fn parse(gpa: Allocator, file_path: []const u8) !Ast {
         1,
         0,
     ) catch |err| {
-        fatal("unable to open '{s}': {s}", .{ file_path, @errorName(err) });
+        fatal("unable to open '{s}': {s}", .{ file_path, @errorname(err) });
     };
     errdefer gpa.free(source_code);
 

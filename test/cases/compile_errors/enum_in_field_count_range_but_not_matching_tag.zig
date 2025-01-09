@@ -3,7 +3,7 @@ const Foo = enum(u32) {
     B = 11,
 };
 export fn entry() void {
-    const x: Foo = @enumFromInt(0);
+    const x: Foo = @enumfromint(0);
     _ = x;
 }
 

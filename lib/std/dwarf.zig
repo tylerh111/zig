@@ -452,7 +452,7 @@ const LineNumberProgram = struct {
             });
 
             return debug.LineInfo{
-                .line = if (self.prev_line >= 0) @as(u64, @intCast(self.prev_line)) else 0,
+                .line = if (self.prev_line >= 0) @as(u64, @intcast(self.prev_line)) else 0,
                 .column = self.prev_column,
                 .file_name = file_name,
             };
@@ -498,10 +498,10 @@ fn parseFormValue(
     implicit_const: ?i64,
 ) anyerror!FormValue {
     return switch (form_id) {
-        FORM.addr => .{ .addr = try fbr.readAddress(switch (@bitSizeOf(usize)) {
+        FORM.addr => .{ .addr = try fbr.readAddress(switch (@bitsizeof(usize)) {
             32 => .@"32",
             64 => .@"64",
-            else => @compileError("unsupported @sizeOf(usize)"),
+            else => @compileerror("unsupported @sizeof(usize)"),
         }) },
         FORM.addrx1 => .{ .addrx = try fbr.readInt(u8) },
         FORM.addrx2 => .{ .addrx = try fbr.readInt(u16) },
@@ -592,8 +592,8 @@ pub const DwarfInfo = struct {
         // `data` is directly backed by the section and the offset is zero.
         pub fn virtualOffset(self: Section, base_address: usize) i64 {
             return if (self.virtual_address) |va|
-                @as(i64, @intCast(base_address + va)) -
-                    @as(i64, @intCast(@intFromPtr(self.data.ptr)))
+                @as(i64, @intcast(base_address + va)) -
+                    @as(i64, @intcast(@intfromptr(self.data.ptr)))
             else
                 0;
         }
@@ -619,11 +619,11 @@ pub const DwarfInfo = struct {
     fde_list: std.ArrayListUnmanaged(FrameDescriptionEntry) = .{},
 
     pub fn section(di: DwarfInfo, dwarf_section: DwarfSection) ?[]const u8 {
-        return if (di.sections[@intFromEnum(dwarf_section)]) |s| s.data else null;
+        return if (di.sections[@intfromenum(dwarf_section)]) |s| s.data else null;
     }
 
     pub fn sectionVirtualOffset(di: DwarfInfo, dwarf_section: DwarfSection, base_address: usize) ?i64 {
-        return if (di.sections[@intFromEnum(dwarf_section)]) |s| s.virtualOffset(base_address) else null;
+        return if (di.sections[@intfromenum(dwarf_section)]) |s| s.virtualOffset(base_address) else null;
     }
 
     pub fn deinit(di: *DwarfInfo, allocator: mem.Allocator) void {
@@ -681,7 +681,7 @@ pub const DwarfInfo = struct {
                 debug_abbrev_offset = try fbr.readAddress(unit_header.format);
                 address_size = try fbr.readByte();
             }
-            if (address_size != @sizeOf(usize)) return badDwarf();
+            if (address_size != @sizeof(usize)) return badDwarf();
 
             const abbrev_table = try di.getAbbrevTable(allocator, debug_abbrev_offset);
 
@@ -871,7 +871,7 @@ pub const DwarfInfo = struct {
                 debug_abbrev_offset = try fbr.readAddress(unit_header.format);
                 address_size = try fbr.readByte();
             }
-            if (address_size != @sizeOf(usize)) return badDwarf();
+            if (address_size != @sizeof(usize)) return badDwarf();
 
             const abbrev_table = try di.getAbbrevTable(allocator, debug_abbrev_offset);
 
@@ -947,13 +947,13 @@ pub const DwarfInfo = struct {
                 .rnglistx => |idx| off: {
                     switch (compile_unit.format) {
                         .@"32" => {
-                            const offset_loc = @as(usize, @intCast(compile_unit.rnglists_base + 4 * idx));
+                            const offset_loc = @as(usize, @intcast(compile_unit.rnglists_base + 4 * idx));
                             if (offset_loc + 4 > debug_ranges.len) return badDwarf();
                             const offset = mem.readInt(u32, debug_ranges[offset_loc..][0..4], di.endian);
                             break :off compile_unit.rnglists_base + offset;
                         },
                         .@"64" => {
-                            const offset_loc = @as(usize, @intCast(compile_unit.rnglists_base + 8 * idx));
+                            const offset_loc = @as(usize, @intcast(compile_unit.rnglists_base + 8 * idx));
                             if (offset_loc + 8 > debug_ranges.len) return badDwarf();
                             const offset = mem.readInt(u64, debug_ranges[offset_loc..][0..8], di.endian);
                             break :off compile_unit.rnglists_base + offset;
@@ -1473,7 +1473,7 @@ pub const DwarfInfo = struct {
         const addr_size = debug_addr[compile_unit.addr_base - 2];
         const seg_size = debug_addr[compile_unit.addr_base - 1];
 
-        const byte_offset = @as(usize, @intCast(compile_unit.addr_base + (addr_size + seg_size) * index));
+        const byte_offset = @as(usize, @intcast(compile_unit.addr_base + (addr_size + seg_size) * index));
         if (byte_offset + addr_size > debug_addr.len) return badDwarf();
         return switch (addr_size) {
             1 => debug_addr[byte_offset],
@@ -1502,13 +1502,13 @@ pub const DwarfInfo = struct {
             const table_enc = try fbr.readByte();
             if (table_enc == EH.PE.omit) break :blk;
 
-            const eh_frame_ptr = math.cast(usize, try readEhPointer(&fbr, eh_frame_ptr_enc, @sizeOf(usize), .{
-                .pc_rel_base = @intFromPtr(&eh_frame_hdr[fbr.pos]),
+            const eh_frame_ptr = math.cast(usize, try readEhPointer(&fbr, eh_frame_ptr_enc, @sizeof(usize), .{
+                .pc_rel_base = @intfromptr(&eh_frame_hdr[fbr.pos]),
                 .follow_indirect = true,
             }) orelse return badDwarf()) orelse return badDwarf();
 
-            const fde_count = math.cast(usize, try readEhPointer(&fbr, fde_count_enc, @sizeOf(usize), .{
-                .pc_rel_base = @intFromPtr(&eh_frame_hdr[fbr.pos]),
+            const fde_count = math.cast(usize, try readEhPointer(&fbr, fde_count_enc, @sizeof(usize), .{
+                .pc_rel_base = @intfromptr(&eh_frame_hdr[fbr.pos]),
                 .follow_indirect = true,
             }) orelse return badDwarf()) orelse return badDwarf();
 
@@ -1542,7 +1542,7 @@ pub const DwarfInfo = struct {
                                 entry_header.format,
                                 frame_section,
                                 entry_header.length_offset,
-                                @sizeOf(usize),
+                                @sizeof(usize),
                                 di.endian,
                             );
                             try di.cie_map.put(allocator, entry_header.length_offset, cie);
@@ -1554,7 +1554,7 @@ pub const DwarfInfo = struct {
                                 di.sectionVirtualOffset(frame_section, base_address).?,
                                 true,
                                 cie,
-                                @sizeOf(usize),
+                                @sizeof(usize),
                                 di.endian,
                             );
                             try di.fde_list.append(allocator, fde);
@@ -1616,7 +1616,7 @@ pub const DwarfInfo = struct {
                 cie_entry_header.format,
                 dwarf_section,
                 cie_entry_header.length_offset,
-                @sizeOf(usize),
+                @sizeof(usize),
                 native_endian,
             );
 
@@ -1625,7 +1625,7 @@ pub const DwarfInfo = struct {
                 0,
                 true,
                 cie,
-                @sizeOf(usize),
+                @sizeof(usize),
                 native_endian,
             );
         } else if (di.eh_frame_hdr) |header| {
@@ -1633,7 +1633,7 @@ pub const DwarfInfo = struct {
             try header.findEntry(
                 context.isValidMemory,
                 eh_frame_len,
-                @intFromPtr(di.section(.eh_frame_hdr).?.ptr),
+                @intfromptr(di.section(.eh_frame_hdr).?.ptr),
                 context.pc,
                 &cie,
                 &fde,
@@ -1671,7 +1671,7 @@ pub const DwarfInfo = struct {
         context.cfa = switch (row.cfa.rule) {
             .val_offset => |offset| blk: {
                 const register = row.cfa.register orelse return error.InvalidCFARule;
-                const value = mem.readInt(usize, (try abi.regBytes(context.thread_context, register, context.reg_context))[0..@sizeOf(usize)], native_endian);
+                const value = mem.readInt(usize, (try abi.regBytes(context.thread_context, register, context.reg_context))[0..@sizeof(usize)], native_endian);
                 break :blk try call_frame.applyOffset(value, offset);
             },
             .expression => |expression| blk: {
@@ -1748,7 +1748,7 @@ pub const DwarfInfo = struct {
                 context.thread_context,
                 cie.return_address_register,
                 context.reg_context,
-            ))[0..@sizeOf(usize)], native_endian));
+            ))[0..@sizeof(usize)], native_endian));
         } else {
             context.pc = 0;
         }
@@ -1791,11 +1791,11 @@ const macho = std.macho;
 pub fn unwindFrameMachO(context: *UnwindContext, unwind_info: []const u8, eh_frame: ?[]const u8, module_base_address: usize) !usize {
     const header = mem.bytesAsValue(
         macho.unwind_info_section_header,
-        unwind_info[0..@sizeOf(macho.unwind_info_section_header)],
+        unwind_info[0..@sizeof(macho.unwind_info_section_header)],
     );
     const indices = mem.bytesAsSlice(
         macho.unwind_info_section_header_index_entry,
-        unwind_info[header.indexSectionOffset..][0 .. header.indexCount * @sizeOf(macho.unwind_info_section_header_index_entry)],
+        unwind_info[header.indexSectionOffset..][0 .. header.indexCount * @sizeof(macho.unwind_info_section_header_index_entry)],
     );
     if (indices.len == 0) return error.MissingUnwindInfo;
 
@@ -1823,13 +1823,13 @@ pub fn unwindFrameMachO(context: *UnwindContext, unwind_info: []const u8, eh_fra
 
     const common_encodings = mem.bytesAsSlice(
         macho.compact_unwind_encoding_t,
-        unwind_info[header.commonEncodingsArraySectionOffset..][0 .. header.commonEncodingsArrayCount * @sizeOf(macho.compact_unwind_encoding_t)],
+        unwind_info[header.commonEncodingsArraySectionOffset..][0 .. header.commonEncodingsArrayCount * @sizeof(macho.compact_unwind_encoding_t)],
     );
 
     const start_offset = second_level_index.secondLevelPagesSectionOffset;
     const kind = mem.bytesAsValue(
         macho.UNWIND_SECOND_LEVEL,
-        unwind_info[start_offset..][0..@sizeOf(macho.UNWIND_SECOND_LEVEL)],
+        unwind_info[start_offset..][0..@sizeof(macho.UNWIND_SECOND_LEVEL)],
     );
 
     const entry: struct {
@@ -1839,12 +1839,12 @@ pub fn unwindFrameMachO(context: *UnwindContext, unwind_info: []const u8, eh_fra
         .REGULAR => blk: {
             const page_header = mem.bytesAsValue(
                 macho.unwind_info_regular_second_level_page_header,
-                unwind_info[start_offset..][0..@sizeOf(macho.unwind_info_regular_second_level_page_header)],
+                unwind_info[start_offset..][0..@sizeof(macho.unwind_info_regular_second_level_page_header)],
             );
 
             const entries = mem.bytesAsSlice(
                 macho.unwind_info_regular_second_level_entry,
-                unwind_info[start_offset + page_header.entryPageOffset ..][0 .. page_header.entryCount * @sizeOf(macho.unwind_info_regular_second_level_entry)],
+                unwind_info[start_offset + page_header.entryPageOffset ..][0 .. page_header.entryCount * @sizeof(macho.unwind_info_regular_second_level_entry)],
             );
             if (entries.len == 0) return error.InvalidUnwindInfo;
 
@@ -1870,12 +1870,12 @@ pub fn unwindFrameMachO(context: *UnwindContext, unwind_info: []const u8, eh_fra
         .COMPRESSED => blk: {
             const page_header = mem.bytesAsValue(
                 macho.unwind_info_compressed_second_level_page_header,
-                unwind_info[start_offset..][0..@sizeOf(macho.unwind_info_compressed_second_level_page_header)],
+                unwind_info[start_offset..][0..@sizeof(macho.unwind_info_compressed_second_level_page_header)],
             );
 
             const entries = mem.bytesAsSlice(
                 macho.UnwindInfoCompressedEntry,
-                unwind_info[start_offset + page_header.entryPageOffset ..][0 .. page_header.entryCount * @sizeOf(macho.UnwindInfoCompressedEntry)],
+                unwind_info[start_offset + page_header.entryPageOffset ..][0 .. page_header.entryCount * @sizeof(macho.UnwindInfoCompressedEntry)],
             );
             if (entries.len == 0) return error.InvalidUnwindInfo;
 
@@ -1909,7 +1909,7 @@ pub fn unwindFrameMachO(context: *UnwindContext, unwind_info: []const u8, eh_fra
                 );
                 const local_encodings = mem.bytesAsSlice(
                     macho.compact_unwind_encoding_t,
-                    unwind_info[start_offset + page_header.encodingsPageOffset ..][0 .. page_header.encodingsCount * @sizeOf(macho.compact_unwind_encoding_t)],
+                    unwind_info[start_offset + page_header.encodingsPageOffset ..][0 .. page_header.encodingsCount * @sizeof(macho.compact_unwind_encoding_t)],
                 );
                 if (local_index >= local_encodings.len) return error.InvalidUnwindInfo;
                 break :blk .{
@@ -1927,7 +1927,7 @@ pub fn unwindFrameMachO(context: *UnwindContext, unwind_info: []const u8, eh_fra
         .is_macho = true,
     };
 
-    const encoding: macho.CompactUnwindEncoding = @bitCast(entry.raw_encoding);
+    const encoding: macho.CompactUnwindEncoding = @bitcast(entry.raw_encoding);
     const new_ip = switch (builtin.cpu.arch) {
         .x86_64 => switch (encoding.mode.x86_64) {
             .OLD => return error.UnimplementedUnwindEncoding,
@@ -1940,21 +1940,21 @@ pub fn unwindFrameMachO(context: *UnwindContext, unwind_info: []const u8, eh_fra
                     encoding.value.x86_64.frame.reg4,
                 };
 
-                const frame_offset = encoding.value.x86_64.frame.frame_offset * @sizeOf(usize);
+                const frame_offset = encoding.value.x86_64.frame.frame_offset * @sizeof(usize);
                 var max_reg: usize = 0;
                 inline for (regs, 0..) |reg, i| {
                     if (reg > 0) max_reg = i;
                 }
 
                 const fp = (try abi.regValueNative(usize, context.thread_context, abi.fpRegNum(reg_context), reg_context)).*;
-                const new_sp = fp + 2 * @sizeOf(usize);
+                const new_sp = fp + 2 * @sizeof(usize);
 
                 // Verify the stack range we're about to read register values from
-                if (!context.isValidMemory(new_sp) or !context.isValidMemory(fp - frame_offset + max_reg * @sizeOf(usize))) return error.InvalidUnwindInfo;
+                if (!context.isValidMemory(new_sp) or !context.isValidMemory(fp - frame_offset + max_reg * @sizeof(usize))) return error.InvalidUnwindInfo;
 
-                const ip_ptr = fp + @sizeOf(usize);
-                const new_ip = @as(*const usize, @ptrFromInt(ip_ptr)).*;
-                const new_fp = @as(*const usize, @ptrFromInt(fp)).*;
+                const ip_ptr = fp + @sizeof(usize);
+                const new_ip = @as(*const usize, @ptrfromint(ip_ptr)).*;
+                const new_fp = @as(*const usize, @ptrfromint(fp)).*;
 
                 (try abi.regValueNative(usize, context.thread_context, abi.fpRegNum(reg_context), reg_context)).* = new_fp;
                 (try abi.regValueNative(usize, context.thread_context, abi.spRegNum(reg_context), reg_context)).* = new_sp;
@@ -1962,9 +1962,9 @@ pub fn unwindFrameMachO(context: *UnwindContext, unwind_info: []const u8, eh_fra
 
                 for (regs, 0..) |reg, i| {
                     if (reg == 0) continue;
-                    const addr = fp - frame_offset + i * @sizeOf(usize);
+                    const addr = fp - frame_offset + i * @sizeof(usize);
                     const reg_number = try compactUnwindToDwarfRegNumber(reg);
-                    (try abi.regValueNative(usize, context.thread_context, reg_number, reg_context)).* = @as(*const usize, @ptrFromInt(addr)).*;
+                    (try abi.regValueNative(usize, context.thread_context, reg_number, reg_context)).* = @as(*const usize, @ptrfromint(addr)).*;
                 }
 
                 break :blk new_ip;
@@ -1974,7 +1974,7 @@ pub fn unwindFrameMachO(context: *UnwindContext, unwind_info: []const u8, eh_fra
             => blk: {
                 const sp = (try abi.regValueNative(usize, context.thread_context, abi.spRegNum(reg_context), reg_context)).*;
                 const stack_size = if (encoding.mode.x86_64 == .STACK_IMMD)
-                    @as(usize, encoding.value.x86_64.frameless.stack.direct.stack_size) * @sizeOf(usize)
+                    @as(usize, encoding.value.x86_64.frameless.stack.direct.stack_size) * @sizeof(usize)
                 else stack_size: {
                     // In .STACK_IND, the stack size is inferred from the subq instruction at the beginning of the function.
                     const sub_offset_addr =
@@ -1984,8 +1984,8 @@ pub fn unwindFrameMachO(context: *UnwindContext, unwind_info: []const u8, eh_fra
                     if (!context.isValidMemory(sub_offset_addr)) return error.InvalidUnwindInfo;
 
                     // `sub_offset_addr` points to the offset of the literal within the instruction
-                    const sub_operand = @as(*align(1) const u32, @ptrFromInt(sub_offset_addr)).*;
-                    break :stack_size sub_operand + @sizeOf(usize) * @as(usize, encoding.value.x86_64.frameless.stack.indirect.stack_adjust);
+                    const sub_operand = @as(*align(1) const u32, @ptrfromint(sub_offset_addr)).*;
+                    break :stack_size sub_operand + @sizeof(usize) * @as(usize, encoding.value.x86_64.frameless.stack.indirect.stack_adjust);
                 };
 
                 // Decode the Lehmer-coded sequence of registers.
@@ -2001,7 +2001,7 @@ pub fn unwindFrameMachO(context: *UnwindContext, unwind_info: []const u8, eh_fra
                     var base: usize = 2;
                     for (0..reg_count) |i| {
                         const div = accumulator / base;
-                        digits[digits.len - 1 - i] = @intCast(accumulator - base * div);
+                        digits[digits.len - 1 - i] = @intcast(accumulator - base * div);
                         accumulator = div;
                         base += 1;
                     }
@@ -2022,19 +2022,19 @@ pub fn unwindFrameMachO(context: *UnwindContext, unwind_info: []const u8, eh_fra
                         used_indices[unused_index] = true;
                     }
 
-                    var reg_addr = sp + stack_size - @sizeOf(usize) * @as(usize, reg_count + 1);
+                    var reg_addr = sp + stack_size - @sizeof(usize) * @as(usize, reg_count + 1);
                     if (!context.isValidMemory(reg_addr)) return error.InvalidUnwindInfo;
                     for (0..reg_count) |i| {
                         const reg_number = try compactUnwindToDwarfRegNumber(registers[i]);
-                        (try abi.regValueNative(usize, context.thread_context, reg_number, reg_context)).* = @as(*const usize, @ptrFromInt(reg_addr)).*;
-                        reg_addr += @sizeOf(usize);
+                        (try abi.regValueNative(usize, context.thread_context, reg_number, reg_context)).* = @as(*const usize, @ptrfromint(reg_addr)).*;
+                        reg_addr += @sizeof(usize);
                     }
 
                     break :reg_blk reg_addr;
-                } else sp + stack_size - @sizeOf(usize);
+                } else sp + stack_size - @sizeof(usize);
 
-                const new_ip = @as(*const usize, @ptrFromInt(ip_ptr)).*;
-                const new_sp = ip_ptr + @sizeOf(usize);
+                const new_ip = @as(*const usize, @ptrfromint(ip_ptr)).*;
+                const new_sp = ip_ptr + @sizeof(usize);
                 if (!context.isValidMemory(new_sp)) return error.InvalidUnwindInfo;
 
                 (try abi.regValueNative(usize, context.thread_context, abi.spRegNum(reg_context), reg_context)).* = new_sp;
@@ -2043,7 +2043,7 @@ pub fn unwindFrameMachO(context: *UnwindContext, unwind_info: []const u8, eh_fra
                 break :blk new_ip;
             },
             .DWARF => {
-                return unwindFrameMachODwarf(context, eh_frame orelse return error.MissingEhFrame, @intCast(encoding.value.x86_64.dwarf));
+                return unwindFrameMachODwarf(context, eh_frame orelse return error.MissingEhFrame, @intcast(encoding.value.x86_64.dwarf));
             },
         },
         .aarch64 => switch (encoding.mode.arm64) {
@@ -2057,48 +2057,48 @@ pub fn unwindFrameMachO(context: *UnwindContext, unwind_info: []const u8, eh_fra
                 break :blk new_ip;
             },
             .DWARF => {
-                return unwindFrameMachODwarf(context, eh_frame orelse return error.MissingEhFrame, @intCast(encoding.value.arm64.dwarf));
+                return unwindFrameMachODwarf(context, eh_frame orelse return error.MissingEhFrame, @intcast(encoding.value.arm64.dwarf));
             },
             .FRAME => blk: {
                 const fp = (try abi.regValueNative(usize, context.thread_context, abi.fpRegNum(reg_context), reg_context)).*;
                 const new_sp = fp + 16;
-                const ip_ptr = fp + @sizeOf(usize);
+                const ip_ptr = fp + @sizeof(usize);
 
                 const num_restored_pairs: usize =
-                    @popCount(@as(u5, @bitCast(encoding.value.arm64.frame.x_reg_pairs))) +
-                    @popCount(@as(u4, @bitCast(encoding.value.arm64.frame.d_reg_pairs)));
-                const min_reg_addr = fp - num_restored_pairs * 2 * @sizeOf(usize);
+                    @popcount(@as(u5, @bitcast(encoding.value.arm64.frame.x_reg_pairs))) +
+                    @popcount(@as(u4, @bitcast(encoding.value.arm64.frame.d_reg_pairs)));
+                const min_reg_addr = fp - num_restored_pairs * 2 * @sizeof(usize);
 
                 if (!context.isValidMemory(new_sp) or !context.isValidMemory(min_reg_addr)) return error.InvalidUnwindInfo;
 
-                var reg_addr = fp - @sizeOf(usize);
-                inline for (@typeInfo(@TypeOf(encoding.value.arm64.frame.x_reg_pairs)).Struct.fields, 0..) |field, i| {
+                var reg_addr = fp - @sizeof(usize);
+                inline for (@typeinfo(@TypeOf(encoding.value.arm64.frame.x_reg_pairs)).Struct.fields, 0..) |field, i| {
                     if (@field(encoding.value.arm64.frame.x_reg_pairs, field.name) != 0) {
-                        (try abi.regValueNative(usize, context.thread_context, 19 + i, reg_context)).* = @as(*const usize, @ptrFromInt(reg_addr)).*;
-                        reg_addr += @sizeOf(usize);
-                        (try abi.regValueNative(usize, context.thread_context, 20 + i, reg_context)).* = @as(*const usize, @ptrFromInt(reg_addr)).*;
-                        reg_addr += @sizeOf(usize);
+                        (try abi.regValueNative(usize, context.thread_context, 19 + i, reg_context)).* = @as(*const usize, @ptrfromint(reg_addr)).*;
+                        reg_addr += @sizeof(usize);
+                        (try abi.regValueNative(usize, context.thread_context, 20 + i, reg_context)).* = @as(*const usize, @ptrfromint(reg_addr)).*;
+                        reg_addr += @sizeof(usize);
                     }
                 }
 
-                inline for (@typeInfo(@TypeOf(encoding.value.arm64.frame.d_reg_pairs)).Struct.fields, 0..) |field, i| {
+                inline for (@typeinfo(@TypeOf(encoding.value.arm64.frame.d_reg_pairs)).Struct.fields, 0..) |field, i| {
                     if (@field(encoding.value.arm64.frame.d_reg_pairs, field.name) != 0) {
                         // Only the lower half of the 128-bit V registers are restored during unwinding
                         @memcpy(
                             try abi.regBytes(context.thread_context, 64 + 8 + i, context.reg_context),
-                            mem.asBytes(@as(*const usize, @ptrFromInt(reg_addr))),
+                            mem.asBytes(@as(*const usize, @ptrfromint(reg_addr))),
                         );
-                        reg_addr += @sizeOf(usize);
+                        reg_addr += @sizeof(usize);
                         @memcpy(
                             try abi.regBytes(context.thread_context, 64 + 9 + i, context.reg_context),
-                            mem.asBytes(@as(*const usize, @ptrFromInt(reg_addr))),
+                            mem.asBytes(@as(*const usize, @ptrfromint(reg_addr))),
                         );
-                        reg_addr += @sizeOf(usize);
+                        reg_addr += @sizeof(usize);
                     }
                 }
 
-                const new_ip = @as(*const usize, @ptrFromInt(ip_ptr)).*;
-                const new_fp = @as(*const usize, @ptrFromInt(fp)).*;
+                const new_ip = @as(*const usize, @ptrfromint(ip_ptr)).*;
+                const new_fp = @as(*const usize, @ptrfromint(fp)).*;
 
                 (try abi.regValueNative(usize, context.thread_context, abi.fpRegNum(reg_context), reg_context)).* = new_fp;
                 (try abi.regValueNative(usize, context.thread_context, abi.ipRegNum(), reg_context)).* = new_ip;
@@ -2121,7 +2121,7 @@ fn unwindFrameMachODwarf(context: *UnwindContext, eh_frame: []const u8, fde_offs
     };
     defer di.deinit(context.allocator);
 
-    di.sections[@intFromEnum(DwarfSection.eh_frame)] = .{
+    di.sections[@intfromenum(DwarfSection.eh_frame)] = .{
         .data = eh_frame,
         .owned = false,
     };
@@ -2248,23 +2248,23 @@ fn readEhPointer(fbr: *FixedBufferReader, enc: u8, addr_size_bytes: u8, ctx: EhP
     };
 
     const ptr: u64 = if (base) |b| switch (value) {
-        .signed => |s| @intCast(try math.add(i64, s, @as(i64, @intCast(b)))),
+        .signed => |s| @intcast(try math.add(i64, s, @as(i64, @intcast(b)))),
         // absptr can actually contain signed values in some cases (aarch64 MachO)
         .unsigned => |u| u +% b,
     } else switch (value) {
-        .signed => |s| @as(u64, @intCast(s)),
+        .signed => |s| @as(u64, @intcast(s)),
         .unsigned => |u| u,
     };
 
     if ((enc & EH.PE.indirect) > 0 and ctx.follow_indirect) {
-        if (@sizeOf(usize) != addr_size_bytes) {
+        if (@sizeof(usize) != addr_size_bytes) {
             // See the documentation for `follow_indirect`
             return error.NonNativeIndirection;
         }
 
         const native_ptr = math.cast(usize, ptr) orelse return error.PointerOverflow;
         return switch (addr_size_bytes) {
-            2, 4, 8 => return @as(*const usize, @ptrFromInt(native_ptr)).*,
+            2, 4, 8 => return @as(*const usize, @ptrfromint(native_ptr)).*,
             else => return error.UnsupportedAddrSize,
         };
     } else {
@@ -2333,8 +2333,8 @@ pub const ExceptionFrameHeader = struct {
             const mid = left + len / 2;
 
             fbr.pos = mid * entry_size;
-            const pc_begin = try readEhPointer(&fbr, self.table_enc, @sizeOf(usize), .{
-                .pc_rel_base = @intFromPtr(&self.entries[fbr.pos]),
+            const pc_begin = try readEhPointer(&fbr, self.table_enc, @sizeof(usize), .{
+                .pc_rel_base = @intfromptr(&self.entries[fbr.pos]),
                 .follow_indirect = true,
                 .data_rel_base = eh_frame_hdr_ptr,
             }) orelse return badDwarf();
@@ -2352,14 +2352,14 @@ pub const ExceptionFrameHeader = struct {
         fbr.pos = left * entry_size;
 
         // Read past the pc_begin field of the entry
-        _ = try readEhPointer(&fbr, self.table_enc, @sizeOf(usize), .{
-            .pc_rel_base = @intFromPtr(&self.entries[fbr.pos]),
+        _ = try readEhPointer(&fbr, self.table_enc, @sizeof(usize), .{
+            .pc_rel_base = @intfromptr(&self.entries[fbr.pos]),
             .follow_indirect = true,
             .data_rel_base = eh_frame_hdr_ptr,
         }) orelse return badDwarf();
 
-        const fde_ptr = math.cast(usize, try readEhPointer(&fbr, self.table_enc, @sizeOf(usize), .{
-            .pc_rel_base = @intFromPtr(&self.entries[fbr.pos]),
+        const fde_ptr = math.cast(usize, try readEhPointer(&fbr, self.table_enc, @sizeof(usize), .{
+            .pc_rel_base = @intfromptr(&self.entries[fbr.pos]),
             .follow_indirect = true,
             .data_rel_base = eh_frame_hdr_ptr,
         }) orelse return badDwarf()) orelse return badDwarf();
@@ -2372,7 +2372,7 @@ pub const ExceptionFrameHeader = struct {
         if (self.isValidPtr(fde_ptr + 11, isValidMemory, eh_frame_len)) fde_entry_header_len = 12;
 
         // Even if eh_frame_len is not specified, all ranges accssed are checked by isValidPtr
-        const eh_frame = @as([*]const u8, @ptrFromInt(self.eh_frame_ptr))[0 .. eh_frame_len orelse math.maxInt(u32)];
+        const eh_frame = @as([*]const u8, @ptrfromint(self.eh_frame_ptr))[0 .. eh_frame_len orelse math.maxInt(u32)];
 
         const fde_offset = fde_ptr - self.eh_frame_ptr;
         var eh_frame_fbr: FixedBufferReader = .{
@@ -2382,14 +2382,14 @@ pub const ExceptionFrameHeader = struct {
         };
 
         const fde_entry_header = try EntryHeader.read(&eh_frame_fbr, .eh_frame);
-        if (!self.isValidPtr(@intFromPtr(&fde_entry_header.entry_bytes[fde_entry_header.entry_bytes.len - 1]), isValidMemory, eh_frame_len)) return badDwarf();
+        if (!self.isValidPtr(@intfromptr(&fde_entry_header.entry_bytes[fde_entry_header.entry_bytes.len - 1]), isValidMemory, eh_frame_len)) return badDwarf();
         if (fde_entry_header.type != .fde) return badDwarf();
 
         // CIEs always come before FDEs (the offset is a subtraction), so we can assume this memory is readable
         const cie_offset = fde_entry_header.type.fde;
         try eh_frame_fbr.seekTo(cie_offset);
         const cie_entry_header = try EntryHeader.read(&eh_frame_fbr, .eh_frame);
-        if (!self.isValidPtr(@intFromPtr(&cie_entry_header.entry_bytes[cie_entry_header.entry_bytes.len - 1]), isValidMemory, eh_frame_len)) return badDwarf();
+        if (!self.isValidPtr(@intfromptr(&cie_entry_header.entry_bytes[cie_entry_header.entry_bytes.len - 1]), isValidMemory, eh_frame_len)) return badDwarf();
         if (cie_entry_header.type != .cie) return badDwarf();
 
         cie.* = try CommonInformationEntry.parse(
@@ -2399,7 +2399,7 @@ pub const ExceptionFrameHeader = struct {
             cie_entry_header.format,
             .eh_frame,
             cie_entry_header.length_offset,
-            @sizeOf(usize),
+            @sizeof(usize),
             native_endian,
         );
 
@@ -2408,7 +2408,7 @@ pub const ExceptionFrameHeader = struct {
             0,
             true,
             cie.*,
-            @sizeOf(usize),
+            @sizeof(usize),
             native_endian,
         );
     }
@@ -2605,7 +2605,7 @@ pub const CommonInformationEntry = struct {
                     'P' => {
                         personality_enc = try fbr.readByte();
                         personality_routine_pointer = try readEhPointer(&fbr, personality_enc.?, addr_size_bytes, .{
-                            .pc_rel_base = try pcRelBase(@intFromPtr(&cie_bytes[fbr.pos]), pc_rel_offset),
+                            .pc_rel_base = try pcRelBase(@intfromptr(&cie_bytes[fbr.pos]), pc_rel_offset),
                             .follow_indirect = is_runtime,
                         });
                     },
@@ -2678,7 +2678,7 @@ pub const FrameDescriptionEntry = struct {
         var fbr: FixedBufferReader = .{ .buf = fde_bytes, .endian = endian };
 
         const pc_begin = try readEhPointer(&fbr, cie.fde_pointer_enc, addr_size_bytes, .{
-            .pc_rel_base = try pcRelBase(@intFromPtr(&fde_bytes[fbr.pos]), pc_rel_offset),
+            .pc_rel_base = try pcRelBase(@intfromptr(&fde_bytes[fbr.pos]), pc_rel_offset),
             .follow_indirect = is_runtime,
         }) orelse return badDwarf();
 
@@ -2695,7 +2695,7 @@ pub const FrameDescriptionEntry = struct {
 
             const lsda_pointer = if (cie.lsda_pointer_enc != EH.PE.omit)
                 try readEhPointer(&fbr, cie.lsda_pointer_enc, addr_size_bytes, .{
-                    .pc_rel_base = try pcRelBase(@intFromPtr(&fde_bytes[fbr.pos]), pc_rel_offset),
+                    .pc_rel_base = try pcRelBase(@intfromptr(&fde_bytes[fbr.pos]), pc_rel_offset),
                     .follow_indirect = is_runtime,
                 })
             else
@@ -2719,9 +2719,9 @@ pub const FrameDescriptionEntry = struct {
 
 fn pcRelBase(field_ptr: usize, pc_rel_offset: i64) !usize {
     if (pc_rel_offset < 0) {
-        return math.sub(usize, field_ptr, @as(usize, @intCast(-pc_rel_offset)));
+        return math.sub(usize, field_ptr, @as(usize, @intcast(-pc_rel_offset)));
     } else {
-        return math.add(usize, field_ptr, @as(usize, @intCast(pc_rel_offset)));
+        return math.add(usize, field_ptr, @as(usize, @intcast(pc_rel_offset)));
     }
 }
 
@@ -2736,12 +2736,12 @@ pub const FixedBufferReader = struct {
 
     fn seekTo(fbr: *FixedBufferReader, pos: u64) Error!void {
         if (pos > fbr.buf.len) return error.EndOfBuffer;
-        fbr.pos = @intCast(pos);
+        fbr.pos = @intcast(pos);
     }
 
     fn seekForward(fbr: *FixedBufferReader, amount: u64) Error!void {
         if (fbr.buf.len - fbr.pos < amount) return error.EndOfBuffer;
-        fbr.pos += @intCast(amount);
+        fbr.pos += @intcast(amount);
     }
 
     pub inline fn readByte(fbr: *FixedBufferReader) Error!u8 {
@@ -2751,11 +2751,11 @@ pub const FixedBufferReader = struct {
     }
 
     fn readByteSigned(fbr: *FixedBufferReader) Error!i8 {
-        return @bitCast(try fbr.readByte());
+        return @bitcast(try fbr.readByte());
     }
 
     fn readInt(fbr: *FixedBufferReader, comptime T: type) Error!T {
-        const size = @divExact(@typeInfo(T).Int.bits, 8);
+        const size = @divexact(@typeinfo(T).Int.bits, 8);
         if (fbr.buf.len - fbr.pos < size) return error.EndOfBuffer;
         defer fbr.pos += size;
         return mem.readInt(T, fbr.buf[fbr.pos..][0..size], fbr.endian);

@@ -1,7 +1,7 @@
-const resource = @embedFile("bogus.txt");
+const resource = @embedfile("bogus.txt");
 
 export fn entry() usize {
-    return @sizeOf(@TypeOf(resource));
+    return @sizeof(@TypeOf(resource));
 }
 
 // error

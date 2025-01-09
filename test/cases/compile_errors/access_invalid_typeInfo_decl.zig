@@ -1,6 +1,6 @@
 const A = B;
 test "Crash" {
-    _ = @typeInfo(@This()).Struct.decls[0];
+    _ = @typeinfo(@This()).Struct.decls[0];
 }
 
 // error

@@ -212,7 +212,7 @@ pub const IdRange = struct {
 
     pub fn at(range: IdRange, i: usize) IdResult {
         assert(i < range.len);
-        return @enumFromInt(range.base + i);
+        return @enumfromint(range.base + i);
     }
 };
 
@@ -241,11 +241,11 @@ fn addEntryPointDeps(
     const decl = self.declPtr(decl_index);
     const deps = self.decl_deps.items[decl.begin_dep..decl.end_dep];
 
-    if (seen.isSet(@intFromEnum(decl_index))) {
+    if (seen.isSet(@intfromenum(decl_index))) {
         return;
     }
 
-    seen.set(@intFromEnum(decl_index));
+    seen.set(@intfromenum(decl_index));
 
     if (decl.kind == .global) {
         try interface.append(decl.result_id);
@@ -370,7 +370,7 @@ pub fn importInstructionSet(self: *Module, set: spec.InstructionSet) !IdRef {
     const result_id = self.allocId();
     try self.sections.extended_instruction_set.emit(self.gpa, .OpExtInstImport, .{
         .id_result = result_id,
-        .name = @tagName(set),
+        .name = @tagname(set),
     });
     gop.value_ptr.* = result_id;
 
@@ -405,7 +405,7 @@ pub fn structType(self: *Module, types: []const IdRef, maybe_names: ?[]const []c
     if (maybe_names) |names| {
         assert(names.len == types.len);
         for (names, 0..) |name, i| {
-            try self.memberDebugName(result_id, @intCast(i), name);
+            try self.memberDebugName(result_id, @intcast(i), name);
         }
     }
 
@@ -535,18 +535,18 @@ pub fn allocDecl(self: *Module, kind: Decl.Kind) !Decl.Index {
         .end_dep = undefined,
     });
 
-    return @as(Decl.Index, @enumFromInt(@as(u32, @intCast(self.decls.items.len - 1))));
+    return @as(Decl.Index, @enumfromint(@as(u32, @intcast(self.decls.items.len - 1))));
 }
 
 pub fn declPtr(self: *Module, index: Decl.Index) *Decl {
-    return &self.decls.items[@intFromEnum(index)];
+    return &self.decls.items[@intfromenum(index)];
 }
 
 /// Declare ALL dependencies for a decl.
 pub fn declareDeclDeps(self: *Module, decl_index: Decl.Index, deps: []const Decl.Index) !void {
-    const begin_dep: u32 = @intCast(self.decl_deps.items.len);
+    const begin_dep: u32 = @intcast(self.decl_deps.items.len);
     try self.decl_deps.appendSlice(self.gpa, deps);
-    const end_dep: u32 = @intCast(self.decl_deps.items.len);
+    const end_dep: u32 = @intcast(self.decl_deps.items.len);
 
     const decl = self.declPtr(decl_index);
     decl.begin_dep = begin_dep;

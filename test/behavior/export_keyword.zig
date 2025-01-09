@@ -7,7 +7,7 @@ const builtin = @import("builtin");
 
 // can't really run this test but we can make sure it has no compile error
 // and generates code
-const vram = @as([*]volatile u8, @ptrFromInt(0x20000000))[0..0x8000];
+const vram = @as([*]volatile u8, @ptrfromint(0x20000000))[0..0x8000];
 export fn writeToVRam() void {
     if (builtin.zig_backend == .stage2_riscv64) return;
 

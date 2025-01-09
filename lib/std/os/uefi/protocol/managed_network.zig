@@ -141,7 +141,7 @@ pub const ManagedNetwork = extern struct {
         fragment_count: u16,
 
         pub fn getFragments(self: *TransmitData) []Fragment {
-            return @as([*]Fragment, @ptrCast(@alignCast(@as([*]u8, @ptrCast(self)) + @sizeOf(TransmitData))))[0..self.fragment_count];
+            return @as([*]Fragment, @ptrcast(@aligncast(@as([*]u8, @ptrcast(self)) + @sizeof(TransmitData))))[0..self.fragment_count];
         }
     };
 

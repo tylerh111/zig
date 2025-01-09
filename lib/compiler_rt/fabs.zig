@@ -38,20 +38,20 @@ pub fn fabsq(a: f128) callconv(.C) f128 {
 }
 
 pub fn fabsl(x: c_longdouble) callconv(.C) c_longdouble {
-    switch (@typeInfo(c_longdouble).Float.bits) {
+    switch (@typeinfo(c_longdouble).Float.bits) {
         16 => return __fabsh(x),
         32 => return fabsf(x),
         64 => return fabs(x),
         80 => return __fabsx(x),
         128 => return fabsq(x),
-        else => @compileError("unreachable"),
+        else => @compileerror("unreachable"),
     }
 }
 
 inline fn generic_fabs(x: anytype) @TypeOf(x) {
     const T = @TypeOf(x);
-    const TBits = std.meta.Int(.unsigned, @typeInfo(T).Float.bits);
-    const float_bits: TBits = @bitCast(x);
+    const TBits = std.meta.Int(.unsigned, @typeinfo(T).Float.bits);
+    const float_bits: TBits = @bitcast(x);
     const remove_sign = ~@as(TBits, 0) >> 1;
-    return @bitCast(float_bits & remove_sign);
+    return @bitcast(float_bits & remove_sign);
 }

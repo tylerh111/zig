@@ -20,7 +20,7 @@ const Case = struct {
 
 const cases = [_]Case{
     .{
-        .data = @embedFile("testdata/gnu.tar"),
+        .data = @embedfile("testdata/gnu.tar"),
         .files = &[_]Case.File{
             .{
                 .name = "small.txt",
@@ -39,11 +39,11 @@ const cases = [_]Case{
         },
     },
     .{
-        .data = @embedFile("testdata/sparse-formats.tar"),
+        .data = @embedfile("testdata/sparse-formats.tar"),
         .err = error.TarUnsupportedHeader,
     },
     .{
-        .data = @embedFile("testdata/star.tar"),
+        .data = @embedfile("testdata/star.tar"),
         .files = &[_]Case.File{
             .{
                 .name = "small.txt",
@@ -62,7 +62,7 @@ const cases = [_]Case{
         },
     },
     .{
-        .data = @embedFile("testdata/v7.tar"),
+        .data = @embedfile("testdata/v7.tar"),
         .files = &[_]Case.File{
             .{
                 .name = "small.txt",
@@ -81,7 +81,7 @@ const cases = [_]Case{
         },
     },
     .{
-        .data = @embedFile("testdata/pax.tar"),
+        .data = @embedfile("testdata/pax.tar"),
         .files = &[_]Case.File{
             .{
                 .name = "a/123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475767778798081828384858687888990919293949596979899100",
@@ -102,12 +102,12 @@ const cases = [_]Case{
     },
     .{
         // pax attribute don't end with \n
-        .data = @embedFile("testdata/pax-bad-hdr-file.tar"),
+        .data = @embedfile("testdata/pax-bad-hdr-file.tar"),
         .err = error.PaxInvalidAttributeEnd,
     },
     .{
         // size is in pax attribute
-        .data = @embedFile("testdata/pax-pos-size-file.tar"),
+        .data = @embedfile("testdata/pax-pos-size-file.tar"),
         .files = &[_]Case.File{
             .{
                 .name = "foo",
@@ -122,7 +122,7 @@ const cases = [_]Case{
     },
     .{
         // has pax records which we are not interested in
-        .data = @embedFile("testdata/pax-records.tar"),
+        .data = @embedfile("testdata/pax-records.tar"),
         .files = &[_]Case.File{
             .{
                 .name = "file",
@@ -131,7 +131,7 @@ const cases = [_]Case{
     },
     .{
         // has global records which we are ignoring
-        .data = @embedFile("testdata/pax-global-records.tar"),
+        .data = @embedfile("testdata/pax-global-records.tar"),
         .files = &[_]Case.File{
             .{
                 .name = "file1",
@@ -148,7 +148,7 @@ const cases = [_]Case{
         },
     },
     .{
-        .data = @embedFile("testdata/nil-uid.tar"),
+        .data = @embedfile("testdata/nil-uid.tar"),
         .files = &[_]Case.File{
             .{
                 .name = "P1050238.JPG.log",
@@ -163,7 +163,7 @@ const cases = [_]Case{
     },
     .{
         // has xattrs and pax records which we are ignoring
-        .data = @embedFile("testdata/xattrs.tar"),
+        .data = @embedfile("testdata/xattrs.tar"),
         .files = &[_]Case.File{
             .{
                 .name = "small.txt",
@@ -184,7 +184,7 @@ const cases = [_]Case{
         },
     },
     .{
-        .data = @embedFile("testdata/gnu-multi-hdrs.tar"),
+        .data = @embedfile("testdata/gnu-multi-hdrs.tar"),
         .files = &[_]Case.File{
             .{
                 .name = "GNU2/GNU2/long-path-name",
@@ -195,12 +195,12 @@ const cases = [_]Case{
     },
     .{
         // has gnu type D (directory) and S (sparse) blocks
-        .data = @embedFile("testdata/gnu-incremental.tar"),
+        .data = @embedfile("testdata/gnu-incremental.tar"),
         .err = error.TarUnsupportedHeader,
     },
     .{
         // should use values only from last pax header
-        .data = @embedFile("testdata/pax-multi-hdrs.tar"),
+        .data = @embedfile("testdata/pax-multi-hdrs.tar"),
         .files = &[_]Case.File{
             .{
                 .name = "bar",
@@ -210,7 +210,7 @@ const cases = [_]Case{
         },
     },
     .{
-        .data = @embedFile("testdata/gnu-long-nul.tar"),
+        .data = @embedfile("testdata/gnu-long-nul.tar"),
         .files = &[_]Case.File{
             .{
                 .name = "0123456789",
@@ -219,7 +219,7 @@ const cases = [_]Case{
         },
     },
     .{
-        .data = @embedFile("testdata/gnu-utf8.tar"),
+        .data = @embedfile("testdata/gnu-utf8.tar"),
         .files = &[_]Case.File{
             .{
                 .name = "☺☻☹☺☻☹☺☻☹☺☻☹☺☻☹☺☻☹☺☻☹☺☻☹☺☻☹☺☻☹☺☻☹☺☻☹☺☻☹☺☻☹☺☻☹☺☻☹☺☻☹☺☻☹",
@@ -228,7 +228,7 @@ const cases = [_]Case{
         },
     },
     .{
-        .data = @embedFile("testdata/gnu-not-utf8.tar"),
+        .data = @embedfile("testdata/gnu-not-utf8.tar"),
         .files = &[_]Case.File{
             .{
                 .name = "hi\x80\x81\x82\x83bye",
@@ -238,32 +238,32 @@ const cases = [_]Case{
     },
     .{
         // null in pax key
-        .data = @embedFile("testdata/pax-nul-xattrs.tar"),
+        .data = @embedfile("testdata/pax-nul-xattrs.tar"),
         .err = error.PaxNullInKeyword,
     },
     .{
-        .data = @embedFile("testdata/pax-nul-path.tar"),
+        .data = @embedfile("testdata/pax-nul-path.tar"),
         .err = error.PaxNullInValue,
     },
     .{
-        .data = @embedFile("testdata/neg-size.tar"),
+        .data = @embedfile("testdata/neg-size.tar"),
         .err = error.TarHeader,
     },
     .{
-        .data = @embedFile("testdata/issue10968.tar"),
+        .data = @embedfile("testdata/issue10968.tar"),
         .err = error.TarHeader,
     },
     .{
-        .data = @embedFile("testdata/issue11169.tar"),
+        .data = @embedfile("testdata/issue11169.tar"),
         .err = error.TarHeader,
     },
     .{
-        .data = @embedFile("testdata/issue12435.tar"),
+        .data = @embedfile("testdata/issue12435.tar"),
         .err = error.TarHeaderChksum,
     },
     .{
         // has magic with space at end instead of null
-        .data = @embedFile("testdata/invalid-go17.tar"),
+        .data = @embedfile("testdata/invalid-go17.tar"),
         .files = &[_]Case.File{
             .{
                 .name = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/foo",
@@ -271,7 +271,7 @@ const cases = [_]Case{
         },
     },
     .{
-        .data = @embedFile("testdata/ustar-file-devs.tar"),
+        .data = @embedfile("testdata/ustar-file-devs.tar"),
         .files = &[_]Case.File{
             .{
                 .name = "file",
@@ -280,7 +280,7 @@ const cases = [_]Case{
         },
     },
     .{
-        .data = @embedFile("testdata/trailing-slash.tar"),
+        .data = @embedfile("testdata/trailing-slash.tar"),
         .files = &[_]Case.File{
             .{
                 .name = "123456789/" ** 30,
@@ -290,7 +290,7 @@ const cases = [_]Case{
     },
     .{
         // Has size in gnu extended format. To represent size bigger than 8 GB.
-        .data = @embedFile("testdata/writer-big.tar"),
+        .data = @embedfile("testdata/writer-big.tar"),
         .files = &[_]Case.File{
             .{
                 .name = "tmp/16gig.txt",
@@ -302,7 +302,7 @@ const cases = [_]Case{
     },
     .{
         // Size in gnu extended format, and name in pax attribute.
-        .data = @embedFile("testdata/writer-big-long.tar"),
+        .data = @embedfile("testdata/writer-big-long.tar"),
         .files = &[_]Case.File{
             .{
                 .name = "longname/" ** 15 ++ "16gig.txt",
@@ -313,11 +313,11 @@ const cases = [_]Case{
         },
     },
     .{
-        .data = @embedFile("testdata/fuzz1.tar"),
+        .data = @embedfile("testdata/fuzz1.tar"),
         .err = error.TarInsufficientBuffer,
     },
     .{
-        .data = @embedFile("testdata/fuzz2.tar"),
+        .data = @embedfile("testdata/fuzz2.tar"),
         .err = error.PaxSizeAttrOverflow,
     },
 };
@@ -465,7 +465,7 @@ test "should not overwrite existing file" {
     // a/b/c/file.txt is overwritten with d/b/c/file.txt !!!
     // This ensures that file is not overwritten.
     //
-    const data = @embedFile("testdata/overwrite_file.tar");
+    const data = @embedfile("testdata/overwrite_file.tar");
     var fsb = std.io.fixedBufferStream(data);
 
     // Unpack with strip_components = 1 should fail
@@ -493,7 +493,7 @@ test "case sensitivity" {
     //     18089/alacritty/darkermatrix.yml
     //     18089/alacritty/Darkermatrix.yml
     //
-    const data = @embedFile("testdata/18089.tar");
+    const data = @embedfile("testdata/18089.tar");
     var fsb = std.io.fixedBufferStream(data);
 
     var root = std.testing.tmpDir(.{});

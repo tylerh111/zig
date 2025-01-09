@@ -292,7 +292,7 @@ pub const Inst = struct {
     // Note that in Debug builds, Zig is allowed to insert a secret field for safety checks.
     // comptime {
     //     if (builtin.mode != .Debug) {
-    //         assert(@sizeOf(Inst) == 8);
+    //         assert(@sizeof(Inst) == 8);
     //     }
     // }
 
@@ -305,7 +305,7 @@ pub const Inst = struct {
         assert(fmt.len == 0);
         _ = options;
 
-        try writer.print("Tag: {s}, Ops: {s}", .{ @tagName(inst.tag), @tagName(inst.ops) });
+        try writer.print("Tag: {s}, Ops: {s}", .{ @tagname(inst.tag), @tagname(inst.ops) });
     }
 };
 
@@ -330,8 +330,8 @@ pub fn extraData(mir: Mir, comptime T: type, index: usize) struct { data: T, end
     inline for (fields) |field| {
         @field(result, field.name) = switch (field.type) {
             u32 => mir.extra[i],
-            i32 => @as(i32, @bitCast(mir.extra[i])),
-            else => @compileError("bad field type"),
+            i32 => @as(i32, @bitcast(mir.extra[i])),
+            else => @compileerror("bad field type"),
         };
         i += 1;
     }
@@ -356,7 +356,7 @@ pub const RegisterList = struct {
 
     fn getIndexForReg(registers: []const Register, reg: Register) BitSet.MaskInt {
         for (registers, 0..) |cpreg, i| {
-            if (reg.id() == cpreg.id()) return @intCast(i);
+            if (reg.id() == cpreg.id()) return @intcast(i);
         }
         unreachable; // register not in input register list!
     }
@@ -376,11 +376,11 @@ pub const RegisterList = struct {
     }
 
     pub fn count(self: Self) i32 {
-        return @intCast(self.bitset.count());
+        return @intcast(self.bitset.count());
     }
 
     pub fn size(self: Self) i32 {
-        return @intCast(self.bitset.count() * 8);
+        return @intcast(self.bitset.count() * 8);
     }
 };
 

@@ -1,12 +1,12 @@
 export fn foo() void {
     var a: f32 = 2;
     _ = &a;
-    _ = @as(comptime_int, @intFromFloat(a));
+    _ = @as(comptime_int, @intfromfloat(a));
 }
 export fn bar() void {
     var a: u32 = 2;
     _ = &a;
-    _ = @as(comptime_float, @floatFromInt(a));
+    _ = @as(comptime_float, @floatfromint(a));
 }
 
 // error

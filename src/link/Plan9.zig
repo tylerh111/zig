@@ -205,7 +205,7 @@ pub const Atom = struct {
     // asserts that self.got_index != null
     pub fn getOffsetTableAddress(self: Atom, plan9: *Plan9) u64 {
         const target = plan9.base.comp.root_mod.resolved_target.result;
-        const ptr_bytes = @divExact(target.ptrBitWidth(), 8);
+        const ptr_bytes = @divexact(target.ptrBitWidth(), 8);
         const got_addr = plan9.bases.data;
         const got_index = self.got_index.?;
         return got_addr + got_index * ptr_bytes;
@@ -352,7 +352,7 @@ fn putFn(self: *Plan9, decl_index: InternPool.DeclIndex, out: FnDeclOutput) !voi
             .sym_index = blk: {
                 try self.syms.append(gpa, undefined);
                 try self.syms.append(gpa, undefined);
-                break :blk @as(u32, @intCast(self.syms.items.len - 1));
+                break :blk @as(u32, @intcast(self.syms.items.len - 1));
             },
         };
         try fn_map_res.value_ptr.functions.put(gpa, decl_index, out);
@@ -539,7 +539,7 @@ pub fn updateDecl(self: *Plan9, mod: *Module, decl_index: InternPool.DeclIndex) 
     const decl_val = if (decl.val.getVariable(mod)) |variable| Value.fromInterned(variable.init) else decl.val;
     // TODO we need the symbol index for symbol in the table of locals for the containing atom
     const res = try codegen.generateSymbol(&self.base, decl.srcLoc(mod), decl_val, &code_buffer, .{ .none = {} }, .{
-        .parent_atom_index = @as(Atom.Index, @intCast(atom_idx)),
+        .parent_atom_index = @as(Atom.Index, @intcast(atom_idx)),
     });
     const code = switch (res) {
         .ok => code_buffer.items,
@@ -620,10 +620,10 @@ pub fn flush(self: *Plan9, arena: Allocator, prog_node: std.Progress.Node) link.
 
 pub fn changeLine(l: *std.ArrayList(u8), delta_line: i32) !void {
     if (delta_line > 0 and delta_line < 65) {
-        const toappend = @as(u8, @intCast(delta_line));
+        const toappend = @as(u8, @intcast(delta_line));
         try l.append(toappend);
     } else if (delta_line < 0 and delta_line > -65) {
-        const toadd: u8 = @as(u8, @intCast(-delta_line + 64));
+        const toadd: u8 = @as(u8, @intcast(-delta_line + 64));
         try l.append(toadd);
     } else if (delta_line != 0) {
         try l.append(0);
@@ -746,7 +746,7 @@ pub fn flushModule(self: *Plan9, arena: Allocator, prog_node: std.Progress.Node)
                 const out = entry.value_ptr.*;
                 {
                     // connect the previous decl to the next
-                    const delta_line = @as(i32, @intCast(out.start_line)) - @as(i32, @intCast(linecount));
+                    const delta_line = @as(i32, @intcast(out.start_line)) - @as(i32, @intcast(linecount));
 
                     try changeLine(&linecountinfo, delta_line);
                     // TODO change the pc too (maybe?)
@@ -763,7 +763,7 @@ pub fn flushModule(self: *Plan9, arena: Allocator, prog_node: std.Progress.Node)
                 atom.offset = off;
                 log.debug("write text decl {*} ({}), lines {d} to {d}.;__GOT+0x{x} vaddr: 0x{x}", .{ decl, decl.name.fmt(&mod.intern_pool), out.start_line + 1, out.end_line, atom.got_index.? * 8, off });
                 if (!self.sixtyfour_bit) {
-                    mem.writeInt(u32, got_table[atom.got_index.? * 4 ..][0..4], @as(u32, @intCast(off)), target.cpu.arch.endian());
+                    mem.writeInt(u32, got_table[atom.got_index.? * 4 ..][0..4], @as(u32, @intcast(off)), target.cpu.arch.endian());
                 } else {
                     mem.writeInt(u64, got_table[atom.got_index.? * 8 ..][0..8], off, target.cpu.arch.endian());
                 }
@@ -792,7 +792,7 @@ pub fn flushModule(self: *Plan9, arena: Allocator, prog_node: std.Progress.Node)
             text_i += code.len;
             text_atom.offset = off;
             if (!self.sixtyfour_bit) {
-                mem.writeInt(u32, got_table[text_atom.got_index.? * 4 ..][0..4], @as(u32, @intCast(off)), target.cpu.arch.endian());
+                mem.writeInt(u32, got_table[text_atom.got_index.? * 4 ..][0..4], @as(u32, @intcast(off)), target.cpu.arch.endian());
             } else {
                 mem.writeInt(u64, got_table[text_atom.got_index.? * 8 ..][0..8], off, target.cpu.arch.endian());
             }
@@ -805,7 +805,7 @@ pub fn flushModule(self: *Plan9, arena: Allocator, prog_node: std.Progress.Node)
         const val = self.getAddr(text_i, .t);
         self.syms.items[etext_atom.sym_index.?].value = val;
         if (!self.sixtyfour_bit) {
-            mem.writeInt(u32, got_table[etext_atom.got_index.? * 4 ..][0..4], @as(u32, @intCast(val)), target.cpu.arch.endian());
+            mem.writeInt(u32, got_table[etext_atom.got_index.? * 4 ..][0..4], @as(u32, @intcast(val)), target.cpu.arch.endian());
         } else {
             mem.writeInt(u64, got_table[etext_atom.got_index.? * 8 ..][0..8], val, target.cpu.arch.endian());
         }
@@ -829,7 +829,7 @@ pub fn flushModule(self: *Plan9, arena: Allocator, prog_node: std.Progress.Node)
             data_i += code.len;
             atom.offset = off;
             if (!self.sixtyfour_bit) {
-                mem.writeInt(u32, got_table[atom.got_index.? * 4 ..][0..4], @as(u32, @intCast(off)), target.cpu.arch.endian());
+                mem.writeInt(u32, got_table[atom.got_index.? * 4 ..][0..4], @as(u32, @intcast(off)), target.cpu.arch.endian());
             } else {
                 mem.writeInt(u64, got_table[atom.got_index.? * 8 ..][0..8], off, target.cpu.arch.endian());
             }
@@ -852,7 +852,7 @@ pub fn flushModule(self: *Plan9, arena: Allocator, prog_node: std.Progress.Node)
                 data_i += code.len;
                 atom.offset = off;
                 if (!self.sixtyfour_bit) {
-                    mem.writeInt(u32, got_table[atom.got_index.? * 4 ..][0..4], @as(u32, @intCast(off)), target.cpu.arch.endian());
+                    mem.writeInt(u32, got_table[atom.got_index.? * 4 ..][0..4], @as(u32, @intcast(off)), target.cpu.arch.endian());
                 } else {
                     mem.writeInt(u64, got_table[atom.got_index.? * 8 ..][0..8], off, target.cpu.arch.endian());
                 }
@@ -873,7 +873,7 @@ pub fn flushModule(self: *Plan9, arena: Allocator, prog_node: std.Progress.Node)
                 data_i += code.len;
                 atom.offset = off;
                 if (!self.sixtyfour_bit) {
-                    mem.writeInt(u32, got_table[atom.got_index.? * 4 ..][0..4], @as(u32, @intCast(off)), target.cpu.arch.endian());
+                    mem.writeInt(u32, got_table[atom.got_index.? * 4 ..][0..4], @as(u32, @intcast(off)), target.cpu.arch.endian());
                 } else {
                     mem.writeInt(u64, got_table[atom.got_index.? * 8 ..][0..8], off, target.cpu.arch.endian());
                 }
@@ -893,7 +893,7 @@ pub fn flushModule(self: *Plan9, arena: Allocator, prog_node: std.Progress.Node)
             data_i += code.len;
             data_atom.offset = off;
             if (!self.sixtyfour_bit) {
-                mem.writeInt(u32, got_table[data_atom.got_index.? * 4 ..][0..4], @as(u32, @intCast(off)), target.cpu.arch.endian());
+                mem.writeInt(u32, got_table[data_atom.got_index.? * 4 ..][0..4], @as(u32, @intcast(off)), target.cpu.arch.endian());
             } else {
                 mem.writeInt(u64, got_table[data_atom.got_index.? * 8 ..][0..8], off, target.cpu.arch.endian());
             }
@@ -905,7 +905,7 @@ pub fn flushModule(self: *Plan9, arena: Allocator, prog_node: std.Progress.Node)
             const val = self.getAddr(data_i, .b);
             self.syms.items[edata_atom.sym_index.?].value = val;
             if (!self.sixtyfour_bit) {
-                mem.writeInt(u32, got_table[edata_atom.got_index.? * 4 ..][0..4], @as(u32, @intCast(val)), target.cpu.arch.endian());
+                mem.writeInt(u32, got_table[edata_atom.got_index.? * 4 ..][0..4], @as(u32, @intcast(val)), target.cpu.arch.endian());
             } else {
                 mem.writeInt(u64, got_table[edata_atom.got_index.? * 8 ..][0..8], val, target.cpu.arch.endian());
             }
@@ -916,7 +916,7 @@ pub fn flushModule(self: *Plan9, arena: Allocator, prog_node: std.Progress.Node)
             const val = self.getAddr(data_i, .b);
             self.syms.items[end_atom.sym_index.?].value = val;
             if (!self.sixtyfour_bit) {
-                mem.writeInt(u32, got_table[end_atom.got_index.? * 4 ..][0..4], @as(u32, @intCast(val)), target.cpu.arch.endian());
+                mem.writeInt(u32, got_table[end_atom.got_index.? * 4 ..][0..4], @as(u32, @intcast(val)), target.cpu.arch.endian());
             } else {
                 log.debug("write end (got_table[0x{x}] = 0x{x})", .{ end_atom.got_index.? * 8, val });
                 mem.writeInt(u64, got_table[end_atom.got_index.? * 8 ..][0..8], val, target.cpu.arch.endian());
@@ -935,13 +935,13 @@ pub fn flushModule(self: *Plan9, arena: Allocator, prog_node: std.Progress.Node)
     // generate the header
     self.hdr = .{
         .magic = self.magic,
-        .text = @as(u32, @intCast(text_i)),
-        .data = @as(u32, @intCast(data_i)),
-        .syms = @as(u32, @intCast(syms.len)),
+        .text = @as(u32, @intcast(text_i)),
+        .data = @as(u32, @intcast(data_i)),
+        .syms = @as(u32, @intcast(syms.len)),
         .bss = 0,
         .spsz = 0,
-        .pcsz = @as(u32, @intCast(linecountinfo.items.len)),
-        .entry = @as(u32, @intCast(self.entry_val.?)),
+        .pcsz = @as(u32, @intcast(linecountinfo.items.len)),
+        .entry = @as(u32, @intcast(self.entry_val.?)),
     };
     @memcpy(hdr_slice, self.hdr.toU8s()[0..hdr_size]);
     // write the fat header for 64 bit entry points
@@ -968,14 +968,14 @@ pub fn flushModule(self: *Plan9, arena: Allocator, prog_node: std.Progress.Node)
 
                     switch (reloc.type) {
                         .pcrel => {
-                            const disp = @as(i32, @intCast(target_offset)) - @as(i32, @intCast(source_atom.offset.?)) - 4 - @as(i32, @intCast(offset));
-                            mem.writeInt(i32, code[@as(usize, @intCast(offset))..][0..4], @as(i32, @intCast(disp)), endian);
+                            const disp = @as(i32, @intcast(target_offset)) - @as(i32, @intcast(source_atom.offset.?)) - 4 - @as(i32, @intcast(offset));
+                            mem.writeInt(i32, code[@as(usize, @intcast(offset))..][0..4], @as(i32, @intcast(disp)), endian);
                         },
                         .nonpcrel => {
                             if (!self.sixtyfour_bit) {
-                                mem.writeInt(u32, code[@intCast(offset)..][0..4], @as(u32, @intCast(target_offset + addend)), endian);
+                                mem.writeInt(u32, code[@intcast(offset)..][0..4], @as(u32, @intcast(target_offset + addend)), endian);
                             } else {
-                                mem.writeInt(u64, code[@intCast(offset)..][0..8], target_offset + addend, endian);
+                                mem.writeInt(u64, code[@intcast(offset)..][0..8], target_offset + addend, endian);
                             }
                         },
                         else => unreachable,
@@ -989,11 +989,11 @@ pub fn flushModule(self: *Plan9, arena: Allocator, prog_node: std.Progress.Node)
                         else => unreachable,
                     };
                     if (!self.sixtyfour_bit) {
-                        mem.writeInt(u32, code[@intCast(offset)..][0..4], @as(u32, @intCast(addr + addend)), endian);
+                        mem.writeInt(u32, code[@intcast(offset)..][0..4], @as(u32, @intcast(addr + addend)), endian);
                     } else {
-                        mem.writeInt(u64, code[@intCast(offset)..][0..8], addr + addend, endian);
+                        mem.writeInt(u64, code[@intcast(offset)..][0..8], addr + addend, endian);
                     }
-                    log.debug("relocating the address of '{s}' + {d} into '{s}' + {d} (({s}[{d}] = 0x{x} + 0x{x})", .{ @tagName(reloc.type), addend, source_atom_symbol.name, offset, source_atom_symbol.name, offset, addr, addend });
+                    log.debug("relocating the address of '{s}' + {d} into '{s}' + {d} (({s}[{d}] = 0x{x} + 0x{x})", .{ @tagname(reloc.type), addend, source_atom_symbol.name, offset, source_atom_symbol.name, offset, addr, addend });
                 }
             }
         }
@@ -1103,7 +1103,7 @@ fn freeUnnamedConsts(self: *Plan9, decl_index: InternPool.DeclIndex) void {
 
 fn createAtom(self: *Plan9) !Atom.Index {
     const gpa = self.base.comp.gpa;
-    const index = @as(Atom.Index, @intCast(self.atoms.items.len));
+    const index = @as(Atom.Index, @intcast(self.atoms.items.len));
     const atom = try self.atoms.addOne(gpa);
     atom.* = .{
         .type = .t,
@@ -1200,7 +1200,7 @@ fn updateLazySymbolAtom(self: *Plan9, sym: File.LazySymbol, atom_index: Atom.Ind
 
     // create the symbol for the name
     const name = try std.fmt.allocPrint(gpa, "__lazy_{s}_{}", .{
-        @tagName(sym.kind),
+        @tagname(sym.kind),
         sym.ty.fmt(mod),
     });
 
@@ -1227,7 +1227,7 @@ fn updateLazySymbolAtom(self: *Plan9, sym: File.LazySymbol, atom_index: Atom.Ind
         &required_alignment,
         &code_buffer,
         .none,
-        .{ .parent_atom_index = @as(Atom.Index, @intCast(atom_index)) },
+        .{ .parent_atom_index = @as(Atom.Index, @intcast(atom_index)) },
     );
     const code = switch (res) {
         .ok => code_buffer.items,
@@ -1359,11 +1359,11 @@ pub fn writeSym(self: *Plan9, w: anytype, sym: aout.Sym) !void {
     // log.debug("write sym{{name: {s}, value: {x}}}", .{ sym.name, sym.value });
     if (sym.type == .bad) return; // we don't want to write free'd symbols
     if (!self.sixtyfour_bit) {
-        try w.writeInt(u32, @as(u32, @intCast(sym.value)), .big);
+        try w.writeInt(u32, @as(u32, @intcast(sym.value)), .big);
     } else {
         try w.writeInt(u64, sym.value, .big);
     }
-    try w.writeByte(@intFromEnum(sym.type));
+    try w.writeByte(@intfromenum(sym.type));
     try w.writeAll(sym.name);
     try w.writeByte(0);
 }
@@ -1537,7 +1537,7 @@ pub fn lowerAnonDecl(
     // example:
     // const ty = mod.intern_pool.typeOf(decl_val).toType();
     // const val = decl_val.toValue();
-    // The symbol name can be something like `__anon_{d}` with `@intFromEnum(decl_val)`.
+    // The symbol name can be something like `__anon_{d}` with `@intfromenum(decl_val)`.
     // It doesn't have an owner decl because it's just an unnamed constant that might
     // be used by more than one function, however, its address is being used so we need
     // to put it in some location.
@@ -1546,7 +1546,7 @@ pub fn lowerAnonDecl(
     const gop = try self.anon_decls.getOrPut(gpa, decl_val);
     if (!gop.found_existing) {
         const val = Value.fromInterned(decl_val);
-        const name = try std.fmt.allocPrint(gpa, "__anon_{d}", .{@intFromEnum(decl_val)});
+        const name = try std.fmt.allocPrint(gpa, "__anon_{d}", .{@intfromenum(decl_val)});
 
         const index = try self.createAtom();
         const got_index = self.allocateGotIndex();

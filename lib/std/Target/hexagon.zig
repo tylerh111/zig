@@ -55,80 +55,80 @@ pub const featureSetHasAny = CpuFeature.feature_set_fns(Feature).featureSetHasAn
 pub const featureSetHasAll = CpuFeature.feature_set_fns(Feature).featureSetHasAll;
 
 pub const all_features = blk: {
-    const len = @typeInfo(Feature).Enum.fields.len;
+    const len = @typeinfo(Feature).Enum.fields.len;
     std.debug.assert(len <= CpuFeature.Set.needed_bit_count);
     var result: [len]CpuFeature = undefined;
-    result[@intFromEnum(Feature.audio)] = .{
+    result[@intfromenum(Feature.audio)] = .{
         .llvm_name = "audio",
         .description = "Hexagon Audio extension instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.cabac)] = .{
+    result[@intfromenum(Feature.cabac)] = .{
         .llvm_name = "cabac",
         .description = "Emit the CABAC instruction",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.compound)] = .{
+    result[@intfromenum(Feature.compound)] = .{
         .llvm_name = "compound",
         .description = "Use compound instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.duplex)] = .{
+    result[@intfromenum(Feature.duplex)] = .{
         .llvm_name = "duplex",
         .description = "Enable generation of duplex instruction",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.hvx)] = .{
+    result[@intfromenum(Feature.hvx)] = .{
         .llvm_name = "hvx",
         .description = "Hexagon HVX instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.hvx_ieee_fp)] = .{
+    result[@intfromenum(Feature.hvx_ieee_fp)] = .{
         .llvm_name = "hvx-ieee-fp",
         .description = "Hexagon HVX IEEE floating point instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.hvx_length128b)] = .{
+    result[@intfromenum(Feature.hvx_length128b)] = .{
         .llvm_name = "hvx-length128b",
         .description = "Hexagon HVX 128B instructions",
         .dependencies = featureSet(&[_]Feature{
             .hvx,
         }),
     };
-    result[@intFromEnum(Feature.hvx_length64b)] = .{
+    result[@intfromenum(Feature.hvx_length64b)] = .{
         .llvm_name = "hvx-length64b",
         .description = "Hexagon HVX 64B instructions",
         .dependencies = featureSet(&[_]Feature{
             .hvx,
         }),
     };
-    result[@intFromEnum(Feature.hvx_qfloat)] = .{
+    result[@intfromenum(Feature.hvx_qfloat)] = .{
         .llvm_name = "hvx-qfloat",
         .description = "Hexagon HVX QFloating point instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.hvxv60)] = .{
+    result[@intfromenum(Feature.hvxv60)] = .{
         .llvm_name = "hvxv60",
         .description = "Hexagon HVX instructions",
         .dependencies = featureSet(&[_]Feature{
             .hvx,
         }),
     };
-    result[@intFromEnum(Feature.hvxv62)] = .{
+    result[@intfromenum(Feature.hvxv62)] = .{
         .llvm_name = "hvxv62",
         .description = "Hexagon HVX instructions",
         .dependencies = featureSet(&[_]Feature{
             .hvxv60,
         }),
     };
-    result[@intFromEnum(Feature.hvxv65)] = .{
+    result[@intfromenum(Feature.hvxv65)] = .{
         .llvm_name = "hvxv65",
         .description = "Hexagon HVX instructions",
         .dependencies = featureSet(&[_]Feature{
             .hvxv62,
         }),
     };
-    result[@intFromEnum(Feature.hvxv66)] = .{
+    result[@intfromenum(Feature.hvxv66)] = .{
         .llvm_name = "hvxv66",
         .description = "Hexagon HVX instructions",
         .dependencies = featureSet(&[_]Feature{
@@ -136,166 +136,166 @@ pub const all_features = blk: {
             .zreg,
         }),
     };
-    result[@intFromEnum(Feature.hvxv67)] = .{
+    result[@intfromenum(Feature.hvxv67)] = .{
         .llvm_name = "hvxv67",
         .description = "Hexagon HVX instructions",
         .dependencies = featureSet(&[_]Feature{
             .hvxv66,
         }),
     };
-    result[@intFromEnum(Feature.hvxv68)] = .{
+    result[@intfromenum(Feature.hvxv68)] = .{
         .llvm_name = "hvxv68",
         .description = "Hexagon HVX instructions",
         .dependencies = featureSet(&[_]Feature{
             .hvxv67,
         }),
     };
-    result[@intFromEnum(Feature.hvxv69)] = .{
+    result[@intfromenum(Feature.hvxv69)] = .{
         .llvm_name = "hvxv69",
         .description = "Hexagon HVX instructions",
         .dependencies = featureSet(&[_]Feature{
             .hvxv68,
         }),
     };
-    result[@intFromEnum(Feature.hvxv71)] = .{
+    result[@intfromenum(Feature.hvxv71)] = .{
         .llvm_name = "hvxv71",
         .description = "Hexagon HVX instructions",
         .dependencies = featureSet(&[_]Feature{
             .hvxv69,
         }),
     };
-    result[@intFromEnum(Feature.hvxv73)] = .{
+    result[@intfromenum(Feature.hvxv73)] = .{
         .llvm_name = "hvxv73",
         .description = "Hexagon HVX instructions",
         .dependencies = featureSet(&[_]Feature{
             .hvxv71,
         }),
     };
-    result[@intFromEnum(Feature.long_calls)] = .{
+    result[@intfromenum(Feature.long_calls)] = .{
         .llvm_name = "long-calls",
         .description = "Use constant-extended calls",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.mem_noshuf)] = .{
+    result[@intfromenum(Feature.mem_noshuf)] = .{
         .llvm_name = "mem_noshuf",
         .description = "Supports mem_noshuf feature",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.memops)] = .{
+    result[@intfromenum(Feature.memops)] = .{
         .llvm_name = "memops",
         .description = "Use memop instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.noreturn_stack_elim)] = .{
+    result[@intfromenum(Feature.noreturn_stack_elim)] = .{
         .llvm_name = "noreturn-stack-elim",
         .description = "Eliminate stack allocation in a noreturn function when possible",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.nvj)] = .{
+    result[@intfromenum(Feature.nvj)] = .{
         .llvm_name = "nvj",
         .description = "Support for new-value jumps",
         .dependencies = featureSet(&[_]Feature{
             .packets,
         }),
     };
-    result[@intFromEnum(Feature.nvs)] = .{
+    result[@intfromenum(Feature.nvs)] = .{
         .llvm_name = "nvs",
         .description = "Support for new-value stores",
         .dependencies = featureSet(&[_]Feature{
             .packets,
         }),
     };
-    result[@intFromEnum(Feature.packets)] = .{
+    result[@intfromenum(Feature.packets)] = .{
         .llvm_name = "packets",
         .description = "Support for instruction packets",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.prev65)] = .{
+    result[@intfromenum(Feature.prev65)] = .{
         .llvm_name = "prev65",
         .description = "Support features deprecated in v65",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.reserved_r19)] = .{
+    result[@intfromenum(Feature.reserved_r19)] = .{
         .llvm_name = "reserved-r19",
         .description = "Reserve register R19",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.small_data)] = .{
+    result[@intfromenum(Feature.small_data)] = .{
         .llvm_name = "small-data",
         .description = "Allow GP-relative addressing of global variables",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.tinycore)] = .{
+    result[@intfromenum(Feature.tinycore)] = .{
         .llvm_name = "tinycore",
         .description = "Hexagon Tiny Core",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.unsafe_fp)] = .{
+    result[@intfromenum(Feature.unsafe_fp)] = .{
         .llvm_name = "unsafe-fp",
         .description = "Use unsafe FP math",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.v5)] = .{
+    result[@intfromenum(Feature.v5)] = .{
         .llvm_name = "v5",
         .description = "Enable Hexagon V5 architecture",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.v55)] = .{
+    result[@intfromenum(Feature.v55)] = .{
         .llvm_name = "v55",
         .description = "Enable Hexagon V55 architecture",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.v60)] = .{
+    result[@intfromenum(Feature.v60)] = .{
         .llvm_name = "v60",
         .description = "Enable Hexagon V60 architecture",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.v62)] = .{
+    result[@intfromenum(Feature.v62)] = .{
         .llvm_name = "v62",
         .description = "Enable Hexagon V62 architecture",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.v65)] = .{
+    result[@intfromenum(Feature.v65)] = .{
         .llvm_name = "v65",
         .description = "Enable Hexagon V65 architecture",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.v66)] = .{
+    result[@intfromenum(Feature.v66)] = .{
         .llvm_name = "v66",
         .description = "Enable Hexagon V66 architecture",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.v67)] = .{
+    result[@intfromenum(Feature.v67)] = .{
         .llvm_name = "v67",
         .description = "Enable Hexagon V67 architecture",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.v68)] = .{
+    result[@intfromenum(Feature.v68)] = .{
         .llvm_name = "v68",
         .description = "Enable Hexagon V68 architecture",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.v69)] = .{
+    result[@intfromenum(Feature.v69)] = .{
         .llvm_name = "v69",
         .description = "Enable Hexagon V69 architecture",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.v71)] = .{
+    result[@intfromenum(Feature.v71)] = .{
         .llvm_name = "v71",
         .description = "Enable Hexagon V71 architecture",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.v73)] = .{
+    result[@intfromenum(Feature.v73)] = .{
         .llvm_name = "v73",
         .description = "Enable Hexagon V73 architecture",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.zreg)] = .{
+    result[@intfromenum(Feature.zreg)] = .{
         .llvm_name = "zreg",
         .description = "Hexagon ZReg extension instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    const ti = @typeInfo(Feature);
+    const ti = @typeinfo(Feature);
     for (&result, 0..) |*elem, i| {
         elem.index = i;
         elem.name = ti.Enum.fields[i].name;

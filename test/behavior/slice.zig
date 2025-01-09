@@ -25,7 +25,7 @@ comptime {
     const unsigned = [_]type{ c_uint, c_ulong, c_ulonglong };
     const list: []const type = &unsigned;
     const pos = S.indexOfScalar(type, list, c_ulong).?;
-    if (pos != 1) @compileError("bad pos");
+    if (pos != 1) @compileerror("bad pos");
 }
 
 test "slicing" {
@@ -131,7 +131,7 @@ test "generic malloc free" {
 }
 var some_mem: [100]u8 = undefined;
 fn memAlloc(comptime T: type, n: usize) anyerror![]T {
-    return @as([*]T, @ptrCast(&some_mem[0]))[0..n];
+    return @as([*]T, @ptrcast(&some_mem[0]))[0..n];
 }
 fn memFree(comptime T: type, memory: []T) void {
     _ = memory;
@@ -140,10 +140,10 @@ fn memFree(comptime T: type, memory: []T) void {
 test "slice of hardcoded address to pointer" {
     const S = struct {
         fn doTheTest() !void {
-            const pointer = @as([*]u8, @ptrFromInt(0x04))[0..2];
+            const pointer = @as([*]u8, @ptrfromint(0x04))[0..2];
             comptime assert(@TypeOf(pointer) == *[2]u8);
             const slice: []const u8 = pointer;
-            try expect(@intFromPtr(slice.ptr) == 4);
+            try expect(@intfromptr(slice.ptr) == 4);
             try expect(slice.len == 2);
         }
     };
@@ -154,7 +154,7 @@ test "slice of hardcoded address to pointer" {
 test "comptime slice of pointer preserves comptime var" {
     comptime {
         var buff: [10]u8 = undefined;
-        var a = @as([*]u8, @ptrCast(&buff));
+        var a = @as([*]u8, @ptrcast(&buff));
         a[0..1][0] = 1;
         try expect(buff[0..][0..][0] == 1);
     }
@@ -163,7 +163,7 @@ test "comptime slice of pointer preserves comptime var" {
 test "comptime pointer cast array and then slice" {
     const array = [_]u8{ 1, 2, 3, 4, 5, 6, 7, 8 };
 
-    const ptrA: [*]const u8 = @as([*]const u8, @ptrCast(&array));
+    const ptrA: [*]const u8 = @as([*]const u8, @ptrcast(&array));
     const sliceA: []const u8 = ptrA[0..2];
 
     const ptrB: [*]const u8 = &array;
@@ -189,7 +189,7 @@ test "slicing pointer by length" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const array = [_]u8{ 1, 2, 3, 4, 5, 6, 7, 8 };
-    const ptr: [*]const u8 = @as([*]const u8, @ptrCast(&array));
+    const ptr: [*]const u8 = @as([*]const u8, @ptrcast(&array));
     const slice = ptr[1..][0..5];
     try expect(slice.len == 5);
     var i: usize = 0;
@@ -198,13 +198,13 @@ test "slicing pointer by length" {
     }
 }
 
-const x = @as([*]i32, @ptrFromInt(0x1000))[0..0x500];
+const x = @as([*]i32, @ptrfromint(0x1000))[0..0x500];
 const y = x[0x100..];
 test "compile time slice of pointer to hard coded address" {
-    try expect(@intFromPtr(x) == 0x1000);
+    try expect(@intfromptr(x) == 0x1000);
     try expect(x.len == 0x500);
 
-    try expect(@intFromPtr(y) == 0x1400);
+    try expect(@intfromptr(y) == 0x1400);
     try expect(y.len == 0x400);
 }
 
@@ -265,7 +265,7 @@ test "C pointer slice access" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     var buf: [10]u32 = [1]u32{42} ** 10;
-    const c_ptr = @as([*c]const u32, @ptrCast(&buf));
+    const c_ptr = @as([*c]const u32, @ptrcast(&buf));
 
     var runtime_zero: usize = 0;
     _ = &runtime_zero;
@@ -339,9 +339,9 @@ test "empty array to slice" {
             const align_1: []align(1) u8 = empty;
             const align_4: []align(4) u8 = empty;
             const align_16: []align(16) u8 = empty;
-            try expect(1 == @typeInfo(@TypeOf(align_1)).Pointer.alignment);
-            try expect(4 == @typeInfo(@TypeOf(align_4)).Pointer.alignment);
-            try expect(16 == @typeInfo(@TypeOf(align_16)).Pointer.alignment);
+            try expect(1 == @typeinfo(@TypeOf(align_1)).Pointer.alignment);
+            try expect(4 == @typeinfo(@TypeOf(align_4)).Pointer.alignment);
+            try expect(16 == @typeinfo(@TypeOf(align_16)).Pointer.alignment);
         }
     };
 
@@ -349,16 +349,16 @@ test "empty array to slice" {
     try comptime S.doTheTest();
 }
 
-test "@ptrCast slice to pointer" {
+test "@ptrcast slice to pointer" {
     if (builtin.zig_backend == .stage2_aarch64) return error.SkipZigTest;
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
         fn doTheTest() !void {
-            var array align(@alignOf(u16)) = [5]u8{ 0xff, 0xff, 0xff, 0xff, 0xff };
-            const slice: []align(@alignOf(u16)) u8 = &array;
-            const ptr: *u16 = @ptrCast(slice);
+            var array align(@alignof(u16)) = [5]u8{ 0xff, 0xff, 0xff, 0xff, 0xff };
+            const slice: []align(@alignof(u16)) u8 = &array;
+            const ptr: *u16 = @ptrcast(slice);
             try expect(ptr.* == 65535);
         }
     };
@@ -517,7 +517,7 @@ test "slice syntax resulting in pointer-to-array" {
             var slice: [:0]u8 = &array;
             comptime assert(@TypeOf(slice[1..3]) == *[2]u8);
             comptime assert(@TypeOf(slice[1..3 :4]) == *[2:4]u8);
-            if (@inComptime()) {
+            if (@incomptime()) {
                 comptime assert(@TypeOf(slice[1..]) == *[4:0]u8);
             } else {
                 comptime assert(@TypeOf(slice[1..]) == [:0]u8);
@@ -702,7 +702,7 @@ test "type coercion of pointer to anon struct literal to pointer to slice" {
             var x2: []const u8 = "hello";
             _ = &x2;
             const t2 = &.{ x2, ", ", "world!" };
-            // @compileLog(@TypeOf(t2));
+            // @compilelog(@TypeOf(t2));
             const slice2: []const []const u8 = t2;
             try expect(slice2.len == 3);
             try expect(mem.eql(u8, slice2[0], "hello"));
@@ -894,14 +894,14 @@ test "empty slice ptr is non null" {
     {
         const empty_slice: []u8 = &[_]u8{};
         const p: [*]u8 = empty_slice.ptr + 0;
-        const t = @as([*]i8, @ptrCast(p));
-        try expect(@intFromPtr(t) == @intFromPtr(empty_slice.ptr));
+        const t = @as([*]i8, @ptrcast(p));
+        try expect(@intfromptr(t) == @intfromptr(empty_slice.ptr));
     }
     {
         const empty_slice: []u8 = &.{};
         const p: [*]u8 = empty_slice.ptr + 0;
-        const t = @as([*]i8, @ptrCast(p));
-        try expect(@intFromPtr(t) == @intFromPtr(empty_slice.ptr));
+        const t = @as([*]i8, @ptrcast(p));
+        try expect(@intfromptr(t) == @intfromptr(empty_slice.ptr));
     }
 }
 

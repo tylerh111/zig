@@ -71,7 +71,7 @@ pub const snan = float.snan;
 ///
 /// NaN values are never considered equal to any value.
 pub fn approxEqAbs(comptime T: type, x: T, y: T, tolerance: T) bool {
-    assert(@typeInfo(T) == .Float or @typeInfo(T) == .ComptimeFloat);
+    assert(@typeinfo(T) == .Float or @typeinfo(T) == .ComptimeFloat);
     assert(tolerance >= 0);
 
     // Fast path for equal values (and signed zeros and infinites).
@@ -99,7 +99,7 @@ pub fn approxEqAbs(comptime T: type, x: T, y: T, tolerance: T) bool {
 ///
 /// NaN values are never considered equal to any value.
 pub fn approxEqRel(comptime T: type, x: T, y: T, tolerance: T) bool {
-    assert(@typeInfo(T) == .Float or @typeInfo(T) == .ComptimeFloat);
+    assert(@typeinfo(T) == .Float or @typeinfo(T) == .ComptimeFloat);
     assert(tolerance > 0);
 
     // Fast path for equal values (and signed zeros and infinites).
@@ -129,7 +129,7 @@ test approxEqAbs {
     comptime {
         // `comptime_float` is guaranteed to have the same precision and operations of
         // the largest other floating point type, which is f128 but it doesn't have a
-        // defined layout so we can't rely on `@bitCast` to construct the smallest
+        // defined layout so we can't rely on `@bitcast` to construct the smallest
         // possible epsilon value like we do in the tests above. In the same vein, we
         // also can't represent a max/min, `NaN` or `Inf` values.
         const eps_value = 1e-4;
@@ -162,7 +162,7 @@ test approxEqRel {
     comptime {
         // `comptime_float` is guaranteed to have the same precision and operations of
         // the largest other floating point type, which is f128 but it doesn't have a
-        // defined layout so we can't rely on `@bitCast` to construct the smallest
+        // defined layout so we can't rely on `@bitcast` to construct the smallest
         // possible epsilon value like we do in the tests above. In the same vein, we
         // also can't represent a max/min, `NaN` or `Inf` values.
         const eps_value = 1e-4;
@@ -262,12 +262,12 @@ pub inline fn tan(value: anytype) @TypeOf(value) {
 /// Converts an angle in radians to degrees. T must be a float or comptime number or a vector of floats.
 pub fn radiansToDegrees(ang: anytype) if (@TypeOf(ang) == comptime_int) comptime_float else @TypeOf(ang) {
     const T = @TypeOf(ang);
-    switch (@typeInfo(T)) {
+    switch (@typeinfo(T)) {
         .Float, .ComptimeFloat, .ComptimeInt => return ang * deg_per_rad,
-        .Vector => |V| if (@typeInfo(V.child) == .Float) return ang * @as(T, @splat(deg_per_rad)),
+        .Vector => |V| if (@typeinfo(V.child) == .Float) return ang * @as(T, @splat(deg_per_rad)),
         else => {},
     }
-    @compileError("Input must be float or a comptime number, or a vector of floats.");
+    @compileerror("Input must be float or a comptime number, or a vector of floats.");
 }
 
 test radiansToDegrees {
@@ -297,12 +297,12 @@ test radiansToDegrees {
 /// Converts an angle in degrees to radians. T must be a float or comptime number or a vector of floats.
 pub fn degreesToRadians(ang: anytype) if (@TypeOf(ang) == comptime_int) comptime_float else @TypeOf(ang) {
     const T = @TypeOf(ang);
-    switch (@typeInfo(T)) {
+    switch (@typeinfo(T)) {
         .Float, .ComptimeFloat, .ComptimeInt => return ang * rad_per_deg,
-        .Vector => |V| if (@typeInfo(V.child) == .Float) return ang * @as(T, @splat(rad_per_deg)),
+        .Vector => |V| if (@typeinfo(V.child) == .Float) return ang * @as(T, @splat(rad_per_deg)),
         else => {},
     }
-    @compileError("Input must be float or a comptime number, or a vector of floats.");
+    @compileerror("Input must be float or a comptime number, or a vector of floats.");
 }
 
 test degreesToRadians {
@@ -407,8 +407,8 @@ test {
 /// Given two types, returns the smallest one which is capable of holding the
 /// full range of the minimum value.
 pub fn Min(comptime A: type, comptime B: type) type {
-    switch (@typeInfo(A)) {
-        .Int => |a_info| switch (@typeInfo(B)) {
+    switch (@typeinfo(A)) {
+        .Int => |a_info| switch (@typeinfo(B)) {
             .Int => |b_info| if (a_info.signedness == .unsigned and b_info.signedness == .unsigned) {
                 if (a_info.bits < b_info.bits) {
                     return A;
@@ -435,10 +435,10 @@ pub fn Min(comptime A: type, comptime B: type) type {
 /// ```
 /// Limit x to the half-open interval [-r, r).
 pub fn wrap(x: anytype, r: anytype) @TypeOf(x) {
-    const info_x = @typeInfo(@TypeOf(x));
-    const info_r = @typeInfo(@TypeOf(r));
+    const info_x = @typeinfo(@TypeOf(x));
+    const info_r = @typeinfo(@TypeOf(r));
     if (info_x == .Int and info_x.Int.signedness != .signed) {
-        @compileError("x must be floating point, comptime integer, or signed integer.");
+        @compileerror("x must be floating point, comptime integer, or signed integer.");
     }
     switch (info_r) {
         .Int => {
@@ -452,7 +452,7 @@ pub fn wrap(x: anytype, r: anytype) @TypeOf(x) {
                 break :do @Type(info);
             };
             const radius: if (info_r.Int.signedness == .signed) @TypeOf(r) else R = r;
-            return @intCast(@mod(x - radius, 2 * @as(R, r)) - r); // provably impossible to overflow
+            return @intcast(@mod(x - radius, 2 * @as(R, r)) - r); // provably impossible to overflow
         },
         else => {
             return @mod(x - r, 2 * r) - r;
@@ -519,13 +519,13 @@ test wrap {
 /// Limit val to the inclusive range [lower, upper].
 pub fn clamp(val: anytype, lower: anytype, upper: anytype) @TypeOf(val, lower, upper) {
     const T = @TypeOf(val, lower, upper);
-    switch (@typeInfo(T)) {
+    switch (@typeinfo(T)) {
         .Int, .Float, .ComptimeInt, .ComptimeFloat => assert(lower <= upper),
-        .Vector => |vinfo| switch (@typeInfo(vinfo.child)) {
+        .Vector => |vinfo| switch (@typeinfo(vinfo.child)) {
             .Int, .Float => assert(@reduce(.And, lower <= upper)),
-            else => @compileError("Expected vector of ints or floats, found " ++ @typeName(T)),
+            else => @compileerror("Expected vector of ints or floats, found " ++ @typename(T)),
         },
-        else => @compileError("Expected an int, float or vector of one, found " ++ @typeName(T)),
+        else => @compileerror("Expected an int, float or vector of one, found " ++ @typename(T)),
     }
     return @max(lower, @min(val, upper));
 }
@@ -553,7 +553,7 @@ test clamp {
 /// Returns the product of a and b. Returns an error on overflow.
 pub fn mul(comptime T: type, a: T, b: T) (error{Overflow}!T) {
     if (T == comptime_int) return a * b;
-    const ov = @mulWithOverflow(a, b);
+    const ov = @mulwithoverflow(a, b);
     if (ov[1] != 0) return error.Overflow;
     return ov[0];
 }
@@ -561,7 +561,7 @@ pub fn mul(comptime T: type, a: T, b: T) (error{Overflow}!T) {
 /// Returns the sum of a and b. Returns an error on overflow.
 pub fn add(comptime T: type, a: T, b: T) (error{Overflow}!T) {
     if (T == comptime_int) return a + b;
-    const ov = @addWithOverflow(a, b);
+    const ov = @addwithoverflow(a, b);
     if (ov[1] != 0) return error.Overflow;
     return ov[0];
 }
@@ -569,7 +569,7 @@ pub fn add(comptime T: type, a: T, b: T) (error{Overflow}!T) {
 /// Returns a - b, or an error on overflow.
 pub fn sub(comptime T: type, a: T, b: T) (error{Overflow}!T) {
     if (T == comptime_int) return a - b;
-    const ov = @subWithOverflow(a, b);
+    const ov = @subwithoverflow(a, b);
     if (ov[1] != 0) return error.Overflow;
     return ov[0];
 }
@@ -580,9 +580,9 @@ pub fn negate(x: anytype) !@TypeOf(x) {
 
 /// Shifts a left by shift_amt. Returns an error on overflow. shift_amt
 /// is unsigned.
-pub fn shlExact(comptime T: type, a: T, shift_amt: Log2Int(T)) !T {
+pub fn shlexact(comptime T: type, a: T, shift_amt: Log2Int(T)) !T {
     if (T == comptime_int) return a << shift_amt;
-    const ov = @shlWithOverflow(a, shift_amt);
+    const ov = @shlwithoverflow(a, shift_amt);
     if (ov[1] != 0) return error.Overflow;
     return ov[0];
 }
@@ -593,18 +593,18 @@ pub fn shl(comptime T: type, a: T, shift_amt: anytype) T {
     const abs_shift_amt = @abs(shift_amt);
 
     const casted_shift_amt = blk: {
-        if (@typeInfo(T) == .Vector) {
-            const C = @typeInfo(T).Vector.child;
-            const len = @typeInfo(T).Vector.len;
-            if (abs_shift_amt >= @typeInfo(C).Int.bits) return @splat(0);
-            break :blk @as(@Vector(len, Log2Int(C)), @splat(@as(Log2Int(C), @intCast(abs_shift_amt))));
+        if (@typeinfo(T) == .Vector) {
+            const C = @typeinfo(T).Vector.child;
+            const len = @typeinfo(T).Vector.len;
+            if (abs_shift_amt >= @typeinfo(C).Int.bits) return @splat(0);
+            break :blk @as(@Vector(len, Log2Int(C)), @splat(@as(Log2Int(C), @intcast(abs_shift_amt))));
         } else {
-            if (abs_shift_amt >= @typeInfo(T).Int.bits) return 0;
-            break :blk @as(Log2Int(T), @intCast(abs_shift_amt));
+            if (abs_shift_amt >= @typeinfo(T).Int.bits) return 0;
+            break :blk @as(Log2Int(T), @intcast(abs_shift_amt));
         }
     };
 
-    if (@TypeOf(shift_amt) == comptime_int or @typeInfo(@TypeOf(shift_amt)).Int.signedness == .signed) {
+    if (@TypeOf(shift_amt) == comptime_int or @typeinfo(@TypeOf(shift_amt)).Int.signedness == .signed) {
         if (shift_amt < 0) {
             return a >> casted_shift_amt;
         }
@@ -638,18 +638,18 @@ pub fn shr(comptime T: type, a: T, shift_amt: anytype) T {
     const abs_shift_amt = @abs(shift_amt);
 
     const casted_shift_amt = blk: {
-        if (@typeInfo(T) == .Vector) {
-            const C = @typeInfo(T).Vector.child;
-            const len = @typeInfo(T).Vector.len;
-            if (abs_shift_amt >= @typeInfo(C).Int.bits) return @splat(0);
-            break :blk @as(@Vector(len, Log2Int(C)), @splat(@as(Log2Int(C), @intCast(abs_shift_amt))));
+        if (@typeinfo(T) == .Vector) {
+            const C = @typeinfo(T).Vector.child;
+            const len = @typeinfo(T).Vector.len;
+            if (abs_shift_amt >= @typeinfo(C).Int.bits) return @splat(0);
+            break :blk @as(@Vector(len, Log2Int(C)), @splat(@as(Log2Int(C), @intcast(abs_shift_amt))));
         } else {
-            if (abs_shift_amt >= @typeInfo(T).Int.bits) return 0;
-            break :blk @as(Log2Int(T), @intCast(abs_shift_amt));
+            if (abs_shift_amt >= @typeinfo(T).Int.bits) return 0;
+            break :blk @as(Log2Int(T), @intcast(abs_shift_amt));
         }
     };
 
-    if (@TypeOf(shift_amt) == comptime_int or @typeInfo(@TypeOf(shift_amt)).Int.signedness == .signed) {
+    if (@TypeOf(shift_amt) == comptime_int or @typeinfo(@TypeOf(shift_amt)).Int.signedness == .signed) {
         if (shift_amt < 0) {
             return a << casted_shift_amt;
         }
@@ -680,26 +680,26 @@ test shr {
 /// Rotates right. Only unsigned values can be rotated.  Negative shift
 /// values result in shift modulo the bit count.
 pub fn rotr(comptime T: type, x: T, r: anytype) T {
-    if (@typeInfo(T) == .Vector) {
-        const C = @typeInfo(T).Vector.child;
+    if (@typeinfo(T) == .Vector) {
+        const C = @typeinfo(T).Vector.child;
         if (C == u0) return 0;
 
-        if (@typeInfo(C).Int.signedness == .signed) {
-            @compileError("cannot rotate signed integers");
+        if (@typeinfo(C).Int.signedness == .signed) {
+            @compileerror("cannot rotate signed integers");
         }
-        const ar: Log2Int(C) = @intCast(@mod(r, @typeInfo(C).Int.bits));
+        const ar: Log2Int(C) = @intcast(@mod(r, @typeinfo(C).Int.bits));
         return (x >> @splat(ar)) | (x << @splat(1 + ~ar));
-    } else if (@typeInfo(T).Int.signedness == .signed) {
-        @compileError("cannot rotate signed integer");
+    } else if (@typeinfo(T).Int.signedness == .signed) {
+        @compileerror("cannot rotate signed integer");
     } else {
         if (T == u0) return 0;
 
-        if (comptime isPowerOfTwo(@typeInfo(T).Int.bits)) {
-            const ar: Log2Int(T) = @intCast(@mod(r, @typeInfo(T).Int.bits));
+        if (comptime isPowerOfTwo(@typeinfo(T).Int.bits)) {
+            const ar: Log2Int(T) = @intcast(@mod(r, @typeinfo(T).Int.bits));
             return x >> ar | x << (1 +% ~ar);
         } else {
-            const ar = @mod(r, @typeInfo(T).Int.bits);
-            return shr(T, x, ar) | shl(T, x, @typeInfo(T).Int.bits - ar);
+            const ar = @mod(r, @typeinfo(T).Int.bits);
+            return shr(T, x, ar) | shl(T, x, @typeinfo(T).Int.bits - ar);
         }
     }
 }
@@ -726,26 +726,26 @@ test rotr {
 /// Rotates left. Only unsigned values can be rotated.  Negative shift
 /// values result in shift modulo the bit count.
 pub fn rotl(comptime T: type, x: T, r: anytype) T {
-    if (@typeInfo(T) == .Vector) {
-        const C = @typeInfo(T).Vector.child;
+    if (@typeinfo(T) == .Vector) {
+        const C = @typeinfo(T).Vector.child;
         if (C == u0) return 0;
 
-        if (@typeInfo(C).Int.signedness == .signed) {
-            @compileError("cannot rotate signed integers");
+        if (@typeinfo(C).Int.signedness == .signed) {
+            @compileerror("cannot rotate signed integers");
         }
-        const ar: Log2Int(C) = @intCast(@mod(r, @typeInfo(C).Int.bits));
+        const ar: Log2Int(C) = @intcast(@mod(r, @typeinfo(C).Int.bits));
         return (x << @splat(ar)) | (x >> @splat(1 +% ~ar));
-    } else if (@typeInfo(T).Int.signedness == .signed) {
-        @compileError("cannot rotate signed integer");
+    } else if (@typeinfo(T).Int.signedness == .signed) {
+        @compileerror("cannot rotate signed integer");
     } else {
         if (T == u0) return 0;
 
-        if (comptime isPowerOfTwo(@typeInfo(T).Int.bits)) {
-            const ar: Log2Int(T) = @intCast(@mod(r, @typeInfo(T).Int.bits));
+        if (comptime isPowerOfTwo(@typeinfo(T).Int.bits)) {
+            const ar: Log2Int(T) = @intcast(@mod(r, @typeinfo(T).Int.bits));
             return x << ar | x >> 1 +% ~ar;
         } else {
-            const ar = @mod(r, @typeInfo(T).Int.bits);
-            return shl(T, x, ar) | shr(T, x, @typeInfo(T).Int.bits - ar);
+            const ar = @mod(r, @typeinfo(T).Int.bits);
+            return shl(T, x, ar) | shr(T, x, @typeinfo(T).Int.bits - ar);
         }
     }
 }
@@ -775,7 +775,7 @@ pub fn Log2Int(comptime T: type) type {
     // comptime ceil log2
     if (T == comptime_int) return comptime_int;
     comptime var count = 0;
-    comptime var s = @typeInfo(T).Int.bits - 1;
+    comptime var s = @typeinfo(T).Int.bits - 1;
     inline while (s != 0) : (s >>= 1) {
         count += 1;
     }
@@ -788,7 +788,7 @@ pub fn Log2IntCeil(comptime T: type) type {
     // comptime ceil log2
     if (T == comptime_int) return comptime_int;
     comptime var count = 0;
-    comptime var s = @typeInfo(T).Int.bits;
+    comptime var s = @typeinfo(T).Int.bits;
     inline while (s != 0) : (s >>= 1) {
         count += 1;
     }
@@ -869,76 +869,76 @@ fn testOverflow() !void {
     try testing.expect((mul(i32, 3, 4) catch unreachable) == 12);
     try testing.expect((add(i32, 3, 4) catch unreachable) == 7);
     try testing.expect((sub(i32, 3, 4) catch unreachable) == -1);
-    try testing.expect((shlExact(i32, 0b11, 4) catch unreachable) == 0b110000);
+    try testing.expect((shlexact(i32, 0b11, 4) catch unreachable) == 0b110000);
 }
 
 /// Divide numerator by denominator, rounding toward zero. Returns an
 /// error on overflow or when denominator is zero.
-pub fn divTrunc(comptime T: type, numerator: T, denominator: T) !T {
-    @setRuntimeSafety(false);
+pub fn divtrunc(comptime T: type, numerator: T, denominator: T) !T {
+    @setruntimesafety(false);
     if (denominator == 0) return error.DivisionByZero;
-    if (@typeInfo(T) == .Int and @typeInfo(T).Int.signedness == .signed and numerator == minInt(T) and denominator == -1) return error.Overflow;
-    return @divTrunc(numerator, denominator);
+    if (@typeinfo(T) == .Int and @typeinfo(T).Int.signedness == .signed and numerator == minInt(T) and denominator == -1) return error.Overflow;
+    return @divtrunc(numerator, denominator);
 }
 
-test divTrunc {
+test divtrunc {
     try testDivTrunc();
     try comptime testDivTrunc();
 }
 fn testDivTrunc() !void {
-    try testing.expect((divTrunc(i32, 5, 3) catch unreachable) == 1);
-    try testing.expect((divTrunc(i32, -5, 3) catch unreachable) == -1);
-    try testing.expectError(error.DivisionByZero, divTrunc(i8, -5, 0));
-    try testing.expectError(error.Overflow, divTrunc(i8, -128, -1));
+    try testing.expect((divtrunc(i32, 5, 3) catch unreachable) == 1);
+    try testing.expect((divtrunc(i32, -5, 3) catch unreachable) == -1);
+    try testing.expectError(error.DivisionByZero, divtrunc(i8, -5, 0));
+    try testing.expectError(error.Overflow, divtrunc(i8, -128, -1));
 
-    try testing.expect((divTrunc(f32, 5.0, 3.0) catch unreachable) == 1.0);
-    try testing.expect((divTrunc(f32, -5.0, 3.0) catch unreachable) == -1.0);
+    try testing.expect((divtrunc(f32, 5.0, 3.0) catch unreachable) == 1.0);
+    try testing.expect((divtrunc(f32, -5.0, 3.0) catch unreachable) == -1.0);
 }
 
 /// Divide numerator by denominator, rounding toward negative
 /// infinity. Returns an error on overflow or when denominator is
 /// zero.
-pub fn divFloor(comptime T: type, numerator: T, denominator: T) !T {
-    @setRuntimeSafety(false);
+pub fn divfloor(comptime T: type, numerator: T, denominator: T) !T {
+    @setruntimesafety(false);
     if (denominator == 0) return error.DivisionByZero;
-    if (@typeInfo(T) == .Int and @typeInfo(T).Int.signedness == .signed and numerator == minInt(T) and denominator == -1) return error.Overflow;
-    return @divFloor(numerator, denominator);
+    if (@typeinfo(T) == .Int and @typeinfo(T).Int.signedness == .signed and numerator == minInt(T) and denominator == -1) return error.Overflow;
+    return @divfloor(numerator, denominator);
 }
 
-test divFloor {
+test divfloor {
     try testDivFloor();
     try comptime testDivFloor();
 }
 fn testDivFloor() !void {
-    try testing.expect((divFloor(i32, 5, 3) catch unreachable) == 1);
-    try testing.expect((divFloor(i32, -5, 3) catch unreachable) == -2);
-    try testing.expectError(error.DivisionByZero, divFloor(i8, -5, 0));
-    try testing.expectError(error.Overflow, divFloor(i8, -128, -1));
+    try testing.expect((divfloor(i32, 5, 3) catch unreachable) == 1);
+    try testing.expect((divfloor(i32, -5, 3) catch unreachable) == -2);
+    try testing.expectError(error.DivisionByZero, divfloor(i8, -5, 0));
+    try testing.expectError(error.Overflow, divfloor(i8, -128, -1));
 
-    try testing.expect((divFloor(f32, 5.0, 3.0) catch unreachable) == 1.0);
-    try testing.expect((divFloor(f32, -5.0, 3.0) catch unreachable) == -2.0);
+    try testing.expect((divfloor(f32, 5.0, 3.0) catch unreachable) == 1.0);
+    try testing.expect((divfloor(f32, -5.0, 3.0) catch unreachable) == -2.0);
 }
 
 /// Divide numerator by denominator, rounding toward positive
 /// infinity. Returns an error on overflow or when denominator is
 /// zero.
 pub fn divCeil(comptime T: type, numerator: T, denominator: T) !T {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     if (denominator == 0) return error.DivisionByZero;
-    const info = @typeInfo(T);
+    const info = @typeinfo(T);
     switch (info) {
         .ComptimeFloat, .Float => return @ceil(numerator / denominator),
         .ComptimeInt, .Int => {
             if (numerator < 0 and denominator < 0) {
                 if (info == .Int and numerator == minInt(T) and denominator == -1)
                     return error.Overflow;
-                return @divFloor(numerator + 1, denominator) + 1;
+                return @divfloor(numerator + 1, denominator) + 1;
             }
             if (numerator > 0 and denominator > 0)
-                return @divFloor(numerator - 1, denominator) + 1;
-            return @divTrunc(numerator, denominator);
+                return @divfloor(numerator - 1, denominator) + 1;
+            return @divtrunc(numerator, denominator);
         },
-        else => @compileError("divCeil unsupported on " ++ @typeName(T)),
+        else => @compileerror("divCeil unsupported on " ++ @typename(T)),
     }
 }
 
@@ -977,36 +977,36 @@ fn testDivCeil() !void {
 
 /// Divide numerator by denominator. Return an error if quotient is
 /// not an integer, denominator is zero, or on overflow.
-pub fn divExact(comptime T: type, numerator: T, denominator: T) !T {
-    @setRuntimeSafety(false);
+pub fn divexact(comptime T: type, numerator: T, denominator: T) !T {
+    @setruntimesafety(false);
     if (denominator == 0) return error.DivisionByZero;
-    if (@typeInfo(T) == .Int and @typeInfo(T).Int.signedness == .signed and numerator == minInt(T) and denominator == -1) return error.Overflow;
-    const result = @divTrunc(numerator, denominator);
+    if (@typeinfo(T) == .Int and @typeinfo(T).Int.signedness == .signed and numerator == minInt(T) and denominator == -1) return error.Overflow;
+    const result = @divtrunc(numerator, denominator);
     if (result * denominator != numerator) return error.UnexpectedRemainder;
     return result;
 }
 
-test divExact {
+test divexact {
     try testDivExact();
     try comptime testDivExact();
 }
 fn testDivExact() !void {
-    try testing.expect((divExact(i32, 10, 5) catch unreachable) == 2);
-    try testing.expect((divExact(i32, -10, 5) catch unreachable) == -2);
-    try testing.expectError(error.DivisionByZero, divExact(i8, -5, 0));
-    try testing.expectError(error.Overflow, divExact(i8, -128, -1));
-    try testing.expectError(error.UnexpectedRemainder, divExact(i32, 5, 2));
+    try testing.expect((divexact(i32, 10, 5) catch unreachable) == 2);
+    try testing.expect((divexact(i32, -10, 5) catch unreachable) == -2);
+    try testing.expectError(error.DivisionByZero, divexact(i8, -5, 0));
+    try testing.expectError(error.Overflow, divexact(i8, -128, -1));
+    try testing.expectError(error.UnexpectedRemainder, divexact(i32, 5, 2));
 
-    try testing.expect((divExact(f32, 10.0, 5.0) catch unreachable) == 2.0);
-    try testing.expect((divExact(f32, -10.0, 5.0) catch unreachable) == -2.0);
-    try testing.expectError(error.UnexpectedRemainder, divExact(f32, 5.0, 2.0));
+    try testing.expect((divexact(f32, 10.0, 5.0) catch unreachable) == 2.0);
+    try testing.expect((divexact(f32, -10.0, 5.0) catch unreachable) == -2.0);
+    try testing.expectError(error.UnexpectedRemainder, divexact(f32, 5.0, 2.0));
 }
 
 /// Returns numerator modulo denominator, or an error if denominator is
 /// zero or negative. Negative numerators never result in negative
 /// return values.
 pub fn mod(comptime T: type, numerator: T, denominator: T) !T {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     if (denominator == 0) return error.DivisionByZero;
     if (denominator < 0) return error.NegativeDenominator;
     return @mod(numerator, denominator);
@@ -1032,7 +1032,7 @@ fn testMod() !void {
 /// an error if denominator is zero or negative. Negative numerators
 /// can give negative results.
 pub fn rem(comptime T: type, numerator: T, denominator: T) !T {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     if (denominator == 0) return error.DivisionByZero;
     if (denominator < 0) return error.NegativeDenominator;
     return @rem(numerator, denominator);
@@ -1056,15 +1056,15 @@ fn testRem() !void {
 
 /// Returns the negation of the integer parameter.
 /// Result is a signed integer.
-pub fn negateCast(x: anytype) !std.meta.Int(.signed, @bitSizeOf(@TypeOf(x))) {
-    if (@typeInfo(@TypeOf(x)).Int.signedness == .signed) return negate(x);
+pub fn negateCast(x: anytype) !std.meta.Int(.signed, @bitsizeof(@TypeOf(x))) {
+    if (@typeinfo(@TypeOf(x)).Int.signedness == .signed) return negate(x);
 
-    const int = std.meta.Int(.signed, @bitSizeOf(@TypeOf(x)));
+    const int = std.meta.Int(.signed, @bitsizeof(@TypeOf(x)));
     if (x > -minInt(int)) return error.Overflow;
 
     if (x == -minInt(int)) return minInt(int);
 
-    return -@as(int, @intCast(x));
+    return -@as(int, @intcast(x));
 }
 
 test negateCast {
@@ -1080,15 +1080,15 @@ test negateCast {
 /// Cast an integer to a different integer type. If the value doesn't fit,
 /// return null.
 pub fn cast(comptime T: type, x: anytype) ?T {
-    comptime assert(@typeInfo(T) == .Int); // must pass an integer
+    comptime assert(@typeinfo(T) == .Int); // must pass an integer
     const is_comptime = @TypeOf(x) == comptime_int;
-    comptime assert(is_comptime or @typeInfo(@TypeOf(x)) == .Int); // must pass an integer
+    comptime assert(is_comptime or @typeinfo(@TypeOf(x)) == .Int); // must pass an integer
     if ((is_comptime or maxInt(@TypeOf(x)) > maxInt(T)) and x > maxInt(T)) {
         return null;
     } else if ((is_comptime or minInt(@TypeOf(x)) < minInt(T)) and x < minInt(T)) {
         return null;
     } else {
-        return @as(T, @intCast(x));
+        return @as(T, @intcast(x));
     }
 }
 
@@ -1111,18 +1111,18 @@ test cast {
 pub const AlignCastError = error{UnalignedMemory};
 
 fn AlignCastResult(comptime alignment: u29, comptime Ptr: type) type {
-    var ptr_info = @typeInfo(Ptr);
+    var ptr_info = @typeinfo(Ptr);
     ptr_info.Pointer.alignment = alignment;
     return @Type(ptr_info);
 }
 
 /// Align cast a pointer but return an error if it's the wrong alignment
-pub fn alignCast(comptime alignment: u29, ptr: anytype) AlignCastError!AlignCastResult(alignment, @TypeOf(ptr)) {
-    const addr = @intFromPtr(ptr);
+pub fn aligncast(comptime alignment: u29, ptr: anytype) AlignCastError!AlignCastResult(alignment, @TypeOf(ptr)) {
+    const addr = @intfromptr(ptr);
     if (addr % alignment != 0) {
         return error.UnalignedMemory;
     }
-    return @alignCast(ptr);
+    return @aligncast(ptr);
 }
 
 /// Asserts `int > 0`.
@@ -1145,7 +1145,7 @@ test isPowerOfTwo {
 
 /// Aligns the given integer type bit width to a width divisible by 8.
 pub fn ByteAlignedInt(comptime T: type) type {
-    const info = @typeInfo(T).Int;
+    const info = @typeinfo(T).Int;
     const bits = (info.bits + 7) / 8 * 8;
     const extended_type = std.meta.Int(info.signedness, bits);
     return extended_type;
@@ -1184,9 +1184,9 @@ pub inline fn floor(value: anytype) @TypeOf(value) {
 /// Returns the nearest power of two less than or equal to value, or
 /// zero if value is less than or equal to zero.
 pub fn floorPowerOfTwo(comptime T: type, value: T) T {
-    const uT = std.meta.Int(.unsigned, @typeInfo(T).Int.bits);
+    const uT = std.meta.Int(.unsigned, @typeinfo(T).Int.bits);
     if (value <= 0) return 0;
-    return @as(T, 1) << log2_int(uT, @as(uT, @intCast(value)));
+    return @as(T, 1) << log2_int(uT, @as(uT, @intcast(value)));
 }
 
 test floorPowerOfTwo {
@@ -1219,21 +1219,21 @@ pub inline fn ceil(value: anytype) @TypeOf(value) {
 /// Returns the next power of two (if the value is not already a power of two).
 /// Only unsigned integers can be used. Zero is not an allowed input.
 /// Result is a type with 1 more bit than the input type.
-pub fn ceilPowerOfTwoPromote(comptime T: type, value: T) std.meta.Int(@typeInfo(T).Int.signedness, @typeInfo(T).Int.bits + 1) {
-    comptime assert(@typeInfo(T) == .Int);
-    comptime assert(@typeInfo(T).Int.signedness == .unsigned);
+pub fn ceilPowerOfTwoPromote(comptime T: type, value: T) std.meta.Int(@typeinfo(T).Int.signedness, @typeinfo(T).Int.bits + 1) {
+    comptime assert(@typeinfo(T) == .Int);
+    comptime assert(@typeinfo(T).Int.signedness == .unsigned);
     assert(value != 0);
-    const PromotedType = std.meta.Int(@typeInfo(T).Int.signedness, @typeInfo(T).Int.bits + 1);
+    const PromotedType = std.meta.Int(@typeinfo(T).Int.signedness, @typeinfo(T).Int.bits + 1);
     const ShiftType = std.math.Log2Int(PromotedType);
-    return @as(PromotedType, 1) << @as(ShiftType, @intCast(@typeInfo(T).Int.bits - @clz(value - 1)));
+    return @as(PromotedType, 1) << @as(ShiftType, @intcast(@typeinfo(T).Int.bits - @clz(value - 1)));
 }
 
 /// Returns the next power of two (if the value is not already a power of two).
 /// Only unsigned integers can be used. Zero is not an allowed input.
 /// If the value doesn't fit, returns an error.
 pub fn ceilPowerOfTwo(comptime T: type, value: T) (error{Overflow}!T) {
-    comptime assert(@typeInfo(T) == .Int);
-    const info = @typeInfo(T).Int;
+    comptime assert(@typeinfo(T) == .Int);
+    const info = @typeinfo(T).Int;
     comptime assert(info.signedness == .unsigned);
     const PromotedType = std.meta.Int(info.signedness, info.bits + 1);
     const overflowBit = @as(PromotedType, 1) << info.bits;
@@ -1241,7 +1241,7 @@ pub fn ceilPowerOfTwo(comptime T: type, value: T) (error{Overflow}!T) {
     if (overflowBit & x != 0) {
         return error.Overflow;
     }
-    return @as(T, @intCast(x));
+    return @as(T, @intcast(x));
 }
 
 /// Returns the next power of two (if the value is not already a power
@@ -1288,17 +1288,17 @@ fn testCeilPowerOfTwo() !void {
 /// Return the log base 2 of integer value x, rounding down to the
 /// nearest integer.
 pub fn log2_int(comptime T: type, x: T) Log2Int(T) {
-    if (@typeInfo(T) != .Int or @typeInfo(T).Int.signedness != .unsigned)
-        @compileError("log2_int requires an unsigned integer, found " ++ @typeName(T));
+    if (@typeinfo(T) != .Int or @typeinfo(T).Int.signedness != .unsigned)
+        @compileerror("log2_int requires an unsigned integer, found " ++ @typename(T));
     assert(x != 0);
-    return @as(Log2Int(T), @intCast(@typeInfo(T).Int.bits - 1 - @clz(x)));
+    return @as(Log2Int(T), @intcast(@typeinfo(T).Int.bits - 1 - @clz(x)));
 }
 
 /// Return the log base 2 of integer value x, rounding up to the
 /// nearest integer.
 pub fn log2_int_ceil(comptime T: type, x: T) Log2IntCeil(T) {
-    if (@typeInfo(T) != .Int or @typeInfo(T).Int.signedness != .unsigned)
-        @compileError("log2_int_ceil requires an unsigned integer, found " ++ @typeName(T));
+    if (@typeinfo(T) != .Int or @typeinfo(T).Int.signedness != .unsigned)
+        @compileerror("log2_int_ceil requires an unsigned integer, found " ++ @typename(T));
     assert(x != 0);
     if (x == 1) return 0;
     const log2_val: Log2IntCeil(T) = log2_int(T, x - 1);
@@ -1322,25 +1322,25 @@ test log2_int_ceil {
 /// can't be perfectly represented by, the new type, it will be
 /// converted to the closest possible representation.
 pub fn lossyCast(comptime T: type, value: anytype) T {
-    switch (@typeInfo(T)) {
+    switch (@typeinfo(T)) {
         .Float => {
-            switch (@typeInfo(@TypeOf(value))) {
-                .Int => return @as(T, @floatFromInt(value)),
-                .Float => return @as(T, @floatCast(value)),
+            switch (@typeinfo(@TypeOf(value))) {
+                .Int => return @as(T, @floatfromint(value)),
+                .Float => return @as(T, @floatcast(value)),
                 .ComptimeInt => return @as(T, value),
                 .ComptimeFloat => return @as(T, value),
-                else => @compileError("bad type"),
+                else => @compileerror("bad type"),
             }
         },
         .Int => {
-            switch (@typeInfo(@TypeOf(value))) {
+            switch (@typeinfo(@TypeOf(value))) {
                 .Int, .ComptimeInt => {
                     if (value >= maxInt(T)) {
                         return @as(T, maxInt(T));
                     } else if (value <= minInt(T)) {
                         return @as(T, minInt(T));
                     } else {
-                        return @as(T, @intCast(value));
+                        return @as(T, @intcast(value));
                     }
                 },
                 .Float, .ComptimeFloat => {
@@ -1351,13 +1351,13 @@ pub fn lossyCast(comptime T: type, value: anytype) T {
                     } else if (value <= minInt(T)) {
                         return @as(T, minInt(T));
                     } else {
-                        return @as(T, @intFromFloat(value));
+                        return @as(T, @intfromfloat(value));
                     }
                 },
-                else => @compileError("bad type"),
+                else => @compileerror("bad type"),
             }
         },
-        else => @compileError("bad result type"),
+        else => @compileerror("bad result type"),
     }
 }
 
@@ -1377,7 +1377,7 @@ test lossyCast {
 /// This is monotonic.
 pub fn lerp(a: anytype, b: anytype, t: anytype) @TypeOf(a, b, t) {
     const Type = @TypeOf(a, b, t);
-    return @mulAdd(Type, b - a, t, a);
+    return @muladd(Type, b - a, t, a);
 }
 
 test lerp {
@@ -1431,15 +1431,15 @@ test lerp {
 
 /// Returns the maximum value of integer type T.
 pub fn maxInt(comptime T: type) comptime_int {
-    const info = @typeInfo(T);
+    const info = @typeinfo(T);
     const bit_count = info.Int.bits;
     if (bit_count == 0) return 0;
-    return (1 << (bit_count - @intFromBool(info.Int.signedness == .signed))) - 1;
+    return (1 << (bit_count - @intfrombool(info.Int.signedness == .signed))) - 1;
 }
 
 /// Returns the minimum value of integer type T.
 pub fn minInt(comptime T: type) comptime_int {
-    const info = @typeInfo(T);
+    const info = @typeinfo(T);
     const bit_count = info.Int.bits;
     if (info.Int.signedness == .unsigned) return 0;
     if (bit_count == 0) return 0;
@@ -1493,12 +1493,12 @@ test "max value type" {
 /// Multiply a and b. Return type is wide enough to guarantee no
 /// overflow.
 pub fn mulWide(comptime T: type, a: T, b: T) std.meta.Int(
-    @typeInfo(T).Int.signedness,
-    @typeInfo(T).Int.bits * 2,
+    @typeinfo(T).Int.signedness,
+    @typeinfo(T).Int.bits * 2,
 ) {
     const ResultInt = std.meta.Int(
-        @typeInfo(T).Int.signedness,
-        @typeInfo(T).Int.bits * 2,
+        @typeinfo(T).Int.signedness,
+        @typeinfo(T).Int.bits * 2,
     );
     return @as(ResultInt, a) * @as(ResultInt, b);
 }
@@ -1643,8 +1643,8 @@ pub const CompareOperator = enum {
     }
 
     test reverse {
-        inline for (@typeInfo(CompareOperator).Enum.fields) |op_field| {
-            const op = @as(CompareOperator, @enumFromInt(op_field.value));
+        inline for (@typeinfo(CompareOperator).Enum.fields) |op_field| {
+            const op = @as(CompareOperator, @enumfromint(op_field.value));
             try testing.expect(compare(2, op, 3) == compare(3, op.reverse(), 2));
             try testing.expect(compare(3, op, 3) == compare(3, op.reverse(), 3));
             try testing.expect(compare(4, op, 3) == compare(3, op.reverse(), 4));
@@ -1681,7 +1681,7 @@ test compare {
     try testing.expect(compare(@as(u8, 255), .gt, @as(i9, -1)));
     try testing.expect(!compare(@as(u8, 255), .lte, @as(i9, -1)));
     try testing.expect(compare(@as(u8, 1), .lt, @as(u8, 2)));
-    try testing.expect(@as(u8, @bitCast(@as(i8, -1))) == @as(u8, 255));
+    try testing.expect(@as(u8, @bitcast(@as(i8, -1))) == @as(u8, 255));
     try testing.expect(!compare(@as(u8, 255), .eq, @as(i8, -1)));
     try testing.expect(compare(@as(u8, 1), .eq, @as(u8, 1)));
 }
@@ -1696,21 +1696,21 @@ test order {
 /// and a mask of all zeroes if value is false.
 /// Compiles to one instruction for register sized integers.
 pub inline fn boolMask(comptime MaskInt: type, value: bool) MaskInt {
-    if (@typeInfo(MaskInt) != .Int)
-        @compileError("boolMask requires an integer mask type.");
+    if (@typeinfo(MaskInt) != .Int)
+        @compileerror("boolMask requires an integer mask type.");
 
     if (MaskInt == u0 or MaskInt == i0)
-        @compileError("boolMask cannot convert to u0 or i0, they are too small.");
+        @compileerror("boolMask cannot convert to u0 or i0, they are too small.");
 
     // The u1 and i1 cases tend to overflow,
     // so we special case them here.
-    if (MaskInt == u1) return @intFromBool(value);
+    if (MaskInt == u1) return @intfrombool(value);
     if (MaskInt == i1) {
         // The @as here is a workaround for #7950
-        return @as(i1, @bitCast(@as(u1, @intFromBool(value))));
+        return @as(i1, @bitcast(@as(u1, @intfrombool(value))));
     }
 
-    return -%@as(MaskInt, @intCast(@intFromBool(value)));
+    return -%@as(MaskInt, @intcast(@intfrombool(value)));
 }
 
 test boolMask {
@@ -1741,7 +1741,7 @@ test boolMask {
 
 /// Return the mod of `num` with the smallest integer type
 pub fn comptimeMod(num: anytype, comptime denom: comptime_int) IntFittingRange(0, denom - 1) {
-    return @as(IntFittingRange(0, denom - 1), @intCast(@mod(num, denom)));
+    return @as(IntFittingRange(0, denom - 1), @intcast(@mod(num, denom)));
 }
 
 pub const F80 = struct {
@@ -1751,11 +1751,11 @@ pub const F80 = struct {
 
 pub fn make_f80(repr: F80) f80 {
     const int = (@as(u80, repr.exp) << 64) | repr.fraction;
-    return @as(f80, @bitCast(int));
+    return @as(f80, @bitcast(int));
 }
 
 pub fn break_f80(x: f80) F80 {
-    const int = @as(u80, @bitCast(x));
+    const int = @as(u80, @bitcast(x));
     return .{
         .fraction = @as(u64, @truncate(int)),
         .exp = @as(u16, @truncate(int >> 64)),
@@ -1768,20 +1768,20 @@ pub fn break_f80(x: f80) F80 {
 /// Branchless.
 pub inline fn sign(i: anytype) @TypeOf(i) {
     const T = @TypeOf(i);
-    return switch (@typeInfo(T)) {
-        .Int, .ComptimeInt => @as(T, @intFromBool(i > 0)) - @as(T, @intFromBool(i < 0)),
-        .Float, .ComptimeFloat => @as(T, @floatFromInt(@intFromBool(i > 0))) - @as(T, @floatFromInt(@intFromBool(i < 0))),
+    return switch (@typeinfo(T)) {
+        .Int, .ComptimeInt => @as(T, @intfrombool(i > 0)) - @as(T, @intfrombool(i < 0)),
+        .Float, .ComptimeFloat => @as(T, @floatfromint(@intfrombool(i > 0))) - @as(T, @floatfromint(@intfrombool(i < 0))),
         .Vector => |vinfo| blk: {
-            switch (@typeInfo(vinfo.child)) {
+            switch (@typeinfo(vinfo.child)) {
                 .Int, .Float => {
                     const zero: T = @splat(0);
                     const one: T = @splat(1);
                     break :blk @select(vinfo.child, i > zero, one, zero) - @select(vinfo.child, i < zero, one, zero);
                 },
-                else => @compileError("Expected vector of ints or floats, found " ++ @typeName(T)),
+                else => @compileerror("Expected vector of ints or floats, found " ++ @typename(T)),
             }
         },
-        else => @compileError("Expected an int, float or vector of one, found " ++ @typeName(T)),
+        else => @compileerror("Expected an int, float or vector of one, found " ++ @typename(T)),
     };
 }
 

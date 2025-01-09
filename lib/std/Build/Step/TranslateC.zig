@@ -118,7 +118,7 @@ pub fn defineCMacroRaw(translate_c: *TranslateC, name_and_value: []const u8) voi
 
 fn make(step: *Step, prog_node: std.Progress.Node) !void {
     const b = step.owner;
-    const translate_c: *TranslateC = @fieldParentPtr("step", step);
+    const translate_c: *TranslateC = @fieldparentptr("step", step);
 
     var argv_list = std.ArrayList([]const u8).init(b.allocator);
     try argv_list.append(b.graph.zig_exe);
@@ -139,7 +139,7 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
 
     switch (translate_c.optimize) {
         .Debug => {}, // Skip since it's the default.
-        else => try argv_list.append(b.fmt("-O{s}", .{@tagName(translate_c.optimize)})),
+        else => try argv_list.append(b.fmt("-O{s}", .{@tagname(translate_c.optimize)})),
     }
 
     for (translate_c.include_dirs.items) |include_dir| {

@@ -73,7 +73,7 @@ pub fn hashSrc(src: []const u8) SrcHash {
 }
 
 pub fn srcHashEql(a: SrcHash, b: SrcHash) bool {
-    return @as(u128, @bitCast(a)) == @as(u128, @bitCast(b));
+    return @as(u128, @bitcast(a)) == @as(u128, @bitcast(b));
 }
 
 pub fn hashName(parent_hash: SrcHash, sep: []const u8, name: []const u8) SrcHash {
@@ -247,7 +247,7 @@ pub const BuildId = union(enum) {
     hexstring: HexString,
 
     pub fn eql(a: BuildId, b: BuildId) bool {
-        const Tag = @typeInfo(BuildId).Union.tag_type.?;
+        const Tag = @typeinfo(BuildId).Union.tag_type.?;
         const a_tag: Tag = a;
         const b_tag: Tag = b;
         if (a_tag != b_tag) return false;
@@ -272,7 +272,7 @@ pub const BuildId = union(enum) {
     pub fn initHexString(bytes: []const u8) BuildId {
         var result: BuildId = .{ .hexstring = .{
             .bytes = undefined,
-            .len = @intCast(bytes.len),
+            .len = @intcast(bytes.len),
         } };
         @memcpy(result.hexstring.bytes[0..bytes.len], bytes);
         return result;
@@ -293,7 +293,7 @@ pub const BuildId = union(enum) {
         } else if (std.mem.startsWith(u8, text, "0x")) {
             var result: BuildId = .{ .hexstring = undefined };
             const slice = try std.fmt.hexToBytes(&result.hexstring.bytes, text[2..]);
-            result.hexstring.len = @as(u8, @intCast(slice.len));
+            result.hexstring.len = @as(u8, @intcast(slice.len));
             return result;
         }
         return error.InvalidBuildIdStyle;
@@ -331,7 +331,7 @@ pub fn serializeCpu(buffer: *std.ArrayList(u8), cpu: std.Target.Cpu) Allocator.E
     }
 
     for (all_features, 0..) |feature, i_usize| {
-        const i: std.Target.Cpu.Feature.Set.Index = @intCast(i_usize);
+        const i: std.Target.Cpu.Feature.Set.Index = @intcast(i_usize);
         const in_cpu_set = populated_cpu_features.isEnabled(i);
         const in_actual_set = cpu.features.isEnabled(i);
         try buffer.ensureUnusedCapacity(feature.name.len + 1);
@@ -355,7 +355,7 @@ pub const DeclIndex = enum(u32) {
     _,
 
     pub fn toOptional(i: DeclIndex) OptionalDeclIndex {
-        return @enumFromInt(@intFromEnum(i));
+        return @enumfromint(@intfromenum(i));
     }
 };
 
@@ -364,12 +364,12 @@ pub const OptionalDeclIndex = enum(u32) {
     _,
 
     pub fn init(oi: ?DeclIndex) OptionalDeclIndex {
-        return @enumFromInt(@intFromEnum(oi orelse return .none));
+        return @enumfromint(@intfromenum(oi orelse return .none));
     }
 
     pub fn unwrap(oi: OptionalDeclIndex) ?DeclIndex {
         if (oi == .none) return null;
-        return @enumFromInt(@intFromEnum(oi));
+        return @enumfromint(@intfromenum(oi));
     }
 };
 
@@ -706,7 +706,7 @@ pub const LazySrcLoc = union(enum) {
 
     noinline fn nodeOffsetDebug(node_offset: i32) LazySrcLoc {
         var result: LazySrcLoc = .{ .node_offset = .{ .x = node_offset } };
-        result.node_offset.trace.addAddr(@returnAddress(), "init");
+        result.node_offset.trace.addAddr(@returnaddress(), "init");
         return result;
     }
 
@@ -801,7 +801,7 @@ fn formatId(
                 },
                 else => {},
             }
-            @compileError("expected {}, {p}, {_}, {p_} or {_p}, found {" ++ fmt ++ "}");
+            @compileerror("expected {}, {p}, {_}, {p_} or {_p}, found {" ++ fmt ++ "}");
         }
         break :parse_fmt .{ allow_primitive, allow_underscore };
     };
@@ -857,7 +857,7 @@ pub fn stringEscape(
             } else if (f.len == 0) {
                 try writer.writeAll("\\\"");
             } else {
-                @compileError("expected {} or {'}, found {" ++ f ++ "}");
+                @compileerror("expected {} or {'}, found {" ++ f ++ "}");
             }
         },
         '\'' => {
@@ -866,7 +866,7 @@ pub fn stringEscape(
             } else if (f.len == 0) {
                 try writer.writeByte('\'');
             } else {
-                @compileError("expected {} or {'}, found {" ++ f ++ "}");
+                @compileerror("expected {} or {'}, found {" ++ f ++ "}");
             }
         },
         ' ', '!', '#'...'&', '('...'[', ']'...'~' => try writer.writeByte(byte),
@@ -920,7 +920,7 @@ pub fn readSourceFileToEndAlloc(
         allocator,
         max_src_size,
         size_hint,
-        @alignOf(u16),
+        @alignof(u16),
         0,
     ) catch |err| switch (err) {
         error.ConnectionResetByPeer => unreachable,
@@ -985,7 +985,7 @@ pub fn putAstErrorsIntoBundle(
 
 pub fn resolveTargetQueryOrFatal(target_query: std.Target.Query) std.Target {
     return std.zig.system.resolveTargetQuery(target_query) catch |err|
-        fatal("unable to resolve target: {s}", .{@errorName(err)});
+        fatal("unable to resolve target: {s}", .{@errorname(err)});
 }
 
 pub fn parseTargetQueryOrReportFatalError(
@@ -1006,7 +1006,7 @@ pub fn parseTargetQueryOrReportFatalError(
                     help_text.writer().print(" {s}\n", .{cpu.name}) catch break :help;
                 }
                 std.log.info("available CPUs for architecture '{s}':\n{s}", .{
-                    @tagName(diags.arch.?), help_text.items,
+                    @tagname(diags.arch.?), help_text.items,
                 });
             }
             fatal("unknown CPU: '{s}'", .{diags.cpu_name.?});
@@ -1019,7 +1019,7 @@ pub fn parseTargetQueryOrReportFatalError(
                     help_text.writer().print(" {s}: {s}\n", .{ feature.name, feature.description }) catch break :help;
                 }
                 std.log.info("available CPU features for architecture '{s}':\n{s}", .{
-                    @tagName(diags.arch.?), help_text.items,
+                    @tagname(diags.arch.?), help_text.items,
                 });
             }
             fatal("unknown CPU feature: '{s}'", .{diags.unknown_feature_name.?});
@@ -1028,7 +1028,7 @@ pub fn parseTargetQueryOrReportFatalError(
             help: {
                 var help_text = std.ArrayList(u8).init(allocator);
                 defer help_text.deinit();
-                inline for (@typeInfo(std.Target.ObjectFormat).Enum.fields) |field| {
+                inline for (@typeinfo(std.Target.ObjectFormat).Enum.fields) |field| {
                     help_text.writer().print(" {s}\n", .{field.name}) catch break :help;
                 }
                 std.log.info("available object formats:\n{s}", .{help_text.items});
@@ -1036,7 +1036,7 @@ pub fn parseTargetQueryOrReportFatalError(
             fatal("unknown object format: '{s}'", .{opts.object_format.?});
         },
         else => |e| fatal("unable to parse target query '{s}': {s}", .{
-            opts.arch_os_abi, @errorName(e),
+            opts.arch_os_abi, @errorname(e),
         }),
     };
 }
@@ -1065,11 +1065,11 @@ pub const EnvVar = enum {
     HOME,
 
     pub fn isSet(comptime ev: EnvVar) bool {
-        return std.process.hasEnvVarConstant(@tagName(ev));
+        return std.process.hasEnvVarConstant(@tagname(ev));
     }
 
     pub fn get(ev: EnvVar, arena: std.mem.Allocator) !?[]u8 {
-        if (std.process.getEnvVarOwned(arena, @tagName(ev))) |value| {
+        if (std.process.getEnvVarOwned(arena, @tagname(ev))) |value| {
             return value;
         } else |err| switch (err) {
             error.EnvironmentVariableNotFound => return null,
@@ -1078,7 +1078,7 @@ pub const EnvVar = enum {
     }
 
     pub fn getPosix(comptime ev: EnvVar) ?[:0]const u8 {
-        return std.posix.getenvZ(@tagName(ev));
+        return std.posix.getenvZ(@tagname(ev));
     }
 };
 

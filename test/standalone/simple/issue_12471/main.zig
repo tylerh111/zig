@@ -1,9 +1,9 @@
-const c = @cImport({
-    @cDefine("FOO", "FOO");
-    @cDefine("BAR", "FOO");
+const c = @cimport({
+    @cdefine("FOO", "FOO");
+    @cdefine("BAR", "FOO");
 
-    @cDefine("BAZ", "QUX");
-    @cDefine("QUX", "QUX");
+    @cdefine("BAZ", "QUX");
+    @cdefine("QUX", "QUX");
 });
 
 pub fn main() u8 {

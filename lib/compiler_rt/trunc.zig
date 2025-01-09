@@ -28,12 +28,12 @@ comptime {
 
 pub fn __trunch(x: f16) callconv(.C) f16 {
     // TODO: more efficient implementation
-    return @floatCast(truncf(x));
+    return @floatcast(truncf(x));
 }
 
 pub fn truncf(x: f32) callconv(.C) f32 {
-    const u: u32 = @bitCast(x);
-    var e = @as(i32, @intCast(((u >> 23) & 0xFF))) - 0x7F + 9;
+    const u: u32 = @bitcast(x);
+    var e = @as(i32, @intcast(((u >> 23) & 0xFF))) - 0x7F + 9;
     var m: u32 = undefined;
 
     if (e >= 23 + 9) {
@@ -43,18 +43,18 @@ pub fn truncf(x: f32) callconv(.C) f32 {
         e = 1;
     }
 
-    m = @as(u32, math.maxInt(u32)) >> @intCast(e);
+    m = @as(u32, math.maxInt(u32)) >> @intcast(e);
     if (u & m == 0) {
         return x;
     } else {
         mem.doNotOptimizeAway(x + 0x1p120);
-        return @bitCast(u & ~m);
+        return @bitcast(u & ~m);
     }
 }
 
 pub fn trunc(x: f64) callconv(.C) f64 {
-    const u: u64 = @bitCast(x);
-    var e = @as(i32, @intCast(((u >> 52) & 0x7FF))) - 0x3FF + 12;
+    const u: u64 = @bitcast(x);
+    var e = @as(i32, @intcast(((u >> 52) & 0x7FF))) - 0x3FF + 12;
     var m: u64 = undefined;
 
     if (e >= 52 + 12) {
@@ -64,23 +64,23 @@ pub fn trunc(x: f64) callconv(.C) f64 {
         e = 1;
     }
 
-    m = @as(u64, math.maxInt(u64)) >> @intCast(e);
+    m = @as(u64, math.maxInt(u64)) >> @intcast(e);
     if (u & m == 0) {
         return x;
     } else {
         mem.doNotOptimizeAway(x + 0x1p120);
-        return @bitCast(u & ~m);
+        return @bitcast(u & ~m);
     }
 }
 
 pub fn __truncx(x: f80) callconv(.C) f80 {
     // TODO: more efficient implementation
-    return @floatCast(truncq(x));
+    return @floatcast(truncq(x));
 }
 
 pub fn truncq(x: f128) callconv(.C) f128 {
-    const u: u128 = @bitCast(x);
-    var e = @as(i32, @intCast(((u >> 112) & 0x7FFF))) - 0x3FFF + 16;
+    const u: u128 = @bitcast(x);
+    var e = @as(i32, @intcast(((u >> 112) & 0x7FFF))) - 0x3FFF + 16;
     var m: u128 = undefined;
 
     if (e >= 112 + 16) {
@@ -90,23 +90,23 @@ pub fn truncq(x: f128) callconv(.C) f128 {
         e = 1;
     }
 
-    m = @as(u128, math.maxInt(u128)) >> @intCast(e);
+    m = @as(u128, math.maxInt(u128)) >> @intcast(e);
     if (u & m == 0) {
         return x;
     } else {
         mem.doNotOptimizeAway(x + 0x1p120);
-        return @bitCast(u & ~m);
+        return @bitcast(u & ~m);
     }
 }
 
 pub fn truncl(x: c_longdouble) callconv(.C) c_longdouble {
-    switch (@typeInfo(c_longdouble).Float.bits) {
+    switch (@typeinfo(c_longdouble).Float.bits) {
         16 => return __trunch(x),
         32 => return truncf(x),
         64 => return trunc(x),
         80 => return __truncx(x),
         128 => return truncq(x),
-        else => @compileError("unreachable"),
+        else => @compileerror("unreachable"),
     }
 }
 

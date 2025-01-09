@@ -358,7 +358,7 @@ fn classifySystemVStruct(
             }
         }
         const field_classes = std.mem.sliceTo(&classifySystemV(field_ty, zcu, target, .field), .none);
-        for (result[@intCast(byte_offset / 8)..][0..field_classes.len], field_classes) |*result_class, field_class|
+        for (result[@intcast(byte_offset / 8)..][0..field_classes.len], field_classes) |*result_class, field_class|
             result_class.* = result_class.combineSystemV(field_class);
         byte_offset += field_ty.abiSize(zcu);
     }
@@ -399,7 +399,7 @@ fn classifySystemVUnion(
             }
         }
         const field_classes = std.mem.sliceTo(&classifySystemV(field_ty, zcu, target, .field), .none);
-        for (result[@intCast(starting_byte_offset / 8)..][0..field_classes.len], field_classes) |*result_class, field_class|
+        for (result[@intcast(starting_byte_offset / 8)..][0..field_classes.len], field_classes) |*result_class, field_class|
             result_class.* = result_class.combineSystemV(field_class);
     }
     return starting_byte_offset + loaded_union.size(ip).*;

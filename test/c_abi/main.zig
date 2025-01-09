@@ -143,11 +143,11 @@ export fn zig_longdouble(x: c_longdouble) void {
 extern fn c_ptr(*anyopaque) void;
 
 test "C ABI pointer" {
-    c_ptr(@as(*anyopaque, @ptrFromInt(0xdeadbeef)));
+    c_ptr(@as(*anyopaque, @ptrfromint(0xdeadbeef)));
 }
 
 export fn zig_ptr(x: *anyopaque) void {
-    expect(@intFromPtr(x) == 0xdeadbeef) catch @panic("test failure: zig_ptr");
+    expect(@intfromptr(x) == 0xdeadbeef) catch @panic("test failure: zig_ptr");
 }
 
 extern fn c_bool(bool) void;
@@ -5548,14 +5548,14 @@ test "C function that takes byval struct called via function pointer" {
     var fn_ptr = &c_func_ptr_byval;
     _ = &fn_ptr;
     fn_ptr(
-        @as(*anyopaque, @ptrFromInt(1)),
-        @as(*anyopaque, @ptrFromInt(2)),
+        @as(*anyopaque, @ptrfromint(1)),
+        @as(*anyopaque, @ptrfromint(2)),
         ByVal{
             .origin = .{ .x = 9, .y = 10, .z = 11 },
             .size = .{ .width = 12, .height = 13, .depth = 14 },
         },
         @as(c_ulong, 3),
-        @as(*anyopaque, @ptrFromInt(4)),
+        @as(*anyopaque, @ptrfromint(4)),
         @as(c_ulong, 5),
     );
 }
@@ -5587,7 +5587,7 @@ test "f80 bare" {
     if (!have_f80) return error.SkipZigTest;
 
     const a = c_f80(12.34);
-    try expect(@as(f64, @floatCast(a)) == 56.78);
+    try expect(@as(f64, @floatcast(a)) == 56.78);
 }
 
 const f80_struct = extern struct {
@@ -5598,7 +5598,7 @@ test "f80 struct" {
     if (!have_f80) return error.SkipZigTest;
 
     const a = c_f80_struct(.{ .a = 12.34 });
-    try expect(@as(f64, @floatCast(a.a)) == 56.78);
+    try expect(@as(f64, @floatcast(a.a)) == 56.78);
 }
 
 const f80_extra_struct = extern struct {
@@ -5610,7 +5610,7 @@ test "f80 extra struct" {
     if (!have_f80) return error.SkipZigTest;
 
     const a = c_f80_extra_struct(.{ .a = 12.34, .b = 42 });
-    try expect(@as(f64, @floatCast(a.a)) == 56.78);
+    try expect(@as(f64, @floatcast(a.a)) == 56.78);
     try expect(a.b == 24);
 }
 
@@ -5628,7 +5628,7 @@ comptime {
                 if (!have_f128) return error.SkipZigTest;
 
                 const a = c_f128(12.34);
-                try expect(@as(f64, @floatCast(a)) == 56.78);
+                try expect(@as(f64, @floatcast(a)) == 56.78);
             }
 
             const f128_struct = extern struct {
@@ -5643,11 +5643,11 @@ comptime {
                 if (!have_f128) return error.SkipZigTest;
 
                 const a = c_f128_struct(.{ .a = 12.34 });
-                try expect(@as(f64, @floatCast(a.a)) == 56.78);
+                try expect(@as(f64, @floatcast(a.a)) == 56.78);
 
                 const b = c_f128_f128_struct(.{ .a = 12.34, .b = 87.65 });
-                try expect(@as(f64, @floatCast(b.a)) == 56.78);
-                try expect(@as(f64, @floatCast(b.b)) == 43.21);
+                try expect(@as(f64, @floatcast(b.a)) == 56.78);
+                try expect(@as(f64, @floatcast(b.b)) == 43.21);
             }
 
             const f128_f128_struct = extern struct {
@@ -5664,11 +5664,11 @@ comptime {
                 if (!have_f128) return error.SkipZigTest;
 
                 const a = c_f128_struct(.{ .a = 12.34 });
-                try expect(@as(f64, @floatCast(a.a)) == 56.78);
+                try expect(@as(f64, @floatcast(a.a)) == 56.78);
 
                 const b = c_f128_f128_struct(.{ .a = 12.34, .b = 87.65 });
-                try expect(@as(f64, @floatCast(b.a)) == 56.78);
-                try expect(@as(f64, @floatCast(b.b)) == 43.21);
+                try expect(@as(f64, @floatcast(b.a)) == 56.78);
+                try expect(@as(f64, @floatcast(b.b)) == 43.21);
             }
         };
     }
@@ -5767,7 +5767,7 @@ const byval_tail_callsite_attr = struct {
         }
 
         fn cast(self: MyRect) struct_Rect {
-            return @bitCast(self);
+            return @bitcast(self);
         }
 
         extern fn c_byval_tail_callsite_attr(struct_Rect) f64;

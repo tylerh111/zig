@@ -1,7 +1,7 @@
 const std = @import("std");
 
 test {
-    try foo(@typeInfo(@TypeOf(someFn)));
+    try foo(@typeinfo(@TypeOf(someFn)));
 }
 
 fn someFn(arg: ?*c_int) f64 {

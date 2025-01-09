@@ -81,7 +81,7 @@ pub fn emitMir(
 
     // Emit machine code
     for (mir_tags, 0..) |tag, index| {
-        const inst = @as(u32, @intCast(index));
+        const inst = @as(u32, @intcast(index));
         switch (tag) {
             .add_immediate => try emit.mirAddSubtractImmediate(inst),
             .adds_immediate => try emit.mirAddSubtractImmediate(inst),
@@ -236,21 +236,21 @@ fn optimalBranchType(emit: *Emit, tag: Mir.Inst.Tag, offset: i64) !BranchType {
 
     switch (tag) {
         .cbz => {
-            if (std.math.cast(i19, @shrExact(offset, 2))) |_| {
+            if (std.math.cast(i19, @shrexact(offset, 2))) |_| {
                 return BranchType.cbz;
             } else {
                 return emit.fail("TODO support cbz branches larger than +-1 MiB", .{});
             }
         },
         .b, .bl => {
-            if (std.math.cast(i26, @shrExact(offset, 2))) |_| {
+            if (std.math.cast(i26, @shrexact(offset, 2))) |_| {
                 return BranchType.unconditional_branch_immediate;
             } else {
                 return emit.fail("TODO support unconditional branches larger than +-128 MiB", .{});
             }
         },
         .b_cond => {
-            if (std.math.cast(i19, @shrExact(offset, 2))) |_| {
+            if (std.math.cast(i19, @shrexact(offset, 2))) |_| {
                 return BranchType.b_cond;
             } else {
                 return emit.fail("TODO support conditional branches larger than +-1 MiB", .{});
@@ -280,7 +280,7 @@ fn instructionSize(emit: *Emit, inst: Mir.Inst.Index) usize {
         => return 2 * 4,
         .pop_regs, .push_regs => {
             const reg_list = emit.mir.instructions.items(.data)[inst].reg_list;
-            const number_of_regs = @popCount(reg_list);
+            const number_of_regs = @popcount(reg_list);
             const number_of_insts = std.math.divCeil(u6, number_of_regs, 2) catch unreachable;
             return number_of_insts * 4;
         },
@@ -327,7 +327,7 @@ fn lowerBranches(emit: *Emit) !void {
     // TODO optimization opportunity: do this in codegen while
     // generating MIR
     for (mir_tags, 0..) |tag, index| {
-        const inst = @as(u32, @intCast(index));
+        const inst = @as(u32, @intcast(index));
         if (isBranch(tag)) {
             const target_inst = emit.branchTarget(inst);
 
@@ -372,7 +372,7 @@ fn lowerBranches(emit: *Emit) !void {
         var current_code_offset: usize = 0;
 
         for (mir_tags, 0..) |tag, index| {
-            const inst = @as(u32, @intCast(index));
+            const inst = @as(u32, @intcast(index));
 
             // If this instruction contained in the code offset
             // mapping (when it is a target of a branch or if it is a
@@ -387,7 +387,7 @@ fn lowerBranches(emit: *Emit) !void {
                 const target_inst = emit.branchTarget(inst);
                 if (target_inst < inst) {
                     const target_offset = emit.code_offset_mapping.get(target_inst).?;
-                    const offset = @as(i64, @intCast(target_offset)) - @as(i64, @intCast(current_code_offset));
+                    const offset = @as(i64, @intcast(target_offset)) - @as(i64, @intcast(current_code_offset));
                     const branch_type = emit.branch_types.getPtr(inst).?;
                     const optimal_branch_type = try emit.optimalBranchType(tag, offset);
                     if (branch_type.* != optimal_branch_type) {
@@ -406,7 +406,7 @@ fn lowerBranches(emit: *Emit) !void {
                 for (origin_list.items) |forward_branch_inst| {
                     const branch_tag = emit.mir.instructions.items(.tag)[forward_branch_inst];
                     const forward_branch_inst_offset = emit.code_offset_mapping.get(forward_branch_inst).?;
-                    const offset = @as(i64, @intCast(current_code_offset)) - @as(i64, @intCast(forward_branch_inst_offset));
+                    const offset = @as(i64, @intcast(current_code_offset)) - @as(i64, @intcast(forward_branch_inst_offset));
                     const branch_type = emit.branch_types.getPtr(forward_branch_inst).?;
                     const optimal_branch_type = try emit.optimalBranchType(branch_tag, offset);
                     if (branch_type.* != optimal_branch_type) {
@@ -454,24 +454,24 @@ fn dbgAdvancePCAndLine(emit: *Emit, line: u32, column: u32) InnerError!void {
             if (delta_pc <= 0) return; // only do this when the pc changes
 
             // increasing the line number
-            try link.File.Plan9.changeLine(&dbg_out.dbg_line, @intCast(delta_line));
+            try link.File.Plan9.changeLine(&dbg_out.dbg_line, @intcast(delta_line));
             // increasing the pc
-            const d_pc_p9 = @as(i64, @intCast(delta_pc)) - dbg_out.pc_quanta;
+            const d_pc_p9 = @as(i64, @intcast(delta_pc)) - dbg_out.pc_quanta;
             if (d_pc_p9 > 0) {
                 // minus one because if its the last one, we want to leave space to change the line which is one pc quanta
-                var diff = @divExact(d_pc_p9, dbg_out.pc_quanta) - dbg_out.pc_quanta;
+                var diff = @divexact(d_pc_p9, dbg_out.pc_quanta) - dbg_out.pc_quanta;
                 while (diff > 0) {
                     if (diff < 64) {
-                        try dbg_out.dbg_line.append(@intCast(diff + 128));
+                        try dbg_out.dbg_line.append(@intcast(diff + 128));
                         diff = 0;
                     } else {
-                        try dbg_out.dbg_line.append(@intCast(64 + 128));
+                        try dbg_out.dbg_line.append(@intcast(64 + 128));
                         diff -= 64;
                     }
                 }
                 if (dbg_out.pcop_change_index) |pci|
                     dbg_out.dbg_line.items[pci] += 1;
-                dbg_out.pcop_change_index = @intCast(dbg_out.dbg_line.items.len - 1);
+                dbg_out.pcop_change_index = @intcast(dbg_out.dbg_line.items.len - 1);
             } else if (d_pc_p9 == 0) {
                 // we don't need to do anything, because adding the pc quanta does it for us
             } else unreachable;
@@ -562,13 +562,13 @@ fn mirConditionalBranchImmediate(emit: *Emit, inst: Mir.Inst.Index) !void {
     const tag = emit.mir.instructions.items(.tag)[inst];
     const inst_cond = emit.mir.instructions.items(.data)[inst].inst_cond;
 
-    const offset = @as(i64, @intCast(emit.code_offset_mapping.get(inst_cond.inst).?)) - @as(i64, @intCast(emit.code.items.len));
+    const offset = @as(i64, @intcast(emit.code_offset_mapping.get(inst_cond.inst).?)) - @as(i64, @intcast(emit.code.items.len));
     const branch_type = emit.branch_types.get(inst).?;
     log.debug("mirConditionalBranchImmediate: {} offset={}", .{ inst, offset });
 
     switch (branch_type) {
         .b_cond => switch (tag) {
-            .b_cond => try emit.writeInstruction(Instruction.bCond(inst_cond.cond, @as(i21, @intCast(offset)))),
+            .b_cond => try emit.writeInstruction(Instruction.bCond(inst_cond.cond, @as(i21, @intcast(offset)))),
             else => unreachable,
         },
         else => unreachable,
@@ -586,14 +586,14 @@ fn mirBranch(emit: *Emit, inst: Mir.Inst.Index) !void {
         emit.mir.instructions.items(.tag)[target_inst],
     });
 
-    const offset = @as(i64, @intCast(emit.code_offset_mapping.get(target_inst).?)) - @as(i64, @intCast(emit.code.items.len));
+    const offset = @as(i64, @intcast(emit.code_offset_mapping.get(target_inst).?)) - @as(i64, @intcast(emit.code.items.len));
     const branch_type = emit.branch_types.get(inst).?;
     log.debug("mirBranch: {} offset={}", .{ inst, offset });
 
     switch (branch_type) {
         .unconditional_branch_immediate => switch (tag) {
-            .b => try emit.writeInstruction(Instruction.b(@as(i28, @intCast(offset)))),
-            .bl => try emit.writeInstruction(Instruction.bl(@as(i28, @intCast(offset)))),
+            .b => try emit.writeInstruction(Instruction.b(@as(i28, @intcast(offset)))),
+            .bl => try emit.writeInstruction(Instruction.bl(@as(i28, @intcast(offset)))),
             else => unreachable,
         },
         else => unreachable,
@@ -604,13 +604,13 @@ fn mirCompareAndBranch(emit: *Emit, inst: Mir.Inst.Index) !void {
     const tag = emit.mir.instructions.items(.tag)[inst];
     const r_inst = emit.mir.instructions.items(.data)[inst].r_inst;
 
-    const offset = @as(i64, @intCast(emit.code_offset_mapping.get(r_inst.inst).?)) - @as(i64, @intCast(emit.code.items.len));
+    const offset = @as(i64, @intcast(emit.code_offset_mapping.get(r_inst.inst).?)) - @as(i64, @intcast(emit.code.items.len));
     const branch_type = emit.branch_types.get(inst).?;
     log.debug("mirCompareAndBranch: {} offset={}", .{ inst, offset });
 
     switch (branch_type) {
         .cbz => switch (tag) {
-            .cbz => try emit.writeInstruction(Instruction.cbz(r_inst.rt, @as(i21, @intCast(offset)))),
+            .cbz => try emit.writeInstruction(Instruction.cbz(r_inst.rt, @as(i21, @intcast(offset)))),
             else => unreachable,
         },
         else => unreachable,
@@ -680,7 +680,7 @@ fn mirCallExtern(emit: *Emit, inst: Mir.Inst.Index) !void {
     _ = relocation;
 
     const offset = blk: {
-        const offset = @as(u32, @intCast(emit.code.items.len));
+        const offset = @as(u32, @intcast(emit.code.items.len));
         // bl
         try emit.writeInstruction(Instruction.bl(0));
         break :blk offset;
@@ -858,11 +858,11 @@ fn mirLoadMemoryPie(emit: *Emit, inst: Mir.Inst.Index) !void {
     const tag = emit.mir.instructions.items(.tag)[inst];
     const payload = emit.mir.instructions.items(.data)[inst].payload;
     const data = emit.mir.extraData(Mir.LoadMemoryPie, payload).data;
-    const reg = @as(Register, @enumFromInt(data.register));
+    const reg = @as(Register, @enumfromint(data.register));
 
     // PC-relative displacement to the entry in memory.
     // adrp
-    const offset = @as(u32, @intCast(emit.code.items.len));
+    const offset = @as(u32, @intcast(emit.code.items.len));
     try emit.writeInstruction(Instruction.adrp(reg.toX(), 0));
 
     switch (tag) {
@@ -1027,7 +1027,7 @@ fn mirLoadStackArgument(emit: *Emit, inst: Mir.Inst.Index) !void {
         },
         .ldrh_stack_argument, .ldrsh_stack_argument => {
             assert(std.mem.isAlignedGeneric(u32, raw_offset, 2)); // misaligned stack entry
-            const offset = if (math.cast(u12, @divExact(raw_offset, 2))) |imm| Instruction.LoadStoreOffset.imm(imm) else {
+            const offset = if (math.cast(u12, @divexact(raw_offset, 2))) |imm| Instruction.LoadStoreOffset.imm(imm) else {
                 return emit.fail("TODO load stack argument halfword with larger offset", .{});
             };
 
@@ -1045,7 +1045,7 @@ fn mirLoadStackArgument(emit: *Emit, inst: Mir.Inst.Index) !void {
             };
 
             assert(std.mem.isAlignedGeneric(u32, raw_offset, alignment)); // misaligned stack entry
-            const offset = if (math.cast(u12, @divExact(raw_offset, alignment))) |imm| Instruction.LoadStoreOffset.imm(imm) else {
+            const offset = if (math.cast(u12, @divexact(raw_offset, alignment))) |imm| Instruction.LoadStoreOffset.imm(imm) else {
                 return emit.fail("TODO load stack argument with larger offset", .{});
             };
 
@@ -1089,7 +1089,7 @@ fn mirLoadStoreStack(emit: *Emit, inst: Mir.Inst.Index) !void {
         },
         .ldrh_stack, .ldrsh_stack, .strh_stack => {
             assert(std.mem.isAlignedGeneric(u32, raw_offset, 2)); // misaligned stack entry
-            const offset = if (math.cast(u12, @divExact(raw_offset, 2))) |imm| Instruction.LoadStoreOffset.imm(imm) else {
+            const offset = if (math.cast(u12, @divexact(raw_offset, 2))) |imm| Instruction.LoadStoreOffset.imm(imm) else {
                 return emit.fail("TODO load/store stack halfword with larger offset", .{});
             };
 
@@ -1108,7 +1108,7 @@ fn mirLoadStoreStack(emit: *Emit, inst: Mir.Inst.Index) !void {
             };
 
             assert(std.mem.isAlignedGeneric(u32, raw_offset, alignment)); // misaligned stack entry
-            const offset = if (math.cast(u12, @divExact(raw_offset, alignment))) |imm| Instruction.LoadStoreOffset.imm(imm) else {
+            const offset = if (math.cast(u12, @divexact(raw_offset, alignment))) |imm| Instruction.LoadStoreOffset.imm(imm) else {
                 return emit.fail("TODO load/store stack with larger offset", .{});
             };
 
@@ -1243,7 +1243,7 @@ fn mirNop(emit: *Emit) !void {
 }
 
 fn regListIsSet(reg_list: u32, reg: Register) bool {
-    return reg_list & @as(u32, 1) << @as(u5, @intCast(reg.id())) != 0;
+    return reg_list & @as(u32, 1) << @as(u5, @intcast(reg.id())) != 0;
 }
 
 fn mirPushPopRegs(emit: *Emit, inst: Mir.Inst.Index) !void {
@@ -1259,7 +1259,7 @@ fn mirPushPopRegs(emit: *Emit, inst: Mir.Inst.Index) !void {
     // use one ldr instruction followed by zero or more ldp
     // instructions; for push_regs we use zero or more stp
     // instructions followed by one str instruction.
-    const number_of_regs = @popCount(reg_list);
+    const number_of_regs = @popcount(reg_list);
     const odd_number_of_regs = number_of_regs % 2 != 0;
 
     switch (tag) {
@@ -1268,7 +1268,7 @@ fn mirPushPopRegs(emit: *Emit, inst: Mir.Inst.Index) !void {
             var count: u6 = 0;
             var other_reg: ?Register = null;
             while (i > 0) : (i -= 1) {
-                const reg = @as(Register, @enumFromInt(i - 1));
+                const reg = @as(Register, @enumfromint(i - 1));
                 if (regListIsSet(reg_list, reg)) {
                     if (count == 0 and odd_number_of_regs) {
                         try emit.writeInstruction(Instruction.ldr(
@@ -1297,7 +1297,7 @@ fn mirPushPopRegs(emit: *Emit, inst: Mir.Inst.Index) !void {
             var count: u6 = 0;
             var other_reg: ?Register = null;
             while (i < 32) : (i += 1) {
-                const reg = @as(Register, @enumFromInt(i));
+                const reg = @as(Register, @enumfromint(i));
                 if (regListIsSet(reg_list, reg)) {
                     if (count == number_of_regs - 1 and odd_number_of_regs) {
                         try emit.writeInstruction(Instruction.str(

@@ -6,7 +6,7 @@ export fn foo_strict(x: f64) f64 {
 }
 
 export fn foo_optimized(x: f64) f64 {
-    @setFloatMode(.optimized);
+    @setfloatmode(.optimized);
     return x + big - big;
 }
 

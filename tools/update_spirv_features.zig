@@ -70,7 +70,7 @@ pub fn main() !void {
     }
 
     // Required for json parsing.
-    @setEvalBranchQuota(10000);
+    @setevalbranchquota(10000);
 
     const registry_path = try fs.path.join(allocator, &.{ spirv_headers_root, "include", "spirv", "unified1", "spirv.core.grammar.json" });
     const registry_json = try std.fs.cwd().readFileAlloc(allocator, registry_path, std.math.maxInt(usize));
@@ -128,8 +128,8 @@ pub fn main() !void {
         \\pub const featureSetHasAll = CpuFeature.feature_set_fns(Feature).featureSetHasAll;
         \\
         \\pub const all_features = blk: {
-        \\    @setEvalBranchQuota(2000);
-        \\    const len = @typeInfo(Feature).Enum.fields.len;
+        \\    @setevalbranchquota(2000);
+        \\    const len = @typeinfo(Feature).Enum.fields.len;
         \\    std.debug.assert(len <= CpuFeature.Set.needed_bit_count);
         \\    var result: [len]CpuFeature = undefined;
         \\
@@ -137,7 +137,7 @@ pub fn main() !void {
 
     for (versions, 0..) |ver, i| {
         try w.print(
-            \\    result[@intFromEnum(Feature.v{0}_{1})] = .{{
+            \\    result[@intfromenum(Feature.v{0}_{1})] = .{{
             \\        .llvm_name = null,
             \\        .description = "SPIR-V version {0}.{1}",
             \\
@@ -163,7 +163,7 @@ pub fn main() !void {
     // TODO: Extension dependencies.
     for (extensions) |ext| {
         try w.print(
-            \\    result[@intFromEnum(Feature.{p_})] = .{{
+            \\    result[@intfromenum(Feature.{p_})] = .{{
             \\        .llvm_name = null,
             \\        .description = "SPIR-V extension {s}",
             \\        .dependencies = featureSet(&[_]Feature{{}}),
@@ -178,7 +178,7 @@ pub fn main() !void {
     // TODO: Capability extension dependencies.
     for (capabilities) |cap| {
         try w.print(
-            \\    result[@intFromEnum(Feature.{p_})] = .{{
+            \\    result[@intfromenum(Feature.{p_})] = .{{
             \\        .llvm_name = null,
             \\        .description = "Enable SPIR-V capability {s}",
             \\        .dependencies = featureSet(&[_]Feature{{
@@ -207,7 +207,7 @@ pub fn main() !void {
     }
 
     try w.writeAll(
-        \\    const ti = @typeInfo(Feature);
+        \\    const ti = @typeinfo(Feature);
         \\    for (&result, 0..) |*elem, i| {
         \\        elem.index = i;
         \\        elem.name = ti.Enum.fields[i].name;

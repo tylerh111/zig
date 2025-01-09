@@ -131,7 +131,7 @@ pub fn deinit(self: *ZigObject, allocator: Allocator) void {
 
 fn addNlist(self: *ZigObject, allocator: Allocator) !Symbol.Index {
     try self.symtab.ensureUnusedCapacity(allocator, 1);
-    const index = @as(Symbol.Index, @intCast(self.symtab.addOneAssumeCapacity()));
+    const index = @as(Symbol.Index, @intcast(self.symtab.addOneAssumeCapacity()));
     self.symtab.set(index, .{
         .nlist = MachO.null_sym,
         .size = 0,
@@ -160,7 +160,7 @@ pub fn addAtom(self: *ZigObject, macho_file: *MachO) !Symbol.Index {
     self.symtab.items(.atom)[nlist_index] = atom_index;
     symbol.nlist_idx = nlist_index;
 
-    const relocs_index = @as(u32, @intCast(self.relocs.items.len));
+    const relocs_index = @as(u32, @intcast(self.relocs.items.len));
     const relocs = try self.relocs.addOne(gpa);
     relocs.* = .{};
     try atom.addExtra(.{ .rel_index = relocs_index, .rel_count = 0 }, macho_file);
@@ -210,7 +210,7 @@ pub fn resolveSymbols(self: *ZigObject, macho_file: *MachO) void {
     defer tracy.end();
 
     for (self.symbols.items, 0..) |index, i| {
-        const nlist_idx = @as(Symbol.Index, @intCast(i));
+        const nlist_idx = @as(Symbol.Index, @intcast(i));
         const nlist = self.symtab.items(.nlist)[nlist_idx];
         const atom_index = self.symtab.items(.atom)[nlist_idx];
 
@@ -393,7 +393,7 @@ pub fn calcSymtabSize(self: *ZigObject, macho_file: *MachO) !void {
             try sym.addExtra(.{ .symtab = self.output_symtab_ctx.nimports }, macho_file);
             self.output_symtab_ctx.nimports += 1;
         }
-        self.output_symtab_ctx.strsize += @as(u32, @intCast(sym.getName(macho_file).len + 1));
+        self.output_symtab_ctx.strsize += @as(u32, @intcast(sym.getName(macho_file).len + 1));
     }
 }
 
@@ -406,7 +406,7 @@ pub fn writeSymtab(self: ZigObject, macho_file: *MachO, ctx: anytype) void {
         const file = sym.getFile(macho_file) orelse continue;
         if (file.getIndex() != self.index) continue;
         const idx = sym.getOutputSymtabIndex(macho_file) orelse continue;
-        const n_strx = @as(u32, @intCast(ctx.strtab.items.len));
+        const n_strx = @as(u32, @intcast(ctx.strtab.items.len));
         ctx.strtab.appendSliceAssumeCapacity(sym.getName(macho_file));
         ctx.strtab.appendAssumeCapacity(0);
         const out_sym = &ctx.symtab.items[idx];
@@ -490,7 +490,7 @@ pub fn flushModule(self: *ZigObject, macho_file: *MachO) !void {
             const d_sym = macho_file.getDebugSymbols().?;
             const sect_index = d_sym.debug_str_section_index.?;
             if (self.debug_strtab_dirty or dw.strtab.buffer.items.len != d_sym.getSection(sect_index).size) {
-                const needed_size = @as(u32, @intCast(dw.strtab.buffer.items.len));
+                const needed_size = @as(u32, @intcast(dw.strtab.buffer.items.len));
                 try d_sym.growSection(sect_index, needed_size, false, macho_file);
                 try d_sym.file.pwriteAll(dw.strtab.buffer.items, d_sym.getSection(sect_index).offset);
                 self.debug_strtab_dirty = false;
@@ -498,7 +498,7 @@ pub fn flushModule(self: *ZigObject, macho_file: *MachO) !void {
         } else {
             const sect_index = macho_file.debug_str_sect_index.?;
             if (self.debug_strtab_dirty or dw.strtab.buffer.items.len != macho_file.sections.items(.header)[sect_index].size) {
-                const needed_size = @as(u32, @intCast(dw.strtab.buffer.items.len));
+                const needed_size = @as(u32, @intcast(dw.strtab.buffer.items.len));
                 try macho_file.growSection(sect_index, needed_size);
                 try macho_file.base.file.?.pwriteAll(dw.strtab.buffer.items, macho_file.sections.items(.header)[sect_index].offset);
                 self.debug_strtab_dirty = false;
@@ -527,7 +527,7 @@ pub fn getDeclVAddr(
     const parent_atom = macho_file.getSymbol(reloc_info.parent_atom_index).getAtom(macho_file).?;
     try parent_atom.addReloc(macho_file, .{
         .tag = .@"extern",
-        .offset = @intCast(reloc_info.offset),
+        .offset = @intcast(reloc_info.offset),
         .target = sym_index,
         .addend = reloc_info.addend,
         .type = .unsigned,
@@ -535,7 +535,7 @@ pub fn getDeclVAddr(
             .pcrel = false,
             .has_subtractor = false,
             .length = 3,
-            .symbolnum = @intCast(sym.nlist_idx),
+            .symbolnum = @intcast(sym.nlist_idx),
         },
     });
     return vaddr;
@@ -553,7 +553,7 @@ pub fn getAnonDeclVAddr(
     const parent_atom = macho_file.getSymbol(reloc_info.parent_atom_index).getAtom(macho_file).?;
     try parent_atom.addReloc(macho_file, .{
         .tag = .@"extern",
-        .offset = @intCast(reloc_info.offset),
+        .offset = @intcast(reloc_info.offset),
         .target = sym_index,
         .addend = reloc_info.addend,
         .type = .unsigned,
@@ -561,7 +561,7 @@ pub fn getAnonDeclVAddr(
             .pcrel = false,
             .has_subtractor = false,
             .length = 3,
-            .symbolnum = @intCast(sym.nlist_idx),
+            .symbolnum = @intcast(sym.nlist_idx),
         },
     });
     return vaddr;
@@ -589,7 +589,7 @@ pub fn lowerAnonDecl(
 
     var name_buf: [32]u8 = undefined;
     const name = std.fmt.bufPrint(&name_buf, "__anon_{d}", .{
-        @intFromEnum(decl_val),
+        @intfromenum(decl_val),
     }) catch unreachable;
     const res = self.lowerConst(
         macho_file,
@@ -604,7 +604,7 @@ pub fn lowerAnonDecl(
             gpa,
             src_loc,
             "unable to lower constant value: {s}",
-            .{@errorName(e)},
+            .{@errorname(e)},
         ) },
     };
     const sym_index = switch (res) {
@@ -973,8 +973,8 @@ fn createTlvDescriptor(
     const sym = macho_file.getSymbol(sym_index);
     const nlist = &self.symtab.items(.nlist)[sym.nlist_idx];
     const atom = sym.getAtom(macho_file).?;
-    const alignment = Atom.Alignment.fromNonzeroByteUnits(@alignOf(u64));
-    const size: u64 = @sizeOf(u64) * 3;
+    const alignment = Atom.Alignment.fromNonzeroByteUnits(@alignof(u64));
+    const size: u64 = @sizeof(u64) * 3;
 
     const sect_index = macho_file.getSectionByName("__DATA", "__thread_vars") orelse
         try macho_file.addSection("__DATA", "__thread_vars", .{
@@ -1007,7 +1007,7 @@ fn createTlvDescriptor(
             .pcrel = false,
             .has_subtractor = false,
             .length = 3,
-            .symbolnum = @intCast(tlv_bootstrap_index),
+            .symbolnum = @intcast(tlv_bootstrap_index),
         },
     });
     try atom.addReloc(macho_file, .{
@@ -1020,7 +1020,7 @@ fn createTlvDescriptor(
             .pcrel = false,
             .has_subtractor = false,
             .length = 3,
-            .symbolnum = @intCast(macho_file.getSymbol(init_sym_index).nlist_idx),
+            .symbolnum = @intcast(macho_file.getSymbol(init_sym_index).nlist_idx),
         },
     });
 
@@ -1287,7 +1287,7 @@ fn updateLazySymbol(
 
     const name_str_index = blk: {
         const name = try std.fmt.allocPrint(gpa, "__lazy_{s}_{}", .{
-            @tagName(lazy_sym.kind),
+            @tagname(lazy_sym.kind),
             lazy_sym.ty.fmt(mod),
         });
         defer gpa.free(name);

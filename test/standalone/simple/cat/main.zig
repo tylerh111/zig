@@ -26,7 +26,7 @@ pub fn main() !void {
             return usage(exe);
         } else {
             const file = cwd.openFile(arg, .{}) catch |err| {
-                warn("Unable to open file: {s}\n", .{@errorName(err)});
+                warn("Unable to open file: {s}\n", .{@errorname(err)});
                 return err;
             };
             defer file.close();

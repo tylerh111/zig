@@ -252,7 +252,7 @@ fn breakPatterns(a: usize, b: usize, context: anytype) void {
     const len = b - a;
     if (len < 8) return;
 
-    var rand = @as(u64, @intCast(len));
+    var rand = @as(u64, @intcast(len));
     const modulus = math.ceilPowerOfTwoAssert(u64, len);
 
     var i = a + (len / 4) * 2 - 1;
@@ -262,7 +262,7 @@ fn breakPatterns(a: usize, b: usize, context: anytype) void {
         rand ^= rand >> 7;
         rand ^= rand << 17;
 
-        var other = @as(usize, @intCast(rand & (modulus - 1)));
+        var other = @as(usize, @intcast(rand & (modulus - 1)));
         if (other >= len) other -= len;
         context.swap(i, a + other);
     }

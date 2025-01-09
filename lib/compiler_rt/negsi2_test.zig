@@ -21,7 +21,7 @@ test "negsi2" {
     try test__negsi2(3, -3);
 
     // max_usable == MAX(i32) == -MIN(i32) == 2147483647 == 7fffffff
-    // divTrunc: max_usable / i, i=1,2,3,5,100
+    // divtrunc: max_usable / i, i=1,2,3,5,100
     // 7fffffff / i
     try test__negsi2(-715827882, 715827882);
     try test__negsi2(715827882, -715827882);

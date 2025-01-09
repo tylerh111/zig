@@ -14,9 +14,9 @@ const Tagged = @Type(.{
         .layout = .auto,
         .tag_type = Tag,
         .fields = &.{
-            .{ .name = "signed", .type = i32, .alignment = @alignOf(i32) },
-            .{ .name = "unsigned", .type = u32, .alignment = @alignOf(u32) },
-            .{ .name = "arst", .type = f32, .alignment = @alignOf(f32) },
+            .{ .name = "signed", .type = i32, .alignment = @alignof(i32) },
+            .{ .name = "unsigned", .type = u32, .alignment = @alignof(u32) },
+            .{ .name = "arst", .type = f32, .alignment = @alignof(f32) },
         },
         .decls = &.{},
     },

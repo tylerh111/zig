@@ -22,7 +22,7 @@ pub const Iterator = switch (native_os) {
     .macos, .ios, .freebsd, .netbsd, .dragonfly, .openbsd, .solaris, .illumos => struct {
         dir: Dir,
         seek: i64,
-        buf: [1024]u8, // TODO align(@alignOf(posix.system.dirent)),
+        buf: [1024]u8, // TODO align(@alignof(posix.system.dirent)),
         index: usize,
         end_index: usize,
         first_iter: bool,
@@ -38,7 +38,7 @@ pub const Iterator = switch (native_os) {
                 .macos, .ios => return self.nextDarwin(),
                 .freebsd, .netbsd, .dragonfly, .openbsd => return self.nextBsd(),
                 .solaris, .illumos => return self.nextSolaris(),
-                else => @compileError("unimplemented"),
+                else => @compileerror("unimplemented"),
             }
         }
 
@@ -66,13 +66,13 @@ pub const Iterator = switch (native_os) {
                         }
                     }
                     self.index = 0;
-                    self.end_index = @as(usize, @intCast(rc));
+                    self.end_index = @as(usize, @intcast(rc));
                 }
-                const darwin_entry = @as(*align(1) posix.system.dirent, @ptrCast(&self.buf[self.index]));
+                const darwin_entry = @as(*align(1) posix.system.dirent, @ptrcast(&self.buf[self.index]));
                 const next_index = self.index + darwin_entry.reclen;
                 self.index = next_index;
 
-                const name = @as([*]u8, @ptrCast(&darwin_entry.name))[0..darwin_entry.namlen];
+                const name = @as([*]u8, @ptrcast(&darwin_entry.name))[0..darwin_entry.namlen];
 
                 if (mem.eql(u8, name, ".") or mem.eql(u8, name, "..") or (darwin_entry.ino == 0)) {
                     continue :start_over;
@@ -114,13 +114,13 @@ pub const Iterator = switch (native_os) {
                     }
                     if (rc == 0) return null;
                     self.index = 0;
-                    self.end_index = @as(usize, @intCast(rc));
+                    self.end_index = @as(usize, @intcast(rc));
                 }
-                const entry = @as(*align(1) posix.system.dirent, @ptrCast(&self.buf[self.index]));
+                const entry = @as(*align(1) posix.system.dirent, @ptrcast(&self.buf[self.index]));
                 const next_index = self.index + entry.reclen;
                 self.index = next_index;
 
-                const name = mem.sliceTo(@as([*:0]u8, @ptrCast(&entry.name)), 0);
+                const name = mem.sliceTo(@as([*:0]u8, @ptrcast(&entry.name)), 0);
                 if (mem.eql(u8, name, ".") or mem.eql(u8, name, ".."))
                     continue :start_over;
 
@@ -175,13 +175,13 @@ pub const Iterator = switch (native_os) {
                     }
                     if (rc == 0) return null;
                     self.index = 0;
-                    self.end_index = @as(usize, @intCast(rc));
+                    self.end_index = @as(usize, @intcast(rc));
                 }
-                const bsd_entry = @as(*align(1) posix.system.dirent, @ptrCast(&self.buf[self.index]));
-                const next_index = self.index + if (@hasDecl(posix.system.dirent, "reclen")) bsd_entry.reclen() else bsd_entry.reclen;
+                const bsd_entry = @as(*align(1) posix.system.dirent, @ptrcast(&self.buf[self.index]));
+                const next_index = self.index + if (@hasdecl(posix.system.dirent, "reclen")) bsd_entry.reclen() else bsd_entry.reclen;
                 self.index = next_index;
 
-                const name = @as([*]u8, @ptrCast(&bsd_entry.name))[0..bsd_entry.namlen];
+                const name = @as([*]u8, @ptrcast(&bsd_entry.name))[0..bsd_entry.namlen];
 
                 const skip_zero_fileno = switch (native_os) {
                     // fileno=0 is used to mark invalid entries or deleted files.
@@ -220,7 +220,7 @@ pub const Iterator = switch (native_os) {
     },
     .haiku => struct {
         dir: Dir,
-        buf: [@sizeOf(DirEnt) + posix.PATH_MAX]u8 align(@alignOf(DirEnt)),
+        buf: [@sizeof(DirEnt) + posix.PATH_MAX]u8 align(@alignof(DirEnt)),
         offset: usize,
         index: usize,
         end_index: usize,
@@ -237,7 +237,7 @@ pub const Iterator = switch (native_os) {
             while (true) {
                 if (self.index >= self.end_index) {
                     if (self.first_iter) {
-                        switch (@as(posix.E, @enumFromInt(posix.system._kern_rewind_dir(self.dir.fd)))) {
+                        switch (@as(posix.E, @enumfromint(posix.system._kern_rewind_dir(self.dir.fd)))) {
                             .SUCCESS => {},
                             .BADF => unreachable, // Dir is invalid
                             .FAULT => unreachable,
@@ -253,11 +253,11 @@ pub const Iterator = switch (native_os) {
                         self.dir.fd,
                         &self.buf,
                         self.buf.len,
-                        self.buf.len / @sizeOf(DirEnt),
+                        self.buf.len / @sizeof(DirEnt),
                     );
                     if (rc == 0) return null;
                     if (rc < 0) {
-                        switch (@as(posix.E, @enumFromInt(rc))) {
+                        switch (@as(posix.E, @enumfromint(rc))) {
                             .BADF => unreachable, // Dir is invalid
                             .FAULT => unreachable,
                             .NOTDIR => unreachable,
@@ -270,16 +270,16 @@ pub const Iterator = switch (native_os) {
                     }
                     self.offset = 0;
                     self.index = 0;
-                    self.end_index = @intCast(rc);
+                    self.end_index = @intcast(rc);
                 }
-                const dirent: *DirEnt = @ptrCast(@alignCast(&self.buf[self.offset]));
+                const dirent: *DirEnt = @ptrcast(@aligncast(&self.buf[self.offset]));
                 self.offset += dirent.reclen;
                 self.index += 1;
                 const name = mem.span(dirent.getName());
                 if (mem.eql(u8, name, ".") or mem.eql(u8, name, "..") or dirent.ino == 0) continue;
 
                 var stat_info: posix.Stat = undefined;
-                switch (@as(posix.E, @enumFromInt(posix.system._kern_read_stat(
+                switch (@as(posix.E, @enumfromint(posix.system._kern_read_stat(
                     self.dir.fd,
                     name,
                     false,
@@ -327,7 +327,7 @@ pub const Iterator = switch (native_os) {
         dir: Dir,
         // The if guard is solely there to prevent compile errors from missing `linux.dirent64`
         // definition when compiling for other OSes. It doesn't do anything when compiling for Linux.
-        buf: [1024]u8 align(@alignOf(linux.dirent64)),
+        buf: [1024]u8 align(@alignof(linux.dirent64)),
         index: usize,
         end_index: usize,
         first_iter: bool,
@@ -374,11 +374,11 @@ pub const Iterator = switch (native_os) {
                     self.index = 0;
                     self.end_index = rc;
                 }
-                const linux_entry = @as(*align(1) linux.dirent64, @ptrCast(&self.buf[self.index]));
+                const linux_entry = @as(*align(1) linux.dirent64, @ptrcast(&self.buf[self.index]));
                 const next_index = self.index + linux_entry.reclen;
                 self.index = next_index;
 
-                const name = mem.sliceTo(@as([*:0]u8, @ptrCast(&linux_entry.name)), 0);
+                const name = mem.sliceTo(@as([*:0]u8, @ptrcast(&linux_entry.name)), 0);
 
                 // skip . and .. entries
                 if (mem.eql(u8, name, ".") or mem.eql(u8, name, "..")) {
@@ -410,7 +410,7 @@ pub const Iterator = switch (native_os) {
     },
     .windows => struct {
         dir: Dir,
-        buf: [1024]u8 align(@alignOf(windows.FILE_BOTH_DIR_INFORMATION)),
+        buf: [1024]u8 align(@alignof(windows.FILE_BOTH_DIR_INFORMATION)),
         index: usize,
         end_index: usize,
         first_iter: bool,
@@ -454,14 +454,14 @@ pub const Iterator = switch (native_os) {
 
                 // While the official api docs guarantee FILE_BOTH_DIR_INFORMATION to be aligned properly
                 // this may not always be the case (e.g. due to faulty VM/Sandboxing tools)
-                const dir_info: *align(2) w.FILE_BOTH_DIR_INFORMATION = @ptrCast(@alignCast(&self.buf[self.index]));
+                const dir_info: *align(2) w.FILE_BOTH_DIR_INFORMATION = @ptrcast(@aligncast(&self.buf[self.index]));
                 if (dir_info.NextEntryOffset != 0) {
                     self.index += dir_info.NextEntryOffset;
                 } else {
                     self.index = self.buf.len;
                 }
 
-                const name_wtf16le = @as([*]u16, @ptrCast(&dir_info.FileName))[0 .. dir_info.FileNameLength / 2];
+                const name_wtf16le = @as([*]u16, @ptrcast(&dir_info.FileName))[0 .. dir_info.FileNameLength / 2];
 
                 if (mem.eql(u16, name_wtf16le, &[_]u16{'.'}) or mem.eql(u16, name_wtf16le, &[_]u16{ '.', '.' }))
                     continue;
@@ -488,7 +488,7 @@ pub const Iterator = switch (native_os) {
     },
     .wasi => struct {
         dir: Dir,
-        buf: [1024]u8, // TODO align(@alignOf(posix.wasi.dirent_t)),
+        buf: [1024]u8, // TODO align(@alignof(posix.wasi.dirent_t)),
         cookie: u64,
         index: usize,
         end_index: usize,
@@ -521,7 +521,7 @@ pub const Iterator = switch (native_os) {
             start_over: while (true) {
                 // According to the WASI spec, the last entry might be truncated,
                 // so we need to check if the left buffer contains the whole dirent.
-                if (self.end_index - self.index < @sizeOf(w.dirent_t)) {
+                if (self.end_index - self.index < @sizeof(w.dirent_t)) {
                     var bufused: usize = undefined;
                     switch (w.fd_readdir(self.dir.fd, &self.buf, self.buf.len, self.cookie, &bufused)) {
                         .SUCCESS => {},
@@ -538,8 +538,8 @@ pub const Iterator = switch (native_os) {
                     self.index = 0;
                     self.end_index = bufused;
                 }
-                const entry = @as(*align(1) w.dirent_t, @ptrCast(&self.buf[self.index]));
-                const entry_size = @sizeOf(w.dirent_t);
+                const entry = @as(*align(1) w.dirent_t, @ptrcast(&self.buf[self.index]));
+                const entry_size = @sizeof(w.dirent_t);
                 const name_index = self.index + entry_size;
                 if (name_index + entry.namlen > self.end_index) {
                     // This case, the name is truncated, so we need to call readdir to store the entire name.
@@ -579,7 +579,7 @@ pub const Iterator = switch (native_os) {
             self.cookie = std.os.wasi.DIRCOOKIE_START;
         }
     },
-    else => @compileError("unimplemented"),
+    else => @compileerror("unimplemented"),
 };
 
 pub fn iterate(self: Dir) Iterator {
@@ -641,7 +641,7 @@ fn iterateImpl(self: Dir, first_iter_start_value: bool) Iterator {
             .end_index = 0,
             .buf = undefined,
         },
-        else => @compileError("unimplemented"),
+        else => @compileerror("unimplemented"),
     }
 }
 
@@ -855,13 +855,13 @@ pub fn openFileZ(self: Dir, sub_path: [*:0]const u8, flags: File.OpenFlags) File
             },
         },
     };
-    if (@hasField(posix.O, "CLOEXEC")) os_flags.CLOEXEC = true;
-    if (@hasField(posix.O, "LARGEFILE")) os_flags.LARGEFILE = true;
-    if (@hasField(posix.O, "NOCTTY")) os_flags.NOCTTY = !flags.allow_ctty;
+    if (@hasfield(posix.O, "CLOEXEC")) os_flags.CLOEXEC = true;
+    if (@hasfield(posix.O, "LARGEFILE")) os_flags.LARGEFILE = true;
+    if (@hasfield(posix.O, "NOCTTY")) os_flags.NOCTTY = !flags.allow_ctty;
 
     // Use the O locking flags if the os supports them to acquire the lock
     // atomically.
-    const has_flock_open_flags = @hasField(posix.O, "EXLOCK");
+    const has_flock_open_flags = @hasfield(posix.O, "EXLOCK");
     if (has_flock_open_flags) {
         // Note that the NONBLOCK flag is removed after the openat() call
         // is successful.
@@ -880,7 +880,7 @@ pub fn openFileZ(self: Dir, sub_path: [*:0]const u8, flags: File.OpenFlags) File
     const fd = try posix.openatZ(self.fd, sub_path, os_flags, 0);
     errdefer posix.close(fd);
 
-    if (@hasDecl(posix.system, "LOCK")) {
+    if (@hasdecl(posix.system, "LOCK")) {
         if (!has_flock_open_flags and flags.lock != .none) {
             // TODO: integrate async I/O
             const lock_nonblocking: i32 = if (flags.lock_nonblocking) posix.LOCK.NB else 0;
@@ -901,7 +901,7 @@ pub fn openFileZ(self: Dir, sub_path: [*:0]const u8, flags: File.OpenFlags) File
             error.LockedRegionLimitExceeded => unreachable,
             else => |e| return e,
         };
-        fl_flags &= ~@as(usize, 1 << @bitOffsetOf(posix.O, "NONBLOCK"));
+        fl_flags &= ~@as(usize, 1 << @bitoffsetof(posix.O, "NONBLOCK"));
         _ = posix.fcntl(fd, posix.F.SETFL, fl_flags) catch |err| switch (err) {
             error.FileBusy => unreachable,
             error.Locked => unreachable,
@@ -946,8 +946,8 @@ pub fn openFileW(self: Dir, sub_path_w: []const u16, flags: File.OpenFlags) File
         &range_off,
         &range_len,
         null,
-        @intFromBool(flags.lock_nonblocking),
-        @intFromBool(exclusive),
+        @intfrombool(flags.lock_nonblocking),
+        @intfrombool(exclusive),
     );
     return file;
 }
@@ -1008,13 +1008,13 @@ pub fn createFileZ(self: Dir, sub_path_c: [*:0]const u8, flags: File.CreateFlags
         .TRUNC = flags.truncate,
         .EXCL = flags.exclusive,
     };
-    if (@hasField(posix.O, "LARGEFILE")) os_flags.LARGEFILE = true;
-    if (@hasField(posix.O, "CLOEXEC")) os_flags.CLOEXEC = true;
+    if (@hasfield(posix.O, "LARGEFILE")) os_flags.LARGEFILE = true;
+    if (@hasfield(posix.O, "CLOEXEC")) os_flags.CLOEXEC = true;
 
     // Use the O locking flags if the os supports them to acquire the lock
     // atomically. Note that the NONBLOCK flag is removed after the openat()
     // call is successful.
-    const has_flock_open_flags = @hasField(posix.O, "EXLOCK");
+    const has_flock_open_flags = @hasfield(posix.O, "EXLOCK");
     if (has_flock_open_flags) switch (flags.lock) {
         .none => {},
         .shared => {
@@ -1049,7 +1049,7 @@ pub fn createFileZ(self: Dir, sub_path_c: [*:0]const u8, flags: File.CreateFlags
             error.LockedRegionLimitExceeded => unreachable,
             else => |e| return e,
         };
-        fl_flags &= ~@as(usize, 1 << @bitOffsetOf(posix.O, "NONBLOCK"));
+        fl_flags &= ~@as(usize, 1 << @bitoffsetof(posix.O, "NONBLOCK"));
         _ = posix.fcntl(fd, posix.F.SETFL, fl_flags) catch |err| switch (err) {
             error.FileBusy => unreachable,
             error.Locked => unreachable,
@@ -1098,8 +1098,8 @@ pub fn createFileW(self: Dir, sub_path_w: []const u16, flags: File.CreateFlags) 
         &range_off,
         &range_len,
         null,
-        @intFromBool(flags.lock_nonblocking),
-        @intFromBool(exclusive),
+        @intfrombool(flags.lock_nonblocking),
+        @intfrombool(exclusive),
     );
     return file;
 }
@@ -1270,7 +1270,7 @@ pub const RealPathError = posix.RealPathError;
 /// See also `Dir.realpathZ`, `Dir.realpathW`, and `Dir.realpathAlloc`.
 pub fn realpath(self: Dir, pathname: []const u8, out_buffer: []u8) RealPathError![]u8 {
     if (native_os == .wasi) {
-        @compileError("realpath is not available on WASI");
+        @compileerror("realpath is not available on WASI");
     }
     if (native_os == .windows) {
         const pathname_w = try windows.sliceToPrefixedFileW(self.fd, pathname);
@@ -1380,7 +1380,7 @@ pub fn realpathAlloc(self: Dir, allocator: Allocator, pathname: []const u8) Real
 /// of a current working directory.
 pub fn setAsCwd(self: Dir) !void {
     if (native_os == .wasi) {
-        @compileError("changing cwd is not currently possible in WASI");
+        @compileerror("changing cwd is not currently possible in WASI");
     }
     if (native_os == .windows) {
         var dir_path_buffer: [windows.PATH_MAX_WIDE]u16 = undefined;
@@ -1487,7 +1487,7 @@ pub fn openDirZ(self: Dir, sub_path_c: [*:0]const u8, args: OpenDirOptions) Open
         .haiku => {
             const rc = posix.system._kern_open_dir(self.fd, sub_path_c);
             if (rc >= 0) return .{ .fd = rc };
-            switch (@as(posix.E, @enumFromInt(rc))) {
+            switch (@as(posix.E, @enumfromint(rc))) {
                 .FAULT => unreachable,
                 .INVAL => unreachable,
                 .BADF => unreachable,
@@ -1522,7 +1522,7 @@ pub fn openDirZ(self: Dir, sub_path_c: [*:0]const u8, args: OpenDirOptions) Open
         },
     };
 
-    if (@hasField(posix.O, "PATH") and !args.iterate)
+    if (@hasfield(posix.O, "PATH") and !args.iterate)
         symlink_flags.PATH = true;
 
     return self.openDirFlagsZ(sub_path_c, symlink_flags);
@@ -1578,14 +1578,14 @@ fn makeOpenDirAccessMaskW(self: Dir, sub_path_w: [*:0]const u16, access_mask: u3
         .fd = undefined,
     };
 
-    const path_len_bytes = @as(u16, @intCast(mem.sliceTo(sub_path_w, 0).len * 2));
+    const path_len_bytes = @as(u16, @intcast(mem.sliceTo(sub_path_w, 0).len * 2));
     var nt_name = w.UNICODE_STRING{
         .Length = path_len_bytes,
         .MaximumLength = path_len_bytes,
-        .Buffer = @constCast(sub_path_w),
+        .Buffer = @constcast(sub_path_w),
     };
     var attr = w.OBJECT_ATTRIBUTES{
-        .Length = @sizeOf(w.OBJECT_ATTRIBUTES),
+        .Length = @sizeof(w.OBJECT_ATTRIBUTES),
         .RootDirectory = if (fs.path.isAbsoluteWindowsW(sub_path_w)) null else self.fd,
         .Attributes = 0, // Note we do not use OBJ_CASE_INSENSITIVE here.
         .ObjectName = &nt_name,
@@ -1907,7 +1907,7 @@ pub fn readFile(self: Dir, file_path: []const u8, buffer: []u8) ![]u8 {
 /// On WASI, `file_path` should be encoded as valid UTF-8.
 /// On other platforms, `file_path` is an opaque sequence of bytes with no particular encoding.
 pub fn readFileAlloc(self: Dir, allocator: mem.Allocator, file_path: []const u8, max_bytes: usize) ![]u8 {
-    return self.readFileAllocOptions(allocator, file_path, max_bytes, null, @alignOf(u8), null);
+    return self.readFileAllocOptions(allocator, file_path, max_bytes, null, @alignof(u8), null);
 }
 
 /// On success, caller owns returned buffer.
@@ -2383,7 +2383,7 @@ pub fn writeFile(self: Dir, options: WriteFileOptions) WriteFileError!void {
     try file.writeAll(options.data);
 }
 
-pub const writeFile2 = @compileError("deprecated; renamed to writeFile");
+pub const writeFile2 = @compileerror("deprecated; renamed to writeFile");
 
 pub const AccessError = posix.AccessError;
 

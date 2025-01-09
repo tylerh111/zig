@@ -17,14 +17,14 @@ fn Table(comptime len: comptime_int, comptime RelType: type, comptime mapping: [
     return struct {
         fn decode(r_type: u32) Kind {
             inline for (mapping) |entry| {
-                if (@intFromEnum(entry[1]) == r_type) return entry[0];
+                if (@intfromenum(entry[1]) == r_type) return entry[0];
             }
             return .other;
         }
 
         fn encode(comptime kind: Kind) u32 {
             inline for (mapping) |entry| {
-                if (entry[0] == kind) return @intFromEnum(entry[1]);
+                if (entry[0] == kind) return @intfromenum(entry[1]);
             }
             @panic("encoding .other is ambiguous");
         }
@@ -116,9 +116,9 @@ fn formatRelocType(
         Elf.R_ZIG_GOT32 => try writer.writeAll("R_ZIG_GOT32"),
         Elf.R_ZIG_GOTPCREL => try writer.writeAll("R_ZIG_GOTPCREL"),
         else => switch (ctx.cpu_arch) {
-            .x86_64 => try writer.print("R_X86_64_{s}", .{@tagName(@as(elf.R_X86_64, @enumFromInt(r_type)))}),
-            .aarch64 => try writer.print("R_AARCH64_{s}", .{@tagName(@as(elf.R_AARCH64, @enumFromInt(r_type)))}),
-            .riscv64 => try writer.print("R_RISCV_{s}", .{@tagName(@as(elf.R_RISCV, @enumFromInt(r_type)))}),
+            .x86_64 => try writer.print("R_X86_64_{s}", .{@tagname(@as(elf.R_X86_64, @enumfromint(r_type)))}),
+            .aarch64 => try writer.print("R_AARCH64_{s}", .{@tagname(@as(elf.R_AARCH64, @enumfromint(r_type)))}),
+            .riscv64 => try writer.print("R_RISCV_{s}", .{@tagname(@as(elf.R_RISCV, @enumfromint(r_type)))}),
             else => unreachable,
         },
     }

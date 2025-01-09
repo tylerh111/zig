@@ -37311,7 +37311,7 @@ IHTMLElement : public IDispatch
     virtual HRESULT STDMETHODCALLTYPE get_id(
         BSTR *p) = 0;
 
-    virtual HRESULT STDMETHODCALLTYPE get_tagName(
+    virtual HRESULT STDMETHODCALLTYPE get_tagname(
         BSTR *p) = 0;
 
     virtual HRESULT STDMETHODCALLTYPE get_parentElement(
@@ -37639,7 +37639,7 @@ typedef struct IHTMLElementVtbl {
         IHTMLElement *This,
         BSTR *p);
 
-    HRESULT (STDMETHODCALLTYPE *get_tagName)(
+    HRESULT (STDMETHODCALLTYPE *get_tagname)(
         IHTMLElement *This,
         BSTR *p);
 
@@ -37987,7 +37987,7 @@ interface IHTMLElement {
 #define IHTMLElement_get_className(This,p) (This)->lpVtbl->get_className(This,p)
 #define IHTMLElement_put_id(This,v) (This)->lpVtbl->put_id(This,v)
 #define IHTMLElement_get_id(This,p) (This)->lpVtbl->get_id(This,p)
-#define IHTMLElement_get_tagName(This,p) (This)->lpVtbl->get_tagName(This,p)
+#define IHTMLElement_get_tagname(This,p) (This)->lpVtbl->get_tagname(This,p)
 #define IHTMLElement_get_parentElement(This,p) (This)->lpVtbl->get_parentElement(This,p)
 #define IHTMLElement_get_style(This,p) (This)->lpVtbl->get_style(This,p)
 #define IHTMLElement_put_onhelp(This,v) (This)->lpVtbl->put_onhelp(This,v)
@@ -38113,8 +38113,8 @@ static __WIDL_INLINE HRESULT IHTMLElement_put_id(IHTMLElement* This,BSTR v) {
 static __WIDL_INLINE HRESULT IHTMLElement_get_id(IHTMLElement* This,BSTR *p) {
     return This->lpVtbl->get_id(This,p);
 }
-static __WIDL_INLINE HRESULT IHTMLElement_get_tagName(IHTMLElement* This,BSTR *p) {
-    return This->lpVtbl->get_tagName(This,p);
+static __WIDL_INLINE HRESULT IHTMLElement_get_tagname(IHTMLElement* This,BSTR *p) {
+    return This->lpVtbl->get_tagname(This,p);
 }
 static __WIDL_INLINE HRESULT IHTMLElement_get_parentElement(IHTMLElement* This,IHTMLElement **p) {
     return This->lpVtbl->get_parentElement(This,p);
@@ -41712,7 +41712,7 @@ IHTMLElement6 : public IDispatch
         BSTR bstrLocalName,
         IHTMLElementCollection **pelColl) = 0;
 
-    virtual HRESULT STDMETHODCALLTYPE get_tagName(
+    virtual HRESULT STDMETHODCALLTYPE get_tagname(
         BSTR *p) = 0;
 
     virtual HRESULT STDMETHODCALLTYPE get_nodeName(
@@ -42022,7 +42022,7 @@ typedef struct IHTMLElement6Vtbl {
         BSTR bstrLocalName,
         IHTMLElementCollection **pelColl);
 
-    HRESULT (STDMETHODCALLTYPE *get_tagName)(
+    HRESULT (STDMETHODCALLTYPE *get_tagname)(
         IHTMLElement6 *This,
         BSTR *p);
 
@@ -42301,7 +42301,7 @@ interface IHTMLElement6 {
 #define IHTMLElement6_removeAttributeNode(This,pattr,ppretAttribute) (This)->lpVtbl->removeAttributeNode(This,pattr,ppretAttribute)
 #define IHTMLElement6_hasAttribute(This,name,pfHasAttribute) (This)->lpVtbl->hasAttribute(This,name,pfHasAttribute)
 #define IHTMLElement6_getElementsByTagNameNS(This,varNS,bstrLocalName,pelColl) (This)->lpVtbl->getElementsByTagNameNS(This,varNS,bstrLocalName,pelColl)
-#define IHTMLElement6_get_tagName(This,p) (This)->lpVtbl->get_tagName(This,p)
+#define IHTMLElement6_get_tagname(This,p) (This)->lpVtbl->get_tagname(This,p)
 #define IHTMLElement6_get_nodeName(This,p) (This)->lpVtbl->get_nodeName(This,p)
 #define IHTMLElement6_getElementsByClassName(This,v,pel) (This)->lpVtbl->getElementsByClassName(This,v,pel)
 #define IHTMLElement6_msMatchesSelector(This,v,pfMatches) (This)->lpVtbl->msMatchesSelector(This,v,pfMatches)
@@ -42429,8 +42429,8 @@ static __WIDL_INLINE HRESULT IHTMLElement6_hasAttribute(IHTMLElement6* This,BSTR
 static __WIDL_INLINE HRESULT IHTMLElement6_getElementsByTagNameNS(IHTMLElement6* This,VARIANT *varNS,BSTR bstrLocalName,IHTMLElementCollection **pelColl) {
     return This->lpVtbl->getElementsByTagNameNS(This,varNS,bstrLocalName,pelColl);
 }
-static __WIDL_INLINE HRESULT IHTMLElement6_get_tagName(IHTMLElement6* This,BSTR *p) {
-    return This->lpVtbl->get_tagName(This,p);
+static __WIDL_INLINE HRESULT IHTMLElement6_get_tagname(IHTMLElement6* This,BSTR *p) {
+    return This->lpVtbl->get_tagname(This,p);
 }
 static __WIDL_INLINE HRESULT IHTMLElement6_get_nodeName(IHTMLElement6* This,BSTR *p) {
     return This->lpVtbl->get_nodeName(This,p);
@@ -52582,7 +52582,7 @@ IHTMLFormElement : public IDispatch
         IDispatch **pdisp) = 0;
 
     virtual HRESULT STDMETHODCALLTYPE tags(
-        VARIANT tagName,
+        VARIANT tagname,
         IDispatch **pdisp) = 0;
 
 };
@@ -52730,7 +52730,7 @@ typedef struct IHTMLFormElementVtbl {
 
     HRESULT (STDMETHODCALLTYPE *tags)(
         IHTMLFormElement *This,
-        VARIANT tagName,
+        VARIANT tagname,
         IDispatch **pdisp);
 
     END_INTERFACE
@@ -52775,7 +52775,7 @@ interface IHTMLFormElement {
 #define IHTMLFormElement_get_length(This,p) (This)->lpVtbl->get_length(This,p)
 #define IHTMLFormElement_get__newEnum(This,p) (This)->lpVtbl->get__newEnum(This,p)
 #define IHTMLFormElement_item(This,name,index,pdisp) (This)->lpVtbl->item(This,name,index,pdisp)
-#define IHTMLFormElement_tags(This,tagName,pdisp) (This)->lpVtbl->tags(This,tagName,pdisp)
+#define IHTMLFormElement_tags(This,tagname,pdisp) (This)->lpVtbl->tags(This,tagname,pdisp)
 #else
 /*** IUnknown methods ***/
 static __WIDL_INLINE HRESULT IHTMLFormElement_QueryInterface(IHTMLFormElement* This,REFIID riid,void **ppvObject) {
@@ -52870,8 +52870,8 @@ static __WIDL_INLINE HRESULT IHTMLFormElement_get__newEnum(IHTMLFormElement* Thi
 static __WIDL_INLINE HRESULT IHTMLFormElement_item(IHTMLFormElement* This,VARIANT name,VARIANT index,IDispatch **pdisp) {
     return This->lpVtbl->item(This,name,index,pdisp);
 }
-static __WIDL_INLINE HRESULT IHTMLFormElement_tags(IHTMLFormElement* This,VARIANT tagName,IDispatch **pdisp) {
-    return This->lpVtbl->tags(This,tagName,pdisp);
+static __WIDL_INLINE HRESULT IHTMLFormElement_tags(IHTMLFormElement* This,VARIANT tagname,IDispatch **pdisp) {
+    return This->lpVtbl->tags(This,tagname,pdisp);
 }
 #endif
 #endif
@@ -64234,7 +64234,7 @@ IHTMLElementCollection : public IDispatch
         IDispatch **pdisp) = 0;
 
     virtual HRESULT STDMETHODCALLTYPE tags(
-        VARIANT tagName,
+        VARIANT tagname,
         IDispatch **pdisp) = 0;
 
 };
@@ -64312,7 +64312,7 @@ typedef struct IHTMLElementCollectionVtbl {
 
     HRESULT (STDMETHODCALLTYPE *tags)(
         IHTMLElementCollection *This,
-        VARIANT tagName,
+        VARIANT tagname,
         IDispatch **pdisp);
 
     END_INTERFACE
@@ -64339,7 +64339,7 @@ interface IHTMLElementCollection {
 #define IHTMLElementCollection_get_length(This,p) (This)->lpVtbl->get_length(This,p)
 #define IHTMLElementCollection_get__newEnum(This,p) (This)->lpVtbl->get__newEnum(This,p)
 #define IHTMLElementCollection_item(This,name,index,pdisp) (This)->lpVtbl->item(This,name,index,pdisp)
-#define IHTMLElementCollection_tags(This,tagName,pdisp) (This)->lpVtbl->tags(This,tagName,pdisp)
+#define IHTMLElementCollection_tags(This,tagname,pdisp) (This)->lpVtbl->tags(This,tagname,pdisp)
 #else
 /*** IUnknown methods ***/
 static __WIDL_INLINE HRESULT IHTMLElementCollection_QueryInterface(IHTMLElementCollection* This,REFIID riid,void **ppvObject) {
@@ -64380,8 +64380,8 @@ static __WIDL_INLINE HRESULT IHTMLElementCollection_get__newEnum(IHTMLElementCol
 static __WIDL_INLINE HRESULT IHTMLElementCollection_item(IHTMLElementCollection* This,VARIANT name,VARIANT index,IDispatch **pdisp) {
     return This->lpVtbl->item(This,name,index,pdisp);
 }
-static __WIDL_INLINE HRESULT IHTMLElementCollection_tags(IHTMLElementCollection* This,VARIANT tagName,IDispatch **pdisp) {
-    return This->lpVtbl->tags(This,tagName,pdisp);
+static __WIDL_INLINE HRESULT IHTMLElementCollection_tags(IHTMLElementCollection* This,VARIANT tagname,IDispatch **pdisp) {
+    return This->lpVtbl->tags(This,tagname,pdisp);
 }
 #endif
 #endif
@@ -65612,7 +65612,7 @@ IHTMLSelectElement : public IDispatch
         IDispatch **pdisp) = 0;
 
     virtual HRESULT STDMETHODCALLTYPE tags(
-        VARIANT tagName,
+        VARIANT tagname,
         IDispatch **pdisp) = 0;
 
 };
@@ -65763,7 +65763,7 @@ typedef struct IHTMLSelectElementVtbl {
 
     HRESULT (STDMETHODCALLTYPE *tags)(
         IHTMLSelectElement *This,
-        VARIANT tagName,
+        VARIANT tagname,
         IDispatch **pdisp);
 
     END_INTERFACE
@@ -65808,7 +65808,7 @@ interface IHTMLSelectElement {
 #define IHTMLSelectElement_get_length(This,p) (This)->lpVtbl->get_length(This,p)
 #define IHTMLSelectElement_get__newEnum(This,p) (This)->lpVtbl->get__newEnum(This,p)
 #define IHTMLSelectElement_item(This,name,index,pdisp) (This)->lpVtbl->item(This,name,index,pdisp)
-#define IHTMLSelectElement_tags(This,tagName,pdisp) (This)->lpVtbl->tags(This,tagName,pdisp)
+#define IHTMLSelectElement_tags(This,tagname,pdisp) (This)->lpVtbl->tags(This,tagname,pdisp)
 #else
 /*** IUnknown methods ***/
 static __WIDL_INLINE HRESULT IHTMLSelectElement_QueryInterface(IHTMLSelectElement* This,REFIID riid,void **ppvObject) {
@@ -65903,8 +65903,8 @@ static __WIDL_INLINE HRESULT IHTMLSelectElement_get__newEnum(IHTMLSelectElement*
 static __WIDL_INLINE HRESULT IHTMLSelectElement_item(IHTMLSelectElement* This,VARIANT name,VARIANT index,IDispatch **pdisp) {
     return This->lpVtbl->item(This,name,index,pdisp);
 }
-static __WIDL_INLINE HRESULT IHTMLSelectElement_tags(IHTMLSelectElement* This,VARIANT tagName,IDispatch **pdisp) {
-    return This->lpVtbl->tags(This,tagName,pdisp);
+static __WIDL_INLINE HRESULT IHTMLSelectElement_tags(IHTMLSelectElement* This,VARIANT tagname,IDispatch **pdisp) {
+    return This->lpVtbl->tags(This,tagname,pdisp);
 }
 #endif
 #endif
@@ -96064,7 +96064,7 @@ IHTMLAreasCollection : public IDispatch
         IDispatch **pdisp) = 0;
 
     virtual HRESULT STDMETHODCALLTYPE tags(
-        VARIANT tagName,
+        VARIANT tagname,
         IDispatch **pdisp) = 0;
 
     virtual HRESULT STDMETHODCALLTYPE add(
@@ -96145,7 +96145,7 @@ typedef struct IHTMLAreasCollectionVtbl {
 
     HRESULT (STDMETHODCALLTYPE *tags)(
         IHTMLAreasCollection *This,
-        VARIANT tagName,
+        VARIANT tagname,
         IDispatch **pdisp);
 
     HRESULT (STDMETHODCALLTYPE *add)(
@@ -96180,7 +96180,7 @@ interface IHTMLAreasCollection {
 #define IHTMLAreasCollection_get_length(This,p) (This)->lpVtbl->get_length(This,p)
 #define IHTMLAreasCollection_get__newEnum(This,p) (This)->lpVtbl->get__newEnum(This,p)
 #define IHTMLAreasCollection_item(This,name,index,pdisp) (This)->lpVtbl->item(This,name,index,pdisp)
-#define IHTMLAreasCollection_tags(This,tagName,pdisp) (This)->lpVtbl->tags(This,tagName,pdisp)
+#define IHTMLAreasCollection_tags(This,tagname,pdisp) (This)->lpVtbl->tags(This,tagname,pdisp)
 #define IHTMLAreasCollection_add(This,element,before) (This)->lpVtbl->add(This,element,before)
 #define IHTMLAreasCollection_remove(This,index) (This)->lpVtbl->remove(This,index)
 #else
@@ -96220,8 +96220,8 @@ static __WIDL_INLINE HRESULT IHTMLAreasCollection_get__newEnum(IHTMLAreasCollect
 static __WIDL_INLINE HRESULT IHTMLAreasCollection_item(IHTMLAreasCollection* This,VARIANT name,VARIANT index,IDispatch **pdisp) {
     return This->lpVtbl->item(This,name,index,pdisp);
 }
-static __WIDL_INLINE HRESULT IHTMLAreasCollection_tags(IHTMLAreasCollection* This,VARIANT tagName,IDispatch **pdisp) {
-    return This->lpVtbl->tags(This,tagName,pdisp);
+static __WIDL_INLINE HRESULT IHTMLAreasCollection_tags(IHTMLAreasCollection* This,VARIANT tagname,IDispatch **pdisp) {
+    return This->lpVtbl->tags(This,tagname,pdisp);
 }
 static __WIDL_INLINE HRESULT IHTMLAreasCollection_add(IHTMLAreasCollection* This,IHTMLElement *element,VARIANT before) {
     return This->lpVtbl->add(This,element,before);
@@ -172023,7 +172023,7 @@ IHTMLNamespace : public IDispatch
     virtual HRESULT STDMETHODCALLTYPE get_urn(
         BSTR *p) = 0;
 
-    virtual HRESULT STDMETHODCALLTYPE get_tagNames(
+    virtual HRESULT STDMETHODCALLTYPE get_tagnames(
         IDispatch **p) = 0;
 
     virtual HRESULT STDMETHODCALLTYPE get_readyState(
@@ -172106,7 +172106,7 @@ typedef struct IHTMLNamespaceVtbl {
         IHTMLNamespace *This,
         BSTR *p);
 
-    HRESULT (STDMETHODCALLTYPE *get_tagNames)(
+    HRESULT (STDMETHODCALLTYPE *get_tagnames)(
         IHTMLNamespace *This,
         IDispatch **p);
 
@@ -172158,7 +172158,7 @@ interface IHTMLNamespace {
 /*** IHTMLNamespace methods ***/
 #define IHTMLNamespace_get_name(This,p) (This)->lpVtbl->get_name(This,p)
 #define IHTMLNamespace_get_urn(This,p) (This)->lpVtbl->get_urn(This,p)
-#define IHTMLNamespace_get_tagNames(This,p) (This)->lpVtbl->get_tagNames(This,p)
+#define IHTMLNamespace_get_tagnames(This,p) (This)->lpVtbl->get_tagnames(This,p)
 #define IHTMLNamespace_get_readyState(This,p) (This)->lpVtbl->get_readyState(This,p)
 #define IHTMLNamespace_put_onreadystatechange(This,v) (This)->lpVtbl->put_onreadystatechange(This,v)
 #define IHTMLNamespace_get_onreadystatechange(This,p) (This)->lpVtbl->get_onreadystatechange(This,p)
@@ -172196,8 +172196,8 @@ static __WIDL_INLINE HRESULT IHTMLNamespace_get_name(IHTMLNamespace* This,BSTR *
 static __WIDL_INLINE HRESULT IHTMLNamespace_get_urn(IHTMLNamespace* This,BSTR *p) {
     return This->lpVtbl->get_urn(This,p);
 }
-static __WIDL_INLINE HRESULT IHTMLNamespace_get_tagNames(IHTMLNamespace* This,IDispatch **p) {
-    return This->lpVtbl->get_tagNames(This,p);
+static __WIDL_INLINE HRESULT IHTMLNamespace_get_tagnames(IHTMLNamespace* This,IDispatch **p) {
+    return This->lpVtbl->get_tagnames(This,p);
 }
 static __WIDL_INLINE HRESULT IHTMLNamespace_get_readyState(IHTMLNamespace* This,VARIANT *p) {
     return This->lpVtbl->get_readyState(This,p);

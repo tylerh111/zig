@@ -82,10 +82,10 @@ const Properties = struct {
     suppress_msvc: bool = false,
 
     pub fn makeOpt(comptime str: []const u8) u16 {
-        return @offsetOf(Options, str);
+        return @offsetof(Options, str);
     }
     pub fn getKind(prop: Properties, options: *Options) Kind {
-        const opt = @as([*]Kind, @ptrCast(options))[prop.opt orelse return prop.kind];
+        const opt = @as([*]Kind, @ptrcast(options))[prop.opt orelse return prop.kind];
         if (opt == .default) return prop.kind;
         return opt;
     }
@@ -396,7 +396,7 @@ pub fn renderMessage(comp: *Compilation, m: anytype, msg: Message) void {
             msg.extra.codepoints.resembles,
         }),
         .attr_arg_count => printRt(m, prop.msg, .{ "{s}", "{d}" }, .{
-            @tagName(msg.extra.attr_arg_count.attribute),
+            @tagname(msg.extra.attr_arg_count.attribute),
             msg.extra.attr_arg_count.expected,
         }),
         .attr_arg_type => printRt(m, prop.msg, .{ "{s}", "{s}" }, .{
@@ -415,15 +415,15 @@ pub fn renderMessage(comp: *Compilation, m: anytype, msg: Message) void {
         }}),
         .signed => printRt(m, prop.msg, .{"{d}"}, .{msg.extra.signed}),
         .attr_enum => printRt(m, prop.msg, .{ "{s}", "{s}" }, .{
-            @tagName(msg.extra.attr_enum.tag),
+            @tagname(msg.extra.attr_enum.tag),
             Attribute.Formatting.choices(msg.extra.attr_enum.tag),
         }),
         .ignored_record_attr => printRt(m, prop.msg, .{ "{s}", "{s}" }, .{
-            @tagName(msg.extra.ignored_record_attr.tag),
-            @tagName(msg.extra.ignored_record_attr.specifier),
+            @tagname(msg.extra.ignored_record_attr.tag),
+            @tagname(msg.extra.ignored_record_attr.specifier),
         }),
         .builtin_with_header => printRt(m, prop.msg, .{ "{s}", "{s}" }, .{
-            @tagName(msg.extra.builtin_with_header.header),
+            @tagname(msg.extra.builtin_with_header.header),
             Builtin.nameFromTag(msg.extra.builtin_with_header.builtin).span(),
         }),
         .invalid_escape => {
@@ -450,7 +450,7 @@ pub fn renderMessage(comp: *Compilation, m: anytype, msg: Message) void {
                     };
                     while (it.nextCodepoint()) |codepoint| {
                         if (codepoint < 0x7F) {
-                            try writer.writeByte(@intCast(codepoint));
+                            try writer.writeByte(@intcast(codepoint));
                         } else if (codepoint < 0xFFFF) {
                             try writer.writeAll("\\u");
                             try std.fmt.formatInt(codepoint, 16, .upper, .{
@@ -497,7 +497,7 @@ fn printRt(m: anytype, str: []const u8, comptime fmts: anytype, args: anytype) v
 }
 
 fn optName(offset: u16) []const u8 {
-    return std.meta.fieldNames(Options)[offset / @sizeOf(Kind)];
+    return std.meta.fieldNames(Options)[offset / @sizeof(Kind)];
 }
 
 fn tagKind(d: *Diagnostics, tag: Tag, langopts: LangOpts) Kind {

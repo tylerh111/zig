@@ -22,8 +22,8 @@ pub const File = union(enum) {
 
     pub fn symbol(file: File, index: Symbol.Index) *Symbol {
         return switch (file) {
-            .zig_object => |obj| &obj.symbols.items[@intFromEnum(index)],
-            .object => |obj| &obj.symtable[@intFromEnum(index)],
+            .zig_object => |obj| &obj.symbols.items[@intfromenum(index)],
+            .object => |obj| &obj.symtable[@intfromenum(index)],
         };
     }
 
@@ -37,11 +37,11 @@ pub const File = union(enum) {
     pub fn symbolName(file: File, index: Symbol.Index) []const u8 {
         switch (file) {
             .zig_object => |obj| {
-                const sym = obj.symbols.items[@intFromEnum(index)];
+                const sym = obj.symbols.items[@intfromenum(index)];
                 return obj.string_table.get(sym.name).?;
             },
             .object => |obj| {
-                const sym = obj.symtable[@intFromEnum(index)];
+                const sym = obj.symtable[@intfromenum(index)];
                 return obj.string_table.get(sym.name);
             },
         }
@@ -58,7 +58,7 @@ pub const File = union(enum) {
     pub fn import(file: File, symbol_index: Symbol.Index) types.Import {
         return switch (file) {
             .zig_object => |obj| obj.imports.get(symbol_index).?,
-            .object => |obj| obj.findImport(obj.symtable[@intFromEnum(symbol_index)]),
+            .object => |obj| obj.findImport(obj.symtable[@intfromenum(symbol_index)]),
         };
     }
 
@@ -92,11 +92,11 @@ pub const File = union(enum) {
     pub fn function(file: File, sym_index: Symbol.Index) std.wasm.Func {
         switch (file) {
             .zig_object => |obj| {
-                const sym = obj.symbols.items[@intFromEnum(sym_index)];
+                const sym = obj.symbols.items[@intfromenum(sym_index)];
                 return obj.functions.items[sym.index];
             },
             .object => |obj| {
-                const sym = obj.symtable[@intFromEnum(sym_index)];
+                const sym = obj.symtable[@intfromenum(sym_index)];
                 return obj.functions[sym.index - obj.imported_functions_count];
             },
         }

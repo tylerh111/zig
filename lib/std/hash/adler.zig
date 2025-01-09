@@ -113,7 +113,7 @@ test "adler32 very long" {
 
 test "adler32 very long with variation" {
     const long = comptime blk: {
-        @setEvalBranchQuota(7000);
+        @setevalbranchquota(7000);
         var result: [6000]u8 = undefined;
 
         var i: usize = 0;

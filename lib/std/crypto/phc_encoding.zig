@@ -89,9 +89,9 @@ pub fn deserialize(comptime HashResult: type, str: []const u8) Error!HashResult 
         var field = it.next() orelse break;
         if (kvSplit(field)) |opt_version| {
             if (mem.eql(u8, opt_version.key, version_param_name)) {
-                if (@hasField(HashResult, "alg_version")) {
-                    const value_type_info = switch (@typeInfo(@TypeOf(out.alg_version))) {
-                        .Optional => |opt| comptime @typeInfo(opt.child),
+                if (@hasfield(HashResult, "alg_version")) {
+                    const value_type_info = switch (@typeinfo(@TypeOf(out.alg_version))) {
+                        .Optional => |opt| comptime @typeinfo(opt.child),
                         else => |t| t,
                     };
                     out.alg_version = fmt.parseUnsigned(
@@ -113,14 +113,14 @@ pub fn deserialize(comptime HashResult: type, str: []const u8) Error!HashResult 
             var found = false;
             inline for (comptime meta.fields(HashResult)) |p| {
                 if (mem.eql(u8, p.name, param.key)) {
-                    switch (@typeInfo(p.type)) {
+                    switch (@typeinfo(p.type)) {
                         .Int => @field(out, p.name) = fmt.parseUnsigned(
                             p.type,
                             param.value,
                             10,
                         ) catch return Error.InvalidEncoding,
                         .Pointer => |ptr| {
-                            if (!ptr.is_const) @compileError("Value slice must be constant");
+                            if (!ptr.is_const) @compileerror("Value slice must be constant");
                             @field(out, p.name) = param.value;
                         },
                         .Struct => try @field(out, p.name).fromB64(param.value),
@@ -142,7 +142,7 @@ pub fn deserialize(comptime HashResult: type, str: []const u8) Error!HashResult 
         if (has_params) field = it.next() orelse break;
 
         // Read an optional salt
-        if (@hasField(HashResult, "salt")) {
+        if (@hasfield(HashResult, "salt")) {
             try out.salt.fromB64(field);
             set_fields += 1;
         } else {
@@ -151,7 +151,7 @@ pub fn deserialize(comptime HashResult: type, str: []const u8) Error!HashResult 
 
         // Read an optional hash
         field = it.next() orelse break;
-        if (@hasField(HashResult, "hash")) {
+        if (@hasfield(HashResult, "hash")) {
             try out.hash.fromB64(field);
             set_fields += 1;
         } else {
@@ -164,7 +164,7 @@ pub fn deserialize(comptime HashResult: type, str: []const u8) Error!HashResult 
     // with default values
     var expected_fields: usize = 0;
     inline for (comptime meta.fields(HashResult)) |p| {
-        if (@typeInfo(p.type) != .Optional and p.default_value == null) {
+        if (@typeinfo(p.type) != .Optional and p.default_value == null) {
             expected_fields += 1;
         }
     }
@@ -193,7 +193,7 @@ pub fn serialize(params: anytype, str: []u8) Error![]const u8 {
 pub fn calcSize(params: anytype) usize {
     var buf = io.countingWriter(io.null_writer);
     serializeTo(params, buf.writer()) catch unreachable;
-    return @as(usize, @intCast(buf.bytes_written));
+    return @as(usize, @intcast(buf.bytes_written));
 }
 
 fn serializeTo(params: anytype, out: anytype) !void {
@@ -201,8 +201,8 @@ fn serializeTo(params: anytype, out: anytype) !void {
     try out.writeAll(fields_delimiter);
     try out.writeAll(params.alg_id);
 
-    if (@hasField(HashResult, "alg_version")) {
-        if (@typeInfo(@TypeOf(params.alg_version)) == .Optional) {
+    if (@hasfield(HashResult, "alg_version")) {
+        if (@typeinfo(@TypeOf(params.alg_version)) == .Optional) {
             if (params.alg_version) |alg_version| {
                 try out.print(
                     "{s}{s}{s}{}",
@@ -226,12 +226,12 @@ fn serializeTo(params: anytype, out: anytype) !void {
         {
             const value = @field(params, p.name);
             try out.writeAll(if (has_params) params_delimiter else fields_delimiter);
-            if (@typeInfo(p.type) == .Struct) {
+            if (@typeinfo(p.type) == .Struct) {
                 var buf: [@TypeOf(value).max_encoded_length]u8 = undefined;
                 try out.print("{s}{s}{s}", .{ p.name, kv_delimiter, try value.toB64(&buf) });
             } else {
                 try out.print(
-                    if (@typeInfo(@TypeOf(value)) == .Pointer) "{s}{s}{s}" else "{s}{s}{}",
+                    if (@typeinfo(@TypeOf(value)) == .Pointer) "{s}{s}{s}" else "{s}{s}{}",
                     .{ p.name, kv_delimiter, value },
                 );
             }
@@ -240,13 +240,13 @@ fn serializeTo(params: anytype, out: anytype) !void {
     }
 
     var has_salt = false;
-    if (@hasField(HashResult, "salt")) {
+    if (@hasfield(HashResult, "salt")) {
         var buf: [@TypeOf(params.salt).max_encoded_length]u8 = undefined;
         try out.print("{s}{s}", .{ fields_delimiter, try params.salt.toB64(&buf) });
         has_salt = true;
     }
 
-    if (@hasField(HashResult, "hash")) {
+    if (@hasfield(HashResult, "hash")) {
         var buf: [@TypeOf(params.hash).max_encoded_length]u8 = undefined;
         if (!has_salt) try out.writeAll(fields_delimiter);
         try out.print("{s}{s}", .{ fields_delimiter, try params.hash.toB64(&buf) });

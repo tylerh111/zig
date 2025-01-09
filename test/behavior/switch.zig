@@ -669,9 +669,9 @@ test "switch on pointer type" {
             field: u32,
         };
 
-        const P1 = @as(*X, @ptrFromInt(0x400));
-        const P2 = @as(*X, @ptrFromInt(0x800));
-        const P3 = @as(*X, @ptrFromInt(0xC00));
+        const P1 = @as(*X, @ptrfromint(0x400));
+        const P2 = @as(*X, @ptrfromint(0x800));
+        const P3 = @as(*X, @ptrfromint(0xC00));
 
         fn doTheTest(arg: *X) i32 {
             switch (arg) {
@@ -764,10 +764,10 @@ test "enum value without tag name used as switch item" {
         b = 2,
         _,
     };
-    var e: E = @enumFromInt(0);
+    var e: E = @enumfromint(0);
     _ = &e;
     switch (e) {
-        @as(E, @enumFromInt(0)) => {},
+        @as(E, @enumfromint(0)) => {},
         .a => return error.TestFailed,
         .b => return error.TestFailed,
         _ => return error.TestFailed,
@@ -782,7 +782,7 @@ test "switch item sizeof" {
             var a: usize = 0;
             _ = &a;
             switch (a) {
-                @sizeOf(struct {}) => {},
+                @sizeof(struct {}) => {},
                 else => return error.TestFailed,
             }
         }
@@ -825,7 +825,7 @@ test "switch capture peer type resolution for in-memory coercible payloads" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const T1 = c_int;
-    const T2 = @Type(@typeInfo(T1));
+    const T2 = @Type(@typeinfo(T1));
 
     comptime assert(T1 != T2);
 
@@ -848,7 +848,7 @@ test "switch pointer capture peer type resolution" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const T1 = c_int;
-    const T2 = @Type(@typeInfo(T1));
+    const T2 = @Type(@typeinfo(T1));
 
     comptime assert(T1 != T2);
 

@@ -8,5 +8,5 @@ fn my_func(comptime T: type) !T {}
 
 // error
 //
-// :2:9: error: expected type 'type', found 'fn (comptime type) @typeInfo(@typeInfo(@TypeOf(tmp.my_func)).Fn.return_type.?).ErrorUnion.error_set!anytype'
-// :5:9: error: expected type 'type', found 'fn (comptime type) @typeInfo(@typeInfo(@TypeOf(tmp.my_func)).Fn.return_type.?).ErrorUnion.error_set!anytype'
+// :2:9: error: expected type 'type', found 'fn (comptime type) @typeinfo(@typeinfo(@TypeOf(tmp.my_func)).Fn.return_type.?).ErrorUnion.error_set!anytype'
+// :5:9: error: expected type 'type', found 'fn (comptime type) @typeinfo(@typeinfo(@TypeOf(tmp.my_func)).Fn.return_type.?).ErrorUnion.error_set!anytype'

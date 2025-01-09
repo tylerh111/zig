@@ -7,12 +7,12 @@ const Log2Int = math.Log2Int;
 /// Returns the logarithm of `x` for the provided `base`, rounding down to the nearest integer.
 /// Asserts that `base > 1` and `x > 0`.
 pub fn log_int(comptime T: type, base: T, x: T) Log2Int(T) {
-    const valid = switch (@typeInfo(T)) {
+    const valid = switch (@typeinfo(T)) {
         .ComptimeInt => true,
         .Int => |IntType| IntType.signedness == .unsigned,
         else => false,
     };
-    if (!valid) @compileError("log_int requires an unsigned integer, found " ++ @typeName(T));
+    if (!valid) @compileerror("log_int requires an unsigned integer, found " ++ @typename(T));
 
     assert(base > 1 and x > 0);
     if (base == 2) return math.log2_int(T, x);
@@ -65,7 +65,7 @@ test "log_int" {
     // We cannot test 0 or 1 bits since base must be > 1.
     inline for (2..64 + 1) |bits| {
         const T = @Type(std.builtin.Type{
-            .Int = std.builtin.Type.Int{ .signedness = .unsigned, .bits = @intCast(bits) },
+            .Int = std.builtin.Type.Int{ .signedness = .unsigned, .bits = @intcast(bits) },
         });
 
         // for base = 2, 3, ..., min(maxInt(T),1024)
@@ -122,7 +122,7 @@ test "log_int at comptime" {
     const x = 59049; // 9 ** 5;
     comptime {
         if (math.log_int(comptime_int, 9, x) != 5) {
-            @compileError("log(9, 59049) should be 5");
+            @compileerror("log(9, 59049) should be 5");
         }
     }
 }

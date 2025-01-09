@@ -255,7 +255,7 @@ pub fn flushModule(self: *SpirV, arena: Allocator, prog_node: std.Progress.Node)
     const linked_module = self.linkModule(arena, module, sub_prog_node) catch |err| switch (err) {
         error.OutOfMemory => return error.OutOfMemory,
         else => |other| {
-            log.err("error while linking: {s}\n", .{@errorName(other)});
+            log.err("error while linking: {s}\n", .{@errorname(other)});
             return error.FlushFailure;
         },
     };

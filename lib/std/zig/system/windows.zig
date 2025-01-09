@@ -13,7 +13,7 @@ pub const IsProcessorFeaturePresent = std.os.windows.IsProcessorFeaturePresent;
 /// Discards information about in-between versions we don't differentiate.
 pub fn detectRuntimeVersion() WindowsVersion {
     var version_info: std.os.windows.RTL_OSVERSIONINFOW = undefined;
-    version_info.dwOSVersionInfoSize = @sizeOf(@TypeOf(version_info));
+    version_info.dwOSVersionInfoSize = @sizeof(@TypeOf(version_info));
 
     switch (std.os.windows.ntdll.RtlGetVersion(&version_info)) {
         .SUCCESS => {},
@@ -26,8 +26,8 @@ pub fn detectRuntimeVersion() WindowsVersion {
     //   `---` `` ``--> Sub-version (Starting from Windows 10 onwards)
     //     \    `--> Service pack (Always zero in the constants defined)
     //      `--> OS version (Major & minor)
-    const os_ver: u16 = @as(u16, @intCast(version_info.dwMajorVersion & 0xff)) << 8 |
-        @as(u16, @intCast(version_info.dwMinorVersion & 0xff));
+    const os_ver: u16 = @as(u16, @intcast(version_info.dwMajorVersion & 0xff)) << 8 |
+        @as(u16, @intcast(version_info.dwMinorVersion & 0xff));
     const sp_ver: u8 = 0;
     const sub_ver: u8 = if (os_ver >= 0x0A00) subver: {
         // There's no other way to obtain this info beside
@@ -43,7 +43,7 @@ pub fn detectRuntimeVersion() WindowsVersion {
 
     const version: u32 = @as(u32, os_ver) << 16 | @as(u16, sp_ver) << 8 | sub_ver;
 
-    return @as(WindowsVersion, @enumFromInt(version));
+    return @as(WindowsVersion, @enumfromint(version));
 }
 
 // Technically, a registry value can be as long as 1MB. However, MS recommends storing
@@ -54,10 +54,10 @@ const max_value_len = 2048;
 
 fn getCpuInfoFromRegistry(core: usize, args: anytype) !void {
     const ArgsType = @TypeOf(args);
-    const args_type_info = @typeInfo(ArgsType);
+    const args_type_info = @typeinfo(ArgsType);
 
     if (args_type_info != .Struct) {
-        @compileError("expected tuple or struct argument, found " ++ @typeName(ArgsType));
+        @compileerror("expected tuple or struct argument, found " ++ @typename(ArgsType));
     }
 
     const fields_info = args_type_info.Struct.fields;
@@ -90,7 +90,7 @@ fn getCpuInfoFromRegistry(core: usize, args: anytype) !void {
         .DefaultLength = 0,
     };
 
-    var tmp_bufs: [fields_info.len][max_value_len]u8 align(@alignOf(std.os.windows.UNICODE_STRING)) = undefined;
+    var tmp_bufs: [fields_info.len][max_value_len]u8 align(@alignof(std.os.windows.UNICODE_STRING)) = undefined;
 
     inline for (fields_info, 0..) |field, i| {
         const ctx: *anyopaque = blk: {
@@ -99,12 +99,12 @@ fn getCpuInfoFromRegistry(core: usize, args: anytype) !void {
                 REG.EXPAND_SZ,
                 REG.MULTI_SZ,
                 => {
-                    comptime assert(@sizeOf(std.os.windows.UNICODE_STRING) % 2 == 0);
-                    const unicode = @as(*std.os.windows.UNICODE_STRING, @ptrCast(&tmp_bufs[i]));
+                    comptime assert(@sizeof(std.os.windows.UNICODE_STRING) % 2 == 0);
+                    const unicode = @as(*std.os.windows.UNICODE_STRING, @ptrcast(&tmp_bufs[i]));
                     unicode.* = .{
                         .Length = 0,
-                        .MaximumLength = max_value_len - @sizeOf(std.os.windows.UNICODE_STRING),
-                        .Buffer = @as([*]u16, @ptrCast(tmp_bufs[i][@sizeOf(std.os.windows.UNICODE_STRING)..])),
+                        .MaximumLength = max_value_len - @sizeof(std.os.windows.UNICODE_STRING),
+                        .Buffer = @as([*]u16, @ptrcast(tmp_bufs[i][@sizeof(std.os.windows.UNICODE_STRING)..])),
                     };
                     break :blk unicode;
                 },
@@ -159,7 +159,7 @@ fn getCpuInfoFromRegistry(core: usize, args: anytype) !void {
                 REG.MULTI_SZ,
                 => {
                     var buf = @field(args, field.name).value_buf;
-                    const entry = @as(*align(1) const std.os.windows.UNICODE_STRING, @ptrCast(table[i + 1].EntryContext));
+                    const entry = @as(*align(1) const std.os.windows.UNICODE_STRING, @ptrcast(table[i + 1].EntryContext));
                     const len = try std.unicode.utf16LeToUtf8(buf, entry.Buffer.?[0 .. entry.Length / 2]);
                     buf[len] = 0;
                 },
@@ -168,7 +168,7 @@ fn getCpuInfoFromRegistry(core: usize, args: anytype) !void {
                 REG.DWORD_BIG_ENDIAN,
                 REG.QWORD,
                 => {
-                    const entry = @as([*]align(1) const u8, @ptrCast(table[i + 1].EntryContext));
+                    const entry = @as([*]align(1) const u8, @ptrcast(table[i + 1].EntryContext));
                     switch (@field(args, field.name).value_type) {
                         REG.DWORD, REG.DWORD_BIG_ENDIAN => {
                             @memcpy(@field(args, field.name).value_buf[0..4], entry[0..4]);
@@ -188,7 +188,7 @@ fn getCpuInfoFromRegistry(core: usize, args: anytype) !void {
 }
 
 fn setFeature(comptime Feature: type, cpu: *Target.Cpu, feature: Feature, enabled: bool) void {
-    const idx = @as(Target.Cpu.Feature.Set.Index, @intFromEnum(feature));
+    const idx = @as(Target.Cpu.Feature.Set.Index, @intfromenum(feature));
 
     if (enabled) cpu.features.addFeature(idx) else cpu.features.removeFeature(idx);
 }
@@ -254,18 +254,18 @@ pub fn detectNativeCpuAndFeatures() ?Target.Cpu {
                 // CP 4039 -> ID_AA64MMFR1_EL1
                 // CP 403A -> ID_AA64MMFR2_EL1
                 getCpuInfoFromRegistry(i, .{
-                    .{ .key = "CP 4000", .value_type = REG.QWORD, .value_buf = @as(*[8]u8, @ptrCast(&registers[0])) },
-                    .{ .key = "CP 4020", .value_type = REG.QWORD, .value_buf = @as(*[8]u8, @ptrCast(&registers[1])) },
-                    .{ .key = "CP 4021", .value_type = REG.QWORD, .value_buf = @as(*[8]u8, @ptrCast(&registers[2])) },
-                    .{ .key = "CP 4028", .value_type = REG.QWORD, .value_buf = @as(*[8]u8, @ptrCast(&registers[3])) },
-                    .{ .key = "CP 4029", .value_type = REG.QWORD, .value_buf = @as(*[8]u8, @ptrCast(&registers[4])) },
-                    .{ .key = "CP 402C", .value_type = REG.QWORD, .value_buf = @as(*[8]u8, @ptrCast(&registers[5])) },
-                    .{ .key = "CP 402D", .value_type = REG.QWORD, .value_buf = @as(*[8]u8, @ptrCast(&registers[6])) },
-                    .{ .key = "CP 4030", .value_type = REG.QWORD, .value_buf = @as(*[8]u8, @ptrCast(&registers[7])) },
-                    .{ .key = "CP 4031", .value_type = REG.QWORD, .value_buf = @as(*[8]u8, @ptrCast(&registers[8])) },
-                    .{ .key = "CP 4038", .value_type = REG.QWORD, .value_buf = @as(*[8]u8, @ptrCast(&registers[9])) },
-                    .{ .key = "CP 4039", .value_type = REG.QWORD, .value_buf = @as(*[8]u8, @ptrCast(&registers[10])) },
-                    .{ .key = "CP 403A", .value_type = REG.QWORD, .value_buf = @as(*[8]u8, @ptrCast(&registers[11])) },
+                    .{ .key = "CP 4000", .value_type = REG.QWORD, .value_buf = @as(*[8]u8, @ptrcast(&registers[0])) },
+                    .{ .key = "CP 4020", .value_type = REG.QWORD, .value_buf = @as(*[8]u8, @ptrcast(&registers[1])) },
+                    .{ .key = "CP 4021", .value_type = REG.QWORD, .value_buf = @as(*[8]u8, @ptrcast(&registers[2])) },
+                    .{ .key = "CP 4028", .value_type = REG.QWORD, .value_buf = @as(*[8]u8, @ptrcast(&registers[3])) },
+                    .{ .key = "CP 4029", .value_type = REG.QWORD, .value_buf = @as(*[8]u8, @ptrcast(&registers[4])) },
+                    .{ .key = "CP 402C", .value_type = REG.QWORD, .value_buf = @as(*[8]u8, @ptrcast(&registers[5])) },
+                    .{ .key = "CP 402D", .value_type = REG.QWORD, .value_buf = @as(*[8]u8, @ptrcast(&registers[6])) },
+                    .{ .key = "CP 4030", .value_type = REG.QWORD, .value_buf = @as(*[8]u8, @ptrcast(&registers[7])) },
+                    .{ .key = "CP 4031", .value_type = REG.QWORD, .value_buf = @as(*[8]u8, @ptrcast(&registers[8])) },
+                    .{ .key = "CP 4038", .value_type = REG.QWORD, .value_buf = @as(*[8]u8, @ptrcast(&registers[9])) },
+                    .{ .key = "CP 4039", .value_type = REG.QWORD, .value_buf = @as(*[8]u8, @ptrcast(&registers[10])) },
+                    .{ .key = "CP 403A", .value_type = REG.QWORD, .value_buf = @as(*[8]u8, @ptrcast(&registers[11])) },
                 }) catch break :blk null;
 
                 cores[i] = @import("arm.zig").aarch64.detectNativeCpuAndFeatures(current_arch, registers) orelse

@@ -220,7 +220,7 @@ fn parseError(tokenizer: *Tokenizer, token: Token, comptime fmt: []const u8, arg
 
 fn assertToken(tokenizer: *Tokenizer, token: Token, id: Token.Id) !void {
     if (token.id != id) {
-        return parseError(tokenizer, token, "expected {s}, found {s}", .{ @tagName(id), @tagName(token.id) });
+        return parseError(tokenizer, token, "expected {s}, found {s}", .{ @tagname(id), @tagname(token.id) });
     }
 }
 
@@ -379,7 +379,7 @@ fn walk(arena: Allocator, tokenizer: *Tokenizer, out_dir: std.fs.Dir, w: anytype
                     const basename = try std.fmt.allocPrint(arena, "{s}.zig", .{name});
 
                     var file = out_dir.createFile(basename, .{ .exclusive = true }) catch |err| {
-                        fatal("unable to create file '{s}': {s}", .{ name, @errorName(err) });
+                        fatal("unable to create file '{s}': {s}", .{ name, @errorname(err) });
                     };
                     defer file.close();
 
@@ -394,7 +394,7 @@ fn walk(arena: Allocator, tokenizer: *Tokenizer, out_dir: std.fs.Dir, w: anytype
                         .lib => try file.writer().print("// lib\n", .{}),
                         .test_error => |s| try file.writer().print("// test_error={s}\n", .{s}),
                         .test_safety => |s| try file.writer().print("// test_safety={s}\n", .{s}),
-                        .exe => |s| try file.writer().print("// exe={s}\n", .{@tagName(s)}),
+                        .exe => |s| try file.writer().print("// exe={s}\n", .{@tagname(s)}),
                         .obj => |opt| if (opt) |s| {
                             try file.writer().print("// obj={s}\n", .{s});
                         } else {
@@ -403,7 +403,7 @@ fn walk(arena: Allocator, tokenizer: *Tokenizer, out_dir: std.fs.Dir, w: anytype
                     }
 
                     if (mode != .Debug)
-                        try file.writer().print("// optimize={s}\n", .{@tagName(mode)});
+                        try file.writer().print("// optimize={s}\n", .{@tagname(mode)});
 
                     for (link_objects.items) |link_object| {
                         try file.writer().print("// link_object={s}\n", .{link_object});
@@ -417,7 +417,7 @@ fn walk(arena: Allocator, tokenizer: *Tokenizer, out_dir: std.fs.Dir, w: anytype
                     if (verbose_cimport) try file.writer().print("// verbose_cimport\n", .{});
 
                     if (link_mode) |m|
-                        try file.writer().print("// link_mode={s}\n", .{@tagName(m)});
+                        try file.writer().print("// link_mode={s}\n", .{@tagname(m)});
 
                     for (additional_options.items) |o| {
                         try file.writer().print("// additional_option={s}\n", .{o});

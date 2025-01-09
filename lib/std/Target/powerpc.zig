@@ -95,337 +95,337 @@ pub const featureSetHasAny = CpuFeature.feature_set_fns(Feature).featureSetHasAn
 pub const featureSetHasAll = CpuFeature.feature_set_fns(Feature).featureSetHasAll;
 
 pub const all_features = blk: {
-    const len = @typeInfo(Feature).Enum.fields.len;
+    const len = @typeinfo(Feature).Enum.fields.len;
     std.debug.assert(len <= CpuFeature.Set.needed_bit_count);
     var result: [len]CpuFeature = undefined;
-    result[@intFromEnum(Feature.@"64bit")] = .{
+    result[@intfromenum(Feature.@"64bit")] = .{
         .llvm_name = "64bit",
         .description = "Enable 64-bit instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.@"64bitregs")] = .{
+    result[@intfromenum(Feature.@"64bitregs")] = .{
         .llvm_name = "64bitregs",
         .description = "Enable 64-bit registers usage for ppc32 [beta]",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.aix)] = .{
+    result[@intfromenum(Feature.aix)] = .{
         .llvm_name = "aix",
         .description = "AIX OS",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.aix_small_local_exec_tls)] = .{
+    result[@intfromenum(Feature.aix_small_local_exec_tls)] = .{
         .llvm_name = "aix-small-local-exec-tls",
         .description = "Produce a TOC-free local-exec TLS sequence for this function for 64-bit AIX",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.allow_unaligned_fp_access)] = .{
+    result[@intfromenum(Feature.allow_unaligned_fp_access)] = .{
         .llvm_name = "allow-unaligned-fp-access",
         .description = "CPU does not trap on unaligned FP access",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.altivec)] = .{
+    result[@intfromenum(Feature.altivec)] = .{
         .llvm_name = "altivec",
         .description = "Enable Altivec instructions",
         .dependencies = featureSet(&[_]Feature{
             .fpu,
         }),
     };
-    result[@intFromEnum(Feature.booke)] = .{
+    result[@intfromenum(Feature.booke)] = .{
         .llvm_name = "booke",
         .description = "Enable Book E instructions",
         .dependencies = featureSet(&[_]Feature{
             .icbt,
         }),
     };
-    result[@intFromEnum(Feature.bpermd)] = .{
+    result[@intfromenum(Feature.bpermd)] = .{
         .llvm_name = "bpermd",
         .description = "Enable the bpermd instruction",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.cmpb)] = .{
+    result[@intfromenum(Feature.cmpb)] = .{
         .llvm_name = "cmpb",
         .description = "Enable the cmpb instruction",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.crbits)] = .{
+    result[@intfromenum(Feature.crbits)] = .{
         .llvm_name = "crbits",
         .description = "Use condition-register bits individually",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.crypto)] = .{
+    result[@intfromenum(Feature.crypto)] = .{
         .llvm_name = "crypto",
         .description = "Enable POWER8 Crypto instructions",
         .dependencies = featureSet(&[_]Feature{
             .power8_altivec,
         }),
     };
-    result[@intFromEnum(Feature.direct_move)] = .{
+    result[@intfromenum(Feature.direct_move)] = .{
         .llvm_name = "direct-move",
         .description = "Enable Power8 direct move instructions",
         .dependencies = featureSet(&[_]Feature{
             .vsx,
         }),
     };
-    result[@intFromEnum(Feature.e500)] = .{
+    result[@intfromenum(Feature.e500)] = .{
         .llvm_name = "e500",
         .description = "Enable E500/E500mc instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.efpu2)] = .{
+    result[@intfromenum(Feature.efpu2)] = .{
         .llvm_name = "efpu2",
         .description = "Enable Embedded Floating-Point APU 2 instructions",
         .dependencies = featureSet(&[_]Feature{
             .spe,
         }),
     };
-    result[@intFromEnum(Feature.extdiv)] = .{
+    result[@intfromenum(Feature.extdiv)] = .{
         .llvm_name = "extdiv",
         .description = "Enable extended divide instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.fast_MFLR)] = .{
+    result[@intfromenum(Feature.fast_MFLR)] = .{
         .llvm_name = "fast-MFLR",
         .description = "MFLR is a fast instruction",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.fcpsgn)] = .{
+    result[@intfromenum(Feature.fcpsgn)] = .{
         .llvm_name = "fcpsgn",
         .description = "Enable the fcpsgn instruction",
         .dependencies = featureSet(&[_]Feature{
             .fpu,
         }),
     };
-    result[@intFromEnum(Feature.float128)] = .{
+    result[@intfromenum(Feature.float128)] = .{
         .llvm_name = "float128",
         .description = "Enable the __float128 data type for IEEE-754R Binary128.",
         .dependencies = featureSet(&[_]Feature{
             .vsx,
         }),
     };
-    result[@intFromEnum(Feature.fpcvt)] = .{
+    result[@intfromenum(Feature.fpcvt)] = .{
         .llvm_name = "fpcvt",
         .description = "Enable fc[ft]* (unsigned and single-precision) and lfiwzx instructions",
         .dependencies = featureSet(&[_]Feature{
             .fpu,
         }),
     };
-    result[@intFromEnum(Feature.fprnd)] = .{
+    result[@intfromenum(Feature.fprnd)] = .{
         .llvm_name = "fprnd",
         .description = "Enable the fri[mnpz] instructions",
         .dependencies = featureSet(&[_]Feature{
             .fpu,
         }),
     };
-    result[@intFromEnum(Feature.fpu)] = .{
+    result[@intfromenum(Feature.fpu)] = .{
         .llvm_name = "fpu",
         .description = "Enable classic FPU instructions",
         .dependencies = featureSet(&[_]Feature{
             .hard_float,
         }),
     };
-    result[@intFromEnum(Feature.fre)] = .{
+    result[@intfromenum(Feature.fre)] = .{
         .llvm_name = "fre",
         .description = "Enable the fre instruction",
         .dependencies = featureSet(&[_]Feature{
             .fpu,
         }),
     };
-    result[@intFromEnum(Feature.fres)] = .{
+    result[@intfromenum(Feature.fres)] = .{
         .llvm_name = "fres",
         .description = "Enable the fres instruction",
         .dependencies = featureSet(&[_]Feature{
             .fpu,
         }),
     };
-    result[@intFromEnum(Feature.frsqrte)] = .{
+    result[@intfromenum(Feature.frsqrte)] = .{
         .llvm_name = "frsqrte",
         .description = "Enable the frsqrte instruction",
         .dependencies = featureSet(&[_]Feature{
             .fpu,
         }),
     };
-    result[@intFromEnum(Feature.frsqrtes)] = .{
+    result[@intfromenum(Feature.frsqrtes)] = .{
         .llvm_name = "frsqrtes",
         .description = "Enable the frsqrtes instruction",
         .dependencies = featureSet(&[_]Feature{
             .fpu,
         }),
     };
-    result[@intFromEnum(Feature.fsqrt)] = .{
+    result[@intfromenum(Feature.fsqrt)] = .{
         .llvm_name = "fsqrt",
         .description = "Enable the fsqrt instruction",
         .dependencies = featureSet(&[_]Feature{
             .fpu,
         }),
     };
-    result[@intFromEnum(Feature.fuse_add_logical)] = .{
+    result[@intfromenum(Feature.fuse_add_logical)] = .{
         .llvm_name = "fuse-add-logical",
         .description = "Target supports Add with Logical Operations fusion",
         .dependencies = featureSet(&[_]Feature{
             .fusion,
         }),
     };
-    result[@intFromEnum(Feature.fuse_addi_load)] = .{
+    result[@intfromenum(Feature.fuse_addi_load)] = .{
         .llvm_name = "fuse-addi-load",
         .description = "Power8 Addi-Load fusion",
         .dependencies = featureSet(&[_]Feature{
             .fusion,
         }),
     };
-    result[@intFromEnum(Feature.fuse_addis_load)] = .{
+    result[@intfromenum(Feature.fuse_addis_load)] = .{
         .llvm_name = "fuse-addis-load",
         .description = "Power8 Addis-Load fusion",
         .dependencies = featureSet(&[_]Feature{
             .fusion,
         }),
     };
-    result[@intFromEnum(Feature.fuse_arith_add)] = .{
+    result[@intfromenum(Feature.fuse_arith_add)] = .{
         .llvm_name = "fuse-arith-add",
         .description = "Target supports Arithmetic Operations with Add fusion",
         .dependencies = featureSet(&[_]Feature{
             .fusion,
         }),
     };
-    result[@intFromEnum(Feature.fuse_back2back)] = .{
+    result[@intfromenum(Feature.fuse_back2back)] = .{
         .llvm_name = "fuse-back2back",
         .description = "Target supports general back to back fusion",
         .dependencies = featureSet(&[_]Feature{
             .fusion,
         }),
     };
-    result[@intFromEnum(Feature.fuse_cmp)] = .{
+    result[@intfromenum(Feature.fuse_cmp)] = .{
         .llvm_name = "fuse-cmp",
         .description = "Target supports Comparison Operations fusion",
         .dependencies = featureSet(&[_]Feature{
             .fusion,
         }),
     };
-    result[@intFromEnum(Feature.fuse_logical)] = .{
+    result[@intfromenum(Feature.fuse_logical)] = .{
         .llvm_name = "fuse-logical",
         .description = "Target supports Logical Operations fusion",
         .dependencies = featureSet(&[_]Feature{
             .fusion,
         }),
     };
-    result[@intFromEnum(Feature.fuse_logical_add)] = .{
+    result[@intfromenum(Feature.fuse_logical_add)] = .{
         .llvm_name = "fuse-logical-add",
         .description = "Target supports Logical with Add Operations fusion",
         .dependencies = featureSet(&[_]Feature{
             .fusion,
         }),
     };
-    result[@intFromEnum(Feature.fuse_sha3)] = .{
+    result[@intfromenum(Feature.fuse_sha3)] = .{
         .llvm_name = "fuse-sha3",
         .description = "Target supports SHA3 assist fusion",
         .dependencies = featureSet(&[_]Feature{
             .fusion,
         }),
     };
-    result[@intFromEnum(Feature.fuse_store)] = .{
+    result[@intfromenum(Feature.fuse_store)] = .{
         .llvm_name = "fuse-store",
         .description = "Target supports store clustering",
         .dependencies = featureSet(&[_]Feature{
             .fusion,
         }),
     };
-    result[@intFromEnum(Feature.fuse_wideimm)] = .{
+    result[@intfromenum(Feature.fuse_wideimm)] = .{
         .llvm_name = "fuse-wideimm",
         .description = "Target supports Wide-Immediate fusion",
         .dependencies = featureSet(&[_]Feature{
             .fusion,
         }),
     };
-    result[@intFromEnum(Feature.fuse_zeromove)] = .{
+    result[@intfromenum(Feature.fuse_zeromove)] = .{
         .llvm_name = "fuse-zeromove",
         .description = "Target supports move to SPR with branch fusion",
         .dependencies = featureSet(&[_]Feature{
             .fusion,
         }),
     };
-    result[@intFromEnum(Feature.fusion)] = .{
+    result[@intfromenum(Feature.fusion)] = .{
         .llvm_name = "fusion",
         .description = "Target supports instruction fusion",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.hard_float)] = .{
+    result[@intfromenum(Feature.hard_float)] = .{
         .llvm_name = "hard-float",
         .description = "Enable floating-point instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.htm)] = .{
+    result[@intfromenum(Feature.htm)] = .{
         .llvm_name = "htm",
         .description = "Enable Hardware Transactional Memory instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.icbt)] = .{
+    result[@intfromenum(Feature.icbt)] = .{
         .llvm_name = "icbt",
         .description = "Enable icbt instruction",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.invariant_function_descriptors)] = .{
+    result[@intfromenum(Feature.invariant_function_descriptors)] = .{
         .llvm_name = "invariant-function-descriptors",
         .description = "Assume function descriptors are invariant",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.isa_future_instructions)] = .{
+    result[@intfromenum(Feature.isa_future_instructions)] = .{
         .llvm_name = "isa-future-instructions",
         .description = "Enable instructions for Future ISA.",
         .dependencies = featureSet(&[_]Feature{
             .isa_v31_instructions,
         }),
     };
-    result[@intFromEnum(Feature.isa_v206_instructions)] = .{
+    result[@intfromenum(Feature.isa_v206_instructions)] = .{
         .llvm_name = "isa-v206-instructions",
         .description = "Enable instructions in ISA 2.06.",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.isa_v207_instructions)] = .{
+    result[@intfromenum(Feature.isa_v207_instructions)] = .{
         .llvm_name = "isa-v207-instructions",
         .description = "Enable instructions in ISA 2.07.",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.isa_v30_instructions)] = .{
+    result[@intfromenum(Feature.isa_v30_instructions)] = .{
         .llvm_name = "isa-v30-instructions",
         .description = "Enable instructions in ISA 3.0.",
         .dependencies = featureSet(&[_]Feature{
             .isa_v207_instructions,
         }),
     };
-    result[@intFromEnum(Feature.isa_v31_instructions)] = .{
+    result[@intfromenum(Feature.isa_v31_instructions)] = .{
         .llvm_name = "isa-v31-instructions",
         .description = "Enable instructions in ISA 3.1.",
         .dependencies = featureSet(&[_]Feature{
             .isa_v30_instructions,
         }),
     };
-    result[@intFromEnum(Feature.isel)] = .{
+    result[@intfromenum(Feature.isel)] = .{
         .llvm_name = "isel",
         .description = "Enable the isel instruction",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.ldbrx)] = .{
+    result[@intfromenum(Feature.ldbrx)] = .{
         .llvm_name = "ldbrx",
         .description = "Enable the ldbrx instruction",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.lfiwax)] = .{
+    result[@intfromenum(Feature.lfiwax)] = .{
         .llvm_name = "lfiwax",
         .description = "Enable the lfiwax instruction",
         .dependencies = featureSet(&[_]Feature{
             .fpu,
         }),
     };
-    result[@intFromEnum(Feature.longcall)] = .{
+    result[@intfromenum(Feature.longcall)] = .{
         .llvm_name = "longcall",
         .description = "Always use indirect calls",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.mfocrf)] = .{
+    result[@intfromenum(Feature.mfocrf)] = .{
         .llvm_name = "mfocrf",
         .description = "Enable the MFOCRF instruction",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.mma)] = .{
+    result[@intfromenum(Feature.mma)] = .{
         .llvm_name = "mma",
         .description = "Enable MMA instructions",
         .dependencies = featureSet(&[_]Feature{
@@ -434,43 +434,43 @@ pub const all_features = blk: {
             .power9_altivec,
         }),
     };
-    result[@intFromEnum(Feature.modern_aix_as)] = .{
+    result[@intfromenum(Feature.modern_aix_as)] = .{
         .llvm_name = "modern-aix-as",
         .description = "AIX system assembler is modern enough to support new mnes",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.msync)] = .{
+    result[@intfromenum(Feature.msync)] = .{
         .llvm_name = "msync",
         .description = "Has only the msync instruction instead of sync",
         .dependencies = featureSet(&[_]Feature{
             .booke,
         }),
     };
-    result[@intFromEnum(Feature.paired_vector_memops)] = .{
+    result[@intfromenum(Feature.paired_vector_memops)] = .{
         .llvm_name = "paired-vector-memops",
         .description = "32Byte load and store instructions",
         .dependencies = featureSet(&[_]Feature{
             .isa_v30_instructions,
         }),
     };
-    result[@intFromEnum(Feature.partword_atomics)] = .{
+    result[@intfromenum(Feature.partword_atomics)] = .{
         .llvm_name = "partword-atomics",
         .description = "Enable l[bh]arx and st[bh]cx.",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.pcrelative_memops)] = .{
+    result[@intfromenum(Feature.pcrelative_memops)] = .{
         .llvm_name = "pcrelative-memops",
         .description = "Enable PC relative Memory Ops",
         .dependencies = featureSet(&[_]Feature{
             .prefix_instrs,
         }),
     };
-    result[@intFromEnum(Feature.popcntd)] = .{
+    result[@intfromenum(Feature.popcntd)] = .{
         .llvm_name = "popcntd",
         .description = "Enable the popcnt[dw] instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.power10_vector)] = .{
+    result[@intfromenum(Feature.power10_vector)] = .{
         .llvm_name = "power10-vector",
         .description = "Enable POWER10 vector instructions",
         .dependencies = featureSet(&[_]Feature{
@@ -478,14 +478,14 @@ pub const all_features = blk: {
             .power9_vector,
         }),
     };
-    result[@intFromEnum(Feature.power8_altivec)] = .{
+    result[@intfromenum(Feature.power8_altivec)] = .{
         .llvm_name = "power8-altivec",
         .description = "Enable POWER8 Altivec instructions",
         .dependencies = featureSet(&[_]Feature{
             .altivec,
         }),
     };
-    result[@intFromEnum(Feature.power8_vector)] = .{
+    result[@intfromenum(Feature.power8_vector)] = .{
         .llvm_name = "power8-vector",
         .description = "Enable POWER8 vector instructions",
         .dependencies = featureSet(&[_]Feature{
@@ -493,7 +493,7 @@ pub const all_features = blk: {
             .vsx,
         }),
     };
-    result[@intFromEnum(Feature.power9_altivec)] = .{
+    result[@intfromenum(Feature.power9_altivec)] = .{
         .llvm_name = "power9-altivec",
         .description = "Enable POWER9 Altivec instructions",
         .dependencies = featureSet(&[_]Feature{
@@ -501,7 +501,7 @@ pub const all_features = blk: {
             .power8_altivec,
         }),
     };
-    result[@intFromEnum(Feature.power9_vector)] = .{
+    result[@intfromenum(Feature.power9_vector)] = .{
         .llvm_name = "power9-vector",
         .description = "Enable POWER9 vector instructions",
         .dependencies = featureSet(&[_]Feature{
@@ -509,32 +509,32 @@ pub const all_features = blk: {
             .power9_altivec,
         }),
     };
-    result[@intFromEnum(Feature.ppc4xx)] = .{
+    result[@intfromenum(Feature.ppc4xx)] = .{
         .llvm_name = "ppc4xx",
         .description = "Enable PPC 4xx instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.ppc6xx)] = .{
+    result[@intfromenum(Feature.ppc6xx)] = .{
         .llvm_name = "ppc6xx",
         .description = "Enable PPC 6xx instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.ppc_postra_sched)] = .{
+    result[@intfromenum(Feature.ppc_postra_sched)] = .{
         .llvm_name = "ppc-postra-sched",
         .description = "Use PowerPC post-RA scheduling strategy",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.ppc_prera_sched)] = .{
+    result[@intfromenum(Feature.ppc_prera_sched)] = .{
         .llvm_name = "ppc-prera-sched",
         .description = "Use PowerPC pre-RA scheduling strategy",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.predictable_select_expensive)] = .{
+    result[@intfromenum(Feature.predictable_select_expensive)] = .{
         .llvm_name = "predictable-select-expensive",
         .description = "Prefer likely predicted branches over selects",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.prefix_instrs)] = .{
+    result[@intfromenum(Feature.prefix_instrs)] = .{
         .llvm_name = "prefix-instrs",
         .description = "Enable prefixed instructions",
         .dependencies = featureSet(&[_]Feature{
@@ -542,68 +542,68 @@ pub const all_features = blk: {
             .power9_altivec,
         }),
     };
-    result[@intFromEnum(Feature.privileged)] = .{
+    result[@intfromenum(Feature.privileged)] = .{
         .llvm_name = "privileged",
         .description = "Add privileged instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.quadword_atomics)] = .{
+    result[@intfromenum(Feature.quadword_atomics)] = .{
         .llvm_name = "quadword-atomics",
         .description = "Enable lqarx and stqcx.",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.recipprec)] = .{
+    result[@intfromenum(Feature.recipprec)] = .{
         .llvm_name = "recipprec",
         .description = "Assume higher precision reciprocal estimates",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.rop_protect)] = .{
+    result[@intfromenum(Feature.rop_protect)] = .{
         .llvm_name = "rop-protect",
         .description = "Add ROP protect",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.secure_plt)] = .{
+    result[@intfromenum(Feature.secure_plt)] = .{
         .llvm_name = "secure-plt",
         .description = "Enable secure plt mode",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.slow_popcntd)] = .{
+    result[@intfromenum(Feature.slow_popcntd)] = .{
         .llvm_name = "slow-popcntd",
         .description = "Has slow popcnt[dw] instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.spe)] = .{
+    result[@intfromenum(Feature.spe)] = .{
         .llvm_name = "spe",
         .description = "Enable SPE instructions",
         .dependencies = featureSet(&[_]Feature{
             .hard_float,
         }),
     };
-    result[@intFromEnum(Feature.stfiwx)] = .{
+    result[@intfromenum(Feature.stfiwx)] = .{
         .llvm_name = "stfiwx",
         .description = "Enable the stfiwx instruction",
         .dependencies = featureSet(&[_]Feature{
             .fpu,
         }),
     };
-    result[@intFromEnum(Feature.two_const_nr)] = .{
+    result[@intfromenum(Feature.two_const_nr)] = .{
         .llvm_name = "two-const-nr",
         .description = "Requires two constant Newton-Raphson computation",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.vectors_use_two_units)] = .{
+    result[@intfromenum(Feature.vectors_use_two_units)] = .{
         .llvm_name = "vectors-use-two-units",
         .description = "Vectors use two units",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.vsx)] = .{
+    result[@intfromenum(Feature.vsx)] = .{
         .llvm_name = "vsx",
         .description = "Enable VSX instructions",
         .dependencies = featureSet(&[_]Feature{
             .altivec,
         }),
     };
-    const ti = @typeInfo(Feature);
+    const ti = @typeinfo(Feature);
     for (&result, 0..) |*elem, i| {
         elem.index = i;
         elem.name = ti.Enum.fields[i].name;

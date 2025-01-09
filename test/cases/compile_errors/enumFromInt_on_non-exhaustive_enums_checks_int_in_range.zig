@@ -1,6 +1,6 @@
 pub export fn entry() void {
     const E = enum(u3) { a, b, c, _ };
-    @compileLog(@as(E, @enumFromInt(100)));
+    @compilelog(@as(E, @enumfromint(100)));
 }
 
 // error

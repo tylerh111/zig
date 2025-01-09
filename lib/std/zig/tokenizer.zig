@@ -341,7 +341,7 @@ pub const Tokenizer = struct {
 
     /// For debugging purposes
     pub fn dump(self: *Tokenizer, token: *const Token) void {
-        std.debug.print("{s} \"{s}\"\n", .{ @tagName(token.tag), self.buffer[token.loc.start..token.loc.end] });
+        std.debug.print("{s} \"{s}\"\n", .{ @tagname(token.tag), self.buffer[token.loc.start..token.loc.end] });
     }
 
     pub fn init(buffer: [:0]const u8) Tokenizer {
@@ -1290,7 +1290,7 @@ pub const Tokenizer = struct {
             // check utf8-encoded character.
             const length = std.unicode.utf8ByteSequenceLength(c0) catch return 1;
             if (self.index + length > self.buffer.len) {
-                return @as(u3, @intCast(self.buffer.len - self.index));
+                return @as(u3, @intcast(self.buffer.len - self.index));
             }
             const bytes = self.buffer[self.index .. self.index + length];
             switch (length) {

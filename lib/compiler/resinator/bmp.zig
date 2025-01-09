@@ -102,25 +102,25 @@ pub fn read(reader: anytype, max_size: u64) ReadError!BitmapInfo {
     const dib_version = BitmapHeader.Version.get(bitmap_info.dib_header_size);
     switch (dib_version) {
         .@"nt3.1", .@"nt4.0", .@"nt5.0" => {
-            var dib_header_buf: [@sizeOf(BITMAPINFOHEADER)]u8 align(@alignOf(BITMAPINFOHEADER)) = undefined;
+            var dib_header_buf: [@sizeof(BITMAPINFOHEADER)]u8 align(@alignof(BITMAPINFOHEADER)) = undefined;
             std.mem.writeInt(u32, dib_header_buf[0..4], bitmap_info.dib_header_size, .little);
             reader.readNoEof(dib_header_buf[4..]) catch return error.UnexpectedEOF;
-            var dib_header: *BITMAPINFOHEADER = @ptrCast(&dib_header_buf);
+            var dib_header: *BITMAPINFOHEADER = @ptrcast(&dib_header_buf);
             structFieldsLittleToNative(BITMAPINFOHEADER, dib_header);
 
             bitmap_info.colors_in_palette = try dib_header.numColorsInTable();
             bitmap_info.bytes_per_color_palette_element = 4;
-            bitmap_info.compression = @enumFromInt(dib_header.biCompression);
+            bitmap_info.compression = @enumfromint(dib_header.biCompression);
 
             if (bitmap_info.getByteLenBetweenHeadersAndPixels() < bitmap_info.getBitmasksByteLen()) {
                 return error.MissingBitfieldMasks;
             }
         },
         .@"win2.0" => {
-            var dib_header_buf: [@sizeOf(BITMAPCOREHEADER)]u8 align(@alignOf(BITMAPCOREHEADER)) = undefined;
+            var dib_header_buf: [@sizeof(BITMAPCOREHEADER)]u8 align(@alignof(BITMAPCOREHEADER)) = undefined;
             std.mem.writeInt(u32, dib_header_buf[0..4], bitmap_info.dib_header_size, .little);
             reader.readNoEof(dib_header_buf[4..]) catch return error.UnexpectedEOF;
-            const dib_header: *BITMAPCOREHEADER = @ptrCast(&dib_header_buf);
+            const dib_header: *BITMAPCOREHEADER = @ptrcast(&dib_header_buf);
             structFieldsLittleToNative(BITMAPCOREHEADER, dib_header);
 
             // > The size of the color palette is calculated from the BitsPerPixel value.
@@ -224,7 +224,7 @@ pub const Compression = enum(u32) {
 };
 
 fn structFieldsLittleToNative(comptime T: type, x: *T) void {
-    inline for (@typeInfo(T).Struct.fields) |field| {
+    inline for (@typeinfo(T).Struct.fields) |field| {
         @field(x, field.name) = std.mem.littleToNative(field.type, @field(x, field.name));
     }
 }

@@ -131,9 +131,9 @@ pub fn benchmarkHash(comptime H: anytype, bytes: usize, allocator: std.mem.Alloc
 
     const elapsed_ns = timer.read();
 
-    const elapsed_s = @as(f64, @floatFromInt(elapsed_ns)) / time.ns_per_s;
-    const size_float: f64 = @floatFromInt(block_size * block_count);
-    const throughput: u64 = @intFromFloat(size_float / elapsed_s);
+    const elapsed_s = @as(f64, @floatfromint(elapsed_ns)) / time.ns_per_s;
+    const size_float: f64 = @floatfromint(block_size * block_count);
+    const throughput: u64 = @intfromfloat(size_float / elapsed_s);
 
     return Result{
         .hash = final,
@@ -170,9 +170,9 @@ pub fn benchmarkHashSmallKeys(comptime H: anytype, key_size: usize, bytes: usize
     }
     const elapsed_ns = timer.read();
 
-    const elapsed_s = @as(f64, @floatFromInt(elapsed_ns)) / time.ns_per_s;
-    const size_float: f64 = @floatFromInt(key_count * key_size);
-    const throughput: u64 = @intFromFloat(size_float / elapsed_s);
+    const elapsed_s = @as(f64, @floatfromint(elapsed_ns)) / time.ns_per_s;
+    const size_float: f64 = @floatfromint(key_count * key_size);
+    const throughput: u64 = @intfromfloat(size_float / elapsed_s);
 
     std.mem.doNotOptimizeAway(sum);
 
@@ -219,8 +219,8 @@ pub fn benchmarkHashSmallKeysArrayPtr(
     }
     const elapsed_ns = timer.read();
 
-    const elapsed_s = @as(f64, @floatFromInt(elapsed_ns)) / time.ns_per_s;
-    const throughput: u64 = @intFromFloat(@as(f64, @floatFromInt(bytes)) / elapsed_s);
+    const elapsed_s = @as(f64, @floatfromint(elapsed_ns)) / time.ns_per_s;
+    const throughput: u64 = @intfromfloat(@as(f64, @floatfromint(bytes)) / elapsed_s);
 
     std.mem.doNotOptimizeAway(sum);
 
@@ -268,8 +268,8 @@ pub fn benchmarkHashSmallKeysArray(
     }
     const elapsed_ns = timer.read();
 
-    const elapsed_s = @as(f64, @floatFromInt(elapsed_ns)) / time.ns_per_s;
-    const throughput: u64 = @intFromFloat(@as(f64, @floatFromInt(bytes)) / elapsed_s);
+    const elapsed_s = @as(f64, @floatfromint(elapsed_ns)) / time.ns_per_s;
+    const throughput: u64 = @intfromfloat(@as(f64, @floatfromint(bytes)) / elapsed_s);
 
     std.mem.doNotOptimizeAway(sum);
 
@@ -308,8 +308,8 @@ pub fn benchmarkHashSmallApi(comptime H: anytype, key_size: usize, bytes: usize,
     }
     const elapsed_ns = timer.read();
 
-    const elapsed_s = @as(f64, @floatFromInt(elapsed_ns)) / time.ns_per_s;
-    const throughput: u64 = @intFromFloat(@as(f64, @floatFromInt(bytes)) / elapsed_s);
+    const elapsed_s = @as(f64, @floatfromint(elapsed_ns)) / time.ns_per_s;
+    const throughput: u64 = @intfromfloat(@as(f64, @floatfromint(bytes)) / elapsed_s);
 
     std.mem.doNotOptimizeAway(sum);
 

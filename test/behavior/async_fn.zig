@@ -137,16 +137,16 @@ test "@frameSize" {
     const S = struct {
         fn doTheTest() !void {
             {
-                var ptr = @as(fn (i32) callconv(.Async) void, @ptrCast(other));
+                var ptr = @as(fn (i32) callconv(.Async) void, @ptrcast(other));
                 _ = &ptr;
                 const size = @frameSize(ptr);
-                try expect(size == @sizeOf(@Frame(other)));
+                try expect(size == @sizeof(@Frame(other)));
             }
             {
-                var ptr = @as(fn () callconv(.Async) void, @ptrCast(first));
+                var ptr = @as(fn () callconv(.Async) void, @ptrcast(first));
                 _ = &ptr;
                 const size = @frameSize(ptr);
-                try expect(size == @sizeOf(@Frame(first)));
+                try expect(size == @sizeof(@Frame(first)));
             }
         }
 
@@ -391,7 +391,7 @@ test "async fn with inferred error set" {
             var frame: [1]@Frame(middle) = undefined;
             var fn_ptr = middle;
             _ = &fn_ptr;
-            var result: @typeInfo(@typeInfo(@TypeOf(fn_ptr)).Fn.return_type.?).ErrorUnion.error_set!void = undefined;
+            var result: @typeinfo(@typeinfo(@TypeOf(fn_ptr)).Fn.return_type.?).ErrorUnion.error_set!void = undefined;
             _ = @asyncCall(std.mem.sliceAsBytes(frame[0..]), &result, fn_ptr, .{});
             resume global_frame;
             try std.testing.expectError(error.Fail, result);
@@ -448,7 +448,7 @@ fn suspendThenFail() callconv(.Async) anyerror!void {
 fn printTrace(p: anyframe->(anyerror!void)) callconv(.Async) void {
     (await p) catch |e| {
         std.testing.expect(e == error.Fail) catch @panic("test failure");
-        if (@errorReturnTrace()) |trace| {
+        if (@errorreturntrace()) |trace| {
             expect(trace.index == 1) catch @panic("test failure");
         } else switch (builtin.mode) {
             .Debug, .ReleaseSafe => @panic("expected return trace"),
@@ -835,7 +835,7 @@ test "alignment of local variables in async functions" {
             var y: u8 = 123;
             _ = &y;
             var x: u8 align(128) = 1;
-            try expect(@intFromPtr(&x) % 128 == 0);
+            try expect(@intfromptr(&x) % 128 == 0);
         }
     };
     try S.doTheTest();
@@ -1088,7 +1088,7 @@ test "@asyncCall with comptime-known function, but not awaited directly" {
 
         fn doTheTest() !void {
             var frame: [1]@Frame(middle) = undefined;
-            var result: @typeInfo(@typeInfo(@TypeOf(middle)).Fn.return_type.?).ErrorUnion.error_set!void = undefined;
+            var result: @typeinfo(@typeinfo(@TypeOf(middle)).Fn.return_type.?).ErrorUnion.error_set!void = undefined;
             _ = @asyncCall(std.mem.sliceAsBytes(frame[0..]), &result, middle, .{});
             resume global_frame;
             try std.testing.expectError(error.Fail, result);
@@ -1166,7 +1166,7 @@ test "@TypeOf an async function call of generic fn with error union type" {
     const S = struct {
         fn func(comptime x: anytype) anyerror!i32 {
             const T = @TypeOf(async func(x));
-            comptime assert(T == @typeInfo(@TypeOf(@frame())).Pointer.child);
+            comptime assert(T == @typeinfo(@TypeOf(@frame())).Pointer.child);
             return undefined;
         }
     };
@@ -1192,7 +1192,7 @@ test "using @TypeOf on a generic function call" {
                 global_frame = @frame();
             }
             const F = @TypeOf(async amain(x - 1));
-            const frame = @as(*F, @ptrFromInt(@intFromPtr(&buf)));
+            const frame = @as(*F, @ptrfromint(@intfromptr(&buf)));
             return await @asyncCall(frame, {}, amain, .{x - 1});
         }
     };
@@ -1220,7 +1220,7 @@ test "recursive call of await @asyncCall with struct return type" {
                 global_frame = @frame();
             }
             const F = @TypeOf(async amain(x - 1));
-            const frame = @as(*F, @ptrFromInt(@intFromPtr(&buf)));
+            const frame = @as(*F, @ptrfromint(@intfromptr(&buf)));
             return await @asyncCall(frame, {}, amain, .{x - 1});
         }
 
@@ -1844,7 +1844,7 @@ test "avoid forcing frame alignment resolution implicit cast to *anyopaque" {
         }
     };
     var frame = async S.foo();
-    resume @as(anyframe->bool, @ptrCast(@alignCast(S.x)));
+    resume @as(anyframe->bool, @ptrcast(@aligncast(S.x)));
     try expect(nosuspend await frame);
 }
 
@@ -1871,7 +1871,7 @@ test "@asyncCall with pass-by-value arguments" {
         }
     };
 
-    var buffer: [1024]u8 align(@alignOf(@Frame(S.f))) = undefined;
+    var buffer: [1024]u8 align(@alignof(@Frame(S.f))) = undefined;
     // The function pointer must not be comptime-known.
     var t = S.f;
     _ = &t;
@@ -1902,7 +1902,7 @@ test "@asyncCall with arguments having non-standard alignment" {
         }
     };
 
-    var buffer: [1024]u8 align(@alignOf(@Frame(S.f))) = undefined;
+    var buffer: [1024]u8 align(@alignof(@Frame(S.f))) = undefined;
     // The function pointer must not be comptime-known.
     var t = S.f;
     _ = &t;

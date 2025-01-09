@@ -169,15 +169,15 @@ pub const BootServices = extern struct {
 
     /// Opens a protocol with a structure as the loaded image for a UEFI application
     pub fn openProtocolSt(self: *BootServices, comptime protocol: type, handle: Handle) !*protocol {
-        if (!@hasDecl(protocol, "guid"))
-            @compileError("Protocol is missing guid!");
+        if (!@hasdecl(protocol, "guid"))
+            @compileerror("Protocol is missing guid!");
 
         var ptr: ?*protocol = undefined;
 
         try self.openProtocol(
             handle,
             &protocol.guid,
-            @as(*?*anyopaque, @ptrCast(&ptr)),
+            @as(*?*anyopaque, @ptrcast(&ptr)),
             // Invoking handle (loaded image)
             uefi.handle,
             // Control handle (null as not a driver)

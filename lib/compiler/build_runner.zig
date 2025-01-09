@@ -158,7 +158,7 @@ pub fn main() !void {
                 const max_rss_text = nextArgOrFatal(args, &arg_idx);
                 max_rss = std.fmt.parseIntSizeSuffix(max_rss_text, 10) catch |err| {
                     std.debug.print("invalid byte size: '{s}': {s}\n", .{
-                        max_rss_text, @errorName(err),
+                        max_rss_text, @errorname(err),
                     });
                     process.exit(1);
                 };
@@ -192,7 +192,7 @@ pub fn main() !void {
                     fatalWithHint("expected u32 after '{s}'", .{arg});
                 seed = std.fmt.parseUnsigned(u32, next_arg, 0) catch |err| {
                     fatal("unable to parse seed '{s}' as 32-bit integer: {s}\n", .{
-                        next_arg, @errorName(err),
+                        next_arg, @errorname(err),
                     });
                 };
             } else if (mem.eql(u8, arg, "--debug-log")) {
@@ -252,7 +252,7 @@ pub fn main() !void {
             } else if (mem.startsWith(u8, arg, "-freference-trace=")) {
                 const num = arg["-freference-trace=".len..];
                 builder.reference_trace = std.fmt.parseUnsigned(u32, num, 10) catch |err| {
-                    std.debug.print("unable to parse reference_trace count '{s}': {s}", .{ num, @errorName(err) });
+                    std.debug.print("unable to parse reference_trace count '{s}': {s}", .{ num, @errorname(err) });
                     process.exit(1);
                 };
             } else if (mem.eql(u8, arg, "-fno-reference-trace")) {
@@ -261,7 +261,7 @@ pub fn main() !void {
                 const num = arg["-j".len..];
                 const n_jobs = std.fmt.parseUnsigned(u32, num, 10) catch |err| {
                     std.debug.print("unable to parse jobs count '{s}': {s}", .{
-                        num, @errorName(err),
+                        num, @errorname(err),
                     });
                     process.exit(1);
                 };
@@ -315,7 +315,7 @@ pub fn main() !void {
             .flags = .{ .exclusive = true },
         }) catch |err| {
             fatal("unable to write configuration results to '{}{s}': {s}", .{
-                local_cache_directory, tmp_sub_path, @errorName(err),
+                local_cache_directory, tmp_sub_path, @errorname(err),
             });
         };
         process.exit(3); // Indicate configure phase failed with meaningful stdout.
@@ -899,10 +899,10 @@ fn workerMakeOneStep(
     // then we return without doing the step, relying on another worker to
     // queue this step up again when dependencies are met.
     for (s.dependencies.items) |dep| {
-        switch (@atomicLoad(Step.State, &dep.state, .seq_cst)) {
+        switch (@atomicload(Step.State, &dep.state, .seq_cst)) {
             .success, .skipped => continue,
             .failure, .dependency_failure, .skipped_oom => {
-                @atomicStore(Step.State, &s.state, .dependency_failure, .seq_cst);
+                @atomicstore(Step.State, &s.state, .dependency_failure, .seq_cst);
                 return;
             },
             .precheck_done, .running => {
@@ -936,7 +936,7 @@ fn workerMakeOneStep(
         s.state = .running;
     } else {
         // Avoid running steps twice.
-        if (@cmpxchgStrong(Step.State, &s.state, .precheck_done, .running, .seq_cst, .seq_cst) != null) {
+        if (@cmpxchgstrong(Step.State, &s.state, .precheck_done, .running, .seq_cst, .seq_cst) != null) {
             // Another worker got the job.
             return;
         }
@@ -962,13 +962,13 @@ fn workerMakeOneStep(
 
     handle_result: {
         if (make_result) |_| {
-            @atomicStore(Step.State, &s.state, .success, .seq_cst);
+            @atomicstore(Step.State, &s.state, .success, .seq_cst);
         } else |err| switch (err) {
             error.MakeFailed => {
-                @atomicStore(Step.State, &s.state, .failure, .seq_cst);
+                @atomicstore(Step.State, &s.state, .failure, .seq_cst);
                 break :handle_result;
             },
-            error.MakeSkipped => @atomicStore(Step.State, &s.state, .skipped, .seq_cst),
+            error.MakeSkipped => @atomicstore(Step.State, &s.state, .skipped, .seq_cst),
         }
 
         // Successful completion of a step, so we queue up its dependants as well.
@@ -1136,7 +1136,7 @@ fn usage(b: *std.Build, out_stream: anytype) !void {
         for (b.available_options_list.items) |option| {
             const name = try fmt.allocPrint(arena, "  -D{s}=[{s}]", .{
                 option.name,
-                @tagName(option.type_id),
+                @tagname(option.type_id),
             });
             try out_stream.print("{s:<30} {s}\n", .{ name, option.description });
             if (option.enum_options) |enum_options| {

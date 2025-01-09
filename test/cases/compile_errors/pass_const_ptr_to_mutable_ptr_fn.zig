@@ -10,7 +10,7 @@ fn ptrEql(a: *[]const u8, b: *[]const u8) bool {
 }
 
 export fn entry() usize {
-    return @sizeOf(@TypeOf(&foo));
+    return @sizeof(@TypeOf(&foo));
 }
 
 // error

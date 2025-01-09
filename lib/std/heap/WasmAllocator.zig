@@ -10,7 +10,7 @@ const math = std.math;
 
 comptime {
     if (!builtin.target.isWasm()) {
-        @compileError("WasmPageAllocator is only available for wasm32 arch");
+        @compileerror("WasmPageAllocator is only available for wasm32 arch");
     }
 }
 
@@ -29,7 +29,7 @@ const pages_per_bigpage = bigpage_size / wasm.page_size;
 const bigpage_count = max_usize / bigpage_size;
 
 /// Because of storing free list pointers, the minimum size class is 3.
-const min_class = math.log2(math.ceilPowerOfTwoAssert(usize, 1 + @sizeOf(usize)));
+const min_class = math.log2(math.ceilPowerOfTwoAssert(usize, 1 + @sizeof(usize)));
 const size_class_count = math.log2(bigpage_size) - min_class;
 /// 0 - 1 bigpage
 /// 1 - 2 bigpages
@@ -47,15 +47,15 @@ fn alloc(ctx: *anyopaque, len: usize, log2_align: u8, return_address: usize) ?[*
     _ = ctx;
     _ = return_address;
     // Make room for the freelist next pointer.
-    const alignment = @as(usize, 1) << @as(Allocator.Log2Align, @intCast(log2_align));
-    const actual_len = @max(len +| @sizeOf(usize), alignment);
+    const alignment = @as(usize, 1) << @as(Allocator.Log2Align, @intcast(log2_align));
+    const actual_len = @max(len +| @sizeof(usize), alignment);
     const slot_size = math.ceilPowerOfTwo(usize, actual_len) catch return null;
     const class = math.log2(slot_size) - min_class;
     if (class < size_class_count) {
         const addr = a: {
             const top_free_ptr = frees[class];
             if (top_free_ptr != 0) {
-                const node: *usize = @ptrFromInt(top_free_ptr + (slot_size - @sizeOf(usize)));
+                const node: *usize = @ptrfromint(top_free_ptr + (slot_size - @sizeof(usize)));
                 frees[class] = node.*;
                 break :a top_free_ptr;
             }
@@ -74,10 +74,10 @@ fn alloc(ctx: *anyopaque, len: usize, log2_align: u8, return_address: usize) ?[*
                 break :a next_addr;
             }
         };
-        return @ptrFromInt(addr);
+        return @ptrfromint(addr);
     }
     const bigpages_needed = bigPagesNeeded(actual_len);
-    return @ptrFromInt(allocBigPages(bigpages_needed));
+    return @ptrfromint(allocBigPages(bigpages_needed));
 }
 
 fn resize(
@@ -91,9 +91,9 @@ fn resize(
     _ = return_address;
     // We don't want to move anything from one size class to another, but we
     // can recover bytes in between powers of two.
-    const buf_align = @as(usize, 1) << @as(Allocator.Log2Align, @intCast(log2_buf_align));
-    const old_actual_len = @max(buf.len + @sizeOf(usize), buf_align);
-    const new_actual_len = @max(new_len +| @sizeOf(usize), buf_align);
+    const buf_align = @as(usize, 1) << @as(Allocator.Log2Align, @intcast(log2_buf_align));
+    const old_actual_len = @max(buf.len + @sizeof(usize), buf_align);
+    const new_actual_len = @max(new_len +| @sizeof(usize), buf_align);
     const old_small_slot_size = math.ceilPowerOfTwoAssert(usize, old_actual_len);
     const old_small_class = math.log2(old_small_slot_size) - min_class;
     if (old_small_class < size_class_count) {
@@ -116,20 +116,20 @@ fn free(
 ) void {
     _ = ctx;
     _ = return_address;
-    const buf_align = @as(usize, 1) << @as(Allocator.Log2Align, @intCast(log2_buf_align));
-    const actual_len = @max(buf.len + @sizeOf(usize), buf_align);
+    const buf_align = @as(usize, 1) << @as(Allocator.Log2Align, @intcast(log2_buf_align));
+    const actual_len = @max(buf.len + @sizeof(usize), buf_align);
     const slot_size = math.ceilPowerOfTwoAssert(usize, actual_len);
     const class = math.log2(slot_size) - min_class;
-    const addr = @intFromPtr(buf.ptr);
+    const addr = @intfromptr(buf.ptr);
     if (class < size_class_count) {
-        const node: *usize = @ptrFromInt(addr + (slot_size - @sizeOf(usize)));
+        const node: *usize = @ptrfromint(addr + (slot_size - @sizeof(usize)));
         node.* = frees[class];
         frees[class] = addr;
     } else {
         const bigpages_needed = bigPagesNeeded(actual_len);
         const pow2_pages = math.ceilPowerOfTwoAssert(usize, bigpages_needed);
         const big_slot_size_bytes = pow2_pages * bigpage_size;
-        const node: *usize = @ptrFromInt(addr + (big_slot_size_bytes - @sizeOf(usize)));
+        const node: *usize = @ptrfromint(addr + (big_slot_size_bytes - @sizeof(usize)));
         const big_class = math.log2(pow2_pages);
         node.* = big_frees[big_class];
         big_frees[big_class] = addr;
@@ -137,7 +137,7 @@ fn free(
 }
 
 inline fn bigPagesNeeded(byte_count: usize) usize {
-    return (byte_count + (bigpage_size + (@sizeOf(usize) - 1))) / bigpage_size;
+    return (byte_count + (bigpage_size + (@sizeof(usize) - 1))) / bigpage_size;
 }
 
 fn allocBigPages(n: usize) usize {
@@ -147,14 +147,14 @@ fn allocBigPages(n: usize) usize {
 
     const top_free_ptr = big_frees[class];
     if (top_free_ptr != 0) {
-        const node: *usize = @ptrFromInt(top_free_ptr + (slot_size_bytes - @sizeOf(usize)));
+        const node: *usize = @ptrfromint(top_free_ptr + (slot_size_bytes - @sizeof(usize)));
         big_frees[class] = node.*;
         return top_free_ptr;
     }
 
-    const page_index = @wasmMemoryGrow(0, pow2_pages * pages_per_bigpage);
+    const page_index = @wasmmemorygrow(0, pow2_pages * pages_per_bigpage);
     if (page_index == -1) return 0;
-    return @as(usize, @intCast(page_index)) * wasm.page_size;
+    return @as(usize, @intcast(page_index)) * wasm.page_size;
 }
 
 const test_ally = Allocator{
@@ -207,7 +207,7 @@ test "very large allocation" {
 }
 
 test "realloc" {
-    var slice = try test_ally.alignedAlloc(u8, @alignOf(u32), 1);
+    var slice = try test_ally.alignedAlloc(u8, @alignof(u32), 1);
     defer test_ally.free(slice);
     slice[0] = 0x12;
 

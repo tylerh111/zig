@@ -6850,7 +6850,7 @@ DEFINE_GUID(IID_IXMLDOMElement, 0x2933bf86, 0x7b36, 0x11d2, 0xb2,0x0e, 0x00,0xc0
 MIDL_INTERFACE("2933bf86-7b36-11d2-b20e-00c04f983e60")
 IXMLDOMElement : public IXMLDOMNode
 {
-    virtual HRESULT STDMETHODCALLTYPE get_tagName(
+    virtual HRESULT STDMETHODCALLTYPE get_tagname(
         BSTR *p) = 0;
 
     virtual HRESULT STDMETHODCALLTYPE getAttribute(
@@ -7090,7 +7090,7 @@ typedef struct IXMLDOMElementVtbl {
         VARIANT var1);
 
     /*** IXMLDOMElement methods ***/
-    HRESULT (STDMETHODCALLTYPE *get_tagName)(
+    HRESULT (STDMETHODCALLTYPE *get_tagname)(
         IXMLDOMElement *This,
         BSTR *p);
 
@@ -7187,7 +7187,7 @@ interface IXMLDOMElement {
 #define IXMLDOMElement_get_baseName(This,p) (This)->lpVtbl->get_baseName(This,p)
 #define IXMLDOMElement_transformNodeToObject(This,domNode,var1) (This)->lpVtbl->transformNodeToObject(This,domNode,var1)
 /*** IXMLDOMElement methods ***/
-#define IXMLDOMElement_get_tagName(This,p) (This)->lpVtbl->get_tagName(This,p)
+#define IXMLDOMElement_get_tagname(This,p) (This)->lpVtbl->get_tagname(This,p)
 #define IXMLDOMElement_getAttribute(This,p,var) (This)->lpVtbl->getAttribute(This,p,var)
 #define IXMLDOMElement_setAttribute(This,p,var) (This)->lpVtbl->setAttribute(This,p,var)
 #define IXMLDOMElement_removeAttribute(This,p) (This)->lpVtbl->removeAttribute(This,p)
@@ -7330,8 +7330,8 @@ static __WIDL_INLINE HRESULT IXMLDOMElement_transformNodeToObject(IXMLDOMElement
     return This->lpVtbl->transformNodeToObject(This,domNode,var1);
 }
 /*** IXMLDOMElement methods ***/
-static __WIDL_INLINE HRESULT IXMLDOMElement_get_tagName(IXMLDOMElement* This,BSTR *p) {
-    return This->lpVtbl->get_tagName(This,p);
+static __WIDL_INLINE HRESULT IXMLDOMElement_get_tagname(IXMLDOMElement* This,BSTR *p) {
+    return This->lpVtbl->get_tagname(This,p);
 }
 static __WIDL_INLINE HRESULT IXMLDOMElement_getAttribute(IXMLDOMElement* This,BSTR p,VARIANT *var) {
     return This->lpVtbl->getAttribute(This,p,var);

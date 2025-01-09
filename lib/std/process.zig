@@ -78,7 +78,7 @@ pub const EnvMap = struct {
     pub const EnvNameHashContext = struct {
         fn upcase(c: u21) u21 {
             if (c <= std.math.maxInt(u16))
-                return windows.ntdll.RtlUpcaseUnicodeChar(@as(u16, @intCast(c)));
+                return windows.ntdll.RtlUpcaseUnicodeChar(@as(u16, @intcast(c)));
             return c;
         }
 
@@ -90,9 +90,9 @@ pub const EnvMap = struct {
                 while (it.nextCodepoint()) |cp| {
                     const cp_upper = upcase(cp);
                     h.update(&[_]u8{
-                        @as(u8, @intCast((cp_upper >> 16) & 0xff)),
-                        @as(u8, @intCast((cp_upper >> 8) & 0xff)),
-                        @as(u8, @intCast((cp_upper >> 0) & 0xff)),
+                        @as(u8, @intcast((cp_upper >> 16) & 0xff)),
+                        @as(u8, @intcast((cp_upper >> 8) & 0xff)),
+                        @as(u8, @intcast((cp_upper >> 0) & 0xff)),
                     });
                 }
                 return h.final();
@@ -399,7 +399,7 @@ pub const GetEnvVarOwnedError = error{
 pub fn getEnvVarOwned(allocator: Allocator, key: []const u8) GetEnvVarOwnedError![]u8 {
     if (native_os == .windows) {
         const result_w = blk: {
-            var stack_alloc = std.heap.stackFallback(256 * @sizeOf(u16), allocator);
+            var stack_alloc = std.heap.stackFallback(256 * @sizeof(u16), allocator);
             const stack_allocator = stack_alloc.get();
             const key_w = try unicode.wtf8ToWtf16LeAllocZ(stack_allocator, key);
             defer stack_allocator.free(key_w);
@@ -425,7 +425,7 @@ pub fn hasEnvVarConstant(comptime key: []const u8) bool {
         const key_w = comptime unicode.utf8ToUtf16LeStringLiteral(key);
         return getenvW(key_w) != null;
     } else if (native_os == .wasi and !builtin.link_libc) {
-        @compileError("hasEnvVarConstant is not supported for WASI without libc");
+        @compileerror("hasEnvVarConstant is not supported for WASI without libc");
     } else {
         return posix.getenv(key) != null;
     }
@@ -444,7 +444,7 @@ pub fn parseEnvVarInt(comptime key: []const u8, comptime I: type, base: u8) Pars
         const text = getenvW(key_w) orelse return error.EnvironmentVariableNotFound;
         return std.fmt.parseIntWithGenericCharacter(I, u16, text, base);
     } else if (native_os == .wasi and !builtin.link_libc) {
-        @compileError("parseEnvVarInt is not supported for WASI without libc");
+        @compileerror("parseEnvVarInt is not supported for WASI without libc");
     } else {
         const text = posix.getenv(key) orelse return error.EnvironmentVariableNotFound;
         return std.fmt.parseInt(I, text, base);
@@ -463,7 +463,7 @@ pub const HasEnvVarError = error{
 /// then `error.InvalidWtf8` is returned.
 pub fn hasEnvVar(allocator: Allocator, key: []const u8) HasEnvVarError!bool {
     if (native_os == .windows) {
-        var stack_alloc = std.heap.stackFallback(256 * @sizeOf(u16), allocator);
+        var stack_alloc = std.heap.stackFallback(256 * @sizeof(u16), allocator);
         const stack_allocator = stack_alloc.get();
         const key_w = try unicode.wtf8ToWtf16LeAllocZ(stack_allocator, key);
         defer stack_allocator.free(key_w);
@@ -489,7 +489,7 @@ pub fn hasEnvVar(allocator: Allocator, key: []const u8) HasEnvVarError!bool {
 /// * `hasEnvVar`
 pub fn getenvW(key: [*:0]const u16) ?[:0]const u16 {
     if (native_os != .windows) {
-        @compileError("Windows-only");
+        @compileerror("Windows-only");
     }
     const key_slice = mem.sliceTo(key, 0);
     const ptr = windows.peb().ProcessParameters.Environment;
@@ -636,9 +636,9 @@ pub const ArgIteratorWasi = struct {
     /// Call to free the internal buffer of the iterator.
     pub fn deinit(self: *ArgIteratorWasi) void {
         const last_item = self.args[self.args.len - 1];
-        const last_byte_addr = @intFromPtr(last_item.ptr) + last_item.len + 1; // null terminated
+        const last_byte_addr = @intfromptr(last_item.ptr) + last_item.len + 1; // null terminated
         const first_item_ptr = self.args[0].ptr;
-        const len = last_byte_addr - @intFromPtr(first_item_ptr);
+        const len = last_byte_addr - @intfromptr(first_item_ptr);
         self.allocator.free(first_item_ptr[0..len]);
         self.allocator.free(self.args);
     }
@@ -1114,10 +1114,10 @@ pub const ArgIterator = struct {
     /// for cross-platform compatibility.
     pub fn init() ArgIterator {
         if (native_os == .wasi) {
-            @compileError("In WASI, use initWithAllocator instead.");
+            @compileerror("In WASI, use initWithAllocator instead.");
         }
         if (native_os == .windows) {
-            @compileError("In Windows, use initWithAllocator instead.");
+            @compileerror("In Windows, use initWithAllocator instead.");
         }
 
         return ArgIterator{ .inner = InnerType.init() };
@@ -1198,9 +1198,9 @@ pub fn argsAlloc(allocator: Allocator) ![][:0]u8 {
 
     const contents_slice = contents.items;
     const slice_sizes = slice_list.items;
-    const slice_list_bytes = try math.mul(usize, @sizeOf([]u8), slice_sizes.len);
+    const slice_list_bytes = try math.mul(usize, @sizeof([]u8), slice_sizes.len);
     const total_bytes = try math.add(usize, slice_list_bytes, contents_slice.len);
-    const buf = try allocator.alignedAlloc(u8, @alignOf([]u8), total_bytes);
+    const buf = try allocator.alignedAlloc(u8, @alignof([]u8), total_bytes);
     errdefer allocator.free(buf);
 
     const result_slice_list = mem.bytesAsSlice([:0]u8, buf[0..slice_list_bytes]);
@@ -1220,10 +1220,10 @@ pub fn argsAlloc(allocator: Allocator) ![][:0]u8 {
 pub fn argsFree(allocator: Allocator, args_alloc: []const [:0]u8) void {
     var total_bytes: usize = 0;
     for (args_alloc) |arg| {
-        total_bytes += @sizeOf([]u8) + arg.len + 1;
+        total_bytes += @sizeof([]u8) + arg.len + 1;
     }
-    const unaligned_allocated_buf = @as([*]const u8, @ptrCast(args_alloc.ptr))[0..total_bytes];
-    const aligned_allocated_buf: []align(@alignOf([]u8)) const u8 = @alignCast(unaligned_allocated_buf);
+    const unaligned_allocated_buf = @as([*]const u8, @ptrcast(args_alloc.ptr))[0..total_bytes];
+    const aligned_allocated_buf: []align(@alignof([]u8)) const u8 = @aligncast(unaligned_allocated_buf);
     return allocator.free(aligned_allocated_buf);
 }
 
@@ -1486,7 +1486,7 @@ pub fn getUserInfo(name: []const u8) !UserInfo {
         .solaris,
         .illumos,
         => posixGetUserInfo(name),
-        else => @compileError("Unsupported OS"),
+        else => @compileerror("Unsupported OS"),
     };
 }
 
@@ -1553,12 +1553,12 @@ pub fn posixGetUserInfo(name: []const u8) !UserInfo {
                             else => return error.CorruptPasswordFile,
                         };
                         {
-                            const ov = @mulWithOverflow(uid, 10);
+                            const ov = @mulwithoverflow(uid, 10);
                             if (ov[1] != 0) return error.CorruptPasswordFile;
                             uid = ov[0];
                         }
                         {
-                            const ov = @addWithOverflow(uid, digit);
+                            const ov = @addwithoverflow(uid, digit);
                             if (ov[1] != 0) return error.CorruptPasswordFile;
                             uid = ov[0];
                         }
@@ -1577,12 +1577,12 @@ pub fn posixGetUserInfo(name: []const u8) !UserInfo {
                             else => return error.CorruptPasswordFile,
                         };
                         {
-                            const ov = @mulWithOverflow(gid, 10);
+                            const ov = @mulwithoverflow(gid, 10);
                             if (ov[1] != 0) return error.CorruptPasswordFile;
                             gid = ov[0];
                         }
                         {
-                            const ov = @addWithOverflow(gid, digit);
+                            const ov = @addwithoverflow(gid, digit);
                             if (ov[1] != 0) return error.CorruptPasswordFile;
                             gid = ov[0];
                         }
@@ -1602,13 +1602,13 @@ pub fn getBaseAddress() usize {
                 return base;
             }
             const phdr = std.os.linux.getauxval(std.elf.AT_PHDR);
-            return phdr - @sizeOf(std.elf.Ehdr);
+            return phdr - @sizeof(std.elf.Ehdr);
         },
         .macos, .freebsd, .netbsd => {
-            return @intFromPtr(&std.c._mh_execute_header);
+            return @intfromptr(&std.c._mh_execute_header);
         },
-        .windows => return @intFromPtr(windows.kernel32.GetModuleHandleW(null)),
-        else => @compileError("Unsupported OS"),
+        .windows => return @intfromptr(windows.kernel32.GetModuleHandleW(null)),
+        else => @compileerror("Unsupported OS"),
     }
 }
 
@@ -1651,7 +1651,7 @@ pub fn execve(
     argv: []const []const u8,
     env_map: ?*const EnvMap,
 ) ExecvError {
-    if (!can_execv) @compileError("The target OS does not support execv");
+    if (!can_execv) @compileerror("The target OS does not support execv");
 
     var arena_allocator = std.heap.ArenaAllocator.init(allocator);
     defer arena_allocator.deinit();
@@ -1669,10 +1669,10 @@ pub fn execve(
         } else if (builtin.output_mode == .Exe) {
             // Then we have Zig start code and this works.
             // TODO type-safety for null-termination of `os.environ`.
-            break :m @as([*:null]const ?[*:0]const u8, @ptrCast(std.os.environ.ptr));
+            break :m @as([*:null]const ?[*:0]const u8, @ptrcast(std.os.environ.ptr));
         } else {
             // TODO come up with a solution for this.
-            @compileError("missing std lib enhancement: std.process.execv implementation has no way to collect the environment variables to forward to the child process");
+            @compileerror("missing std lib enhancement: std.process.execv implementation has no way to collect the environment variables to forward to the child process");
         }
     };
 
@@ -1694,12 +1694,12 @@ pub fn totalSystemMemory() TotalSystemMemoryError!u64 {
         },
         .freebsd => {
             var physmem: c_ulong = undefined;
-            var len: usize = @sizeOf(c_ulong);
+            var len: usize = @sizeof(c_ulong);
             posix.sysctlbynameZ("hw.physmem", &physmem, &len, null, 0) catch |err| switch (err) {
                 error.NameTooLong, error.UnknownName => unreachable,
                 else => return error.UnknownTotalSystemMemory,
             };
-            return @as(usize, @intCast(physmem));
+            return @as(usize, @intcast(physmem));
         },
         .openbsd => {
             const mib: [2]c_int = [_]c_int{
@@ -1707,7 +1707,7 @@ pub fn totalSystemMemory() TotalSystemMemoryError!u64 {
                 posix.HW.PHYSMEM64,
             };
             var physmem: i64 = undefined;
-            var len: usize = @sizeOf(@TypeOf(physmem));
+            var len: usize = @sizeof(@TypeOf(physmem));
             posix.sysctl(&mib, &physmem, &len, null, 0) catch |err| switch (err) {
                 error.NameTooLong => unreachable, // constant, known good value
                 error.PermissionDenied => unreachable, // only when setting values,
@@ -1716,14 +1716,14 @@ pub fn totalSystemMemory() TotalSystemMemoryError!u64 {
                 else => return error.UnknownTotalSystemMemory,
             };
             assert(physmem >= 0);
-            return @as(u64, @bitCast(physmem));
+            return @as(u64, @bitcast(physmem));
         },
         .windows => {
             var sbi: windows.SYSTEM_BASIC_INFORMATION = undefined;
             const rc = windows.ntdll.NtQuerySystemInformation(
                 .SystemBasicInformation,
                 &sbi,
-                @sizeOf(windows.SYSTEM_BASIC_INFORMATION),
+                @sizeof(windows.SYSTEM_BASIC_INFORMATION),
                 null,
             );
             if (rc != .SUCCESS) {
@@ -1797,7 +1797,7 @@ pub fn raiseFileDescriptorLimit() void {
     }
 
     while (true) {
-        lim.cur = min + @divTrunc(max - min, 2); // on freebsd rlim_t is signed
+        lim.cur = min + @divtrunc(max - min, 2); // on freebsd rlim_t is signed
         if (posix.setrlimit(.NOFILE, lim)) |_| {
             min = lim.cur;
         } else |_| {

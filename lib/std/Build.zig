@@ -408,7 +408,7 @@ fn createChildOnly(
 
 fn userInputOptionsFromArgs(allocator: Allocator, args: anytype) UserInputOptionsMap {
     var user_input_options = UserInputOptionsMap.init(allocator);
-    inline for (@typeInfo(@TypeOf(args)).Struct.fields) |field| {
+    inline for (@typeinfo(@TypeOf(args)).Struct.fields) |field| {
         const v = @field(args, field.name);
         const T = @TypeOf(v);
         switch (T) {
@@ -453,7 +453,7 @@ fn userInputOptionsFromArgs(allocator: Allocator, args: anytype) UserInputOption
                     .used = false,
                 }) catch @panic("OOM");
             },
-            else => switch (@typeInfo(T)) {
+            else => switch (@typeinfo(T)) {
                 .Bool => {
                     user_input_options.put(field.name, .{
                         .name = field.name,
@@ -464,7 +464,7 @@ fn userInputOptionsFromArgs(allocator: Allocator, args: anytype) UserInputOption
                 .Enum, .EnumLiteral => {
                     user_input_options.put(field.name, .{
                         .name = field.name,
-                        .value = .{ .scalar = @tagName(v) },
+                        .value = .{ .scalar = @tagname(v) },
                         .used = false,
                     }) catch @panic("OOM");
                 },
@@ -475,7 +475,7 @@ fn userInputOptionsFromArgs(allocator: Allocator, args: anytype) UserInputOption
                         .used = false,
                     }) catch @panic("OOM");
                 },
-                else => @compileError("option '" ++ field.name ++ "' has unsupported type: " ++ @typeName(T)),
+                else => @compileerror("option '" ++ field.name ++ "' has unsupported type: " ++ @typename(T)),
             },
         }
     }
@@ -993,7 +993,7 @@ pub fn addConfigHeader(
 ) *Step.ConfigHeader {
     var options_copy = options;
     if (options_copy.first_ret_addr == null)
-        options_copy.first_ret_addr = @returnAddress();
+        options_copy.first_ret_addr = @returnaddress();
 
     const config_header_step = Step.ConfigHeader.create(b, options_copy);
     config_header_step.addValues(values);
@@ -1062,8 +1062,8 @@ pub fn getUninstallStep(b: *Build) *Step {
 
 fn makeUninstall(uninstall_step: *Step, prog_node: std.Progress.Node) anyerror!void {
     _ = prog_node;
-    const uninstall_tls: *TopLevelStep = @fieldParentPtr("step", uninstall_step);
-    const b: *Build = @fieldParentPtr("uninstall_tls", uninstall_tls);
+    const uninstall_tls: *TopLevelStep = @fieldparentptr("step", uninstall_step);
+    const b: *Build = @fieldparentptr("uninstall_tls", uninstall_tls);
 
     for (b.installed_files.items) |installed_file| {
         const full_path = b.getInstallPath(installed_file.dir, installed_file.path);
@@ -1086,7 +1086,7 @@ pub fn option(b: *Build, comptime T: type, name_raw: []const u8, description_raw
     const description = b.dupe(description_raw);
     const type_id = comptime typeToEnum(T);
     const enum_options = if (type_id == .@"enum" or type_id == .enum_list) blk: {
-        const EnumType = if (type_id == .enum_list) @typeInfo(T).Pointer.child else T;
+        const EnumType = if (type_id == .enum_list) @typeinfo(T).Pointer.child else T;
         const fields = comptime std.meta.fields(EnumType);
         var options = ArrayList([]const u8).initCapacity(b.allocator, fields.len) catch @panic("OOM");
 
@@ -1125,7 +1125,7 @@ pub fn option(b: *Build, comptime T: type, name_raw: []const u8, description_raw
             },
             .list, .map => {
                 log.err("Expected -D{s} to be a boolean, but received a {s}.", .{
-                    name, @tagName(option_ptr.value),
+                    name, @tagname(option_ptr.value),
                 });
                 b.markInvalidUserInput();
                 return null;
@@ -1134,7 +1134,7 @@ pub fn option(b: *Build, comptime T: type, name_raw: []const u8, description_raw
         .int => switch (option_ptr.value) {
             .flag, .list, .map => {
                 log.err("Expected -D{s} to be an integer, but received a {s}.", .{
-                    name, @tagName(option_ptr.value),
+                    name, @tagname(option_ptr.value),
                 });
                 b.markInvalidUserInput();
                 return null;
@@ -1142,12 +1142,12 @@ pub fn option(b: *Build, comptime T: type, name_raw: []const u8, description_raw
             .scalar => |s| {
                 const n = std.fmt.parseInt(T, s, 10) catch |err| switch (err) {
                     error.Overflow => {
-                        log.err("-D{s} value {s} cannot fit into type {s}.", .{ name, s, @typeName(T) });
+                        log.err("-D{s} value {s} cannot fit into type {s}.", .{ name, s, @typename(T) });
                         b.markInvalidUserInput();
                         return null;
                     },
                     else => {
-                        log.err("Expected -D{s} to be an integer of type {s}.", .{ name, @typeName(T) });
+                        log.err("Expected -D{s} to be an integer of type {s}.", .{ name, @typename(T) });
                         b.markInvalidUserInput();
                         return null;
                     },
@@ -1158,14 +1158,14 @@ pub fn option(b: *Build, comptime T: type, name_raw: []const u8, description_raw
         .float => switch (option_ptr.value) {
             .flag, .map, .list => {
                 log.err("Expected -D{s} to be a float, but received a {s}.", .{
-                    name, @tagName(option_ptr.value),
+                    name, @tagname(option_ptr.value),
                 });
                 b.markInvalidUserInput();
                 return null;
             },
             .scalar => |s| {
                 const n = std.fmt.parseFloat(T, s) catch {
-                    log.err("Expected -D{s} to be a float of type {s}.", .{ name, @typeName(T) });
+                    log.err("Expected -D{s} to be a float of type {s}.", .{ name, @typename(T) });
                     b.markInvalidUserInput();
                     return null;
                 };
@@ -1175,7 +1175,7 @@ pub fn option(b: *Build, comptime T: type, name_raw: []const u8, description_raw
         .@"enum" => switch (option_ptr.value) {
             .flag, .map, .list => {
                 log.err("Expected -D{s} to be an enum, but received a {s}.", .{
-                    name, @tagName(option_ptr.value),
+                    name, @tagname(option_ptr.value),
                 });
                 b.markInvalidUserInput();
                 return null;
@@ -1184,7 +1184,7 @@ pub fn option(b: *Build, comptime T: type, name_raw: []const u8, description_raw
                 if (std.meta.stringToEnum(T, s)) |enum_lit| {
                     return enum_lit;
                 } else {
-                    log.err("Expected -D{s} to be of type {s}.", .{ name, @typeName(T) });
+                    log.err("Expected -D{s} to be of type {s}.", .{ name, @typename(T) });
                     b.markInvalidUserInput();
                     return null;
                 }
@@ -1193,7 +1193,7 @@ pub fn option(b: *Build, comptime T: type, name_raw: []const u8, description_raw
         .string => switch (option_ptr.value) {
             .flag, .list, .map => {
                 log.err("Expected -D{s} to be a string, but received a {s}.", .{
-                    name, @tagName(option_ptr.value),
+                    name, @tagname(option_ptr.value),
                 });
                 b.markInvalidUserInput();
                 return null;
@@ -1203,7 +1203,7 @@ pub fn option(b: *Build, comptime T: type, name_raw: []const u8, description_raw
         .build_id => switch (option_ptr.value) {
             .flag, .map, .list => {
                 log.err("Expected -D{s} to be an enum, but received a {s}.", .{
-                    name, @tagName(option_ptr.value),
+                    name, @tagname(option_ptr.value),
                 });
                 b.markInvalidUserInput();
                 return null;
@@ -1212,7 +1212,7 @@ pub fn option(b: *Build, comptime T: type, name_raw: []const u8, description_raw
                 if (std.zig.BuildId.parse(s)) |build_id| {
                     return build_id;
                 } else |err| {
-                    log.err("unable to parse option '-D{s}': {s}", .{ name, @errorName(err) });
+                    log.err("unable to parse option '-D{s}': {s}", .{ name, @errorname(err) });
                     b.markInvalidUserInput();
                     return null;
                 }
@@ -1221,7 +1221,7 @@ pub fn option(b: *Build, comptime T: type, name_raw: []const u8, description_raw
         .list => switch (option_ptr.value) {
             .flag, .map => {
                 log.err("Expected -D{s} to be a list, but received a {s}.", .{
-                    name, @tagName(option_ptr.value),
+                    name, @tagname(option_ptr.value),
                 });
                 b.markInvalidUserInput();
                 return null;
@@ -1234,26 +1234,26 @@ pub fn option(b: *Build, comptime T: type, name_raw: []const u8, description_raw
         .enum_list => switch (option_ptr.value) {
             .flag, .map => {
                 log.err("Expected -D{s} to be a list, but received a {s}.", .{
-                    name, @tagName(option_ptr.value),
+                    name, @tagname(option_ptr.value),
                 });
                 b.markInvalidUserInput();
                 return null;
             },
             .scalar => |s| {
-                const Child = @typeInfo(T).Pointer.child;
+                const Child = @typeinfo(T).Pointer.child;
                 const value = std.meta.stringToEnum(Child, s) orelse {
-                    log.err("Expected -D{s} to be of type {s}.", .{ name, @typeName(Child) });
+                    log.err("Expected -D{s} to be of type {s}.", .{ name, @typename(Child) });
                     b.markInvalidUserInput();
                     return null;
                 };
                 return b.allocator.dupe(Child, &[_]Child{value}) catch @panic("OOM");
             },
             .list => |lst| {
-                const Child = @typeInfo(T).Pointer.child;
+                const Child = @typeinfo(T).Pointer.child;
                 var new_list = b.allocator.alloc(Child, lst.items.len) catch @panic("OOM");
                 for (lst.items, 0..) |str, i| {
                     const value = std.meta.stringToEnum(Child, str) orelse {
-                        log.err("Expected -D{s} to be of type {s}.", .{ name, @typeName(Child) });
+                        log.err("Expected -D{s} to be of type {s}.", .{ name, @typename(Child) });
                         b.markInvalidUserInput();
                         b.allocator.free(new_list);
                         return null;
@@ -1342,7 +1342,7 @@ pub fn parseTargetQuery(options: std.Target.Query.ParseOptions) error{ParseFaile
     return std.Target.Query.parse(opts_copy) catch |err| switch (err) {
         error.UnknownCpuModel => {
             std.debug.print("unknown CPU: '{s}'\navailable CPUs for architecture '{s}':\n", .{
-                diags.cpu_name.?, @tagName(diags.arch.?),
+                diags.cpu_name.?, @tagname(diags.arch.?),
             });
             for (diags.arch.?.allCpuModels()) |cpu| {
                 std.debug.print(" {s}\n", .{cpu.name});
@@ -1356,7 +1356,7 @@ pub fn parseTargetQuery(options: std.Target.Query.ParseOptions) error{ParseFaile
                 \\
             , .{
                 diags.unknown_feature_name.?,
-                @tagName(diags.arch.?),
+                @tagname(diags.arch.?),
             });
             for (diags.arch.?.allFeaturesList()) |feature| {
                 std.debug.print(" {s}: {s}\n", .{ feature.name, feature.description });
@@ -1376,7 +1376,7 @@ pub fn parseTargetQuery(options: std.Target.Query.ParseOptions) error{ParseFaile
         },
         else => |e| {
             std.debug.print("unable to parse target '{s}': {s}\n", .{
-                options.arch_os_abi, @errorName(e),
+                options.arch_os_abi, @errorname(e),
             });
             return error.ParseFailed;
         },
@@ -1516,7 +1516,7 @@ pub fn addUserInputFlag(b: *Build, name_raw: []const u8) !bool {
 fn typeToEnum(comptime T: type) TypeId {
     return switch (T) {
         std.zig.BuildId => .build_id,
-        else => return switch (@typeInfo(T)) {
+        else => return switch (@typeinfo(T)) {
             .Int => .int,
             .Float => .float,
             .Bool => .bool,
@@ -1524,12 +1524,12 @@ fn typeToEnum(comptime T: type) TypeId {
             .Pointer => |pointer| switch (pointer.child) {
                 u8 => .string,
                 []const u8 => .list,
-                else => switch (@typeInfo(pointer.child)) {
+                else => switch (@typeinfo(pointer.child)) {
                     .Enum => .enum_list,
-                    else => @compileError("Unsupported type: " ++ @typeName(T)),
+                    else => @compileerror("Unsupported type: " ++ @typename(T)),
                 },
             },
-            else => @compileError("Unsupported type: " ++ @typeName(T)),
+            else => @compileerror("Unsupported type: " ++ @typename(T)),
         },
     };
 }
@@ -1809,7 +1809,7 @@ pub fn run(b: *Build, argv: []const []const u8) []u8 {
     return b.runAllowFail(argv, &code, .Inherit) catch |err| {
         const printed_cmd = allocPrintCmd(b.allocator, null, argv) catch @panic("OOM");
         std.debug.print("unable to spawn the following command: {s}\n{s}\n", .{
-            @errorName(err), printed_cmd,
+            @errorname(err), printed_cmd,
         });
         process.exit(1);
     };
@@ -1887,10 +1887,10 @@ inline fn findImportPkgHashOrFatal(b: *Build, comptime asking_build_zig: type, c
     const build_runner = @import("root");
     const deps = build_runner.dependencies;
 
-    const b_pkg_hash, const b_pkg_deps = comptime for (@typeInfo(deps.packages).Struct.decls) |decl| {
+    const b_pkg_hash, const b_pkg_deps = comptime for (@typeinfo(deps.packages).Struct.decls) |decl| {
         const pkg_hash = decl.name;
         const pkg = @field(deps.packages, pkg_hash);
-        if (@hasDecl(pkg, "build_zig") and pkg.build_zig == asking_build_zig) break .{ pkg_hash, pkg.deps };
+        if (@hasdecl(pkg, "build_zig") and pkg.build_zig == asking_build_zig) break .{ pkg_hash, pkg.deps };
     } else .{ "", deps.root_deps };
     if (!std.mem.eql(u8, b_pkg_hash, b.pkg_hash)) {
         std.debug.panic("'{}' is not the struct that corresponds to '{s}'", .{ asking_build_zig, b.pathFromRoot("build.zig") });
@@ -1925,15 +1925,15 @@ pub fn lazyDependency(b: *Build, name: []const u8, args: anytype) ?*Dependency {
     const deps = build_runner.dependencies;
     const pkg_hash = findPkgHashOrFatal(b, name);
 
-    inline for (@typeInfo(deps.packages).Struct.decls) |decl| {
+    inline for (@typeinfo(deps.packages).Struct.decls) |decl| {
         if (mem.eql(u8, decl.name, pkg_hash)) {
             const pkg = @field(deps.packages, decl.name);
-            const available = !@hasDecl(pkg, "available") or pkg.available;
+            const available = !@hasdecl(pkg, "available") or pkg.available;
             if (!available) {
                 markNeededLazyDep(b, pkg_hash);
                 return null;
             }
-            return dependencyInner(b, name, pkg.build_root, if (@hasDecl(pkg, "build_zig")) pkg.build_zig else null, pkg_hash, pkg.deps, args);
+            return dependencyInner(b, name, pkg.build_root, if (@hasdecl(pkg, "build_zig")) pkg.build_zig else null, pkg_hash, pkg.deps, args);
         }
     }
 
@@ -1945,13 +1945,13 @@ pub fn dependency(b: *Build, name: []const u8, args: anytype) *Dependency {
     const deps = build_runner.dependencies;
     const pkg_hash = findPkgHashOrFatal(b, name);
 
-    inline for (@typeInfo(deps.packages).Struct.decls) |decl| {
+    inline for (@typeinfo(deps.packages).Struct.decls) |decl| {
         if (mem.eql(u8, decl.name, pkg_hash)) {
             const pkg = @field(deps.packages, decl.name);
-            if (@hasDecl(pkg, "available")) {
+            if (@hasdecl(pkg, "available")) {
                 std.debug.panic("dependency '{s}{s}' is marked as lazy in build.zig.zon which means it must use the lazyDependency function instead", .{ b.dep_prefix, name });
             }
-            return dependencyInner(b, name, pkg.build_root, if (@hasDecl(pkg, "build_zig")) pkg.build_zig else null, pkg_hash, pkg.deps, args);
+            return dependencyInner(b, name, pkg.build_root, if (@hasdecl(pkg, "build_zig")) pkg.build_zig else null, pkg_hash, pkg.deps, args);
         }
     }
 
@@ -1975,18 +1975,18 @@ pub inline fn lazyImport(
     const deps = build_runner.dependencies;
     const pkg_hash = findImportPkgHashOrFatal(b, asking_build_zig, dep_name);
 
-    inline for (@typeInfo(deps.packages).Struct.decls) |decl| {
+    inline for (@typeinfo(deps.packages).Struct.decls) |decl| {
         if (comptime mem.eql(u8, decl.name, pkg_hash)) {
             const pkg = @field(deps.packages, decl.name);
-            const available = !@hasDecl(pkg, "available") or pkg.available;
+            const available = !@hasdecl(pkg, "available") or pkg.available;
             if (!available) {
                 markNeededLazyDep(b, pkg_hash);
                 return null;
             }
-            return if (@hasDecl(pkg, "build_zig"))
+            return if (@hasdecl(pkg, "build_zig"))
                 pkg.build_zig
             else
-                @compileError("dependency '" ++ dep_name ++ "' does not have a build.zig");
+                @compileerror("dependency '" ++ dep_name ++ "' does not have a build.zig");
         }
     }
 
@@ -2004,10 +2004,10 @@ pub fn dependencyFromBuildZig(
     const deps = build_runner.dependencies;
 
     find_dep: {
-        const pkg, const pkg_hash = inline for (@typeInfo(deps.packages).Struct.decls) |decl| {
+        const pkg, const pkg_hash = inline for (@typeinfo(deps.packages).Struct.decls) |decl| {
             const pkg_hash = decl.name;
             const pkg = @field(deps.packages, pkg_hash);
-            if (@hasDecl(pkg, "build_zig") and pkg.build_zig == build_zig) break .{ pkg, pkg_hash };
+            if (@hasdecl(pkg, "build_zig") and pkg.build_zig == build_zig) break .{ pkg, pkg_hash };
         } else break :find_dep;
         const dep_name = for (b.available_deps) |dep| {
             if (mem.eql(u8, dep[1], pkg_hash)) break dep[1];
@@ -2086,7 +2086,7 @@ fn dependencyInner(
         .path = build_root_string,
         .handle = fs.cwd().openDir(build_root_string, .{}) catch |err| {
             std.debug.print("unable to open '{s}': {s}\n", .{
-                build_root_string, @errorName(err),
+                build_root_string, @errorname(err),
             });
             process.exit(1);
         },
@@ -2097,7 +2097,7 @@ fn dependencyInner(
         sub_builder.runBuild(bz) catch @panic("unhandled error");
 
         if (sub_builder.validateUserInputDidItFail()) {
-            std.debug.dumpCurrentStackTrace(@returnAddress());
+            std.debug.dumpCurrentStackTrace(@returnaddress());
         }
     }
 
@@ -2112,15 +2112,15 @@ fn dependencyInner(
 }
 
 pub fn runBuild(b: *Build, build_zig: anytype) anyerror!void {
-    switch (@typeInfo(@typeInfo(@TypeOf(build_zig.build)).Fn.return_type.?)) {
+    switch (@typeinfo(@typeinfo(@TypeOf(build_zig.build)).Fn.return_type.?)) {
         .Void => build_zig.build(b),
         .ErrorUnion => try build_zig.build(b),
-        else => @compileError("expected return type of build to be 'void' or '!void'"),
+        else => @compileerror("expected return type of build to be 'void' or '!void'"),
     }
 }
 
 /// A file that is generated by a build step.
-/// This struct is an interface that is meant to be used with `@fieldParentPtr` to implement the actual path logic.
+/// This struct is an interface that is meant to be used with `@fieldparentptr` to implement the actual path logic.
 pub const GeneratedFile = struct {
     /// The step that generates the file
     step: *Step,
@@ -2496,7 +2496,7 @@ pub fn makeTempPath(b: *Build) []const u8 {
     const result_path = b.cache_root.join(b.allocator, &.{tmp_dir_sub_path}) catch @panic("OOM");
     b.cache_root.handle.makePath(tmp_dir_sub_path) catch |err| {
         std.debug.print("unable to make tmp path '{s}': {s}\n", .{
-            result_path, @errorName(err),
+            result_path, @errorname(err),
         });
     };
     return result_path;
@@ -2509,7 +2509,7 @@ pub fn hex64(x: u64) [16]u8 {
     var result: [16]u8 = undefined;
     var i: usize = 0;
     while (i < 8) : (i += 1) {
-        const byte: u8 = @truncate(x >> @as(u6, @intCast(8 * i)));
+        const byte: u8 = @truncate(x >> @as(u6, @intcast(8 * i)));
         result[i * 2 + 0] = hex_charset[byte >> 4];
         result[i * 2 + 1] = hex_charset[byte & 15];
     }

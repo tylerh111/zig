@@ -1,5 +1,5 @@
 pub export fn entry1() void {
-    @setEvalBranchQuota(1001);
+    @setevalbranchquota(1001);
     // Return type evaluation should inherit both the
     // parent's branch quota and count meaning
     // at least 2002 backwards branches are required.
@@ -8,7 +8,7 @@ pub export fn entry1() void {
     _ = simple(10);
 }
 pub export fn entry2() void {
-    @setEvalBranchQuota(2001);
+    @setevalbranchquota(2001);
     comptime var i = 0;
     inline while (i < 1000) : (i += 1) {}
     _ = simple(10);
@@ -26,5 +26,5 @@ fn Type(comptime n: usize) type {
 // target=native
 //
 // :21:16: error: evaluation exceeded 1001 backwards branches
-// :21:16: note: use @setEvalBranchQuota() to raise the branch limit from 1001
+// :21:16: note: use @setevalbranchquota() to raise the branch limit from 1001
 // :16:34: note: called from here

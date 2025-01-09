@@ -1,4 +1,4 @@
-const foo = @compileError(
+const foo = @compileerror(
     "aoeu",
 );
 

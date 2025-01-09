@@ -4,10 +4,10 @@ const tests = @import("tests.zig");
 
 pub fn addCases(cases: *tests.CompareOutputContext) void {
     cases.addC("hello world with libc",
-        \\const c = @cImport({
+        \\const c = @cimport({
         \\    // See https://github.com/ziglang/zig/issues/515
-        \\    @cDefine("_NO_CRT_STDIO_INLINE", "1");
-        \\    @cInclude("stdio.h");
+        \\    @cdefine("_NO_CRT_STDIO_INLINE", "1");
+        \\    @cinclude("stdio.h");
         \\});
         \\pub export fn main(argc: c_int, argv: [*][*]u8) c_int {
         \\    _ = argc;
@@ -30,14 +30,14 @@ pub fn addCases(cases: *tests.CompareOutputContext) void {
         \\const std = @import("std");
         \\const builtin = @import("builtin");
         \\const is_windows = builtin.os.tag == .windows;
-        \\const c = @cImport({
+        \\const c = @cimport({
         \\    if (is_windows) {
         \\        // See https://github.com/ziglang/zig/issues/515
-        \\        @cDefine("_NO_CRT_STDIO_INLINE", "1");
-        \\        @cInclude("io.h");
-        \\        @cInclude("fcntl.h");
+        \\        @cdefine("_NO_CRT_STDIO_INLINE", "1");
+        \\        @cinclude("io.h");
+        \\        @cinclude("fcntl.h");
         \\    }
-        \\    @cInclude("stdio.h");
+        \\    @cinclude("stdio.h");
         \\});
         \\
         \\pub export fn main(argc: c_int, argv: [*][*]u8) c_int {
@@ -177,11 +177,11 @@ pub fn addCases(cases: *tests.CompareOutputContext) void {
     , "OK\n");
 
     cases.addC("expose function pointer to C land",
-        \\const c = @cImport(@cInclude("stdlib.h"));
+        \\const c = @cimport(@cinclude("stdlib.h"));
         \\
         \\export fn compare_fn(a: ?*const anyopaque, b: ?*const anyopaque) c_int {
-        \\    const a_int: *const i32 = @ptrCast(@alignCast(a));
-        \\    const b_int: *const i32 = @ptrCast(@alignCast(b));
+        \\    const a_int: *const i32 = @ptrcast(@aligncast(a));
+        \\    const b_int: *const i32 = @ptrcast(@aligncast(b));
         \\    if (a_int.* < b_int.*) {
         \\        return -1;
         \\    } else if (a_int.* > b_int.*) {
@@ -194,7 +194,7 @@ pub fn addCases(cases: *tests.CompareOutputContext) void {
         \\pub export fn main() c_int {
         \\    var array = [_]u32{ 1, 7, 3, 2, 0, 9, 4, 8, 6, 5 };
         \\
-        \\    c.qsort(@ptrCast(&array), @intCast(array.len), @sizeOf(i32), compare_fn);
+        \\    c.qsort(@ptrcast(&array), @intcast(array.len), @sizeof(i32), compare_fn);
         \\
         \\    for (array, 0..) |item, i| {
         \\        if (item != i) {
@@ -210,14 +210,14 @@ pub fn addCases(cases: *tests.CompareOutputContext) void {
         \\const std = @import("std");
         \\const builtin = @import("builtin");
         \\const is_windows = builtin.os.tag == .windows;
-        \\const c = @cImport({
+        \\const c = @cimport({
         \\    if (is_windows) {
         \\        // See https://github.com/ziglang/zig/issues/515
-        \\        @cDefine("_NO_CRT_STDIO_INLINE", "1");
-        \\        @cInclude("io.h");
-        \\        @cInclude("fcntl.h");
+        \\        @cdefine("_NO_CRT_STDIO_INLINE", "1");
+        \\        @cinclude("io.h");
+        \\        @cinclude("fcntl.h");
         \\    }
-        \\    @cInclude("stdio.h");
+        \\    @cinclude("stdio.h");
         \\});
         \\
         \\pub export fn main(argc: c_int, argv: [*][*]u8) c_int {
@@ -229,8 +229,8 @@ pub fn addCases(cases: *tests.CompareOutputContext) void {
         \\    }
         \\    const small: f32 = 3.25;
         \\    const x: f64 = small;
-        \\    const y: i32 = @intFromFloat(x);
-        \\    const z: f64 = @floatFromInt(y);
+        \\    const y: i32 = @intfromfloat(x);
+        \\    const z: f64 = @floatfromint(y);
         \\    _ = c.printf("%.2f\n%d\n%.2f\n%.2f\n", x, y, z, @as(f64, -0.4));
         \\    return 0;
         \\}
@@ -339,8 +339,8 @@ pub fn addCases(cases: *tests.CompareOutputContext) void {
     , "before\nafter\ndefer3\ndefer1\n");
 
     cases.addCase(x: {
-        var tc = cases.create("@embedFile",
-            \\const foo_txt = @embedFile("foo.txt");
+        var tc = cases.create("@embedfile",
+            \\const foo_txt = @embedfile("foo.txt");
             \\const io = @import("std").io;
             \\
             \\pub fn main() void {
@@ -478,7 +478,7 @@ pub fn addCases(cases: *tests.CompareOutputContext) void {
         \\    args: anytype,
         \\) void {
         \\    const level_txt = comptime level.asText();
-        \\    const prefix2 = if (scope == .default) ": " else "(" ++ @tagName(scope) ++ "):";
+        \\    const prefix2 = if (scope == .default) ": " else "(" ++ @tagname(scope) ++ "):";
         \\    const stdout = std.io.getStdOut().writer();
         \\    nosuspend stdout.print(level_txt ++ prefix2 ++ format ++ "\n", args) catch return;
         \\}
@@ -524,7 +524,7 @@ pub fn addCases(cases: *tests.CompareOutputContext) void {
         \\    args: anytype,
         \\) void {
         \\    const level_txt = comptime level.asText();
-        \\    const prefix2 = if (scope == .default) ": " else "(" ++ @tagName(scope) ++ "): ";
+        \\    const prefix2 = if (scope == .default) ": " else "(" ++ @tagname(scope) ++ "): ";
         \\    const stdout = std.io.getStdOut().writer();
         \\    nosuspend stdout.print(level_txt ++ prefix2 ++ format ++ "\n", args) catch return;
         \\}

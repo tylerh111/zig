@@ -80,7 +80,7 @@ pub fn Blake2s(comptime out_bits: usize) type {
 
             const key_len = if (options.key) |key| key.len else 0;
             // default parameters
-            d.h[0] ^= 0x01010000 ^ @as(u32, @truncate(key_len << 8)) ^ @as(u32, @intCast(options.expected_out_bits >> 3));
+            d.h[0] ^= 0x01010000 ^ @as(u32, @truncate(key_len << 8)) ^ @as(u32, @intcast(options.expected_out_bits >> 3));
             d.t = 0;
             d.buf_len = 0;
 
@@ -127,7 +127,7 @@ pub fn Blake2s(comptime out_bits: usize) type {
             // Copy any remainder for next pass.
             const b_slice = b[off..];
             @memcpy(d.buf[d.buf_len..][0..b_slice.len], b_slice);
-            d.buf_len += @as(u8, @intCast(b_slice.len));
+            d.buf_len += @as(u8, @intcast(b_slice.len));
         }
 
         pub fn final(d: *Self, out: *[digest_length]u8) void {
@@ -135,7 +135,7 @@ pub fn Blake2s(comptime out_bits: usize) type {
             d.t += d.buf_len;
             d.round(d.buf[0..], true);
             for (&d.h) |*x| x.* = mem.nativeToLittle(u32, x.*);
-            out.* = @as(*[digest_length]u8, @ptrCast(&d.h)).*;
+            out.* = @as(*[digest_length]u8, @ptrcast(&d.h)).*;
         }
 
         fn round(d: *Self, b: *const [64]u8, last: bool) void {
@@ -153,7 +153,7 @@ pub fn Blake2s(comptime out_bits: usize) type {
             }
 
             v[12] ^= @as(u32, @truncate(d.t));
-            v[13] ^= @as(u32, @intCast(d.t >> 32));
+            v[13] ^= @as(u32, @intcast(d.t >> 32));
             if (last) v[14] = ~v[14];
 
             const rounds = comptime [_]RoundParam{
@@ -267,7 +267,7 @@ test "blake2s160 streaming" {
 test "comptime blake2s160" {
     //comptime
     {
-        @setEvalBranchQuota(10000);
+        @setevalbranchquota(10000);
         var block = [_]u8{0} ** Blake2s160.block_length;
         var out: [Blake2s160.digest_length]u8 = undefined;
 
@@ -349,7 +349,7 @@ test "blake2s224 streaming" {
 
 test "comptime blake2s224" {
     comptime {
-        @setEvalBranchQuota(10000);
+        @setevalbranchquota(10000);
         var block = [_]u8{0} ** Blake2s224.block_length;
         var out: [Blake2s224.digest_length]u8 = undefined;
 
@@ -441,7 +441,7 @@ test "blake2s256 keyed" {
 
 test "comptime blake2s256" {
     comptime {
-        @setEvalBranchQuota(10000);
+        @setevalbranchquota(10000);
         var block = [_]u8{0} ** Blake2s256.block_length;
         var out: [Blake2s256.digest_length]u8 = undefined;
 
@@ -563,7 +563,7 @@ pub fn Blake2b(comptime out_bits: usize) type {
             // Copy any remainder for next pass.
             const b_slice = b[off..];
             @memcpy(d.buf[d.buf_len..][0..b_slice.len], b_slice);
-            d.buf_len += @as(u8, @intCast(b_slice.len));
+            d.buf_len += @as(u8, @intcast(b_slice.len));
         }
 
         pub fn final(d: *Self, out: *[digest_length]u8) void {
@@ -571,7 +571,7 @@ pub fn Blake2b(comptime out_bits: usize) type {
             d.t += d.buf_len;
             d.round(d.buf[0..], true);
             for (&d.h) |*x| x.* = mem.nativeToLittle(u64, x.*);
-            out.* = @as(*[digest_length]u8, @ptrCast(&d.h)).*;
+            out.* = @as(*[digest_length]u8, @ptrcast(&d.h)).*;
         }
 
         fn round(d: *Self, b: *const [128]u8, last: bool) void {
@@ -589,7 +589,7 @@ pub fn Blake2b(comptime out_bits: usize) type {
             }
 
             v[12] ^= @as(u64, @truncate(d.t));
-            v[13] ^= @as(u64, @intCast(d.t >> 64));
+            v[13] ^= @as(u64, @intcast(d.t >> 64));
             if (last) v[14] = ~v[14];
 
             const rounds = comptime [_]RoundParam{
@@ -697,7 +697,7 @@ test "blake2b160 streaming" {
 
 test "comptime blake2b160" {
     comptime {
-        @setEvalBranchQuota(10000);
+        @setevalbranchquota(10000);
         var block = [_]u8{0} ** Blake2b160.block_length;
         var out: [Blake2b160.digest_length]u8 = undefined;
 
@@ -786,7 +786,7 @@ test "blake2b384 streaming" {
 
 test "comptime blake2b384" {
     comptime {
-        @setEvalBranchQuota(10000);
+        @setevalbranchquota(10000);
         var block = [_]u8{0} ** Blake2b384.block_length;
         var out: [Blake2b384.digest_length]u8 = undefined;
 
@@ -878,7 +878,7 @@ test "blake2b512 keyed" {
 
 test "comptime blake2b512" {
     comptime {
-        @setEvalBranchQuota(10000);
+        @setevalbranchquota(10000);
         var block = [_]u8{0} ** Blake2b512.block_length;
         var out: [Blake2b512.digest_length]u8 = undefined;
 

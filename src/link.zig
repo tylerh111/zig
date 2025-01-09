@@ -215,7 +215,7 @@ pub const File = struct {
     }
 
     pub fn cast(base: *File, comptime T: type) ?*T {
-        return if (base.tag == T.base_tag) @fieldParentPtr("base", base) else null;
+        return if (base.tag == T.base_tag) @fieldparentptr("base", base) else null;
     }
 
     pub fn makeWritable(base: *File) !void {
@@ -229,7 +229,7 @@ pub const File = struct {
                 if (base.child_pid) |pid| {
                     if (builtin.os.tag == .windows) {
                         base.cast(Coff).?.ptraceAttach(pid) catch |err| {
-                            log.warn("attaching failed with error: {s}", .{@errorName(err)});
+                            log.warn("attaching failed with error: {s}", .{@errorname(err)});
                         };
                     } else {
                         // If we try to open the output file in write mode while it is running,
@@ -244,10 +244,10 @@ pub const File = struct {
                         try emit.directory.handle.rename(tmp_sub_path, emit.sub_path);
                         switch (builtin.os.tag) {
                             .linux => std.posix.ptrace(std.os.linux.PTRACE.ATTACH, pid, 0, 0) catch |err| {
-                                log.warn("ptrace failure: {s}", .{@errorName(err)});
+                                log.warn("ptrace failure: {s}", .{@errorname(err)});
                             },
                             .macos => base.cast(MachO).?.ptraceAttach(pid) catch |err| {
-                                log.warn("attaching failed with error: {s}", .{@errorName(err)});
+                                log.warn("attaching failed with error: {s}", .{@errorname(err)});
                             },
                             .windows => unreachable,
                             else => return error.HotSwapUnavailableOnHostOperatingSystem,
@@ -295,7 +295,7 @@ pub const File = struct {
                 if (base.child_pid) |pid| {
                     switch (builtin.os.tag) {
                         .linux => std.posix.ptrace(std.os.linux.PTRACE.DETACH, pid, 0, 0) catch |err| {
-                            log.warn("ptrace failure: {s}", .{@errorName(err)});
+                            log.warn("ptrace failure: {s}", .{@errorname(err)});
                         },
                         else => return error.HotSwapUnavailableOnHostOperatingSystem,
                     }
@@ -314,7 +314,7 @@ pub const File = struct {
                 if (base.child_pid) |pid| {
                     switch (builtin.os.tag) {
                         .macos => base.cast(MachO).?.ptraceDetach(pid) catch |err| {
-                            log.warn("detaching failed with error: {s}", .{@errorName(err)});
+                            log.warn("detaching failed with error: {s}", .{@errorname(err)});
                         },
                         .windows => base.cast(Coff).?.ptraceDetach(pid),
                         else => return error.HotSwapUnavailableOnHostOperatingSystem,
@@ -366,13 +366,13 @@ pub const File = struct {
     /// constant. Returns the symbol index of the lowered constant in the read-only section
     /// of the final binary.
     pub fn lowerUnnamedConst(base: *File, val: Value, decl_index: InternPool.DeclIndex) UpdateDeclError!u32 {
-        if (build_options.only_c) @compileError("unreachable");
+        if (build_options.only_c) @compileerror("unreachable");
         switch (base.tag) {
             .spirv => unreachable,
             .c => unreachable,
             .nvptx => unreachable,
             inline else => |t| {
-                return @as(*t.Type(), @fieldParentPtr("base", base)).lowerUnnamedConst(val, decl_index);
+                return @as(*t.Type(), @fieldparentptr("base", base)).lowerUnnamedConst(val, decl_index);
             },
         }
     }
@@ -383,7 +383,7 @@ pub const File = struct {
     /// Optionally, it is possible to specify where to expect the symbol defined if it
     /// is an import.
     pub fn getGlobalSymbol(base: *File, name: []const u8, lib_name: ?[]const u8) UpdateDeclError!u32 {
-        if (build_options.only_c) @compileError("unreachable");
+        if (build_options.only_c) @compileerror("unreachable");
         log.debug("getGlobalSymbol '{s}' (expected in '{?s}')", .{ name, lib_name });
         switch (base.tag) {
             .plan9 => unreachable,
@@ -391,7 +391,7 @@ pub const File = struct {
             .c => unreachable,
             .nvptx => unreachable,
             inline else => |t| {
-                return @as(*t.Type(), @fieldParentPtr("base", base)).getGlobalSymbol(name, lib_name);
+                return @as(*t.Type(), @fieldparentptr("base", base)).getGlobalSymbol(name, lib_name);
             },
         }
     }
@@ -403,7 +403,7 @@ pub const File = struct {
         switch (base.tag) {
             inline else => |tag| {
                 if (tag != .c and build_options.only_c) unreachable;
-                return @as(*tag.Type(), @fieldParentPtr("base", base)).updateDecl(module, decl_index);
+                return @as(*tag.Type(), @fieldparentptr("base", base)).updateDecl(module, decl_index);
             },
         }
     }
@@ -419,7 +419,7 @@ pub const File = struct {
         switch (base.tag) {
             inline else => |tag| {
                 if (tag != .c and build_options.only_c) unreachable;
-                return @as(*tag.Type(), @fieldParentPtr("base", base)).updateFunc(module, func_index, air, liveness);
+                return @as(*tag.Type(), @fieldparentptr("base", base)).updateFunc(module, func_index, air, liveness);
             },
         }
     }
@@ -431,7 +431,7 @@ pub const File = struct {
             .spirv, .nvptx => {},
             inline else => |tag| {
                 if (tag != .c and build_options.only_c) unreachable;
-                return @as(*tag.Type(), @fieldParentPtr("base", base)).updateDeclLineNumber(module, decl_index);
+                return @as(*tag.Type(), @fieldparentptr("base", base)).updateDeclLineNumber(module, decl_index);
             },
         }
     }
@@ -455,7 +455,7 @@ pub const File = struct {
         switch (base.tag) {
             inline else => |tag| {
                 if (tag != .c and build_options.only_c) unreachable;
-                @as(*tag.Type(), @fieldParentPtr("base", base)).deinit();
+                @as(*tag.Type(), @fieldparentptr("base", base)).deinit();
             },
         }
     }
@@ -538,7 +538,7 @@ pub const File = struct {
     pub fn flush(base: *File, arena: Allocator, prog_node: std.Progress.Node) FlushError!void {
         if (build_options.only_c) {
             assert(base.tag == .c);
-            return @as(*C, @fieldParentPtr("base", base)).flush(arena, prog_node);
+            return @as(*C, @fieldparentptr("base", base)).flush(arena, prog_node);
         }
         const comp = base.comp;
         if (comp.clang_preprocessor_mode == .yes or comp.clang_preprocessor_mode == .pch) {
@@ -565,7 +565,7 @@ pub const File = struct {
         }
         switch (base.tag) {
             inline else => |tag| {
-                return @as(*tag.Type(), @fieldParentPtr("base", base)).flush(arena, prog_node);
+                return @as(*tag.Type(), @fieldparentptr("base", base)).flush(arena, prog_node);
             },
         }
     }
@@ -576,7 +576,7 @@ pub const File = struct {
         switch (base.tag) {
             inline else => |tag| {
                 if (tag != .c and build_options.only_c) unreachable;
-                return @as(*tag.Type(), @fieldParentPtr("base", base)).flushModule(arena, prog_node);
+                return @as(*tag.Type(), @fieldparentptr("base", base)).flushModule(arena, prog_node);
             },
         }
     }
@@ -586,7 +586,7 @@ pub const File = struct {
         switch (base.tag) {
             inline else => |tag| {
                 if (tag != .c and build_options.only_c) unreachable;
-                @as(*tag.Type(), @fieldParentPtr("base", base)).freeDecl(decl_index);
+                @as(*tag.Type(), @fieldparentptr("base", base)).freeDecl(decl_index);
             },
         }
     }
@@ -609,7 +609,7 @@ pub const File = struct {
         switch (base.tag) {
             inline else => |tag| {
                 if (tag != .c and build_options.only_c) unreachable;
-                return @as(*tag.Type(), @fieldParentPtr("base", base)).updateExports(module, exported, exports);
+                return @as(*tag.Type(), @fieldparentptr("base", base)).updateExports(module, exported, exports);
             },
         }
     }
@@ -627,13 +627,13 @@ pub const File = struct {
     /// May be called before or after updateFunc/updateDecl therefore it is up to the linker to allocate
     /// the block/atom.
     pub fn getDeclVAddr(base: *File, decl_index: InternPool.DeclIndex, reloc_info: RelocInfo) !u64 {
-        if (build_options.only_c) @compileError("unreachable");
+        if (build_options.only_c) @compileerror("unreachable");
         switch (base.tag) {
             .c => unreachable,
             .spirv => unreachable,
             .nvptx => unreachable,
             inline else => |tag| {
-                return @as(*tag.Type(), @fieldParentPtr("base", base)).getDeclVAddr(decl_index, reloc_info);
+                return @as(*tag.Type(), @fieldparentptr("base", base)).getDeclVAddr(decl_index, reloc_info);
             },
         }
     }
@@ -646,25 +646,25 @@ pub const File = struct {
         decl_align: InternPool.Alignment,
         src_loc: Module.SrcLoc,
     ) !LowerResult {
-        if (build_options.only_c) @compileError("unreachable");
+        if (build_options.only_c) @compileerror("unreachable");
         switch (base.tag) {
             .c => unreachable,
             .spirv => unreachable,
             .nvptx => unreachable,
             inline else => |tag| {
-                return @as(*tag.Type(), @fieldParentPtr("base", base)).lowerAnonDecl(decl_val, decl_align, src_loc);
+                return @as(*tag.Type(), @fieldparentptr("base", base)).lowerAnonDecl(decl_val, decl_align, src_loc);
             },
         }
     }
 
     pub fn getAnonDeclVAddr(base: *File, decl_val: InternPool.Index, reloc_info: RelocInfo) !u64 {
-        if (build_options.only_c) @compileError("unreachable");
+        if (build_options.only_c) @compileerror("unreachable");
         switch (base.tag) {
             .c => unreachable,
             .spirv => unreachable,
             .nvptx => unreachable,
             inline else => |tag| {
-                return @as(*tag.Type(), @fieldParentPtr("base", base)).getAnonDeclVAddr(decl_val, reloc_info);
+                return @as(*tag.Type(), @fieldparentptr("base", base)).getAnonDeclVAddr(decl_val, reloc_info);
             },
         }
     }
@@ -674,7 +674,7 @@ pub const File = struct {
         decl_index: InternPool.DeclIndex,
         name: InternPool.NullTerminatedString,
     ) !void {
-        if (build_options.only_c) @compileError("unreachable");
+        if (build_options.only_c) @compileerror("unreachable");
         switch (base.tag) {
             .plan9,
             .c,
@@ -683,7 +683,7 @@ pub const File = struct {
             => {},
 
             inline else => |tag| {
-                return @as(*tag.Type(), @fieldParentPtr("base", base)).deleteDeclExport(decl_index, name);
+                return @as(*tag.Type(), @fieldparentptr("base", base)).deleteDeclExport(decl_index, name);
             },
         }
     }
@@ -761,7 +761,7 @@ pub const File = struct {
                 id_symlink_basename,
                 &prev_digest_buf,
             ) catch |err| b: {
-                log.debug("archive new_digest={s} readFile error: {s}", .{ std.fmt.fmtSliceHexLower(&digest), @errorName(err) });
+                log.debug("archive new_digest={s} readFile error: {s}", .{ std.fmt.fmtSliceHexLower(&digest), @errorname(err) });
                 break :b prev_digest_buf[0..0];
             };
             if (mem.eql(u8, prev_digest, &digest)) {
@@ -818,12 +818,12 @@ pub const File = struct {
 
         if (!base.disable_lld_caching) {
             Cache.writeSmallFile(directory.handle, id_symlink_basename, &digest) catch |err| {
-                log.warn("failed to save archive hash digest file: {s}", .{@errorName(err)});
+                log.warn("failed to save archive hash digest file: {s}", .{@errorname(err)});
             };
 
             if (man.have_exclusive_lock) {
                 man.writeManifest() catch |err| {
-                    log.warn("failed to write cache manifest when archiving: {s}", .{@errorName(err)});
+                    log.warn("failed to write cache manifest when archiving: {s}", .{@errorname(err)});
                 };
             }
 
@@ -1032,7 +1032,7 @@ pub fn spawnLld(
 
                 const rsp_file = try comp.local_cache_directory.handle.createFileZ(rsp_path, .{});
                 defer comp.local_cache_directory.handle.deleteFileZ(rsp_path) catch |err|
-                    log.warn("failed to delete response file {s}: {s}", .{ rsp_path, @errorName(err) });
+                    log.warn("failed to delete response file {s}: {s}", .{ rsp_path, @errorname(err) });
                 {
                     defer rsp_file.close();
                     var rsp_buf = std.io.bufferedWriter(rsp_file.writer());
@@ -1075,7 +1075,7 @@ pub fn spawnLld(
             },
             else => first_err,
         };
-        log.err("unable to spawn {s}: {s}", .{ argv[0], @errorName(err) });
+        log.err("unable to spawn {s}: {s}", .{ argv[0], @errorname(err) });
         return error.UnableToSpawnSelf;
     };
 

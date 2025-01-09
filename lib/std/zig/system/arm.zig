@@ -151,7 +151,7 @@ pub const cpu_models = struct {
 
 pub const aarch64 = struct {
     fn setFeature(cpu: *Target.Cpu, feature: Target.aarch64.Feature, enabled: bool) void {
-        const idx = @as(Target.Cpu.Feature.Set.Index, @intFromEnum(feature));
+        const idx = @as(Target.Cpu.Feature.Set.Index, @intfromenum(feature));
 
         if (enabled) cpu.features.addFeature(idx) else cpu.features.removeFeature(idx);
     }
@@ -206,7 +206,7 @@ pub const aarch64 = struct {
                 }
             }
 
-            info.variant |= @as(u8, @intCast(@as(u4, @truncate(midr >> 20)))) << 4;
+            info.variant |= @as(u8, @intcast(@as(u4, @truncate(midr >> 20)))) << 4;
             info.variant |= @as(u4, @truncate(midr));
             info.architecture = @as(u4, @truncate(midr >> 16));
         }

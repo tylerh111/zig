@@ -111,7 +111,7 @@ fn randomCommandLineW(allocator: Allocator, rand: std.rand.Random) ![:0]const u1
 fn spawnVerify(verify_path: [:0]const u16, cmd_line: [:0]const u16) !windows.DWORD {
     const child_proc = spawn: {
         var startup_info: windows.STARTUPINFOW = .{
-            .cb = @sizeOf(windows.STARTUPINFOW),
+            .cb = @sizeof(windows.STARTUPINFOW),
             .lpReserved = null,
             .lpDesktop = null,
             .lpTitle = null,
@@ -133,8 +133,8 @@ fn spawnVerify(verify_path: [:0]const u16, cmd_line: [:0]const u16) !windows.DWO
         var proc_info: windows.PROCESS_INFORMATION = undefined;
 
         try windows.CreateProcessW(
-            @constCast(verify_path.ptr),
-            @constCast(cmd_line.ptr),
+            @constcast(verify_path.ptr),
+            @constcast(cmd_line.ptr),
             null,
             null,
             windows.TRUE,

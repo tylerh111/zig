@@ -108,7 +108,7 @@ pub fn wideMultiply(comptime Z: type, a: Z, b: Z, hi: *Z, lo: *Z) void {
         u16 => {
             // 16x16 --> 32 bit multiply
             const product = @as(u32, a) * @as(u32, b);
-            hi.* = @intCast(product >> 16);
+            hi.* = @intcast(product >> 16);
             lo.* = @truncate(product);
         },
         u32 => {
@@ -213,36 +213,36 @@ pub fn wideMultiply(comptime Z: type, a: Z, b: Z, hi: *Z, lo: *Z) void {
                 (sum5 << 32) +%
                 (sum6 << 64);
         },
-        else => @compileError("unsupported"),
+        else => @compileerror("unsupported"),
     }
 }
 
-pub fn normalize(comptime T: type, significand: *std.meta.Int(.unsigned, @typeInfo(T).Float.bits)) i32 {
-    const Z = std.meta.Int(.unsigned, @typeInfo(T).Float.bits);
+pub fn normalize(comptime T: type, significand: *std.meta.Int(.unsigned, @typeinfo(T).Float.bits)) i32 {
+    const Z = std.meta.Int(.unsigned, @typeinfo(T).Float.bits);
     const integerBit = @as(Z, 1) << std.math.floatFractionalBits(T);
 
     const shift = @clz(significand.*) - @clz(integerBit);
-    significand.* <<= @as(std.math.Log2Int(Z), @intCast(shift));
+    significand.* <<= @as(std.math.Log2Int(Z), @intcast(shift));
     return @as(i32, 1) - shift;
 }
 
 pub inline fn fneg(a: anytype) @TypeOf(a) {
     const F = @TypeOf(a);
-    const bits = @typeInfo(F).Float.bits;
+    const bits = @typeinfo(F).Float.bits;
     const U = @Type(.{ .Int = .{
         .signedness = .unsigned,
         .bits = bits,
     } });
     const sign_bit_mask = @as(U, 1) << (bits - 1);
-    const negated = @as(U, @bitCast(a)) ^ sign_bit_mask;
-    return @bitCast(negated);
+    const negated = @as(U, @bitcast(a)) ^ sign_bit_mask;
+    return @bitcast(negated);
 }
 
 /// Allows to access underlying bits as two equally sized lower and higher
 /// signed or unsigned integers.
 pub fn HalveInt(comptime T: type, comptime signed_half: bool) type {
     return extern union {
-        pub const bits = @divExact(@typeInfo(T).Int.bits, 2);
+        pub const bits = @divexact(@typeinfo(T).Int.bits, 2);
         pub const HalfTU = std.meta.Int(.unsigned, bits);
         pub const HalfTS = std.meta.Int(.signed, bits);
         pub const HalfT = if (signed_half) HalfTS else HalfTU;

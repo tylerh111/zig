@@ -37,18 +37,18 @@ const Directive = enum {
 };
 
 fn beforePreprocess(pragma: *Pragma, comp: *Compilation) void {
-    var self: *GCC = @fieldParentPtr("pragma", pragma);
+    var self: *GCC = @fieldparentptr("pragma", pragma);
     self.original_options = comp.diagnostics.options;
 }
 
 fn beforeParse(pragma: *Pragma, comp: *Compilation) void {
-    var self: *GCC = @fieldParentPtr("pragma", pragma);
+    var self: *GCC = @fieldparentptr("pragma", pragma);
     comp.diagnostics.options = self.original_options;
     self.options_stack.items.len = 0;
 }
 
 fn afterParse(pragma: *Pragma, comp: *Compilation) void {
-    var self: *GCC = @fieldParentPtr("pragma", pragma);
+    var self: *GCC = @fieldparentptr("pragma", pragma);
     comp.diagnostics.options = self.original_options;
     self.options_stack.items.len = 0;
 }
@@ -60,7 +60,7 @@ pub fn init(allocator: mem.Allocator) !*Pragma {
 }
 
 fn deinit(pragma: *Pragma, comp: *Compilation) void {
-    var self: *GCC = @fieldParentPtr("pragma", pragma);
+    var self: *GCC = @fieldparentptr("pragma", pragma);
     self.options_stack.deinit(comp.gpa);
     comp.gpa.destroy(self);
 }
@@ -108,7 +108,7 @@ fn diagnosticHandler(self: *GCC, pp: *Preprocessor, start_idx: TokenIndex) Pragm
 }
 
 fn preprocessorHandler(pragma: *Pragma, pp: *Preprocessor, start_idx: TokenIndex) Pragma.Error!void {
-    var self: *GCC = @fieldParentPtr("pragma", pragma);
+    var self: *GCC = @fieldparentptr("pragma", pragma);
     const directive_tok = pp.tokens.get(start_idx + 1);
     if (directive_tok.id == .nl) return;
 
@@ -125,7 +125,7 @@ fn preprocessorHandler(pragma: *Pragma, pp: *Preprocessor, start_idx: TokenIndex
                     return pp.comp.addDiagnostic(.{
                         .tag = .pragma_requires_string_literal,
                         .loc = directive_tok.loc,
-                        .extra = .{ .str = @tagName(gcc_pragma) },
+                        .extra = .{ .str = @tagname(gcc_pragma) },
                     }, pp.expansionSlice(start_idx + 1));
                 },
                 else => |e| return e,
@@ -174,7 +174,7 @@ fn preprocessorHandler(pragma: *Pragma, pp: *Preprocessor, start_idx: TokenIndex
 }
 
 fn parserHandler(pragma: *Pragma, p: *Parser, start_idx: TokenIndex) Compilation.Error!void {
-    var self: *GCC = @fieldParentPtr("pragma", pragma);
+    var self: *GCC = @fieldparentptr("pragma", pragma);
     const directive_tok = p.pp.tokens.get(start_idx + 1);
     if (directive_tok.id == .nl) return;
     const name = p.pp.expandedSlice(directive_tok);

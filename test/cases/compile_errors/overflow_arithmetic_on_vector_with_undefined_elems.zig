@@ -1,17 +1,17 @@
 comptime {
     const a: @Vector(3, u8) = .{ 1, 200, undefined };
-    @compileLog(@addWithOverflow(a, a));
+    @compilelog(@addwithoverflow(a, a));
 }
 
 comptime {
     const a: @Vector(3, u8) = .{ 1, 2, undefined };
     const b: @Vector(3, u8) = .{ 0, 3, 10 };
-    @compileLog(@subWithOverflow(a, b));
+    @compilelog(@subwithoverflow(a, b));
 }
 
 comptime {
     const a: @Vector(3, u8) = .{ 1, 200, undefined };
-    @compileLog(@mulWithOverflow(a, a));
+    @compilelog(@mulwithoverflow(a, a));
 }
 
 // error

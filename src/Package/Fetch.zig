@@ -325,7 +325,7 @@ pub fn run(f: *Fetch) RunError!void {
                 // "p/$hash/foo", with possibly more directories after "foo".
                 // We want to fail unless the resolved relative path has a
                 // prefix of "p/$hash/".
-                const digest_len = @typeInfo(Manifest.MultiHashHexDigest).Array.len;
+                const digest_len = @typeinfo(Manifest.MultiHashHexDigest).Array.len;
                 const prefix_len: usize = if (f.job_queue.read_only) 0 else "p/".len;
                 const expected_prefix = f.parent_package_root.sub_path[0 .. prefix_len + digest_len];
                 if (!std.mem.startsWith(u8, pkg_root.sub_path, expected_prefix)) {
@@ -357,7 +357,7 @@ pub fn run(f: *Fetch) RunError!void {
                 const uri = std.Uri.parse(path_or_url) catch |uri_err| {
                     return f.fail(0, try eb.printString(
                         "'{s}' could not be recognized as a file path ({s}) or an URL ({s})",
-                        .{ path_or_url, @errorName(file_err), @errorName(uri_err) },
+                        .{ path_or_url, @errorname(file_err), @errorname(uri_err) },
                     ));
                 };
                 var server_header_buffer: [header_buffer_size]u8 = undefined;
@@ -402,7 +402,7 @@ pub fn run(f: *Fetch) RunError!void {
             else => |e| {
                 try eb.addRootErrorMessage(.{
                     .msg = try eb.printString("unable to open global package cache directory '{}{s}': {s}", .{
-                        cache_root, pkg_sub_path, @errorName(e),
+                        cache_root, pkg_sub_path, @errorname(e),
                     }),
                 });
                 return error.FetchFailed;
@@ -420,7 +420,7 @@ pub fn run(f: *Fetch) RunError!void {
 
     const uri = std.Uri.parse(remote.url) catch |err| return f.fail(
         f.location_tok,
-        try eb.printString("invalid URI: {s}", .{@errorName(err)}),
+        try eb.printString("invalid URI: {s}", .{@errorname(err)}),
     );
     var server_header_buffer: [header_buffer_size]u8 = undefined;
     var resource = try f.initResource(uri, &server_header_buffer);
@@ -457,7 +457,7 @@ fn runResource(
                 }) catch |err| {
                     try eb.addRootErrorMessage(.{
                         .msg = try eb.printString("unable to create temporary directory '{s}': {s}", .{
-                            tmp_directory_path, @errorName(err),
+                            tmp_directory_path, @errorname(err),
                         }),
                     });
                     return error.FetchFailed;
@@ -522,7 +522,7 @@ fn runResource(
         const dest = try cache_root.join(arena, &.{f.package_root.sub_path});
         try eb.addRootErrorMessage(.{ .msg = try eb.printString(
             "unable to rename temporary directory '{s}' into package cache directory '{s}': {s}",
-            .{ src, dest, @errorName(err) },
+            .{ src, dest, @errorname(err) },
         ) });
         return error.FetchFailed;
     };
@@ -550,7 +550,7 @@ fn runResource(
             .notes_len = notes_len,
         });
         const notes_start = try eb.reserveNotes(notes_len);
-        eb.extra.items[notes_start] = @intFromEnum(try eb.addErrorMessage(.{
+        eb.extra.items[notes_start] = @intfromenum(try eb.addErrorMessage(.{
             .msg = try eb.printString("expected .hash = \"{s}\",", .{&actual_hex}),
         }));
         return error.FetchFailed;
@@ -573,7 +573,7 @@ fn checkBuildFileExistence(f: *Fetch) RunError!void {
         else => |e| {
             try eb.addRootErrorMessage(.{
                 .msg = try eb.printString("unable to access '{}{s}': {s}", .{
-                    f.package_root, Package.build_zig_basename, @errorName(e),
+                    f.package_root, Package.build_zig_basename, @errorname(e),
                 }),
             });
             return error.FetchFailed;
@@ -598,7 +598,7 @@ fn loadManifest(f: *Fetch, pkg_root: Cache.Path) RunError!void {
             const file_path = try pkg_root.join(arena, Manifest.basename);
             try eb.addRootErrorMessage(.{
                 .msg = try eb.printString("unable to load package manifest '{}': {s}", .{
-                    file_path, @errorName(e),
+                    file_path, @errorname(e),
                 }),
             });
             return error.FetchFailed;
@@ -650,7 +650,7 @@ fn queueJobsForDeps(f: *Fetch) RunError!void {
         defer f.job_queue.mutex.unlock();
 
         try f.job_queue.all_fetches.ensureUnusedCapacity(gpa, new_fetches.len);
-        try f.job_queue.table.ensureUnusedCapacity(gpa, @intCast(new_fetches.len));
+        try f.job_queue.table.ensureUnusedCapacity(gpa, @intcast(new_fetches.len));
 
         // There are four cases here:
         // * Correct hash is provided by manifest.
@@ -670,7 +670,7 @@ fn queueJobsForDeps(f: *Fetch) RunError!void {
                     .url = url,
                     .hash = h: {
                         const h = dep.hash orelse break :h null;
-                        const digest_len = @typeInfo(Manifest.MultiHashHexDigest).Array.len;
+                        const digest_len = @typeinfo(Manifest.MultiHashHexDigest).Array.len;
                         const multihash_digest = h[0..digest_len].*;
                         const gop = f.job_queue.table.getOrPutAssumeCapacity(multihash_digest);
                         if (gop.found_existing) continue;
@@ -775,10 +775,10 @@ fn srcLoc(
     return eb.addSourceLocation(.{
         .src_path = src_path,
         .span_start = token_starts[tok],
-        .span_end = @intCast(token_starts[tok] + ast.tokenSlice(tok).len),
+        .span_end = @intcast(token_starts[tok] + ast.tokenSlice(tok).len),
         .span_main = token_starts[tok] + msg_off,
-        .line = @intCast(start_loc.line),
-        .column = @intCast(start_loc.column),
+        .line = @intcast(start_loc.line),
+        .column = @intcast(start_loc.column),
         .source_line = try eb.addString(ast.source[start_loc.line_start..start_loc.line_end]),
     });
 }
@@ -821,7 +821,7 @@ const Resource = union(enum) {
     }
 
     fn read(context: *const anyopaque, buffer: []u8) anyerror!usize {
-        const resource: *Resource = @constCast(@ptrCast(@alignCast(context)));
+        const resource: *Resource = @constcast(@ptrcast(@aligncast(context)));
         switch (resource.*) {
             .file => |*f| return f.read(buffer),
             .http_request => |*r| return r.read(buffer),
@@ -900,7 +900,7 @@ fn initResource(f: *Fetch, uri: std.Uri, server_header_buffer: []u8) RunError!Re
         const path = try uri.path.toRawMaybeAlloc(arena);
         return .{ .file = f.parent_package_root.openFile(path, .{}) catch |err| {
             return f.fail(f.location_tok, try eb.printString("unable to open '{}{s}': {s}", .{
-                f.parent_package_root, path, @errorName(err),
+                f.parent_package_root, path, @errorname(err),
             }));
         } };
     }
@@ -915,7 +915,7 @@ fn initResource(f: *Fetch, uri: std.Uri, server_header_buffer: []u8) RunError!Re
         }) catch |err| {
             return f.fail(f.location_tok, try eb.printString(
                 "unable to connect to server: {s}",
-                .{@errorName(err)},
+                .{@errorname(err)},
             ));
         };
         errdefer req.deinit(); // releases more than memory
@@ -923,20 +923,20 @@ fn initResource(f: *Fetch, uri: std.Uri, server_header_buffer: []u8) RunError!Re
         req.send() catch |err| {
             return f.fail(f.location_tok, try eb.printString(
                 "HTTP request failed: {s}",
-                .{@errorName(err)},
+                .{@errorname(err)},
             ));
         };
         req.wait() catch |err| {
             return f.fail(f.location_tok, try eb.printString(
                 "invalid HTTP response: {s}",
-                .{@errorName(err)},
+                .{@errorname(err)},
             ));
         };
 
         if (req.response.status != .ok) {
             return f.fail(f.location_tok, try eb.printString(
                 "bad HTTP response code: '{d} {s}'",
-                .{ @intFromEnum(req.response.status), req.response.status.phrase() orelse "" },
+                .{ @intfromenum(req.response.status), req.response.status.phrase() orelse "" },
             ));
         }
 
@@ -961,7 +961,7 @@ fn initResource(f: *Fetch, uri: std.Uri, server_header_buffer: []u8) RunError!Re
             else => |e| {
                 return f.fail(f.location_tok, try eb.printString(
                     "unable to discover remote git server capabilities: {s}",
-                    .{@errorName(e)},
+                    .{@errorname(e)},
                 ));
             },
         };
@@ -981,14 +981,14 @@ fn initResource(f: *Fetch, uri: std.Uri, server_header_buffer: []u8) RunError!Re
             }) catch |err| {
                 return f.fail(f.location_tok, try eb.printString(
                     "unable to list refs: {s}",
-                    .{@errorName(err)},
+                    .{@errorname(err)},
                 ));
             };
             defer ref_iterator.deinit();
             while (ref_iterator.next() catch |err| {
                 return f.fail(f.location_tok, try eb.printString(
                     "unable to iterate refs: {s}",
-                    .{@errorName(err)},
+                    .{@errorname(err)},
                 ));
             }) |ref| {
                 if (std.mem.eql(u8, ref.name, want_ref) or
@@ -1010,7 +1010,7 @@ fn initResource(f: *Fetch, uri: std.Uri, server_header_buffer: []u8) RunError!Re
                 .notes_len = notes_len,
             });
             const notes_start = try eb.reserveNotes(notes_len);
-            eb.extra.items[notes_start] = @intFromEnum(try eb.addErrorMessage(.{
+            eb.extra.items[notes_start] = @intfromenum(try eb.addErrorMessage(.{
                 .msg = try eb.printString("try .url = \"{;+/}#{}\",", .{
                     uri, std.fmt.fmtSliceHexLower(&want_oid),
                 }),
@@ -1025,7 +1025,7 @@ fn initResource(f: *Fetch, uri: std.Uri, server_header_buffer: []u8) RunError!Re
         var fetch_stream = session.fetch(gpa, &.{&want_oid_buf}, server_header_buffer) catch |err| {
             return f.fail(f.location_tok, try eb.printString(
                 "unable to create fetch stream: {s}",
-                .{@errorName(err)},
+                .{@errorname(err)},
             ));
         };
         errdefer fetch_stream.deinit();
@@ -1115,7 +1115,7 @@ fn unpackResource(
             f.recursiveDirectoryCopy(dir, tmp_directory.handle) catch |err| {
                 return f.fail(f.location_tok, try eb.printString(
                     "unable to copy directory '{s}': {s}",
-                    .{ uri_path, @errorName(err) },
+                    .{ uri_path, @errorname(err) },
                 ));
             };
             return .{};
@@ -1137,7 +1137,7 @@ fn unpackResource(
             var dcp = std.compress.xz.decompress(gpa, br.reader()) catch |err| {
                 return f.fail(f.location_tok, try eb.printString(
                     "unable to decompress tarball: {s}",
-                    .{@errorName(err)},
+                    .{@errorname(err)},
                 ));
             };
             defer dcp.deinit();
@@ -1158,7 +1158,7 @@ fn unpackResource(
             error.OutOfMemory => return error.OutOfMemory,
             else => |e| return f.fail(f.location_tok, try eb.printString(
                 "unable to unpack git files: {s}",
-                .{@errorName(e)},
+                .{@errorname(e)},
             )),
         },
         .zip => return try unzip(f, tmp_directory.handle, resource.reader()),
@@ -1178,7 +1178,7 @@ fn unpackTarball(f: *Fetch, out_dir: fs.Dir, reader: anytype) RunError!UnpackRes
         .exclude_empty_directories = true,
     }) catch |err| return f.fail(f.location_tok, try eb.printString(
         "unable to unpack tarball to temporary directory: {s}",
-        .{@errorName(err)},
+        .{@errorname(err)},
     ));
 
     var res: UnpackResult = .{ .root_dir = diagnostics.root_dir };
@@ -1188,7 +1188,7 @@ fn unpackTarball(f: *Fetch, out_dir: fs.Dir, reader: anytype) RunError!UnpackRes
             switch (item) {
                 .unable_to_create_file => |i| res.unableToCreateFile(stripRoot(i.file_name, res.root_dir), i.code),
                 .unable_to_create_sym_link => |i| res.unableToCreateSymLink(stripRoot(i.file_name, res.root_dir), i.link_name, i.code),
-                .unsupported_file_type => |i| res.unsupportedFileType(stripRoot(i.file_name, res.root_dir), @intFromEnum(i.file_type)),
+                .unsupported_file_type => |i| res.unsupportedFileType(stripRoot(i.file_name, res.root_dir), @intfromenum(i.file_type)),
             }
         }
     }
@@ -1239,19 +1239,19 @@ fn unzip(f: *Fetch, out_dir: fs.Dir, reader: anytype) RunError!UnpackResult {
             .{},
         ) catch |err| return f.fail(f.location_tok, try eb.printString(
             "failed to create tmp zip file: {s}",
-            .{@errorName(err)},
+            .{@errorname(err)},
         ));
         defer zip_file.close();
         var buf: [std.mem.page_size]u8 = undefined;
         while (true) {
             const len = reader.readAll(&buf) catch |err| return f.fail(f.location_tok, try eb.printString(
                 "read zip stream failed: {s}",
-                .{@errorName(err)},
+                .{@errorname(err)},
             ));
             if (len == 0) break;
             zip_file.writer().writeAll(buf[0..len]) catch |err| return f.fail(f.location_tok, try eb.printString(
                 "write temporary zip file failed: {s}",
-                .{@errorName(err)},
+                .{@errorname(err)},
             ));
         }
     }
@@ -1265,7 +1265,7 @@ fn unzip(f: *Fetch, out_dir: fs.Dir, reader: anytype) RunError!UnpackResult {
             .{},
         ) catch |err| return f.fail(f.location_tok, try eb.printString(
             "failed to open temporary zip file: {s}",
-            .{@errorName(err)},
+            .{@errorname(err)},
         ));
         defer zip_file.close();
 
@@ -1274,13 +1274,13 @@ fn unzip(f: *Fetch, out_dir: fs.Dir, reader: anytype) RunError!UnpackResult {
             .diagnostics = &diagnostics,
         }) catch |err| return f.fail(f.location_tok, try eb.printString(
             "zip extract failed: {s}",
-            .{@errorName(err)},
+            .{@errorname(err)},
         ));
     }
 
     cache_root.handle.deleteFile(&zip_path) catch |err| return f.fail(f.location_tok, try eb.printString(
         "delete temporary zip failed: {s}",
-        .{@errorName(err)},
+        .{@errorname(err)},
     ));
 
     const res: UnpackResult = .{ .root_dir = diagnostics.root_dir };
@@ -1454,7 +1454,7 @@ fn computeHash(
         while (walker.next() catch |err| {
             try eb.addRootErrorMessage(.{ .msg = try eb.printString(
                 "unable to walk temporary directory '{}': {s}",
-                .{ pkg_path, @errorName(err) },
+                .{ pkg_path, @errorname(err) },
             ) });
             return error.FetchFailed;
         }) |entry| {
@@ -1485,7 +1485,7 @@ fn computeHash(
                 .sym_link => .link,
                 else => return f.fail(f.location_tok, try eb.printString(
                     "package contains '{s}' which has illegal file type '{s}'",
-                    .{ entry.path, @tagName(entry.kind) },
+                    .{ entry.path, @tagname(entry.kind) },
                 )),
             };
 
@@ -1525,7 +1525,7 @@ fn computeHash(
                 else => |e| {
                     try eb.addRootErrorMessage(.{ .msg = try eb.printString(
                         "unable to delete empty directory '{s}': {s}",
-                        .{ sus_dir, @errorName(e) },
+                        .{ sus_dir, @errorname(e) },
                     ) });
                     return error.FetchFailed;
                 },
@@ -1545,7 +1545,7 @@ fn computeHash(
             any_failures = true;
             try eb.addRootErrorMessage(.{
                 .msg = try eb.printString("unable to hash '{s}': {s}", .{
-                    hashed_file.fs_path, @errorName(err),
+                    hashed_file.fs_path, @errorname(err),
                 }),
             });
         };
@@ -1556,7 +1556,7 @@ fn computeHash(
             any_failures = true;
             try eb.addRootErrorMessage(.{
                 .msg = try eb.printString("failed to delete excluded path '{s}' from package: {s}", .{
-                    deleted_file.fs_path, @errorName(err),
+                    deleted_file.fs_path, @errorname(err),
                 }),
             });
         };
@@ -1569,7 +1569,7 @@ fn computeHash(
         // Print something to stdout that can be text diffed to figure out why
         // the package hash is different.
         dumpHashInfo(all_files.items) catch |err| {
-            std.debug.print("unable to write to stdout: {s}\n", .{@errorName(err)});
+            std.debug.print("unable to write to stdout: {s}\n", .{@errorname(err)});
             std.process.exit(1);
         };
     }
@@ -1584,7 +1584,7 @@ fn dumpHashInfo(all_files: []const *const HashedFile) !void {
 
     for (all_files) |hashed_file| {
         try w.print("{s}: {s}: {s}\n", .{
-            @tagName(hashed_file.kind),
+            @tagname(hashed_file.kind),
             std.fmt.fmtSliceHexLower(&hashed_file.hash),
             hashed_file.normalized_path,
         });
@@ -1910,21 +1910,21 @@ const UnpackResult = struct {
             if (item.excluded(filter)) continue;
             switch (item) {
                 .unable_to_create_sym_link => |info| {
-                    eb.extra.items[note_i] = @intFromEnum(try eb.addErrorMessage(.{
+                    eb.extra.items[note_i] = @intfromenum(try eb.addErrorMessage(.{
                         .msg = try eb.printString("unable to create symlink from '{s}' to '{s}': {s}", .{
-                            info.file_name, info.link_name, @errorName(info.code),
+                            info.file_name, info.link_name, @errorname(info.code),
                         }),
                     }));
                 },
                 .unable_to_create_file => |info| {
-                    eb.extra.items[note_i] = @intFromEnum(try eb.addErrorMessage(.{
+                    eb.extra.items[note_i] = @intfromenum(try eb.addErrorMessage(.{
                         .msg = try eb.printString("unable to create file '{s}': {s}", .{
-                            info.file_name, @errorName(info.code),
+                            info.file_name, @errorname(info.code),
                         }),
                     }));
                 },
                 .unsupported_file_type => |info| {
-                    eb.extra.items[note_i] = @intFromEnum(try eb.addErrorMessage(.{
+                    eb.extra.items[note_i] = @intfromenum(try eb.addErrorMessage(.{
                         .msg = try eb.printString("file '{s}' has unsupported type '{c}'", .{
                             info.file_name, info.file_type,
                         }),
@@ -2222,7 +2222,7 @@ test "set executable bit based on file content" {
 
 fn saveEmbedFile(comptime tarball_name: []const u8, dir: fs.Dir) !void {
     //const tarball_name = "duplicate_paths_excluded.tar.gz";
-    const tarball_content = @embedFile("Fetch/testdata/" ++ tarball_name);
+    const tarball_content = @embedfile("Fetch/testdata/" ++ tarball_name);
     var tmp_file = try dir.createFile(tarball_name, .{});
     defer tmp_file.close();
     try tmp_file.writeAll(tarball_content);

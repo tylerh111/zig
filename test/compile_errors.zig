@@ -8,7 +8,7 @@ pub fn addCases(ctx: *Cases, b: *std.Build) !void {
 
         case.addError(
             \\comptime {
-            \\    @compileError("hello\nworld");
+            \\    @compileerror("hello\nworld");
             \\}
         , &[_][]const u8{
             \\:2:5: error: hello
@@ -17,7 +17,7 @@ pub fn addCases(ctx: *Cases, b: *std.Build) !void {
 
         case.addError(
             \\comptime {
-            \\    @compileError(
+            \\    @compileerror(
             \\        \\
             \\        \\hello!
             \\        \\I'm a multiline error message.
@@ -84,7 +84,7 @@ pub fn addCases(ctx: *Cases, b: *std.Build) !void {
 
         case.addError(
             \\pub export fn entry() void {
-            \\    _ = (@sizeOf(@import("b.zig")));
+            \\    _ = (@sizeof(@import("b.zig")));
             \\}
         , &[_][]const u8{
             ":1:1: error: expected type expression, found '+'",

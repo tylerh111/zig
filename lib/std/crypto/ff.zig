@@ -22,7 +22,7 @@ const Limb = usize;
 const carry_bits = 1;
 
 // The number of active bits in a Limb.
-const t_bits: usize = @bitSizeOf(Limb) - carry_bits;
+const t_bits: usize = @bitsizeof(Limb) - carry_bits;
 
 // A TLimb is a Limb that is truncated to t_bits.
 const TLimb = meta.Int(.unsigned, t_bits);
@@ -58,7 +58,7 @@ pub const Error = OverflowError || InvalidModulusError || NullExponentError || F
 /// An unsigned big integer with a fixed maximum size (`max_bits`), suitable for cryptographic operations.
 /// Unless side-channels mitigations are explicitly disabled, operations are designed to be constant-time.
 pub fn Uint(comptime max_bits: comptime_int) type {
-    comptime assert(@bitSizeOf(Limb) % 8 == 0); // Limb size must be a multiple of 8
+    comptime assert(@bitsizeof(Limb) % 8 == 0); // Limb size must be a multiple of 8
 
     return struct {
         const Self = @This();
@@ -109,7 +109,7 @@ pub fn Uint(comptime max_bits: comptime_int) type {
                 .limbs_len = max_limbs_count,
             };
             for (&out.limbs_buffer) |*limb| {
-                limb.* = if (@bitSizeOf(T) > t_bits) @as(TLimb, @truncate(x)) else x;
+                limb.* = if (@bitsizeof(T) > t_bits) @as(TLimb, @truncate(x)) else x;
                 x = math.shr(T, x, t_bits);
             }
             if (x != 0) {
@@ -124,7 +124,7 @@ pub fn Uint(comptime max_bits: comptime_int) type {
             var x: T = 0;
             var i = self.limbs_len - 1;
             while (true) : (i -= 1) {
-                if (@bitSizeOf(T) >= t_bits and math.shr(T, x, @bitSizeOf(T) - t_bits) != 0) {
+                if (@bitsizeof(T) >= t_bits and math.shr(T, x, @bitsizeof(T) - t_bits) != 0) {
                     return error.Overflow;
                 }
                 x = math.shl(T, x, t_bits);
@@ -253,12 +253,12 @@ pub fn Uint(comptime max_bits: comptime_int) type {
         }
 
         /// Adds `y` to `x`, and returns `true` if the operation overflowed.
-        pub fn addWithOverflow(x: *Self, y: Self) u1 {
+        pub fn addwithoverflow(x: *Self, y: Self) u1 {
             return x.conditionalAddWithOverflow(true, y);
         }
 
         /// Subtracts `y` from `x`, and returns `true` if the operation overflowed.
-        pub fn subWithOverflow(x: *Self, y: Self) u1 {
+        pub fn subwithoverflow(x: *Self, y: Self) u1 {
             return x.conditionalSubWithOverflow(true, y);
         }
 
@@ -319,7 +319,7 @@ fn Fe_(comptime bits: comptime_int) type {
         /// Creates a field element from a primitive.
         /// This function may not run in constant time.
         pub fn fromPrimitive(comptime T: type, m: Modulus(bits), x: T) (OverflowError || FieldElementError)!Self {
-            comptime assert(@bitSizeOf(T) <= bits); // Primitive type is larger than the modulus type.
+            comptime assert(@bitsizeof(T) <= bits); // Primitive type is larger than the modulus type.
             const v = try FeUint.fromPrimitive(T, x);
             var fe = Self{ .v = v };
             try m.shrink(&fe);
@@ -451,7 +451,7 @@ pub fn Modulus(comptime max_bits: comptime_int) type {
         /// Creates a new modulus from a primitive value.
         /// The modulus must be odd and larger than 2.
         pub fn fromPrimitive(comptime T: type, x: T) (InvalidModulusError || OverflowError)!Self {
-            comptime assert(@bitSizeOf(T) <= max_bits); // Primitive type is larger than the modulus type.
+            comptime assert(@bitsizeof(T) <= max_bits); // Primitive type is larger than the modulus type.
             const v = try FeUint.fromPrimitive(T, x);
             return try Self.fromUint(v);
         }
@@ -530,8 +530,8 @@ pub fn Modulus(comptime max_bits: comptime_int) type {
         /// Adds two field elements (mod m).
         pub fn add(self: Self, x: Fe, y: Fe) Fe {
             var out = x;
-            const overflow = out.v.addWithOverflow(y.v);
-            const underflow: u1 = @bitCast(ct.limbsCmpLt(out.v, self.v));
+            const overflow = out.v.addwithoverflow(y.v);
+            const underflow: u1 = @bitcast(ct.limbsCmpLt(out.v, self.v));
             const need_sub = ct.eql(overflow, underflow);
             _ = out.v.conditionalSubWithOverflow(need_sub, self.v);
             return out;
@@ -540,7 +540,7 @@ pub fn Modulus(comptime max_bits: comptime_int) type {
         /// Subtracts two field elements (mod m).
         pub fn sub(self: Self, x: Fe, y: Fe) Fe {
             var out = x;
-            const underflow: bool = @bitCast(out.v.subWithOverflow(y.v));
+            const underflow: bool = @bitcast(out.v.subwithoverflow(y.v));
             _ = out.v.conditionalAddWithOverflow(underflow, self.v);
             return out;
         }
@@ -600,24 +600,24 @@ pub fn Modulus(comptime max_bits: comptime_int) type {
                 var carry: Limb = 0;
 
                 var wide = ct.mulWide(a_limbs[i], b_limbs[0]);
-                var z_lo = @addWithOverflow(d_limbs[0], wide.lo);
+                var z_lo = @addwithoverflow(d_limbs[0], wide.lo);
                 const f = @as(TLimb, @truncate(z_lo[0] *% self.m0inv));
                 var z_hi = wide.hi +% z_lo[1];
                 wide = ct.mulWide(f, m_limbs[0]);
-                z_lo = @addWithOverflow(z_lo[0], wide.lo);
+                z_lo = @addwithoverflow(z_lo[0], wide.lo);
                 z_hi +%= z_lo[1];
                 z_hi +%= wide.hi;
                 carry = (z_hi << 1) | (z_lo[0] >> t_bits);
 
                 for (1..self.limbs_count()) |j| {
                     wide = ct.mulWide(a_limbs[i], b_limbs[j]);
-                    z_lo = @addWithOverflow(d_limbs[j], wide.lo);
+                    z_lo = @addwithoverflow(d_limbs[j], wide.lo);
                     z_hi = wide.hi +% z_lo[1];
                     wide = ct.mulWide(f, m_limbs[j]);
-                    z_lo = @addWithOverflow(z_lo[0], wide.lo);
+                    z_lo = @addwithoverflow(z_lo[0], wide.lo);
                     z_hi +%= z_lo[1];
                     z_hi +%= wide.hi;
-                    z_lo = @addWithOverflow(z_lo[0], carry);
+                    z_lo = @addwithoverflow(z_lo[0], carry);
                     z_hi +%= z_lo[1];
                     if (j > 0) {
                         d_limbs[j - 1] = @as(TLimb, @truncate(z_lo[0]));
@@ -637,7 +637,7 @@ pub fn Modulus(comptime max_bits: comptime_int) type {
             assert(x.limbs_count() == self.limbs_count());
             assert(y.limbs_count() == self.limbs_count());
             const overflow = self.montgomeryLoop(&d, x, y);
-            const underflow = 1 -% @intFromBool(ct.limbsCmpGeq(d.v, self.v));
+            const underflow = 1 -% @intfrombool(ct.limbsCmpGeq(d.v, self.v));
             const need_sub = ct.eql(overflow, underflow);
             _ = d.v.conditionalSubWithOverflow(need_sub, self.v);
             d.montgomery = x.montgomery == y.montgomery;
@@ -649,7 +649,7 @@ pub fn Modulus(comptime max_bits: comptime_int) type {
             var d = self.zero;
             assert(x.limbs_count() == self.limbs_count());
             const overflow = self.montgomeryLoop(&d, x, x);
-            const underflow = 1 -% @intFromBool(ct.limbsCmpGeq(d.v, self.v));
+            const underflow = 1 -% @intfrombool(ct.limbsCmpGeq(d.v, self.v));
             const need_sub = ct.eql(overflow, underflow);
             _ = d.v.conditionalSubWithOverflow(need_sub, self.v);
             d.montgomery = true;
@@ -821,15 +821,15 @@ const ct = if (std.options.side_channels_mitigations == .none) ct_unprotected el
 const ct_protected = struct {
     // Returns x if on is true, otherwise y.
     fn select(on: bool, x: Limb, y: Limb) Limb {
-        const mask = @as(Limb, 0) -% @intFromBool(on);
+        const mask = @as(Limb, 0) -% @intfrombool(on);
         return y ^ (mask & (y ^ x));
     }
 
     // Compares two values in constant time.
     fn eql(x: anytype, y: @TypeOf(x)) bool {
-        const c1 = @subWithOverflow(x, y)[1];
-        const c2 = @subWithOverflow(y, x)[1];
-        return @as(bool, @bitCast(1 - (c1 | c2)));
+        const c1 = @subwithoverflow(x, y)[1];
+        const c2 = @subwithoverflow(y, x)[1];
+        return @as(bool, @bitcast(1 - (c1 | c2)));
     }
 
     // Compares two big integers in constant time, returning true if x < y.
@@ -848,7 +848,7 @@ const ct_protected = struct {
 
     // Multiplies two limbs and returns the result as a wide limb.
     fn mulWide(x: Limb, y: Limb) WideLimb {
-        const half_bits = @typeInfo(Limb).Int.bits / 2;
+        const half_bits = @typeinfo(Limb).Int.bits / 2;
         const Half = meta.Int(.unsigned, half_bits);
         const x0 = @as(Half, @truncate(x));
         const x1 = @as(Half, @truncate(x >> half_bits));
@@ -901,7 +901,7 @@ const ct_unprotected = struct {
     fn mulWide(x: Limb, y: Limb) WideLimb {
         const wide = math.mulWide(Limb, x, y);
         return .{
-            .hi = @as(Limb, @truncate(wide >> @typeInfo(Limb).Int.bits)),
+            .hi = @as(Limb, @truncate(wide >> @typeinfo(Limb).Int.bits)),
             .lo = @as(Limb, @truncate(wide)),
         };
     }

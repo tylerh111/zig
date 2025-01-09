@@ -19,7 +19,7 @@ pub fn exp(z: anytype) Complex(@TypeOf(z.re, z.im)) {
     return switch (T) {
         f32 => exp32(z),
         f64 => exp64(z),
-        else => @compileError("exp not implemented for " ++ @typeName(z)),
+        else => @compileerror("exp not implemented for " ++ @typename(z)),
     };
 }
 
@@ -30,13 +30,13 @@ fn exp32(z: Complex(f32)) Complex(f32) {
     const x = z.re;
     const y = z.im;
 
-    const hy = @as(u32, @bitCast(y)) & 0x7fffffff;
+    const hy = @as(u32, @bitcast(y)) & 0x7fffffff;
     // cexp(x + i0) = exp(x) + i0
     if (hy == 0) {
         return Complex(f32).init(@exp(x), y);
     }
 
-    const hx = @as(u32, @bitCast(x));
+    const hx = @as(u32, @bitcast(x));
     // cexp(0 + iy) = cos(y) + isin(y)
     if ((hx & 0x7fffffff) == 0) {
         return Complex(f32).init(@cos(y), @sin(y));
@@ -75,8 +75,8 @@ fn exp64(z: Complex(f64)) Complex(f64) {
     const x = z.re;
     const y = z.im;
 
-    const fy: u64 = @bitCast(y);
-    const hy: u32 = @intCast((fy >> 32) & 0x7fffffff);
+    const fy: u64 = @bitcast(y);
+    const hy: u32 = @intcast((fy >> 32) & 0x7fffffff);
     const ly: u32 = @truncate(fy);
 
     // cexp(x + i0) = exp(x) + i0
@@ -84,8 +84,8 @@ fn exp64(z: Complex(f64)) Complex(f64) {
         return Complex(f64).init(@exp(x), y);
     }
 
-    const fx: u64 = @bitCast(x);
-    const hx: u32 = @intCast(fx >> 32);
+    const fx: u64 = @bitcast(x);
+    const hx: u32 = @intcast(fx >> 32);
     const lx: u32 = @truncate(fx);
 
     // cexp(0 + iy) = cos(y) + isin(y)

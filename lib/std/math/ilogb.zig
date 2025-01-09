@@ -26,7 +26,7 @@ pub const fp_ilogbnan = minInt(i32);
 pub const fp_ilogb0 = minInt(i32);
 
 fn ilogbX(comptime T: type, x: T) i32 {
-    const typeWidth = @typeInfo(T).Float.bits;
+    const typeWidth = @typeinfo(T).Float.bits;
     const significandBits = math.floatMantissaBits(T);
     const exponentBits = math.floatExponentBits(T);
 
@@ -38,8 +38,8 @@ fn ilogbX(comptime T: type, x: T) i32 {
 
     const absMask = signBit - 1;
 
-    const u = @as(Z, @bitCast(x)) & absMask;
-    const e: i32 = @intCast(u >> significandBits);
+    const u = @as(Z, @bitcast(x)) & absMask;
+    const e: i32 = @intcast(u >> significandBits);
 
     if (e == 0) {
         if (u == 0) {
@@ -48,13 +48,13 @@ fn ilogbX(comptime T: type, x: T) i32 {
         }
 
         // offset sign bit, exponent bits, and integer bit (if present) + bias
-        const offset = 1 + exponentBits + @as(comptime_int, @intFromBool(T == f80)) - exponentBias;
-        return offset - @as(i32, @intCast(@clz(u)));
+        const offset = 1 + exponentBits + @as(comptime_int, @intfrombool(T == f80)) - exponentBias;
+        return offset - @as(i32, @intcast(@clz(u)));
     }
 
     if (e == maxExponent) {
         math.raiseInvalid();
-        if (u > @as(Z, @bitCast(math.inf(T)))) {
+        if (u > @as(Z, @bitcast(math.inf(T)))) {
             return fp_ilogbnan; // u is a NaN
         } else return maxInt(i32);
     }

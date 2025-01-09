@@ -2,7 +2,7 @@ const ctz = @import("count0bits.zig");
 const testing = @import("std").testing;
 
 fn test__ctzdi2(a: u64, expected: i32) !void {
-    const x: i64 = @bitCast(a);
+    const x: i64 = @bitcast(a);
     const result = ctz.__ctzdi2(x);
     try testing.expectEqual(expected, result);
 }

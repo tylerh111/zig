@@ -169,7 +169,7 @@ fn SipHash(comptime T: type, comptime c_rounds: usize, comptime d_rounds: usize)
         const State = SipHashStateless(T, c_rounds, d_rounds);
         const Self = @This();
         pub const key_length = 16;
-        pub const mac_length = @sizeOf(T);
+        pub const mac_length = @sizeof(T);
         pub const block_length = 8;
 
         state: State,
@@ -202,7 +202,7 @@ fn SipHash(comptime T: type, comptime c_rounds: usize, comptime d_rounds: usize)
 
             const b_slice = b[off + aligned_len ..];
             @memcpy(self.buf[self.buf_len..][0..b_slice.len], b_slice);
-            self.buf_len += @as(u8, @intCast(b_slice.len));
+            self.buf_len += @as(u8, @intcast(b_slice.len));
         }
 
         pub fn peek(self: Self) [mac_length]u8 {
@@ -329,7 +329,7 @@ test "siphash64-2-4 sanity" {
 
     var buffer: [64]u8 = undefined;
     for (vectors, 0..) |vector, i| {
-        buffer[i] = @as(u8, @intCast(i));
+        buffer[i] = @as(u8, @intcast(i));
 
         var out: [siphash.mac_length]u8 = undefined;
         siphash.create(&out, buffer[0..i], test_key);
@@ -409,7 +409,7 @@ test "siphash128-2-4 sanity" {
 
     var buffer: [64]u8 = undefined;
     for (vectors, 0..) |vector, i| {
-        buffer[i] = @as(u8, @intCast(i));
+        buffer[i] = @as(u8, @intcast(i));
 
         var out: [siphash.mac_length]u8 = undefined;
         siphash.create(&out, buffer[0..i], test_key[0..]);

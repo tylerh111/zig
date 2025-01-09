@@ -86,7 +86,7 @@ fn AesOcb(comptime Aes: anytype) type {
 
         fn getOffset(aes_enc_ctx: EncryptCtx, npub: [nonce_length]u8) Block {
             var nx = [_]u8{0} ** 16;
-            nx[0] = @as(u8, @intCast(@as(u7, @truncate(tag_length * 8)) << 1));
+            nx[0] = @as(u8, @intcast(@as(u7, @truncate(tag_length * 8)) << 1));
             nx[16 - nonce_length - 1] = 1;
             nx[nx.len - nonce_length ..].* = npub;
 

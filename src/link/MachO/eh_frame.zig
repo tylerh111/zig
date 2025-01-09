@@ -13,7 +13,7 @@ pub const Cie = struct {
         defer tracy.end();
 
         const data = cie.getData(macho_file);
-        const aug = std.mem.sliceTo(@as([*:0]const u8, @ptrCast(data.ptr + 9)), 0);
+        const aug = std.mem.sliceTo(@as([*:0]const u8, @ptrcast(data.ptr + 9)), 0);
 
         if (aug[0] != 'z') return; // TODO should we error out?
 
@@ -90,7 +90,7 @@ pub const Cie = struct {
         _ = unused_fmt_string;
         _ = options;
         _ = writer;
-        @compileError("do not format CIEs directly");
+        @compileerror("do not format CIEs directly");
     }
 
     pub fn fmt(cie: Cie, macho_file: *MachO) std.fmt.Formatter(format2) {
@@ -153,7 +153,7 @@ pub const Fde = struct {
 
         // Parse target atom index
         const pc_begin = std.mem.readInt(i64, data[8..][0..8], .little);
-        const taddr: u64 = @intCast(@as(i64, @intCast(sect.addr + fde.offset + 8)) + pc_begin);
+        const taddr: u64 = @intcast(@as(i64, @intcast(sect.addr + fde.offset + 8)) + pc_begin);
         fde.atom = object.findAtom(taddr) orelse {
             try macho_file.reportParseError2(object.index, "{s},{s}: 0x{x}: invalid function reference in FDE", .{
                 sect.segName(), sect.sectName(), fde.offset + 8,
@@ -161,13 +161,13 @@ pub const Fde = struct {
             return error.MalformedObject;
         };
         const atom = fde.getAtom(macho_file);
-        fde.atom_offset = @intCast(taddr - atom.getInputAddress(macho_file));
+        fde.atom_offset = @intcast(taddr - atom.getInputAddress(macho_file));
 
         // Associate with a CIE
         const cie_ptr = std.mem.readInt(u32, data[4..8], .little);
         const cie_offset = fde.offset + 4 - cie_ptr;
         const cie_index = for (object.cies.items, 0..) |cie, cie_index| {
-            if (cie.offset == cie_offset) break @as(Cie.Index, @intCast(cie_index));
+            if (cie.offset == cie_offset) break @as(Cie.Index, @intcast(cie_index));
         } else null;
         if (cie_index) |cie| {
             fde.cie = cie;
@@ -186,12 +186,12 @@ pub const Fde = struct {
             var creader = std.io.countingReader(stream.reader());
             const reader = creader.reader();
             _ = try leb.readULEB128(u64, reader); // augmentation length
-            fde.lsda_ptr_offset = @intCast(creader.bytes_read + 24);
+            fde.lsda_ptr_offset = @intcast(creader.bytes_read + 24);
             const lsda_ptr = switch (lsda_size) {
                 .p32 => try reader.readInt(i32, .little),
                 .p64 => try reader.readInt(i64, .little),
             };
-            const lsda_addr: u64 = @intCast(@as(i64, @intCast(sect.addr + fde.offset + fde.lsda_ptr_offset)) + lsda_ptr);
+            const lsda_addr: u64 = @intcast(@as(i64, @intcast(sect.addr + fde.offset + fde.lsda_ptr_offset)) + lsda_ptr);
             fde.lsda = object.findAtom(lsda_addr) orelse {
                 try macho_file.reportParseError2(object.index, "{s},{s}: 0x{x}: invalid LSDA reference in FDE", .{
                     sect.segName(), sect.sectName(), fde.offset + fde.lsda_ptr_offset,
@@ -199,7 +199,7 @@ pub const Fde = struct {
                 return error.MalformedObject;
             };
             const lsda_atom = fde.getLsdaAtom(macho_file).?;
-            fde.lsda_offset = @intCast(lsda_addr - lsda_atom.getInputAddress(macho_file));
+            fde.lsda_offset = @intcast(lsda_addr - lsda_atom.getInputAddress(macho_file));
         }
     }
 
@@ -240,7 +240,7 @@ pub const Fde = struct {
         _ = unused_fmt_string;
         _ = options;
         _ = writer;
-        @compileError("do not format FDEs directly");
+        @compileerror("do not format FDEs directly");
     }
 
     pub fn fmt(fde: Fde, macho_file: *MachO) std.fmt.Formatter(format2) {
@@ -393,7 +393,7 @@ pub fn write(macho_file: *MachO, buffer: []u8) void {
                 std.mem.writeInt(
                     i32,
                     buffer[offset..][0..4],
-                    @intCast(@as(i64, @intCast(taddr)) - @as(i64, @intCast(saddr)) + addend),
+                    @intcast(@as(i64, @intcast(taddr)) - @as(i64, @intcast(saddr)) + addend),
                     .little,
                 );
             }
@@ -420,7 +420,7 @@ pub fn write(macho_file: *MachO, buffer: []u8) void {
                 std.mem.writeInt(
                     i64,
                     buffer[offset..][0..8],
-                    @as(i64, @intCast(taddr)) - @as(i64, @intCast(saddr)),
+                    @as(i64, @intcast(taddr)) - @as(i64, @intcast(saddr)),
                     .little,
                 );
             }
@@ -433,13 +433,13 @@ pub fn write(macho_file: *MachO, buffer: []u8) void {
                     .p32 => std.mem.writeInt(
                         i32,
                         buffer[offset..][0..4],
-                        @intCast(@as(i64, @intCast(taddr)) - @as(i64, @intCast(saddr)) + addend),
+                        @intcast(@as(i64, @intcast(taddr)) - @as(i64, @intcast(saddr)) + addend),
                         .little,
                     ),
                     .p64 => std.mem.writeInt(
                         i64,
                         buffer[offset..][0..8],
-                        @as(i64, @intCast(taddr)) - @as(i64, @intCast(saddr)),
+                        @as(i64, @intcast(taddr)) - @as(i64, @intcast(saddr)),
                         .little,
                     ),
                 }
@@ -476,8 +476,8 @@ pub fn writeRelocs(macho_file: *MachO, code: []u8, relocs: *std.ArrayList(macho.
                     .r_extern = 1,
                     .r_pcrel = 1,
                     .r_type = switch (cpu_arch) {
-                        .aarch64 => @intFromEnum(macho.reloc_type_arm64.ARM64_RELOC_POINTER_TO_GOT),
-                        .x86_64 => @intFromEnum(macho.reloc_type_x86_64.X86_64_RELOC_GOT),
+                        .aarch64 => @intfromenum(macho.reloc_type_arm64.ARM64_RELOC_POINTER_TO_GOT),
+                        .x86_64 => @intfromenum(macho.reloc_type_x86_64.X86_64_RELOC_GOT),
                         else => unreachable,
                     },
                 });
@@ -505,7 +505,7 @@ pub fn writeRelocs(macho_file: *MachO, code: []u8, relocs: *std.ArrayList(macho.
                 std.mem.writeInt(
                     i64,
                     code[offset..][0..8],
-                    @as(i64, @intCast(taddr)) - @as(i64, @intCast(saddr)),
+                    @as(i64, @intcast(taddr)) - @as(i64, @intcast(saddr)),
                     .little,
                 );
             }
@@ -518,13 +518,13 @@ pub fn writeRelocs(macho_file: *MachO, code: []u8, relocs: *std.ArrayList(macho.
                     .p32 => std.mem.writeInt(
                         i32,
                         code[offset..][0..4],
-                        @intCast(@as(i64, @intCast(taddr)) - @as(i64, @intCast(saddr)) + addend),
+                        @intcast(@as(i64, @intcast(taddr)) - @as(i64, @intcast(saddr)) + addend),
                         .little,
                     ),
                     .p64 => std.mem.writeInt(
                         i64,
                         code[offset..][0..8],
-                        @as(i64, @intCast(taddr)) - @as(i64, @intCast(saddr)),
+                        @as(i64, @intcast(taddr)) - @as(i64, @intcast(saddr)),
                         .little,
                     ),
                 }

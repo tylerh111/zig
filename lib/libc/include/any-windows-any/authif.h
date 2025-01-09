@@ -111,7 +111,7 @@ typedef enum _RADIUS_AUTHENTICATION_PROVIDER {
   rapNone
 } RADIUS_AUTHENTICATION_PROVIDER;
 typedef enum _RADIUS_REJECT_REASON_CODE {
-  rrrcUndefined = 0,
+  rrrcundefined = 0,
   rrrcAccountUnknown = 1,
   rrrcAccountDisabled = 2,
   rrrcAccountExpired = 3,

@@ -13,7 +13,7 @@ pub fn maybeInt() ?i32 {
 }
 
 export fn entry() usize {
-    return @sizeOf(@TypeOf(testTrickyDefer));
+    return @sizeof(@TypeOf(testTrickyDefer));
 }
 
 // error

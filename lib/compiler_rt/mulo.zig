@@ -26,7 +26,7 @@ inline fn muloXi4_genericSmall(comptime ST: type, a: ST, b: ST, overflow: *c_int
     // on some machines a*b = -2^{31} with overflow
     // Then -2^{31}/-1 overflows and any result is possible.
     // => check with a<0 and b=-2^{31}
-    if ((a < 0 and b == min) or (a != 0 and @divTrunc(res, a) != b))
+    if ((a < 0 and b == min) or (a != 0 and @divtrunc(res, a) != b))
         overflow.* = 1;
     return res;
 }
@@ -49,7 +49,7 @@ inline fn muloXi4_genericFast(comptime ST: type, a: ST, b: ST, overflow: *c_int)
 }
 
 pub fn __mulosi4(a: i32, b: i32, overflow: *c_int) callconv(.C) i32 {
-    if (2 * @bitSizeOf(i32) <= @bitSizeOf(usize)) {
+    if (2 * @bitsizeof(i32) <= @bitsizeof(usize)) {
         return muloXi4_genericFast(i32, a, b, overflow);
     } else {
         return muloXi4_genericSmall(i32, a, b, overflow);
@@ -57,7 +57,7 @@ pub fn __mulosi4(a: i32, b: i32, overflow: *c_int) callconv(.C) i32 {
 }
 
 pub fn __mulodi4(a: i64, b: i64, overflow: *c_int) callconv(.C) i64 {
-    if (2 * @bitSizeOf(i64) <= @bitSizeOf(usize)) {
+    if (2 * @bitsizeof(i64) <= @bitsizeof(usize)) {
         return muloXi4_genericFast(i64, a, b, overflow);
     } else {
         return muloXi4_genericSmall(i64, a, b, overflow);
@@ -65,7 +65,7 @@ pub fn __mulodi4(a: i64, b: i64, overflow: *c_int) callconv(.C) i64 {
 }
 
 pub fn __muloti4(a: i128, b: i128, overflow: *c_int) callconv(.C) i128 {
-    if (2 * @bitSizeOf(i128) <= @bitSizeOf(usize)) {
+    if (2 * @bitsizeof(i128) <= @bitsizeof(usize)) {
         return muloXi4_genericFast(i128, a, b, overflow);
     } else {
         return muloXi4_genericSmall(i128, a, b, overflow);

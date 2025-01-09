@@ -63,7 +63,7 @@ fn outer(y: u32) *const fn (u32) u32 {
     const Y = @TypeOf(y);
     const st = struct {
         fn get(z: u32) u32 {
-            return z + @sizeOf(Y);
+            return z + @sizeof(Y);
         }
     };
     return st.get;
@@ -327,7 +327,7 @@ test "function pointers" {
         &fn4,
     };
     for (fns, 0..) |f, i| {
-        try expect(f() == @as(u32, @intCast(i)) + 5);
+        try expect(f() == @as(u32, @intcast(i)) + 5);
     }
 }
 fn fn1() u32 {
@@ -405,7 +405,7 @@ test "ability to give comptime types and non comptime types to same parameter" {
         }
 
         fn foo(arg: anytype) i32 {
-            if (@typeInfo(@TypeOf(arg)) == .Type and arg == i32) return 20;
+            if (@typeinfo(@TypeOf(arg)) == .Type and arg == i32) return 20;
             return 9 + arg;
         }
     };
@@ -420,8 +420,8 @@ test "function with inferred error set but returning no error" {
         fn foo() !void {}
     };
 
-    const return_ty = @typeInfo(@TypeOf(S.foo)).Fn.return_type.?;
-    try expectEqual(0, @typeInfo(@typeInfo(return_ty).ErrorUnion.error_set).ErrorSet.?.len);
+    const return_ty = @typeinfo(@TypeOf(S.foo)).Fn.return_type.?;
+    try expectEqual(0, @typeinfo(@typeinfo(return_ty).ErrorUnion.error_set).ErrorSet.?.len);
 }
 
 test "import passed byref to function in return type" {
@@ -500,7 +500,7 @@ test "method call with optional pointer first param" {
     try s_ptr.method();
 }
 
-test "using @ptrCast on function pointers" {
+test "using @ptrcast on function pointers" {
     if (builtin.zig_backend == .stage2_arm) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_aarch64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
@@ -516,8 +516,8 @@ test "using @ptrCast on function pointers" {
 
         fn run() !void {
             const a = A{ .data = "abcd".* };
-            const casted_fn = @as(*const fn (*const anyopaque, usize) *const u8, @ptrCast(&at));
-            const casted_impl = @as(*const anyopaque, @ptrCast(&a));
+            const casted_fn = @as(*const fn (*const anyopaque, usize) *const u8, @ptrcast(&at));
+            const casted_impl = @as(*const anyopaque, @ptrcast(&a));
             const ptr = casted_fn(casted_impl, 2);
             try expect(ptr.* == 'c');
         }
@@ -566,23 +566,23 @@ test "lazy values passed to anytype parameter" {
     const A = struct {
         a: u32,
         fn foo(comptime a: anytype) !void {
-            try expect(a[0][0] == @sizeOf(@This()));
+            try expect(a[0][0] == @sizeof(@This()));
         }
     };
-    try A.foo(.{[_]usize{@sizeOf(A)}});
+    try A.foo(.{[_]usize{@sizeof(A)}});
 
     const B = struct {
         fn foo(comptime a: anytype) !void {
             try expect(a.x == 0);
         }
     };
-    try B.foo(.{ .x = @sizeOf(B) });
+    try B.foo(.{ .x = @sizeof(B) });
 
     const C = struct {};
-    try expect(@as(u32, @truncate(@sizeOf(C))) == 0);
+    try expect(@as(u32, @truncate(@sizeof(C))) == 0);
 
     const D = struct {};
-    try expect(@sizeOf(D) << 1 == 0);
+    try expect(@sizeof(D) << 1 == 0);
 }
 
 test "pass and return comptime-only types" {

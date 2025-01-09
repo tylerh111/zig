@@ -56,24 +56,24 @@ fn utf8EncodeImpl(c: u21, out: []u8, comptime surrogates: Surrogates) !u3 {
         // - Increasing the initial shift by 6 each time
         // - Each time after the first shorten the shifted
         //   value to a max of 0b111111 (63)
-        1 => out[0] = @as(u8, @intCast(c)), // Can just do 0 + codepoint for initial range
+        1 => out[0] = @as(u8, @intcast(c)), // Can just do 0 + codepoint for initial range
         2 => {
-            out[0] = @as(u8, @intCast(0b11000000 | (c >> 6)));
-            out[1] = @as(u8, @intCast(0b10000000 | (c & 0b111111)));
+            out[0] = @as(u8, @intcast(0b11000000 | (c >> 6)));
+            out[1] = @as(u8, @intcast(0b10000000 | (c & 0b111111)));
         },
         3 => {
             if (surrogates == .cannot_encode_surrogate_half and isSurrogateCodepoint(c)) {
                 return error.Utf8CannotEncodeSurrogateHalf;
             }
-            out[0] = @as(u8, @intCast(0b11100000 | (c >> 12)));
-            out[1] = @as(u8, @intCast(0b10000000 | ((c >> 6) & 0b111111)));
-            out[2] = @as(u8, @intCast(0b10000000 | (c & 0b111111)));
+            out[0] = @as(u8, @intcast(0b11100000 | (c >> 12)));
+            out[1] = @as(u8, @intcast(0b10000000 | ((c >> 6) & 0b111111)));
+            out[2] = @as(u8, @intcast(0b10000000 | (c & 0b111111)));
         },
         4 => {
-            out[0] = @as(u8, @intCast(0b11110000 | (c >> 18)));
-            out[1] = @as(u8, @intCast(0b10000000 | ((c >> 12) & 0b111111)));
-            out[2] = @as(u8, @intCast(0b10000000 | ((c >> 6) & 0b111111)));
-            out[3] = @as(u8, @intCast(0b10000000 | (c & 0b111111)));
+            out[0] = @as(u8, @intcast(0b11110000 | (c >> 18)));
+            out[1] = @as(u8, @intcast(0b10000000 | ((c >> 12) & 0b111111)));
+            out[2] = @as(u8, @intcast(0b10000000 | ((c >> 6) & 0b111111)));
+            out[3] = @as(u8, @intcast(0b10000000 | (c & 0b111111)));
         },
         else => unreachable,
     }
@@ -82,14 +82,14 @@ fn utf8EncodeImpl(c: u21, out: []u8, comptime surrogates: Surrogates) !u3 {
 
 pub inline fn utf8EncodeComptime(comptime c: u21) [
     utf8CodepointSequenceLength(c) catch |err|
-        @compileError(@errorName(err))
+        @compileerror(@errorname(err))
 ]u8 {
     comptime var result: [
         utf8CodepointSequenceLength(c) catch
             unreachable
     ]u8 = undefined;
     comptime assert((utf8Encode(c, &result) catch |err|
-        @compileError(@errorName(err))) == result.len);
+        @compileerror(@errorname(err))) == result.len);
     return result;
 }
 
@@ -202,7 +202,7 @@ pub fn utf8ValidCodepoint(value: u21) bool {
 pub fn utf8CountCodepoints(s: []const u8) !usize {
     var len: usize = 0;
 
-    const N = @sizeOf(usize);
+    const N = @sizeof(usize);
     const MASK = 0x80 * (std.math.maxInt(usize) / 0xff);
 
     var i: usize = 0;
@@ -377,7 +377,7 @@ pub const Utf8View = struct {
     pub inline fn initComptime(comptime s: []const u8) Utf8View {
         return comptime if (init(s)) |r| r else |err| switch (err) {
             error.InvalidUtf8 => {
-                @compileError("invalid utf8");
+                @compileerror("invalid utf8");
             },
         };
     }
@@ -1166,10 +1166,10 @@ fn utf8ToUtf16LeArrayListImpl(result: *std.ArrayList(u16), utf8: []const u8, com
     var it = view.iterator();
     while (it.nextCodepoint()) |codepoint| {
         if (codepoint < 0x10000) {
-            try result.append(mem.nativeToLittle(u16, @intCast(codepoint)));
+            try result.append(mem.nativeToLittle(u16, @intcast(codepoint)));
         } else {
-            const high = @as(u16, @intCast((codepoint - 0x10000) >> 10)) + 0xD800;
-            const low = @as(u16, @intCast(codepoint & 0x3FF)) + 0xDC00;
+            const high = @as(u16, @intcast((codepoint - 0x10000) >> 10)) + 0xD800;
+            const low = @as(u16, @intcast(codepoint & 0x3FF)) + 0xDC00;
             try result.appendSlice(&.{ mem.nativeToLittle(u16, high), mem.nativeToLittle(u16, low) });
         }
     }
@@ -1237,11 +1237,11 @@ pub fn utf8ToUtf16LeImpl(utf16le: []u16, utf8: []const u8, comptime surrogates: 
     var it = view.iterator();
     while (it.nextCodepoint()) |codepoint| {
         if (codepoint < 0x10000) {
-            utf16le[dest_index] = mem.nativeToLittle(u16, @intCast(codepoint));
+            utf16le[dest_index] = mem.nativeToLittle(u16, @intcast(codepoint));
             dest_index += 1;
         } else {
-            const high = @as(u16, @intCast((codepoint - 0x10000) >> 10)) + 0xD800;
-            const low = @as(u16, @intCast(codepoint & 0x3FF)) + 0xDC00;
+            const high = @as(u16, @intcast((codepoint - 0x10000) >> 10)) + 0xD800;
+            const low = @as(u16, @intcast(codepoint & 0x3FF)) + 0xDC00;
             utf16le[dest_index..][0..2].* = .{ mem.nativeToLittle(u16, high), mem.nativeToLittle(u16, low) };
             dest_index += 2;
         }
@@ -1410,11 +1410,11 @@ test "ArrayList functions on a re-used list" {
 }
 
 /// Converts a UTF-8 string literal into a UTF-16LE string literal.
-pub fn utf8ToUtf16LeStringLiteral(comptime utf8: []const u8) *const [calcUtf16LeLen(utf8) catch |err| @compileError(err):0]u16 {
+pub fn utf8ToUtf16LeStringLiteral(comptime utf8: []const u8) *const [calcUtf16LeLen(utf8) catch |err| @compileerror(err):0]u16 {
     return comptime blk: {
         const len: usize = calcUtf16LeLen(utf8) catch unreachable;
         var utf16le: [len:0]u16 = [_:0]u16{0} ** len;
-        const utf16le_len = utf8ToUtf16Le(&utf16le, utf8[0..]) catch |err| @compileError(err);
+        const utf16le_len = utf8ToUtf16Le(&utf16le, utf8[0..]) catch |err| @compileerror(err);
         assert(len == utf16le_len);
         const final = utf16le;
         break :blk &final;
@@ -1692,7 +1692,7 @@ pub const Wtf8View = struct {
     pub inline fn initComptime(comptime s: []const u8) Wtf8View {
         return comptime if (init(s)) |r| r else |err| switch (err) {
             error.InvalidWtf8 => {
-                @compileError("invalid wtf8");
+                @compileerror("invalid wtf8");
             },
         };
     }

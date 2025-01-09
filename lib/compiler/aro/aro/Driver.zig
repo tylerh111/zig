@@ -558,7 +558,7 @@ pub fn errorDescription(e: anyerror) []const u8 {
         error.SystemResources => "ran out of system resources",
         error.FatalError => "a fatal error occurred",
         error.Unexpected => "an unexpected error occurred",
-        else => @errorName(e),
+        else => @errorname(e),
     };
 }
 
@@ -698,7 +698,7 @@ fn processSource(
     if (d.comp.target.ofmt != .elf or d.comp.target.cpu.arch != .x86_64) {
         return d.fatal(
             "unsupported target {s}-{s}-{s}, currently only x86-64 elf is supported",
-            .{ @tagName(d.comp.target.cpu.arch), @tagName(d.comp.target.os.tag), @tagName(d.comp.target.abi) },
+            .{ @tagname(d.comp.target.cpu.arch), @tagname(d.comp.target.os.tag), @tagname(d.comp.target.abi) },
         );
     }
 

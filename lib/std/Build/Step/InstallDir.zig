@@ -59,13 +59,13 @@ pub fn create(owner: *std.Build, options: Options) *InstallDir {
 fn make(step: *Step, prog_node: std.Progress.Node) !void {
     _ = prog_node;
     const b = step.owner;
-    const install_dir: *InstallDir = @fieldParentPtr("step", step);
+    const install_dir: *InstallDir = @fieldparentptr("step", step);
     const arena = b.allocator;
     const dest_prefix = b.getInstallPath(install_dir.options.install_dir, install_dir.options.install_subdir);
     const src_dir_path = install_dir.options.source_dir.getPath2(b, step);
     var src_dir = b.build_root.handle.openDir(src_dir_path, .{ .iterate = true }) catch |err| {
         return step.fail("unable to open source directory '{}{s}': {s}", .{
-            b.build_root, src_dir_path, @errorName(err),
+            b.build_root, src_dir_path, @errorname(err),
         });
     };
     defer src_dir.close();
@@ -111,7 +111,7 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
                     .{},
                 ) catch |err| {
                     return step.fail("unable to update file from '{}{s}' to '{s}': {s}", .{
-                        b.build_root, src_sub_path, dest_path, @errorName(err),
+                        b.build_root, src_sub_path, dest_path, @errorname(err),
                     });
                 };
                 all_cached = all_cached and prev_status == .fresh;

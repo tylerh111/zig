@@ -63,9 +63,9 @@ pub const Guid = extern struct {
         if (f.len == 0) {
             const fmt = std.fmt.fmtSliceHexLower;
 
-            const time_low = @byteSwap(self.time_low);
-            const time_mid = @byteSwap(self.time_mid);
-            const time_high_and_version = @byteSwap(self.time_high_and_version);
+            const time_low = @byteswap(self.time_low);
+            const time_mid = @byteswap(self.time_mid);
+            const time_high_and_version = @byteswap(self.time_high_and_version);
 
             return std.fmt.format(writer, "{:0>8}-{:0>4}-{:0>4}-{:0>2}{:0>2}-{:0>12}", .{
                 fmt(std.mem.asBytes(&time_low)),
@@ -137,7 +137,7 @@ pub const Time = extern struct {
         var days: u32 = 0;
         var month: u4 = 0;
         while (month < maxMonth) : (month += 1) {
-            days += std.time.epoch.getDaysInMonth(leapYear, @enumFromInt(month + 1));
+            days += std.time.epoch.getDaysInMonth(leapYear, @enumfromint(month + 1));
         }
         return days;
     }
@@ -150,7 +150,7 @@ pub const Time = extern struct {
             days += daysInYear(year + 1970, 12);
         }
 
-        days += daysInYear(self.year, @as(u4, @intCast(self.month)) - 1) + self.day;
+        days += daysInYear(self.year, @as(u4, @intcast(self.month)) - 1) + self.day;
         const hours = self.hour + (days * 24);
         const minutes = self.minute + (hours * 60);
         const seconds = self.second + (minutes * std.time.s_per_min);
@@ -175,7 +175,7 @@ pub const FileHandle = *opaque {};
 
 test "GUID formatting" {
     const bytes = [_]u8{ 137, 60, 203, 50, 128, 128, 124, 66, 186, 19, 80, 73, 135, 59, 194, 135 };
-    const guid: Guid = @bitCast(bytes);
+    const guid: Guid = @bitcast(bytes);
 
     const str = try std.fmt.allocPrint(std.testing.allocator, "{}", .{guid});
     defer std.testing.allocator.free(str);
@@ -193,7 +193,7 @@ pub const FileInfo = extern struct {
     attribute: u64,
 
     pub fn getFileName(self: *const FileInfo) [*:0]const u16 {
-        return @ptrCast(@alignCast(@as([*]const u8, @ptrCast(self)) + @sizeOf(FileInfo)));
+        return @ptrcast(@aligncast(@as([*]const u8, @ptrcast(self)) + @sizeof(FileInfo)));
     }
 
     pub const efi_file_read_only: u64 = 0x0000000000000001;
@@ -223,7 +223,7 @@ pub const FileSystemInfo = extern struct {
     _volume_label: u16,
 
     pub fn getVolumeLabel(self: *const FileSystemInfo) [*:0]const u16 {
-        return @as([*:0]const u16, @ptrCast(&self._volume_label));
+        return @as([*:0]const u16, @ptrcast(&self._volume_label));
     }
 
     pub const guid align(8) = Guid{

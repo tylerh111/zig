@@ -295,7 +295,7 @@ pub const Options = struct {
         const language_id = self.default_language_id orelse res.Language.default;
         const language_name = language_name: {
             if (std.meta.intToEnum(lang.LanguageId, language_id)) |lang_enum_val| {
-                break :language_name @tagName(lang_enum_val);
+                break :language_name @tagname(lang_enum_val);
             } else |_| {}
             if (language_id == lang.LOCALE_CUSTOM_UNSPECIFIED) {
                 break :language_name "LOCALE_CUSTOM_UNSPECIFIED";
@@ -305,7 +305,7 @@ pub const Options = struct {
         try writer.print("Default language: {s} (id=0x{x})\n", .{ language_name, language_id });
 
         const code_page = self.default_code_page orelse .windows1252;
-        try writer.print("Default codepage: {s} (id={})\n", .{ @tagName(code_page), @intFromEnum(code_page) });
+        try writer.print("Default codepage: {s} (id={})\n", .{ @tagname(code_page), @intfromenum(code_page) });
     }
 };
 
@@ -366,7 +366,7 @@ pub const Arg = struct {
             const prefix_len = arg.prefixSlice().len;
             switch (self.index_increment) {
                 1 => return .{
-                    .value_offset = @intFromPtr(self.slice.ptr) - @intFromPtr(arg.full.ptr),
+                    .value_offset = @intfromptr(self.slice.ptr) - @intfromptr(arg.full.ptr),
                     .prefix_len = prefix_len,
                     .name_offset = arg.name_offset,
                 },
@@ -646,8 +646,8 @@ pub fn parse(allocator: Allocator, args: []const []const u8, diagnostics: *Diagn
                     arg_i += value.index_increment;
                     continue :next_arg;
                 }
-                const percent_float = @as(f32, @floatFromInt(percent)) / 100;
-                options.max_string_literal_codepoints = @intFromFloat(percent_float * max_string_literal_length_100_percent);
+                const percent_float = @as(f32, @floatfromint(percent)) / 100;
+                options.max_string_literal_codepoints = @intfromfloat(percent_float * max_string_literal_length_100_percent);
                 arg_i += value.index_increment;
                 continue :next_arg;
             } else if (std.ascii.startsWithIgnoreCase(arg_name, "ln")) {
@@ -782,7 +782,7 @@ pub fn parse(allocator: Allocator, args: []const []const u8, diagnostics: *Diagn
                         var err_details = Diagnostics.ErrorDetails{ .arg_index = arg_i, .arg_span = value.argSpan(arg) };
                         var msg_writer = err_details.msg.writer(allocator);
                         try msg_writer.print("unsupported code page: {s} (id={})", .{
-                            @tagName(CodePage.getByIdentifier(code_page_id) catch unreachable),
+                            @tagname(CodePage.getByIdentifier(code_page_id) catch unreachable),
                             code_page_id,
                         });
                         try diagnostics.append(err_details);

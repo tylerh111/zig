@@ -126,7 +126,7 @@ pub const Type = struct {
         _ = unused_fmt_string;
         _ = options;
         _ = writer;
-        @compileError("do not format types directly; use either ty.fmtDebug() or ty.fmt()");
+        @compileerror("do not format types directly; use either ty.fmtDebug() or ty.fmt()");
     }
 
     pub const Formatter = std.fmt.Formatter(format2);
@@ -171,7 +171,7 @@ pub const Type = struct {
         return writer.print("{any}", .{start_type.ip_index});
     }
 
-    /// Prints a name suitable for `@typeName`.
+    /// Prints a name suitable for `@typename`.
     /// TODO: take an `opt_sema` to pass to `fmtValue` when printing sentinels.
     pub fn print(ty: Type, writer: anytype, mod: *Module) @TypeOf(writer).Error!void {
         const ip = &mod.intern_pool;
@@ -214,12 +214,12 @@ pub const Type = struct {
                     if (info.flags.vector_index == .runtime) {
                         try writer.writeAll(":?");
                     } else if (info.flags.vector_index != .none) {
-                        try writer.print(":{d}", .{@intFromEnum(info.flags.vector_index)});
+                        try writer.print(":{d}", .{@intfromenum(info.flags.vector_index)});
                     }
                     try writer.writeAll(") ");
                 }
                 if (info.flags.address_space != .generic) {
-                    try writer.print("addrspace(.{s}) ", .{@tagName(info.flags.address_space)});
+                    try writer.print("addrspace(.{s}) ", .{@tagname(info.flags.address_space)});
                 }
                 if (info.flags.is_const) try writer.writeAll("const ");
                 if (info.flags.is_volatile) try writer.writeAll("volatile ");
@@ -262,7 +262,7 @@ pub const Type = struct {
                 return;
             },
             .inferred_error_set_type => |func_index| {
-                try writer.writeAll("@typeInfo(@typeInfo(@TypeOf(");
+                try writer.writeAll("@typeinfo(@typeinfo(@TypeOf(");
                 const owner_decl = mod.funcOwnerDeclPtr(func_index);
                 try owner_decl.renderFullyQualifiedName(mod, writer);
                 try writer.writeAll(")).Fn.return_type.?).ErrorUnion.error_set");
@@ -303,13 +303,13 @@ pub const Type = struct {
                 .comptime_float,
                 .noreturn,
                 .adhoc_inferred_error_set,
-                => return writer.writeAll(@tagName(s)),
+                => return writer.writeAll(@tagname(s)),
 
                 .null,
                 .undefined,
-                => try writer.print("@TypeOf({s})", .{@tagName(s)}),
+                => try writer.print("@TypeOf({s})", .{@tagname(s)}),
 
-                .enum_literal => try writer.print("@TypeOf(.{s})", .{@tagName(s)}),
+                .enum_literal => try writer.print("@TypeOf(.{s})", .{@tagname(s)}),
                 .atomic_order => try writer.writeAll("std.builtin.AtomicOrder"),
                 .atomic_rmw_op => try writer.writeAll("std.builtin.AtomicRmwOp"),
                 .calling_convention => try writer.writeAll("std.builtin.CallingConvention"),
@@ -402,7 +402,7 @@ pub const Type = struct {
                 try writer.writeAll(") ");
                 if (fn_info.cc != .Unspecified) {
                     try writer.writeAll("callconv(.");
-                    try writer.writeAll(@tagName(fn_info.cc));
+                    try writer.writeAll(@tagname(fn_info.cc));
                     try writer.writeAll(") ");
                 }
                 if (fn_info.return_type == .generic_poison_type) {
@@ -908,7 +908,7 @@ pub const Type = struct {
                     if (vector_type.len == 0) return .{ .scalar = .@"1" };
                     switch (mod.comp.getZigBackend()) {
                         else => {
-                            const elem_bits: u32 = @intCast(try Type.fromInterned(vector_type.child).bitSizeAdvanced(mod, opt_sema));
+                            const elem_bits: u32 = @intcast(try Type.fromInterned(vector_type.child).bitSizeAdvanced(mod, opt_sema));
                             if (elem_bits == 0) return .{ .scalar = .@"1" };
                             const bytes = ((elem_bits * vector_type.len) + 7) / 8;
                             const alignment = std.math.ceilPowerOfTwoAssert(u32, bytes);
@@ -926,7 +926,7 @@ pub const Type = struct {
                                 const alignment = std.math.ceilPowerOfTwoAssert(u32, bytes);
                                 return .{ .scalar = Alignment.fromByteUnits(alignment) };
                             }
-                            const elem_bytes: u32 = @intCast((try Type.fromInterned(vector_type.child).abiSizeAdvanced(mod, strat)).scalar);
+                            const elem_bytes: u32 = @intcast((try Type.fromInterned(vector_type.child).abiSizeAdvanced(mod, strat)).scalar);
                             if (elem_bytes == 0) return .{ .scalar = .@"1" };
                             const bytes = elem_bytes * vector_type.len;
                             if (bytes > 32 and std.Target.x86.featureSetHas(target.cpu.features, .avx512f)) return .{ .scalar = .@"64" };
@@ -1229,10 +1229,10 @@ pub const Type = struct {
                     return AbiSizeAdvanced{ .scalar = intAbiSize(int_type.bits, target, use_llvm) };
                 },
                 .ptr_type => |ptr_type| switch (ptr_type.flags.size) {
-                    .Slice => return .{ .scalar = @divExact(target.ptrBitWidth(), 8) * 2 },
-                    else => return .{ .scalar = @divExact(target.ptrBitWidth(), 8) },
+                    .Slice => return .{ .scalar = @divexact(target.ptrBitWidth(), 8) * 2 },
+                    else => return .{ .scalar = @divexact(target.ptrBitWidth(), 8) },
                 },
-                .anyframe_type => return AbiSizeAdvanced{ .scalar = @divExact(target.ptrBitWidth(), 8) },
+                .anyframe_type => return AbiSizeAdvanced{ .scalar = @divexact(target.ptrBitWidth(), 8) },
 
                 .array_type => |array_type| {
                     const len = array_type.lenIncludingSentinel();
@@ -1271,12 +1271,12 @@ pub const Type = struct {
                             break :total_bytes (total_bits + 7) / 8;
                         },
                         .stage2_c => total_bytes: {
-                            const elem_bytes: u32 = @intCast((try Type.fromInterned(vector_type.child).abiSizeAdvanced(mod, strat)).scalar);
+                            const elem_bytes: u32 = @intcast((try Type.fromInterned(vector_type.child).abiSizeAdvanced(mod, strat)).scalar);
                             break :total_bytes elem_bytes * vector_type.len;
                         },
                         .stage2_x86_64 => total_bytes: {
                             if (vector_type.child == .bool_type) break :total_bytes std.math.divCeil(u32, vector_type.len, 8) catch unreachable;
-                            const elem_bytes: u32 = @intCast((try Type.fromInterned(vector_type.child).abiSizeAdvanced(mod, strat)).scalar);
+                            const elem_bytes: u32 = @intcast((try Type.fromInterned(vector_type.child).abiSizeAdvanced(mod, strat)).scalar);
                             break :total_bytes elem_bytes * vector_type.len;
                         },
                     };
@@ -1360,7 +1360,7 @@ pub const Type = struct {
 
                     .usize,
                     .isize,
-                    => return AbiSizeAdvanced{ .scalar = @divExact(target.ptrBitWidth(), 8) },
+                    => return AbiSizeAdvanced{ .scalar = @divexact(target.ptrBitWidth(), 8) },
 
                     .c_char => return AbiSizeAdvanced{ .scalar = target.c_type_byte_size(.char) },
                     .c_short => return AbiSizeAdvanced{ .scalar = target.c_type_byte_size(.short) },
@@ -1532,11 +1532,11 @@ pub const Type = struct {
     }
 
     pub fn ptrAbiAlignment(target: Target) Alignment {
-        return Alignment.fromNonzeroByteUnits(@divExact(target.ptrBitWidth(), 8));
+        return Alignment.fromNonzeroByteUnits(@divexact(target.ptrBitWidth(), 8));
     }
 
     pub fn intAbiSize(bits: u16, target: Target, use_llvm: bool) u64 {
-        return intAbiAlignment(bits, target, use_llvm).forward(@as(u16, @intCast((@as(u17, bits) + 7) / 8)));
+        return intAbiAlignment(bits, target, use_llvm).forward(@as(u16, @intcast((@as(u17, bits) + 7) / 8)));
     }
 
     pub fn intAbiAlignment(bits: u16, target: Target, use_llvm: bool) Alignment {
@@ -1560,7 +1560,7 @@ pub const Type = struct {
                 },
             },
             else => return Alignment.fromByteUnits(@min(
-                std.math.ceilPowerOfTwoPromote(u16, @as(u16, @intCast((@as(u17, bits) + 7) / 8))),
+                std.math.ceilPowerOfTwoPromote(u16, @as(u16, @intcast((@as(u17, bits) + 7) / 8))),
                 maxIntAlignment(target, use_llvm),
             )),
         };
@@ -2104,7 +2104,7 @@ pub const Type = struct {
     pub fn unionBackingType(ty: Type, mod: *Module) !Type {
         return switch (ty.containerLayout(mod)) {
             .@"extern" => try mod.arrayType(.{ .len = ty.abiSize(mod), .child = .u8_type }),
-            .@"packed" => try mod.intType(.unsigned, @intCast(ty.bitSize(mod))),
+            .@"packed" => try mod.intType(.unsigned, @intcast(ty.bitSize(mod))),
             .auto => unreachable,
         };
     }
@@ -2238,7 +2238,7 @@ pub const Type = struct {
     pub fn vectorLen(ty: Type, mod: *const Module) u32 {
         return switch (mod.intern_pool.indexToKey(ty.toIntern())) {
             .vector_type => |vector_type| vector_type.len,
-            .anon_struct_type => |tuple| @intCast(tuple.types.len),
+            .anon_struct_type => |tuple| @intcast(tuple.types.len),
             else => unreachable,
         };
     }
@@ -2519,7 +2519,7 @@ pub const Type = struct {
 
                 inline .array_type, .vector_type => |seq_type, seq_tag| {
                     const has_sentinel = seq_tag == .array_type and seq_type.sentinel != .none;
-                    if (seq_type.len + @intFromBool(has_sentinel) == 0) return Value.fromInterned((try mod.intern(.{ .aggregate = .{
+                    if (seq_type.len + @intfrombool(has_sentinel) == 0) return Value.fromInterned((try mod.intern(.{ .aggregate = .{
                         .ty = ty.toIntern(),
                         .storage = .{ .elems = &.{} },
                     } })));
@@ -2593,7 +2593,7 @@ pub const Type = struct {
                     const field_vals = try mod.gpa.alloc(InternPool.Index, struct_type.field_types.len);
                     defer mod.gpa.free(field_vals);
                     for (field_vals, 0..) |*field_val, i_usize| {
-                        const i: u32 = @intCast(i_usize);
+                        const i: u32 = @intcast(i_usize);
                         if (struct_type.fieldIsComptime(ip, i)) {
                             assert(struct_type.haveFieldInits(ip));
                             field_val.* = struct_type.field_inits.get(ip)[i];
@@ -2826,7 +2826,7 @@ pub const Type = struct {
                             try sema.resolveTypeFieldsStruct(ty.toIntern(), struct_type);
 
                             for (0..struct_type.field_types.len) |i_usize| {
-                                const i: u32 = @intCast(i_usize);
+                                const i: u32 = @intcast(i_usize);
                                 if (struct_type.fieldIsComptime(ip, i)) continue;
                                 const field_ty = struct_type.field_types.get(ip)[i];
                                 if (try Type.fromInterned(field_ty).comptimeOnlyAdvanced(mod, opt_sema)) {
@@ -2917,7 +2917,7 @@ pub const Type = struct {
         return ty.zigTypeTag(mod) == .Vector;
     }
 
-    /// Returns 0 if not a vector, otherwise returns @bitSizeOf(Element) * vector_len.
+    /// Returns 0 if not a vector, otherwise returns @bitsizeof(Element) * vector_len.
     pub fn totalVectorBits(ty: Type, zcu: *Zcu) u64 {
         if (!ty.isVector(zcu)) return 0;
         const v = zcu.intern_pool.indexToKey(ty.toIntern()).vector_type;
@@ -3200,9 +3200,9 @@ pub const Type = struct {
             .union_type => {
                 const union_obj = ip.loadUnionType(ty.toIntern());
                 if (opt_sema) |sema| {
-                    return sema.unionFieldAlignment(union_obj, @intCast(index));
+                    return sema.unionFieldAlignment(union_obj, @intcast(index));
                 } else {
-                    return zcu.unionFieldNormalAlignment(union_obj, @intCast(index));
+                    return zcu.unionFieldNormalAlignment(union_obj, @intcast(index));
                 }
             },
             else => unreachable,
@@ -3473,7 +3473,7 @@ pub const Type = struct {
             if (i == field_idx) {
                 bit_offset = running_bits;
             }
-            running_bits += @intCast(f_ty.bitSize(zcu));
+            running_bits += @intcast(f_ty.bitSize(zcu));
         }
 
         const res_host_size: u16, const res_bit_offset: u16 = if (parent_ptr_info.packed_offset.host_size != 0)
@@ -3563,8 +3563,8 @@ pub const Type = struct {
     pub fn smallestUnsignedBits(max: u64) u16 {
         if (max == 0) return 0;
         const base = std.math.log2(max);
-        const upper = (@as(u64, 1) << @as(u6, @intCast(base))) - 1;
-        return @as(u16, @intCast(base + @intFromBool(upper < max)));
+        const upper = (@as(u64, 1) << @as(u6, @intcast(base))) - 1;
+        return @as(u16, @intcast(base + @intfrombool(upper < max)));
     }
 
     /// This is only used for comptime asserts. Bump this number when you make a change

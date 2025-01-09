@@ -228,7 +228,7 @@ pub const W = struct {
     pub const TRAPPED = 0x0020;
 
     pub fn EXITSTATUS(s: u32) u8 {
-        return @as(u8, @intCast((s & 0xff00) >> 8));
+        return @as(u8, @intcast((s & 0xff00) >> 8));
     }
     pub fn TERMSIG(s: u32) u32 {
         return s & 0x7f;
@@ -427,7 +427,7 @@ pub const dirent = extern struct {
     name: [256]u8,
 
     pub fn reclen(self: dirent) u16 {
-        return (@offsetOf(dirent, "name") + self.namlen + 1 + 7) & ~@as(u16, 7);
+        return (@offsetof(dirent, "name") + self.namlen + 1 + 7) & ~@as(u16, 7);
     }
 };
 
@@ -473,13 +473,13 @@ pub const sockaddr = extern struct {
         padding: [126]u8 = undefined,
 
         comptime {
-            assert(@sizeOf(storage) == SS_MAXSIZE);
-            assert(@alignOf(storage) == 8);
+            assert(@sizeof(storage) == SS_MAXSIZE);
+            assert(@alignof(storage) == 8);
         }
     };
 
     pub const in = extern struct {
-        len: u8 = @sizeOf(in),
+        len: u8 = @sizeof(in),
         family: sa_family_t = AF.INET,
         port: in_port_t,
         addr: u32,
@@ -487,7 +487,7 @@ pub const sockaddr = extern struct {
     };
 
     pub const in6 = extern struct {
-        len: u8 = @sizeOf(in6),
+        len: u8 = @sizeof(in6),
         family: sa_family_t = AF.INET6,
         port: in_port_t,
         flowinfo: u32,
@@ -496,7 +496,7 @@ pub const sockaddr = extern struct {
     };
 
     pub const un = extern struct {
-        len: u8 = @sizeOf(un),
+        len: u8 = @sizeof(un),
         family: sa_family_t = AF.UNIX,
         path: [104]u8,
     };
@@ -616,9 +616,9 @@ pub const S = struct {
 pub const BADSIG = SIG.ERR;
 
 pub const SIG = struct {
-    pub const DFL: ?Sigaction.handler_fn = @ptrFromInt(0);
-    pub const IGN: ?Sigaction.handler_fn = @ptrFromInt(1);
-    pub const ERR: ?Sigaction.handler_fn = @ptrFromInt(maxInt(usize));
+    pub const DFL: ?Sigaction.handler_fn = @ptrfromint(0);
+    pub const IGN: ?Sigaction.handler_fn = @ptrfromint(1);
+    pub const ERR: ?Sigaction.handler_fn = @ptrfromint(maxInt(usize));
 
     pub const BLOCK = 1;
     pub const UNBLOCK = 2;
@@ -869,10 +869,10 @@ pub const RTLD = struct {
     pub const NODELETE = 0x01000;
     pub const NOLOAD = 0x02000;
 
-    pub const NEXT = @as(*anyopaque, @ptrFromInt(@as(usize, @bitCast(@as(isize, -1)))));
-    pub const DEFAULT = @as(*anyopaque, @ptrFromInt(@as(usize, @bitCast(@as(isize, -2)))));
-    pub const SELF = @as(*anyopaque, @ptrFromInt(@as(usize, @bitCast(@as(isize, -3)))));
-    pub const ALL = @as(*anyopaque, @ptrFromInt(@as(usize, @bitCast(@as(isize, -4)))));
+    pub const NEXT = @as(*anyopaque, @ptrfromint(@as(usize, @bitcast(@as(isize, -1)))));
+    pub const DEFAULT = @as(*anyopaque, @ptrfromint(@as(usize, @bitcast(@as(isize, -2)))));
+    pub const SELF = @as(*anyopaque, @ptrfromint(@as(usize, @bitcast(@as(isize, -3)))));
+    pub const ALL = @as(*anyopaque, @ptrfromint(@as(usize, @bitcast(@as(isize, -4)))));
 };
 
 pub const dl_phdr_info = extern struct {

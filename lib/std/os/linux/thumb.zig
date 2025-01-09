@@ -8,9 +8,9 @@ const linux = std.os.linux;
 const SYS = linux.SYS;
 
 pub fn syscall0(number: SYS) usize {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
 
-    var buf: [2]usize = .{ @intFromEnum(number), undefined };
+    var buf: [2]usize = .{ @intfromenum(number), undefined };
     return asm volatile (
         \\ str r7, [%[tmp], #4]
         \\ ldr r7, [%[tmp]]
@@ -23,9 +23,9 @@ pub fn syscall0(number: SYS) usize {
 }
 
 pub fn syscall1(number: SYS, arg1: usize) usize {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
 
-    var buf: [2]usize = .{ @intFromEnum(number), undefined };
+    var buf: [2]usize = .{ @intfromenum(number), undefined };
     return asm volatile (
         \\ str r7, [%[tmp], #4]
         \\ ldr r7, [%[tmp]]
@@ -39,9 +39,9 @@ pub fn syscall1(number: SYS, arg1: usize) usize {
 }
 
 pub fn syscall2(number: SYS, arg1: usize, arg2: usize) usize {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
 
-    var buf: [2]usize = .{ @intFromEnum(number), undefined };
+    var buf: [2]usize = .{ @intfromenum(number), undefined };
     return asm volatile (
         \\ str r7, [%[tmp], #4]
         \\ ldr r7, [%[tmp]]
@@ -56,9 +56,9 @@ pub fn syscall2(number: SYS, arg1: usize, arg2: usize) usize {
 }
 
 pub fn syscall3(number: SYS, arg1: usize, arg2: usize, arg3: usize) usize {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
 
-    var buf: [2]usize = .{ @intFromEnum(number), undefined };
+    var buf: [2]usize = .{ @intfromenum(number), undefined };
     return asm volatile (
         \\ str r7, [%[tmp], #4]
         \\ ldr r7, [%[tmp]]
@@ -74,9 +74,9 @@ pub fn syscall3(number: SYS, arg1: usize, arg2: usize, arg3: usize) usize {
 }
 
 pub fn syscall4(number: SYS, arg1: usize, arg2: usize, arg3: usize, arg4: usize) usize {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
 
-    var buf: [2]usize = .{ @intFromEnum(number), undefined };
+    var buf: [2]usize = .{ @intfromenum(number), undefined };
     return asm volatile (
         \\ str r7, [%[tmp], #4]
         \\ ldr r7, [%[tmp]]
@@ -93,9 +93,9 @@ pub fn syscall4(number: SYS, arg1: usize, arg2: usize, arg3: usize, arg4: usize)
 }
 
 pub fn syscall5(number: SYS, arg1: usize, arg2: usize, arg3: usize, arg4: usize, arg5: usize) usize {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
 
-    var buf: [2]usize = .{ @intFromEnum(number), undefined };
+    var buf: [2]usize = .{ @intfromenum(number), undefined };
     return asm volatile (
         \\ str r7, [%[tmp], #4]
         \\ ldr r7, [%[tmp]]
@@ -121,9 +121,9 @@ pub fn syscall6(
     arg5: usize,
     arg6: usize,
 ) usize {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
 
-    var buf: [2]usize = .{ @intFromEnum(number), undefined };
+    var buf: [2]usize = .{ @intfromenum(number), undefined };
     return asm volatile (
         \\ str r7, [%[tmp], #4]
         \\ ldr r7, [%[tmp]]
@@ -146,7 +146,7 @@ pub fn restore() callconv(.Naked) noreturn {
         \\ mov r7, %[number]
         \\ svc #0
         :
-        : [number] "I" (@intFromEnum(SYS.sigreturn)),
+        : [number] "I" (@intfromenum(SYS.sigreturn)),
     );
 }
 
@@ -155,7 +155,7 @@ pub fn restore_rt() callconv(.Naked) noreturn {
         \\ mov r7, %[number]
         \\ svc #0
         :
-        : [number] "I" (@intFromEnum(SYS.rt_sigreturn)),
+        : [number] "I" (@intfromenum(SYS.rt_sigreturn)),
         : "memory"
     );
 }

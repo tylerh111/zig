@@ -15,7 +15,7 @@ pub const Index = enum(u32) {
     _,
 
     pub fn get(i: Index) *Decl {
-        return &Walk.decls.items[@intFromEnum(i)];
+        return &Walk.decls.items[@intfromenum(i)];
     }
 };
 
@@ -72,7 +72,7 @@ pub fn extra_info(d: *const Decl) ExtraInfo {
         },
 
         else => |t| {
-            log.debug("hit '{s}'", .{@tagName(t)});
+            log.debug("hit '{s}'", .{@tagname(t)});
             unreachable;
         },
     }

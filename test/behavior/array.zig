@@ -170,15 +170,15 @@ test "array with sentinels" {
             {
                 var zero_sized: [0:0xde]u8 = [_:0xde]u8{};
                 try expect(zero_sized[0] == 0xde);
-                var reinterpreted: *[1]u8 = @ptrCast(&zero_sized);
+                var reinterpreted: *[1]u8 = @ptrcast(&zero_sized);
                 _ = &reinterpreted;
                 try expect(reinterpreted[0] == 0xde);
             }
             var arr: [3:0x55]u8 = undefined;
             // Make sure the sentinel pointer is pointing after the last element.
             if (!is_ct) {
-                const sentinel_ptr = @intFromPtr(&arr[3]);
-                const last_elem_ptr = @intFromPtr(&arr[2]);
+                const sentinel_ptr = @intfromptr(&arr[3]);
+                const last_elem_ptr = @intfromptr(&arr[2]);
                 try expect((sentinel_ptr - last_elem_ptr) == 1);
             }
             // Make sure the sentinel is writeable.
@@ -194,7 +194,7 @@ test "void arrays" {
     var array: [4]void = undefined;
     array[0] = void{};
     array[1] = array[2];
-    try expect(@sizeOf(@TypeOf(array)) == 0);
+    try expect(@sizeof(@TypeOf(array)) == 0);
     try expect(array.len == 4);
 }
 
@@ -707,7 +707,7 @@ test "runtime initialized sentinel-terminated array literal" {
     var c: u16 = 300;
     _ = &c;
     const f = &[_:0x9999]u16{c};
-    const g = @as(*const [4]u8, @ptrCast(f));
+    const g = @as(*const [4]u8, @ptrcast(f));
     try std.testing.expect(g[2] == 0x99);
     try std.testing.expect(g[3] == 0x99);
 }
@@ -744,8 +744,8 @@ test "discarded array init preserves result location" {
 
     var x: u32 = 0;
     _ = [2]u8{
-        @intCast(S.f(&x)),
-        @intCast(S.f(&x)),
+        @intcast(S.f(&x)),
+        @intcast(S.f(&x)),
     };
 
     // Ensure function was run
@@ -754,8 +754,8 @@ test "discarded array init preserves result location" {
 
 test "array init with no result location has result type" {
     const x = .{ .foo = [2]u16{
-        @intCast(10),
-        @intCast(20),
+        @intcast(10),
+        @intcast(20),
     } };
 
     try expect(x.foo.len == 2);
@@ -787,7 +787,7 @@ test "array init with no result pointer sets field result types" {
     };
 
     const x: u64 = 123;
-    const y = S.f(.{@intCast(x)});
+    const y = S.f(.{@intcast(x)});
 
     try expect(y == x);
 }
@@ -825,8 +825,8 @@ test "slice initialized through reference to anonymous array init provides resul
     var my_u64: u64 = 456;
     _ = .{ &my_u32, &my_u64 };
     const foo: []const u16 = &.{
-        @intCast(my_u32),
-        @intCast(my_u64),
+        @intcast(my_u32),
+        @intcast(my_u64),
         @truncate(my_u32),
         @truncate(my_u64),
     };
@@ -840,8 +840,8 @@ test "sentinel-terminated slice initialized through reference to anonymous array
     var my_u64: u64 = 456;
     _ = .{ &my_u32, &my_u64 };
     const foo: [:999]const u16 = &.{
-        @intCast(my_u32),
-        @intCast(my_u64),
+        @intcast(my_u32),
+        @intcast(my_u64),
         @truncate(my_u32),
         @truncate(my_u64),
     };
@@ -855,8 +855,8 @@ test "many-item pointer initialized through reference to anonymous array init pr
     var my_u64: u64 = 456;
     _ = .{ &my_u32, &my_u64 };
     const foo: [*]const u16 = &.{
-        @intCast(my_u32),
-        @intCast(my_u64),
+        @intcast(my_u32),
+        @intcast(my_u64),
         @truncate(my_u32),
         @truncate(my_u64),
     };
@@ -873,8 +873,8 @@ test "many-item sentinel-terminated pointer initialized through reference to ano
     var my_u64: u64 = 456;
     _ = .{ &my_u32, &my_u64 };
     const foo: [*:999]const u16 = &.{
-        @intCast(my_u32),
-        @intCast(my_u64),
+        @intcast(my_u32),
+        @intcast(my_u64),
         @truncate(my_u32),
         @truncate(my_u64),
     };
@@ -892,8 +892,8 @@ test "pointer to array initialized through reference to anonymous array init pro
     var my_u64: u64 = 456;
     _ = .{ &my_u32, &my_u64 };
     const foo: *const [4]u16 = &.{
-        @intCast(my_u32),
-        @intCast(my_u64),
+        @intcast(my_u32),
+        @intcast(my_u64),
         @truncate(my_u32),
         @truncate(my_u64),
     };
@@ -907,8 +907,8 @@ test "pointer to sentinel-terminated array initialized through reference to anon
     var my_u64: u64 = 456;
     _ = .{ &my_u32, &my_u64 };
     const foo: *const [4:999]u16 = &.{
-        @intCast(my_u32),
-        @intCast(my_u64),
+        @intcast(my_u32),
+        @intcast(my_u64),
         @truncate(my_u32),
         @truncate(my_u64),
     };
@@ -918,11 +918,11 @@ test "pointer to sentinel-terminated array initialized through reference to anon
 test "tuple initialized through reference to anonymous array init provides result types" {
     const Tuple = struct { u64, *const u32 };
     const foo: *const Tuple = &.{
-        @intCast(12345),
-        @ptrFromInt(0x1000),
+        @intcast(12345),
+        @ptrfromint(0x1000),
     };
     try expect(foo[0] == 12345);
-    try expect(@intFromPtr(foo[1]) == 0x1000);
+    try expect(@intfromptr(foo[1]) == 0x1000);
 }
 
 test "copied array element doesn't alias source" {

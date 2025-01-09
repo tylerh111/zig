@@ -198,5 +198,5 @@ const defer_assign = switch (block: {
     else => |i| i,
 };
 comptime {
-    if (defer_assign != 0) @compileError("defer_assign failed!");
+    if (defer_assign != 0) @compileerror("defer_assign failed!");
 }

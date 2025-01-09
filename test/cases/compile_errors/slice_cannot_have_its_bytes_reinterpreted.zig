@@ -1,6 +1,6 @@
 export fn foo() void {
-    const bytes align(@alignOf([]const u8)) = [1]u8{0xfa} ** 16;
-    _ = @as(*const []const u8, @ptrCast(&bytes)).*;
+    const bytes align(@alignof([]const u8)) = [1]u8{0xfa} ** 16;
+    _ = @as(*const []const u8, @ptrcast(&bytes)).*;
 }
 
 // error

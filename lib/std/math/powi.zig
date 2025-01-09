@@ -21,13 +21,13 @@ const testing = std.testing;
 ///  - powi(T, -1, y)  = -1 for y an odd integer
 ///  - powi(T, -1, y)  = 1 unless T is i1, i0, u0
 ///  - powi(T, -1, y)  = Overflow
-///  - powi(T, x, y)   = Overflow when y >= @bitSizeOf(x)
+///  - powi(T, x, y)   = Overflow when y >= @bitsizeof(x)
 ///  - powi(T, x, y)   = Underflow when y < 0
 pub fn powi(comptime T: type, x: T, y: T) (error{
     Overflow,
     Underflow,
 }!T) {
-    const bit_size = @typeInfo(T).Int.bits;
+    const bit_size = @typeinfo(T).Int.bits;
 
     // `y & 1 == 0` won't compile when `does_one_overflow`.
     const does_one_overflow = math.maxInt(T) < 1;
@@ -70,20 +70,20 @@ pub fn powi(comptime T: type, x: T, y: T) (error{
 
     while (exp > 1) {
         if (exp & 1 == 1) {
-            const ov = @mulWithOverflow(acc, base);
+            const ov = @mulwithoverflow(acc, base);
             if (ov[1] != 0) return error.Overflow;
             acc = ov[0];
         }
 
         exp >>= 1;
 
-        const ov = @mulWithOverflow(base, base);
+        const ov = @mulwithoverflow(base, base);
         if (ov[1] != 0) return error.Overflow;
         base = ov[0];
     }
 
     if (exp == 1) {
-        const ov = @mulWithOverflow(acc, base);
+        const ov = @mulwithoverflow(acc, base);
         if (ov[1] != 0) return error.Overflow;
         acc = ov[0];
     }

@@ -22,7 +22,7 @@ pub fn init(allocator: mem.Allocator) !*Pragma {
 }
 
 fn deinit(pragma: *Pragma, comp: *Compilation) void {
-    const self: *Message = @fieldParentPtr("pragma", pragma);
+    const self: *Message = @fieldparentptr("pragma", pragma);
     comp.gpa.destroy(self);
 }
 

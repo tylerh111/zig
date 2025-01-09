@@ -109,7 +109,7 @@ pub const Node = struct {
             // included for safety checks. Without such safety checks enabled,
             // we always want this union to be 8 bytes.
             if (builtin.mode != .Debug and builtin.mode != .ReleaseSafe) {
-                assert(@sizeOf(Data) == 8);
+                assert(@sizeof(Data) == 8);
             }
         }
     };
@@ -126,8 +126,8 @@ pub const Node = struct {
 
         pub fn asNumber(start: ListStart) ?u30 {
             if (start == .unordered) return null;
-            assert(@intFromEnum(start) <= 999_999_999);
-            return @intFromEnum(start);
+            assert(@intfromenum(start) <= 999_999_999);
+            return @intfromenum(start);
         }
     };
 
@@ -170,13 +170,13 @@ pub fn ExtraData(comptime T: type) type {
 }
 
 pub fn extraData(doc: Document, comptime T: type, index: ExtraIndex) ExtraData(T) {
-    const fields = @typeInfo(T).Struct.fields;
-    var i: usize = @intFromEnum(index);
+    const fields = @typeinfo(T).Struct.fields;
+    var i: usize = @intfromenum(index);
     var result: T = undefined;
     inline for (fields) |field| {
         @field(result, field.name) = switch (field.type) {
             u32 => doc.extra[i],
-            else => @compileError("bad field type"),
+            else => @compileerror("bad field type"),
         };
         i += 1;
     }
@@ -185,10 +185,10 @@ pub fn extraData(doc: Document, comptime T: type, index: ExtraIndex) ExtraData(T
 
 pub fn extraChildren(doc: Document, index: ExtraIndex) []const Node.Index {
     const children = doc.extraData(Node.Children, index);
-    return @ptrCast(doc.extra[children.end..][0..children.data.len]);
+    return @ptrcast(doc.extra[children.end..][0..children.data.len]);
 }
 
 pub fn string(doc: Document, index: StringIndex) [:0]const u8 {
-    const start = @intFromEnum(index);
-    return std.mem.span(@as([*:0]u8, @ptrCast(doc.string_bytes[start..].ptr)));
+    const start = @intfromenum(index);
+    return std.mem.span(@as([*:0]u8, @ptrcast(doc.string_bytes[start..].ptr)));
 }

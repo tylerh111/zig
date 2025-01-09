@@ -1,21 +1,21 @@
 const err = error.Foo;
 
 export fn entry1() void {
-    const a: anyerror = @errorCast(1);
+    const a: anyerror = @errorcast(1);
     _ = a;
 }
 export fn entry2() void {
-    const a: i32 = @errorCast(err);
+    const a: i32 = @errorcast(err);
     _ = a;
 }
 export fn entry3() void {
     const e: anyerror!void = err;
-    const a: anyerror = @errorCast(e);
+    const a: anyerror = @errorcast(e);
     _ = a;
 }
 pub export fn entry4() void {
     const a: anyerror!u32 = 123;
-    const b: anyerror!f32 = @errorCast(a);
+    const b: anyerror!f32 = @errorcast(a);
     _ = b;
 }
 

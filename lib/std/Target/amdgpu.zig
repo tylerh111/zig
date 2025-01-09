@@ -183,320 +183,320 @@ pub const featureSetHasAny = CpuFeature.feature_set_fns(Feature).featureSetHasAn
 pub const featureSetHasAll = CpuFeature.feature_set_fns(Feature).featureSetHasAll;
 
 pub const all_features = blk: {
-    const len = @typeInfo(Feature).Enum.fields.len;
+    const len = @typeinfo(Feature).Enum.fields.len;
     std.debug.assert(len <= CpuFeature.Set.needed_bit_count);
     var result: [len]CpuFeature = undefined;
-    result[@intFromEnum(Feature.@"16_bit_insts")] = .{
+    result[@intfromenum(Feature.@"16_bit_insts")] = .{
         .llvm_name = "16-bit-insts",
         .description = "Has i16/f16 instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.a16)] = .{
+    result[@intfromenum(Feature.a16)] = .{
         .llvm_name = "a16",
         .description = "Support A16 for 16-bit coordinates/gradients/lod/clamp/mip image operands",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.add_no_carry_insts)] = .{
+    result[@intfromenum(Feature.add_no_carry_insts)] = .{
         .llvm_name = "add-no-carry-insts",
         .description = "Have VALU add/sub instructions without carry out",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.aperture_regs)] = .{
+    result[@intfromenum(Feature.aperture_regs)] = .{
         .llvm_name = "aperture-regs",
         .description = "Has Memory Aperture Base and Size Registers",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.architected_flat_scratch)] = .{
+    result[@intfromenum(Feature.architected_flat_scratch)] = .{
         .llvm_name = "architected-flat-scratch",
         .description = "Flat Scratch register is a readonly SPI initialized architected register",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.architected_sgprs)] = .{
+    result[@intfromenum(Feature.architected_sgprs)] = .{
         .llvm_name = "architected-sgprs",
         .description = "Enable the architected SGPRs",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.atomic_buffer_global_pk_add_f16_insts)] = .{
+    result[@intfromenum(Feature.atomic_buffer_global_pk_add_f16_insts)] = .{
         .llvm_name = "atomic-buffer-global-pk-add-f16-insts",
         .description = "Has buffer_atomic_pk_add_f16 and global_atomic_pk_add_f16 instructions that can return original value",
         .dependencies = featureSet(&[_]Feature{
             .flat_global_insts,
         }),
     };
-    result[@intFromEnum(Feature.atomic_buffer_global_pk_add_f16_no_rtn_insts)] = .{
+    result[@intfromenum(Feature.atomic_buffer_global_pk_add_f16_no_rtn_insts)] = .{
         .llvm_name = "atomic-buffer-global-pk-add-f16-no-rtn-insts",
         .description = "Has buffer_atomic_pk_add_f16 and global_atomic_pk_add_f16 instructions that don't return original value",
         .dependencies = featureSet(&[_]Feature{
             .flat_global_insts,
         }),
     };
-    result[@intFromEnum(Feature.atomic_csub_no_rtn_insts)] = .{
+    result[@intfromenum(Feature.atomic_csub_no_rtn_insts)] = .{
         .llvm_name = "atomic-csub-no-rtn-insts",
         .description = "Has buffer_atomic_csub and global_atomic_csub instructions that don't return original value",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.atomic_ds_pk_add_16_insts)] = .{
+    result[@intfromenum(Feature.atomic_ds_pk_add_16_insts)] = .{
         .llvm_name = "atomic-ds-pk-add-16-insts",
         .description = "Has ds_pk_add_bf16, ds_pk_add_f16, ds_pk_add_rtn_bf16, ds_pk_add_rtn_f16 instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.atomic_fadd_no_rtn_insts)] = .{
+    result[@intfromenum(Feature.atomic_fadd_no_rtn_insts)] = .{
         .llvm_name = "atomic-fadd-no-rtn-insts",
         .description = "Has buffer_atomic_add_f32 and global_atomic_add_f32 instructions that don't return original value",
         .dependencies = featureSet(&[_]Feature{
             .flat_global_insts,
         }),
     };
-    result[@intFromEnum(Feature.atomic_fadd_rtn_insts)] = .{
+    result[@intfromenum(Feature.atomic_fadd_rtn_insts)] = .{
         .llvm_name = "atomic-fadd-rtn-insts",
         .description = "Has buffer_atomic_add_f32 and global_atomic_add_f32 instructions that return original value",
         .dependencies = featureSet(&[_]Feature{
             .flat_global_insts,
         }),
     };
-    result[@intFromEnum(Feature.atomic_flat_pk_add_16_insts)] = .{
+    result[@intfromenum(Feature.atomic_flat_pk_add_16_insts)] = .{
         .llvm_name = "atomic-flat-pk-add-16-insts",
         .description = "Has flat_atomic_pk_add_f16 and flat_atomic_pk_add_bf16 instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.atomic_global_pk_add_bf16_inst)] = .{
+    result[@intfromenum(Feature.atomic_global_pk_add_bf16_inst)] = .{
         .llvm_name = "atomic-global-pk-add-bf16-inst",
         .description = "Has global_atomic_pk_add_bf16 instruction",
         .dependencies = featureSet(&[_]Feature{
             .flat_global_insts,
         }),
     };
-    result[@intFromEnum(Feature.auto_waitcnt_before_barrier)] = .{
+    result[@intfromenum(Feature.auto_waitcnt_before_barrier)] = .{
         .llvm_name = "auto-waitcnt-before-barrier",
         .description = "Hardware automatically inserts waitcnt before barrier",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.back_off_barrier)] = .{
+    result[@intfromenum(Feature.back_off_barrier)] = .{
         .llvm_name = "back-off-barrier",
         .description = "Hardware supports backing off s_barrier if an exception occurs",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.ci_insts)] = .{
+    result[@intfromenum(Feature.ci_insts)] = .{
         .llvm_name = "ci-insts",
         .description = "Additional instructions for CI+",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.cumode)] = .{
+    result[@intfromenum(Feature.cumode)] = .{
         .llvm_name = "cumode",
         .description = "Enable CU wavefront execution mode",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.default_component_broadcast)] = .{
+    result[@intfromenum(Feature.default_component_broadcast)] = .{
         .llvm_name = "default-component-broadcast",
         .description = "BUFFER/IMAGE store instructions set unspecified components to x component (GFX12)",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.default_component_zero)] = .{
+    result[@intfromenum(Feature.default_component_zero)] = .{
         .llvm_name = "default-component-zero",
         .description = "BUFFER/IMAGE store instructions set unspecified components to zero (before GFX12)",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.dl_insts)] = .{
+    result[@intfromenum(Feature.dl_insts)] = .{
         .llvm_name = "dl-insts",
         .description = "Has v_fmac_f32 and v_xnor_b32 instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.dot10_insts)] = .{
+    result[@intfromenum(Feature.dot10_insts)] = .{
         .llvm_name = "dot10-insts",
         .description = "Has v_dot2_f32_f16 instruction",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.dot1_insts)] = .{
+    result[@intfromenum(Feature.dot1_insts)] = .{
         .llvm_name = "dot1-insts",
         .description = "Has v_dot4_i32_i8 and v_dot8_i32_i4 instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.dot2_insts)] = .{
+    result[@intfromenum(Feature.dot2_insts)] = .{
         .llvm_name = "dot2-insts",
         .description = "Has v_dot2_i32_i16, v_dot2_u32_u16 instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.dot3_insts)] = .{
+    result[@intfromenum(Feature.dot3_insts)] = .{
         .llvm_name = "dot3-insts",
         .description = "Has v_dot8c_i32_i4 instruction",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.dot4_insts)] = .{
+    result[@intfromenum(Feature.dot4_insts)] = .{
         .llvm_name = "dot4-insts",
         .description = "Has v_dot2c_i32_i16 instruction",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.dot5_insts)] = .{
+    result[@intfromenum(Feature.dot5_insts)] = .{
         .llvm_name = "dot5-insts",
         .description = "Has v_dot2c_f32_f16 instruction",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.dot6_insts)] = .{
+    result[@intfromenum(Feature.dot6_insts)] = .{
         .llvm_name = "dot6-insts",
         .description = "Has v_dot4c_i32_i8 instruction",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.dot7_insts)] = .{
+    result[@intfromenum(Feature.dot7_insts)] = .{
         .llvm_name = "dot7-insts",
         .description = "Has v_dot4_u32_u8, v_dot8_u32_u4 instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.dot8_insts)] = .{
+    result[@intfromenum(Feature.dot8_insts)] = .{
         .llvm_name = "dot8-insts",
         .description = "Has v_dot4_i32_iu8, v_dot8_i32_iu4 instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.dot9_insts)] = .{
+    result[@intfromenum(Feature.dot9_insts)] = .{
         .llvm_name = "dot9-insts",
         .description = "Has v_dot2_f16_f16, v_dot2_bf16_bf16, v_dot2_f32_bf16 instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.dpp)] = .{
+    result[@intfromenum(Feature.dpp)] = .{
         .llvm_name = "dpp",
         .description = "Support DPP (Data Parallel Primitives) extension",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.dpp8)] = .{
+    result[@intfromenum(Feature.dpp8)] = .{
         .llvm_name = "dpp8",
         .description = "Support DPP8 (Data Parallel Primitives) extension",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.dpp_64bit)] = .{
+    result[@intfromenum(Feature.dpp_64bit)] = .{
         .llvm_name = "dpp-64bit",
         .description = "Support DPP (Data Parallel Primitives) extension in DP ALU",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.dpp_src1_sgpr)] = .{
+    result[@intfromenum(Feature.dpp_src1_sgpr)] = .{
         .llvm_name = "dpp-src1-sgpr",
         .description = "Support SGPR for Src1 of DPP instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.ds128)] = .{
+    result[@intfromenum(Feature.ds128)] = .{
         .llvm_name = "enable-ds128",
         .description = "Use ds_{read|write}_b128",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.ds_src2_insts)] = .{
+    result[@intfromenum(Feature.ds_src2_insts)] = .{
         .llvm_name = "ds-src2-insts",
         .description = "Has ds_*_src2 instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.extended_image_insts)] = .{
+    result[@intfromenum(Feature.extended_image_insts)] = .{
         .llvm_name = "extended-image-insts",
         .description = "Support mips != 0, lod != 0, gather4, and get_lod",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.fast_denormal_f32)] = .{
+    result[@intfromenum(Feature.fast_denormal_f32)] = .{
         .llvm_name = "fast-denormal-f32",
         .description = "Enabling denormals does not cause f32 instructions to run at f64 rates",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.fast_fmaf)] = .{
+    result[@intfromenum(Feature.fast_fmaf)] = .{
         .llvm_name = "fast-fmaf",
         .description = "Assuming f32 fma is at least as fast as mul + add",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.flat_address_space)] = .{
+    result[@intfromenum(Feature.flat_address_space)] = .{
         .llvm_name = "flat-address-space",
         .description = "Support flat address space",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.flat_atomic_fadd_f32_inst)] = .{
+    result[@intfromenum(Feature.flat_atomic_fadd_f32_inst)] = .{
         .llvm_name = "flat-atomic-fadd-f32-inst",
         .description = "Has flat_atomic_add_f32 instruction",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.flat_for_global)] = .{
+    result[@intfromenum(Feature.flat_for_global)] = .{
         .llvm_name = "flat-for-global",
         .description = "Force to generate flat instruction for global",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.flat_global_insts)] = .{
+    result[@intfromenum(Feature.flat_global_insts)] = .{
         .llvm_name = "flat-global-insts",
         .description = "Have global_* flat memory instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.flat_inst_offsets)] = .{
+    result[@intfromenum(Feature.flat_inst_offsets)] = .{
         .llvm_name = "flat-inst-offsets",
         .description = "Flat instructions have immediate offset addressing mode",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.flat_scratch)] = .{
+    result[@intfromenum(Feature.flat_scratch)] = .{
         .llvm_name = "enable-flat-scratch",
         .description = "Use scratch_* flat memory instructions to access scratch",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.flat_scratch_insts)] = .{
+    result[@intfromenum(Feature.flat_scratch_insts)] = .{
         .llvm_name = "flat-scratch-insts",
         .description = "Have scratch_* flat memory instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.flat_segment_offset_bug)] = .{
+    result[@intfromenum(Feature.flat_segment_offset_bug)] = .{
         .llvm_name = "flat-segment-offset-bug",
         .description = "GFX10 bug where inst_offset is ignored when flat instructions access global memory",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.fma_mix_insts)] = .{
+    result[@intfromenum(Feature.fma_mix_insts)] = .{
         .llvm_name = "fma-mix-insts",
         .description = "Has v_fma_mix_f32, v_fma_mixlo_f16, v_fma_mixhi_f16 instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.fmacf64_inst)] = .{
+    result[@intfromenum(Feature.fmacf64_inst)] = .{
         .llvm_name = "fmacf64-inst",
         .description = "Has v_fmac_f64 instruction",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.fmaf)] = .{
+    result[@intfromenum(Feature.fmaf)] = .{
         .llvm_name = "fmaf",
         .description = "Enable single precision FMA (not as fast as mul+add, but fused)",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.force_store_sc0_sc1)] = .{
+    result[@intfromenum(Feature.force_store_sc0_sc1)] = .{
         .llvm_name = "force-store-sc0-sc1",
         .description = "Has SC0 and SC1 on stores",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.fp64)] = .{
+    result[@intfromenum(Feature.fp64)] = .{
         .llvm_name = "fp64",
         .description = "Enable double precision operations",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.fp8_conversion_insts)] = .{
+    result[@intfromenum(Feature.fp8_conversion_insts)] = .{
         .llvm_name = "fp8-conversion-insts",
         .description = "Has fp8 and bf8 conversion instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.fp8_insts)] = .{
+    result[@intfromenum(Feature.fp8_insts)] = .{
         .llvm_name = "fp8-insts",
         .description = "Has fp8 and bf8 instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.full_rate_64_ops)] = .{
+    result[@intfromenum(Feature.full_rate_64_ops)] = .{
         .llvm_name = "full-rate-64-ops",
         .description = "Most fp64 instructions are full rate",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.g16)] = .{
+    result[@intfromenum(Feature.g16)] = .{
         .llvm_name = "g16",
         .description = "Support G16 for 16-bit gradient image operands",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.gcn3_encoding)] = .{
+    result[@intfromenum(Feature.gcn3_encoding)] = .{
         .llvm_name = "gcn3-encoding",
         .description = "Encoding format for VI",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.gds)] = .{
+    result[@intfromenum(Feature.gds)] = .{
         .llvm_name = "gds",
         .description = "Has Global Data Share",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.get_wave_id_inst)] = .{
+    result[@intfromenum(Feature.get_wave_id_inst)] = .{
         .llvm_name = "get-wave-id-inst",
         .description = "Has s_get_waveid_in_workgroup instruction",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.gfx10)] = .{
+    result[@intfromenum(Feature.gfx10)] = .{
         .llvm_name = "gfx10",
         .description = "GFX10 GPU generation",
         .dependencies = featureSet(&[_]Feature{
@@ -545,27 +545,27 @@ pub const all_features = blk: {
             .vscnt,
         }),
     };
-    result[@intFromEnum(Feature.gfx10_3_insts)] = .{
+    result[@intfromenum(Feature.gfx10_3_insts)] = .{
         .llvm_name = "gfx10-3-insts",
         .description = "Additional instructions for GFX10.3",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.gfx10_a_encoding)] = .{
+    result[@intfromenum(Feature.gfx10_a_encoding)] = .{
         .llvm_name = "gfx10_a-encoding",
         .description = "Has BVH ray tracing instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.gfx10_b_encoding)] = .{
+    result[@intfromenum(Feature.gfx10_b_encoding)] = .{
         .llvm_name = "gfx10_b-encoding",
         .description = "Encoding format GFX10_B",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.gfx10_insts)] = .{
+    result[@intfromenum(Feature.gfx10_insts)] = .{
         .llvm_name = "gfx10-insts",
         .description = "Additional instructions for GFX10+",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.gfx11)] = .{
+    result[@intfromenum(Feature.gfx11)] = .{
         .llvm_name = "gfx11",
         .description = "GFX11 GPU generation",
         .dependencies = featureSet(&[_]Feature{
@@ -613,17 +613,17 @@ pub const all_features = blk: {
             .vscnt,
         }),
     };
-    result[@intFromEnum(Feature.gfx11_full_vgprs)] = .{
+    result[@intfromenum(Feature.gfx11_full_vgprs)] = .{
         .llvm_name = "gfx11-full-vgprs",
         .description = "GFX11 with 50% more physical VGPRs and 50% larger allocation granule than GFX10",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.gfx11_insts)] = .{
+    result[@intfromenum(Feature.gfx11_insts)] = .{
         .llvm_name = "gfx11-insts",
         .description = "Additional instructions for GFX11+",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.gfx12)] = .{
+    result[@intfromenum(Feature.gfx12)] = .{
         .llvm_name = "gfx12",
         .description = "GFX12 GPU generation",
         .dependencies = featureSet(&[_]Feature{
@@ -669,22 +669,22 @@ pub const all_features = blk: {
             .vscnt,
         }),
     };
-    result[@intFromEnum(Feature.gfx12_insts)] = .{
+    result[@intfromenum(Feature.gfx12_insts)] = .{
         .llvm_name = "gfx12-insts",
         .description = "Additional instructions for GFX12+",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.gfx7_gfx8_gfx9_insts)] = .{
+    result[@intfromenum(Feature.gfx7_gfx8_gfx9_insts)] = .{
         .llvm_name = "gfx7-gfx8-gfx9-insts",
         .description = "Instructions shared in GFX7, GFX8, GFX9",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.gfx8_insts)] = .{
+    result[@intfromenum(Feature.gfx8_insts)] = .{
         .llvm_name = "gfx8-insts",
         .description = "Additional instructions for GFX8+",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.gfx9)] = .{
+    result[@intfromenum(Feature.gfx9)] = .{
         .llvm_name = "gfx9",
         .description = "GFX9 GPU generation",
         .dependencies = featureSet(&[_]Feature{
@@ -729,312 +729,312 @@ pub const all_features = blk: {
             .xnack_support,
         }),
     };
-    result[@intFromEnum(Feature.gfx90a_insts)] = .{
+    result[@intfromenum(Feature.gfx90a_insts)] = .{
         .llvm_name = "gfx90a-insts",
         .description = "Additional instructions for GFX90A+",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.gfx940_insts)] = .{
+    result[@intfromenum(Feature.gfx940_insts)] = .{
         .llvm_name = "gfx940-insts",
         .description = "Additional instructions for GFX940+",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.gfx9_insts)] = .{
+    result[@intfromenum(Feature.gfx9_insts)] = .{
         .llvm_name = "gfx9-insts",
         .description = "Additional instructions for GFX9+",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.gws)] = .{
+    result[@intfromenum(Feature.gws)] = .{
         .llvm_name = "gws",
         .description = "Has Global Wave Sync",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.half_rate_64_ops)] = .{
+    result[@intfromenum(Feature.half_rate_64_ops)] = .{
         .llvm_name = "half-rate-64-ops",
         .description = "Most fp64 instructions are half rate instead of quarter",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.image_gather4_d16_bug)] = .{
+    result[@intfromenum(Feature.image_gather4_d16_bug)] = .{
         .llvm_name = "image-gather4-d16-bug",
         .description = "Image Gather4 D16 hardware bug",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.image_insts)] = .{
+    result[@intfromenum(Feature.image_insts)] = .{
         .llvm_name = "image-insts",
         .description = "Support image instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.image_store_d16_bug)] = .{
+    result[@intfromenum(Feature.image_store_d16_bug)] = .{
         .llvm_name = "image-store-d16-bug",
         .description = "Image Store D16 hardware bug",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.inst_fwd_prefetch_bug)] = .{
+    result[@intfromenum(Feature.inst_fwd_prefetch_bug)] = .{
         .llvm_name = "inst-fwd-prefetch-bug",
         .description = "S_INST_PREFETCH instruction causes shader to hang",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.int_clamp_insts)] = .{
+    result[@intfromenum(Feature.int_clamp_insts)] = .{
         .llvm_name = "int-clamp-insts",
         .description = "Support clamp for integer destination",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.inv_2pi_inline_imm)] = .{
+    result[@intfromenum(Feature.inv_2pi_inline_imm)] = .{
         .llvm_name = "inv-2pi-inline-imm",
         .description = "Has 1 / (2 * pi) as inline immediate",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.kernarg_preload)] = .{
+    result[@intfromenum(Feature.kernarg_preload)] = .{
         .llvm_name = "kernarg-preload",
         .description = "Hardware supports preloading of kernel arguments in user SGPRs.",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.lds_branch_vmem_war_hazard)] = .{
+    result[@intfromenum(Feature.lds_branch_vmem_war_hazard)] = .{
         .llvm_name = "lds-branch-vmem-war-hazard",
         .description = "Switching between LDS and VMEM-tex not waiting VM_VSRC=0",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.lds_misaligned_bug)] = .{
+    result[@intfromenum(Feature.lds_misaligned_bug)] = .{
         .llvm_name = "lds-misaligned-bug",
         .description = "Some GFX10 bug with multi-dword LDS and flat access that is not naturally aligned in WGP mode",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.ldsbankcount16)] = .{
+    result[@intfromenum(Feature.ldsbankcount16)] = .{
         .llvm_name = "ldsbankcount16",
         .description = "The number of LDS banks per compute unit.",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.ldsbankcount32)] = .{
+    result[@intfromenum(Feature.ldsbankcount32)] = .{
         .llvm_name = "ldsbankcount32",
         .description = "The number of LDS banks per compute unit.",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.load_store_opt)] = .{
+    result[@intfromenum(Feature.load_store_opt)] = .{
         .llvm_name = "load-store-opt",
         .description = "Enable SI load/store optimizer pass",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.localmemorysize32768)] = .{
+    result[@intfromenum(Feature.localmemorysize32768)] = .{
         .llvm_name = "localmemorysize32768",
         .description = "The size of local memory in bytes",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.localmemorysize65536)] = .{
+    result[@intfromenum(Feature.localmemorysize65536)] = .{
         .llvm_name = "localmemorysize65536",
         .description = "The size of local memory in bytes",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.mad_intra_fwd_bug)] = .{
+    result[@intfromenum(Feature.mad_intra_fwd_bug)] = .{
         .llvm_name = "mad-intra-fwd-bug",
         .description = "MAD_U64/I64 intra instruction forwarding bug",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.mad_mac_f32_insts)] = .{
+    result[@intfromenum(Feature.mad_mac_f32_insts)] = .{
         .llvm_name = "mad-mac-f32-insts",
         .description = "Has v_mad_f32/v_mac_f32/v_madak_f32/v_madmk_f32 instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.mad_mix_insts)] = .{
+    result[@intfromenum(Feature.mad_mix_insts)] = .{
         .llvm_name = "mad-mix-insts",
         .description = "Has v_mad_mix_f32, v_mad_mixlo_f16, v_mad_mixhi_f16 instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.mai_insts)] = .{
+    result[@intfromenum(Feature.mai_insts)] = .{
         .llvm_name = "mai-insts",
         .description = "Has mAI instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.max_private_element_size_16)] = .{
+    result[@intfromenum(Feature.max_private_element_size_16)] = .{
         .llvm_name = "max-private-element-size-16",
         .description = "Maximum private access size may be 16",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.max_private_element_size_4)] = .{
+    result[@intfromenum(Feature.max_private_element_size_4)] = .{
         .llvm_name = "max-private-element-size-4",
         .description = "Maximum private access size may be 4",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.max_private_element_size_8)] = .{
+    result[@intfromenum(Feature.max_private_element_size_8)] = .{
         .llvm_name = "max-private-element-size-8",
         .description = "Maximum private access size may be 8",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.mfma_inline_literal_bug)] = .{
+    result[@intfromenum(Feature.mfma_inline_literal_bug)] = .{
         .llvm_name = "mfma-inline-literal-bug",
         .description = "MFMA cannot use inline literal as SrcC",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.mimg_r128)] = .{
+    result[@intfromenum(Feature.mimg_r128)] = .{
         .llvm_name = "mimg-r128",
         .description = "Support 128-bit texture resources",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.movrel)] = .{
+    result[@intfromenum(Feature.movrel)] = .{
         .llvm_name = "movrel",
         .description = "Has v_movrel*_b32 instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.msaa_load_dst_sel_bug)] = .{
+    result[@intfromenum(Feature.msaa_load_dst_sel_bug)] = .{
         .llvm_name = "msaa-load-dst-sel-bug",
         .description = "MSAA loads not honoring dst_sel bug",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.negative_scratch_offset_bug)] = .{
+    result[@intfromenum(Feature.negative_scratch_offset_bug)] = .{
         .llvm_name = "negative-scratch-offset-bug",
         .description = "Negative immediate offsets in scratch instructions with an SGPR offset page fault on GFX9",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.negative_unaligned_scratch_offset_bug)] = .{
+    result[@intfromenum(Feature.negative_unaligned_scratch_offset_bug)] = .{
         .llvm_name = "negative-unaligned-scratch-offset-bug",
         .description = "Scratch instructions with a VGPR offset and a negative immediate offset that is not a multiple of 4 read wrong memory on GFX10",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.no_data_dep_hazard)] = .{
+    result[@intfromenum(Feature.no_data_dep_hazard)] = .{
         .llvm_name = "no-data-dep-hazard",
         .description = "Does not need SW waitstates",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.no_sdst_cmpx)] = .{
+    result[@intfromenum(Feature.no_sdst_cmpx)] = .{
         .llvm_name = "no-sdst-cmpx",
         .description = "V_CMPX does not write VCC/SGPR in addition to EXEC",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.nsa_clause_bug)] = .{
+    result[@intfromenum(Feature.nsa_clause_bug)] = .{
         .llvm_name = "nsa-clause-bug",
         .description = "MIMG-NSA in a hard clause has unpredictable results on GFX10.1",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.nsa_encoding)] = .{
+    result[@intfromenum(Feature.nsa_encoding)] = .{
         .llvm_name = "nsa-encoding",
         .description = "Support NSA encoding for image instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.nsa_to_vmem_bug)] = .{
+    result[@intfromenum(Feature.nsa_to_vmem_bug)] = .{
         .llvm_name = "nsa-to-vmem-bug",
         .description = "MIMG-NSA followed by VMEM fail if EXEC_LO or EXEC_HI equals zero",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.offset_3f_bug)] = .{
+    result[@intfromenum(Feature.offset_3f_bug)] = .{
         .llvm_name = "offset-3f-bug",
         .description = "Branch offset of 3f hardware bug",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.packed_fp32_ops)] = .{
+    result[@intfromenum(Feature.packed_fp32_ops)] = .{
         .llvm_name = "packed-fp32-ops",
         .description = "Support packed fp32 instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.packed_tid)] = .{
+    result[@intfromenum(Feature.packed_tid)] = .{
         .llvm_name = "packed-tid",
         .description = "Workitem IDs are packed into v0 at kernel launch",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.partial_nsa_encoding)] = .{
+    result[@intfromenum(Feature.partial_nsa_encoding)] = .{
         .llvm_name = "partial-nsa-encoding",
         .description = "Support partial NSA encoding for image instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.pk_fmac_f16_inst)] = .{
+    result[@intfromenum(Feature.pk_fmac_f16_inst)] = .{
         .llvm_name = "pk-fmac-f16-inst",
         .description = "Has v_pk_fmac_f16 instruction",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.promote_alloca)] = .{
+    result[@intfromenum(Feature.promote_alloca)] = .{
         .llvm_name = "promote-alloca",
         .description = "Enable promote alloca pass",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.prt_strict_null)] = .{
+    result[@intfromenum(Feature.prt_strict_null)] = .{
         .llvm_name = "enable-prt-strict-null",
         .description = "Enable zeroing of result registers for sparse texture fetches",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.pseudo_scalar_trans)] = .{
+    result[@intfromenum(Feature.pseudo_scalar_trans)] = .{
         .llvm_name = "pseudo-scalar-trans",
         .description = "Has Pseudo Scalar Transcendental instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.r128_a16)] = .{
+    result[@intfromenum(Feature.r128_a16)] = .{
         .llvm_name = "r128-a16",
         .description = "Support gfx9-style A16 for 16-bit coordinates/gradients/lod/clamp/mip image operands, where a16 is aliased with r128",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.real_true16)] = .{
+    result[@intfromenum(Feature.real_true16)] = .{
         .llvm_name = "real-true16",
         .description = "Use true 16-bit registers",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.restricted_soffset)] = .{
+    result[@intfromenum(Feature.restricted_soffset)] = .{
         .llvm_name = "restricted-soffset",
         .description = "Has restricted SOffset (immediate not supported).",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.s_memrealtime)] = .{
+    result[@intfromenum(Feature.s_memrealtime)] = .{
         .llvm_name = "s-memrealtime",
         .description = "Has s_memrealtime instruction",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.s_memtime_inst)] = .{
+    result[@intfromenum(Feature.s_memtime_inst)] = .{
         .llvm_name = "s-memtime-inst",
         .description = "Has s_memtime instruction",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.salu_float)] = .{
+    result[@intfromenum(Feature.salu_float)] = .{
         .llvm_name = "salu-float",
         .description = "Has SALU floating point instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.scalar_atomics)] = .{
+    result[@intfromenum(Feature.scalar_atomics)] = .{
         .llvm_name = "scalar-atomics",
         .description = "Has atomic scalar memory instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.scalar_dwordx3_loads)] = .{
+    result[@intfromenum(Feature.scalar_dwordx3_loads)] = .{
         .llvm_name = "scalar-dwordx3-loads",
         .description = "Has 96-bit scalar load instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.scalar_flat_scratch_insts)] = .{
+    result[@intfromenum(Feature.scalar_flat_scratch_insts)] = .{
         .llvm_name = "scalar-flat-scratch-insts",
         .description = "Have s_scratch_* flat memory instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.scalar_stores)] = .{
+    result[@intfromenum(Feature.scalar_stores)] = .{
         .llvm_name = "scalar-stores",
         .description = "Has store scalar memory instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.sdwa)] = .{
+    result[@intfromenum(Feature.sdwa)] = .{
         .llvm_name = "sdwa",
         .description = "Support SDWA (Sub-DWORD Addressing) extension",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.sdwa_mav)] = .{
+    result[@intfromenum(Feature.sdwa_mav)] = .{
         .llvm_name = "sdwa-mav",
         .description = "Support v_mac_f32/f16 with SDWA (Sub-DWORD Addressing) extension",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.sdwa_omod)] = .{
+    result[@intfromenum(Feature.sdwa_omod)] = .{
         .llvm_name = "sdwa-omod",
         .description = "Support OMod with SDWA (Sub-DWORD Addressing) extension",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.sdwa_out_mods_vopc)] = .{
+    result[@intfromenum(Feature.sdwa_out_mods_vopc)] = .{
         .llvm_name = "sdwa-out-mods-vopc",
         .description = "Support clamp for VOPC with SDWA (Sub-DWORD Addressing) extension",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.sdwa_scalar)] = .{
+    result[@intfromenum(Feature.sdwa_scalar)] = .{
         .llvm_name = "sdwa-scalar",
         .description = "Support scalar register with SDWA (Sub-DWORD Addressing) extension",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.sdwa_sdst)] = .{
+    result[@intfromenum(Feature.sdwa_sdst)] = .{
         .llvm_name = "sdwa-sdst",
         .description = "Support scalar dst for VOPC with SDWA (Sub-DWORD Addressing) extension",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.sea_islands)] = .{
+    result[@intfromenum(Feature.sea_islands)] = .{
         .llvm_name = "sea-islands",
         .description = "SEA_ISLANDS GPU generation",
         .dependencies = featureSet(&[_]Feature{
@@ -1058,32 +1058,32 @@ pub const all_features = blk: {
             .wavefrontsize64,
         }),
     };
-    result[@intFromEnum(Feature.sgpr_init_bug)] = .{
+    result[@intfromenum(Feature.sgpr_init_bug)] = .{
         .llvm_name = "sgpr-init-bug",
         .description = "VI SGPR initialization bug requiring a fixed SGPR allocation size",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.shader_cycles_hi_lo_registers)] = .{
+    result[@intfromenum(Feature.shader_cycles_hi_lo_registers)] = .{
         .llvm_name = "shader-cycles-hi-lo-registers",
         .description = "Has SHADER_CYCLES_HI/LO hardware registers",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.shader_cycles_register)] = .{
+    result[@intfromenum(Feature.shader_cycles_register)] = .{
         .llvm_name = "shader-cycles-register",
         .description = "Has SHADER_CYCLES hardware register",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.si_scheduler)] = .{
+    result[@intfromenum(Feature.si_scheduler)] = .{
         .llvm_name = "si-scheduler",
         .description = "Enable SI Machine Scheduler",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.smem_to_vector_write_hazard)] = .{
+    result[@intfromenum(Feature.smem_to_vector_write_hazard)] = .{
         .llvm_name = "smem-to-vector-write-hazard",
         .description = "s_load_dword followed by v_cmp page faults",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.southern_islands)] = .{
+    result[@intfromenum(Feature.southern_islands)] = .{
         .llvm_name = "southern-islands",
         .description = "SOUTHERN_ISLANDS GPU generation",
         .dependencies = featureSet(&[_]Feature{
@@ -1104,102 +1104,102 @@ pub const all_features = blk: {
             .wavefrontsize64,
         }),
     };
-    result[@intFromEnum(Feature.sramecc)] = .{
+    result[@intfromenum(Feature.sramecc)] = .{
         .llvm_name = "sramecc",
         .description = "Enable SRAMECC",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.sramecc_support)] = .{
+    result[@intfromenum(Feature.sramecc_support)] = .{
         .llvm_name = "sramecc-support",
         .description = "Hardware supports SRAMECC",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.tgsplit)] = .{
+    result[@intfromenum(Feature.tgsplit)] = .{
         .llvm_name = "tgsplit",
         .description = "Enable threadgroup split execution",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.trap_handler)] = .{
+    result[@intfromenum(Feature.trap_handler)] = .{
         .llvm_name = "trap-handler",
         .description = "Trap handler support",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.trig_reduced_range)] = .{
+    result[@intfromenum(Feature.trig_reduced_range)] = .{
         .llvm_name = "trig-reduced-range",
         .description = "Requires use of fract on arguments to trig instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.true16)] = .{
+    result[@intfromenum(Feature.true16)] = .{
         .llvm_name = "true16",
         .description = "True 16-bit operand instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.unaligned_access_mode)] = .{
+    result[@intfromenum(Feature.unaligned_access_mode)] = .{
         .llvm_name = "unaligned-access-mode",
         .description = "Enable unaligned global, local and region loads and stores if the hardware supports it",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.unaligned_buffer_access)] = .{
+    result[@intfromenum(Feature.unaligned_buffer_access)] = .{
         .llvm_name = "unaligned-buffer-access",
         .description = "Hardware supports unaligned global loads and stores",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.unaligned_ds_access)] = .{
+    result[@intfromenum(Feature.unaligned_ds_access)] = .{
         .llvm_name = "unaligned-ds-access",
         .description = "Hardware supports unaligned local and region loads and stores",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.unaligned_scratch_access)] = .{
+    result[@intfromenum(Feature.unaligned_scratch_access)] = .{
         .llvm_name = "unaligned-scratch-access",
         .description = "Support unaligned scratch loads and stores",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.unpacked_d16_vmem)] = .{
+    result[@intfromenum(Feature.unpacked_d16_vmem)] = .{
         .llvm_name = "unpacked-d16-vmem",
         .description = "Has unpacked d16 vmem instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.unsafe_ds_offset_folding)] = .{
+    result[@intfromenum(Feature.unsafe_ds_offset_folding)] = .{
         .llvm_name = "unsafe-ds-offset-folding",
         .description = "Force using DS instruction immediate offsets on SI",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.user_sgpr_init16_bug)] = .{
+    result[@intfromenum(Feature.user_sgpr_init16_bug)] = .{
         .llvm_name = "user-sgpr-init16-bug",
         .description = "Bug requiring at least 16 user+system SGPRs to be enabled",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.valu_trans_use_hazard)] = .{
+    result[@intfromenum(Feature.valu_trans_use_hazard)] = .{
         .llvm_name = "valu-trans-use-hazard",
         .description = "Hazard when TRANS instructions are closely followed by a use of the result",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.vcmpx_exec_war_hazard)] = .{
+    result[@intfromenum(Feature.vcmpx_exec_war_hazard)] = .{
         .llvm_name = "vcmpx-exec-war-hazard",
         .description = "V_CMPX WAR hazard on EXEC (V_CMPX issue ONLY)",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.vcmpx_permlane_hazard)] = .{
+    result[@intfromenum(Feature.vcmpx_permlane_hazard)] = .{
         .llvm_name = "vcmpx-permlane-hazard",
         .description = "TODO: describe me",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.vgpr_index_mode)] = .{
+    result[@intfromenum(Feature.vgpr_index_mode)] = .{
         .llvm_name = "vgpr-index-mode",
         .description = "Has VGPR mode register indexing",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.vgpr_singleuse_hint)] = .{
+    result[@intfromenum(Feature.vgpr_singleuse_hint)] = .{
         .llvm_name = "vgpr-singleuse-hint",
         .description = "Has single-use VGPR hint instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.vmem_to_scalar_write_hazard)] = .{
+    result[@intfromenum(Feature.vmem_to_scalar_write_hazard)] = .{
         .llvm_name = "vmem-to-scalar-write-hazard",
         .description = "VMEM instruction followed by scalar writing to EXEC mask, M0 or SGPR leads to incorrect execution.",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.volcanic_islands)] = .{
+    result[@intfromenum(Feature.volcanic_islands)] = .{
         .llvm_name = "volcanic-islands",
         .description = "VOLCANIC_ISLANDS GPU generation",
         .dependencies = featureSet(&[_]Feature{
@@ -1236,52 +1236,52 @@ pub const all_features = blk: {
             .wavefrontsize64,
         }),
     };
-    result[@intFromEnum(Feature.vop3_literal)] = .{
+    result[@intfromenum(Feature.vop3_literal)] = .{
         .llvm_name = "vop3-literal",
         .description = "Can use one literal in VOP3",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.vop3p)] = .{
+    result[@intfromenum(Feature.vop3p)] = .{
         .llvm_name = "vop3p",
         .description = "Has VOP3P packed instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.vopd)] = .{
+    result[@intfromenum(Feature.vopd)] = .{
         .llvm_name = "vopd",
         .description = "Has VOPD dual issue wave32 instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.vscnt)] = .{
+    result[@intfromenum(Feature.vscnt)] = .{
         .llvm_name = "vscnt",
         .description = "Has separate store vscnt counter",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.wavefrontsize16)] = .{
+    result[@intfromenum(Feature.wavefrontsize16)] = .{
         .llvm_name = "wavefrontsize16",
         .description = "The number of threads per wavefront",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.wavefrontsize32)] = .{
+    result[@intfromenum(Feature.wavefrontsize32)] = .{
         .llvm_name = "wavefrontsize32",
         .description = "The number of threads per wavefront",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.wavefrontsize64)] = .{
+    result[@intfromenum(Feature.wavefrontsize64)] = .{
         .llvm_name = "wavefrontsize64",
         .description = "The number of threads per wavefront",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.xnack)] = .{
+    result[@intfromenum(Feature.xnack)] = .{
         .llvm_name = "xnack",
         .description = "Enable XNACK support",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.xnack_support)] = .{
+    result[@intfromenum(Feature.xnack_support)] = .{
         .llvm_name = "xnack-support",
         .description = "Hardware supports XNACK",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    const ti = @typeInfo(Feature);
+    const ti = @typeinfo(Feature);
     for (&result, 0..) |*elem, i| {
         elem.index = i;
         elem.name = ti.Enum.fields[i].name;

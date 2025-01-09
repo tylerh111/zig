@@ -8,7 +8,7 @@ const joinpd1 = clang_options.joinpd1;
 const jspd1 = clang_options.jspd1;
 const sepd1 = clang_options.sepd1;
 const m = clang_options.m;
-pub const data = blk: { @setEvalBranchQuota(6000); break :blk &[_]CliArg{
+pub const data = blk: { @setevalbranchquota(6000); break :blk &[_]CliArg{
 flagpd1("C"),
 flagpd1("CC"),
 .{

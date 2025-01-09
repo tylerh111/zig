@@ -38,7 +38,7 @@ fn testZigInstallPrefix(base_dir: fs.Dir) ?Compilation.Directory {
 /// based on a hard-coded Preopen directory ("/zig")
 pub fn findZigExePath(allocator: mem.Allocator) ![]u8 {
     if (builtin.os.tag == .wasi) {
-        @compileError("this function is unsupported on WASI");
+        @compileerror("this function is unsupported on WASI");
     }
 
     return fs.selfExePathAlloc(allocator);
@@ -82,7 +82,7 @@ pub fn findZigLibDirFromSelfExe(
 /// Caller owns returned memory.
 pub fn resolveGlobalCacheDir(allocator: mem.Allocator) ![]u8 {
     if (builtin.os.tag == .wasi)
-        @compileError("on WASI the global cache dir must be resolved with preopens");
+        @compileerror("on WASI the global cache dir must be resolved with preopens");
 
     if (try std.zig.EnvVar.ZIG_GLOBAL_CACHE_DIR.get(allocator)) |value| return value;
 

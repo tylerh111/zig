@@ -69,12 +69,12 @@ pub fn parse(self: *Object, macho_file: *MachO) !void {
     const offset = if (self.archive) |ar| ar.offset else 0;
     const handle = macho_file.getFileHandle(self.file_handle);
 
-    var header_buffer: [@sizeOf(macho.mach_header_64)]u8 = undefined;
+    var header_buffer: [@sizeof(macho.mach_header_64)]u8 = undefined;
     {
         const amt = try handle.preadAll(&header_buffer, offset);
-        if (amt != @sizeOf(macho.mach_header_64)) return error.InputOutput;
+        if (amt != @sizeof(macho.mach_header_64)) return error.InputOutput;
     }
-    self.header = @as(*align(1) const macho.mach_header_64, @ptrCast(&header_buffer)).*;
+    self.header = @as(*align(1) const macho.mach_header_64, @ptrcast(&header_buffer)).*;
 
     const this_cpu_arch: std.Target.Cpu.Arch = switch (self.header.?.cputype) {
         macho.CPU_TYPE_ARM64 => .aarch64,
@@ -85,14 +85,14 @@ pub fn parse(self: *Object, macho_file: *MachO) !void {
         },
     };
     if (macho_file.getTarget().cpu.arch != this_cpu_arch) {
-        try macho_file.reportParseError2(self.index, "invalid cpu architecture: {s}", .{@tagName(this_cpu_arch)});
+        try macho_file.reportParseError2(self.index, "invalid cpu architecture: {s}", .{@tagname(this_cpu_arch)});
         return error.InvalidCpuArch;
     }
 
     const lc_buffer = try gpa.alloc(u8, self.header.?.sizeofcmds);
     defer gpa.free(lc_buffer);
     {
-        const amt = try handle.preadAll(lc_buffer, offset + @sizeOf(macho.mach_header_64));
+        const amt = try handle.preadAll(lc_buffer, offset + @sizeof(macho.mach_header_64));
         if (amt != self.header.?.sizeofcmds) return error.InputOutput;
     }
 
@@ -109,9 +109,9 @@ pub fn parse(self: *Object, macho_file: *MachO) !void {
                 self.sections.set(index, .{ .header = sect });
 
                 if (mem.eql(u8, sect.sectName(), "__eh_frame")) {
-                    self.eh_frame_sect_index = @intCast(index);
+                    self.eh_frame_sect_index = @intcast(index);
                 } else if (mem.eql(u8, sect.sectName(), "__compact_unwind")) {
-                    self.compact_unwind_sect_index = @intCast(index);
+                    self.compact_unwind_sect_index = @intcast(index);
                 }
             }
         },
@@ -123,13 +123,13 @@ pub fn parse(self: *Object, macho_file: *MachO) !void {
                 if (amt != self.strtab.items.len) return error.InputOutput;
             }
 
-            const symtab_buffer = try gpa.alloc(u8, cmd.nsyms * @sizeOf(macho.nlist_64));
+            const symtab_buffer = try gpa.alloc(u8, cmd.nsyms * @sizeof(macho.nlist_64));
             defer gpa.free(symtab_buffer);
             {
                 const amt = try handle.preadAll(symtab_buffer, cmd.symoff + offset);
                 if (amt != symtab_buffer.len) return error.InputOutput;
             }
-            const symtab = @as([*]align(1) const macho.nlist_64, @ptrCast(symtab_buffer.ptr))[0..cmd.nsyms];
+            const symtab = @as([*]align(1) const macho.nlist_64, @ptrcast(symtab_buffer.ptr))[0..cmd.nsyms];
             try self.symtab.ensureUnusedCapacity(gpa, symtab.len);
             for (symtab) |nlist| {
                 self.symtab.appendAssumeCapacity(.{
@@ -147,8 +147,8 @@ pub fn parse(self: *Object, macho_file: *MachO) !void {
                 const amt = try handle.preadAll(buffer, offset + cmd.dataoff);
                 if (amt != buffer.len) return error.InputOutput;
             }
-            const ndice = @divExact(cmd.datasize, @sizeOf(macho.data_in_code_entry));
-            const dice = @as([*]align(1) const macho.data_in_code_entry, @ptrCast(buffer.ptr))[0..ndice];
+            const ndice = @divexact(cmd.datasize, @sizeof(macho.data_in_code_entry));
+            const dice = @as([*]align(1) const macho.data_in_code_entry, @ptrcast(buffer.ptr))[0..ndice];
             try self.data_in_code.appendUnalignedSlice(gpa, dice);
         },
         .BUILD_VERSION,
@@ -297,7 +297,7 @@ fn initSubsections(self: *Object, nlists: anytype, macho_file: *MachO) !void {
             const size = if (nlist_start == nlist_end) sect.size else nlists[nlist_start].nlist.n_value - sect.addr;
             const atom_index = try self.addAtom(.{
                 .name = try self.addString(gpa, name),
-                .n_sect = @intCast(n_sect),
+                .n_sect = @intcast(n_sect),
                 .off = 0,
                 .size = size,
                 .alignment = sect.@"align",
@@ -327,7 +327,7 @@ fn initSubsections(self: *Object, nlists: anytype, macho_file: *MachO) !void {
                 sect.@"align";
             const atom_index = try self.addAtom(.{
                 .name = nlist.nlist.n_strx,
-                .n_sect = @intCast(n_sect),
+                .n_sect = @intcast(n_sect),
                 .off = nlist.nlist.n_value - sect.addr,
                 .size = size,
                 .alignment = alignment,
@@ -362,7 +362,7 @@ fn initSections(self: *Object, nlists: anytype, macho_file: *MachO) !void {
 
         const atom_index = try self.addAtom(.{
             .name = try self.addString(gpa, name),
-            .n_sect = @intCast(n_sect),
+            .n_sect = @intcast(n_sect),
             .off = 0,
             .size = sect.size,
             .alignment = sect.@"align",
@@ -406,7 +406,7 @@ fn initCstringLiterals(self: *Object, macho_file: *MachO) !void {
     for (slice.items(.header), 0..) |sect, n_sect| {
         if (!isCstringLiteral(sect)) continue;
 
-        const data = try self.getSectionData(@intCast(n_sect), macho_file);
+        const data = try self.getSectionData(@intcast(n_sect), macho_file);
         defer gpa.free(data);
 
         var start: u32 = 0;
@@ -425,7 +425,7 @@ fn initCstringLiterals(self: *Object, macho_file: *MachO) !void {
 
             const atom_index = try self.addAtom(.{
                 .name = 0,
-                .n_sect = @intCast(n_sect),
+                .n_sect = @intcast(n_sect),
                 .off = start,
                 .size = end - start,
                 .alignment = sect.@"align",
@@ -467,7 +467,7 @@ fn initFixedSizeLiterals(self: *Object, macho_file: *MachO) !void {
         while (pos < sect.size) : (pos += rec_size) {
             const atom_index = try self.addAtom(.{
                 .name = 0,
-                .n_sect = @intCast(n_sect),
+                .n_sect = @intcast(n_sect),
                 .off = pos,
                 .size = rec_size,
                 .alignment = sect.@"align",
@@ -499,13 +499,13 @@ fn initPointerLiterals(self: *Object, macho_file: *MachO) !void {
             );
             return error.MalformedObject;
         }
-        const num_ptrs = math.cast(usize, @divExact(sect.size, rec_size)) orelse return error.Overflow;
+        const num_ptrs = math.cast(usize, @divexact(sect.size, rec_size)) orelse return error.Overflow;
 
         for (0..num_ptrs) |i| {
-            const pos: u32 = @as(u32, @intCast(i)) * rec_size;
+            const pos: u32 = @as(u32, @intcast(i)) * rec_size;
             const atom_index = try self.addAtom(.{
                 .name = 0,
-                .n_sect = @intCast(n_sect),
+                .n_sect = @intcast(n_sect),
                 .off = pos,
                 .size = rec_size,
                 .alignment = sect.@"align",
@@ -527,7 +527,7 @@ pub fn resolveLiterals(self: Object, lp: *MachO.LiteralPool, macho_file: *MachO)
     const slice = self.sections.slice();
     for (slice.items(.header), slice.items(.subsections), 0..) |header, subs, n_sect| {
         if (isCstringLiteral(header) or isFixedSizeLiteral(header)) {
-            const data = try self.getSectionData(@intCast(n_sect), macho_file);
+            const data = try self.getSectionData(@intcast(n_sect), macho_file);
             defer gpa.free(data);
 
             for (subs.items) |sub| {
@@ -641,7 +641,7 @@ pub fn findAtom(self: Object, addr: u64) ?Atom.Index {
         if (subs.items.len == 0) continue;
         if (sect.addr == addr) return subs.items[0].atom;
         if (sect.addr < addr and addr < sect.addr + sect.size) {
-            return self.findAtomInSection(addr, @intCast(n_sect));
+            return self.findAtomInSection(addr, @intcast(n_sect));
         }
     }
     return null;
@@ -728,7 +728,7 @@ fn initSymbols(self: *Object, macho_file: *MachO) !void {
         symbol.* = .{
             .value = nlist.n_value,
             .name = nlist.n_strx,
-            .nlist_idx = @intCast(i),
+            .nlist_idx = @intcast(i),
             .atom = 0,
             .file = self.index,
         };
@@ -768,11 +768,11 @@ fn initSymbolStabs(self: *Object, nlists: anytype, macho_file: *MachO) !void {
     };
 
     const start: u32 = for (self.symtab.items(.nlist), 0..) |nlist, i| {
-        if (nlist.stab()) break @intCast(i);
-    } else @intCast(self.symtab.items(.nlist).len);
+        if (nlist.stab()) break @intcast(i);
+    } else @intcast(self.symtab.items(.nlist).len);
     const end: u32 = for (self.symtab.items(.nlist)[start..], start..) |nlist, i| {
-        if (!nlist.stab()) break @intCast(i);
-    } else @intCast(self.symtab.items(.nlist).len);
+        if (!nlist.stab()) break @intcast(i);
+    } else @intcast(self.symtab.items(.nlist).len);
 
     if (start == end) return;
 
@@ -863,8 +863,8 @@ fn initRelocs(self: *Object, macho_file: *MachO) !void {
             !mem.eql(u8, sect.sectName(), "__compact_unwind")) continue;
 
         switch (cpu_arch) {
-            .x86_64 => try x86_64.parseRelocs(self, @intCast(n_sect), sect, out, macho_file),
-            .aarch64 => try aarch64.parseRelocs(self, @intCast(n_sect), sect, out, macho_file),
+            .x86_64 => try x86_64.parseRelocs(self, @intcast(n_sect), sect, out, macho_file),
+            .aarch64 => try aarch64.parseRelocs(self, @intcast(n_sect), sect, out, macho_file),
             else => unreachable,
         }
 
@@ -914,20 +914,20 @@ fn initEhFrameRecords(self: *Object, sect_id: u8, macho_file: *MachO) !void {
                 assert((rel.meta.length == 2 or rel.meta.length == 3) and rel.meta.has_subtractor); // TODO error
                 const S: i64 = switch (rel.tag) {
                     .local => rel.meta.symbolnum,
-                    .@"extern" => @intCast(nlists[rel.meta.symbolnum].n_value),
+                    .@"extern" => @intcast(nlists[rel.meta.symbolnum].n_value),
                 };
                 const A = rel.addend;
                 const SUB: i64 = blk: {
                     const sub_rel = relocs.items[i - 1];
                     break :blk switch (sub_rel.tag) {
                         .local => sub_rel.meta.symbolnum,
-                        .@"extern" => @intCast(nlists[sub_rel.meta.symbolnum].n_value),
+                        .@"extern" => @intcast(nlists[sub_rel.meta.symbolnum].n_value),
                     };
                 };
                 switch (rel.meta.length) {
                     0, 1 => unreachable,
-                    2 => mem.writeInt(u32, self.eh_frame_data.items[rel.offset..][0..4], @bitCast(@as(i32, @truncate(S + A - SUB))), .little),
-                    3 => mem.writeInt(u64, self.eh_frame_data.items[rel.offset..][0..8], @bitCast(S + A - SUB), .little),
+                    2 => mem.writeInt(u32, self.eh_frame_data.items[rel.offset..][0..4], @bitcast(@as(i32, @truncate(S + A - SUB))), .little),
+                    3 => mem.writeInt(u64, self.eh_frame_data.items[rel.offset..][0..8], @bitcast(S + A - SUB), .little),
                 }
             },
             else => {},
@@ -980,7 +980,7 @@ fn initEhFrameRecords(self: *Object, sect_id: u8, macho_file: *MachO) !void {
                     });
                     return error.MalformedObject;
                 };
-                cie.personality = .{ .index = @intCast(rel.target), .offset = rel.offset - cie.offset };
+                cie.personality = .{ .index = @intcast(rel.target), .offset = rel.offset - cie.offset };
             },
             else => {},
         }
@@ -1006,8 +1006,8 @@ fn initUnwindRecords(self: *Object, sect_id: u8, macho_file: *MachO) !void {
     const gpa = macho_file.base.comp.gpa;
     const data = try self.getSectionData(sect_id, macho_file);
     defer gpa.free(data);
-    const nrecs = @divExact(data.len, @sizeOf(macho.compact_unwind_entry));
-    const recs = @as([*]align(1) const macho.compact_unwind_entry, @ptrCast(data.ptr))[0..nrecs];
+    const nrecs = @divexact(data.len, @sizeof(macho.compact_unwind_entry));
+    const recs = @as([*]align(1) const macho.compact_unwind_entry, @ptrcast(data.ptr))[0..nrecs];
     const sym_lookup = SymbolLookup{ .ctx = self };
 
     try self.unwind_records.resize(gpa, nrecs);
@@ -1016,8 +1016,8 @@ fn initUnwindRecords(self: *Object, sect_id: u8, macho_file: *MachO) !void {
     const relocs = self.sections.items(.relocs)[sect_id].items;
     var reloc_idx: usize = 0;
     for (recs, self.unwind_records.items, 0..) |rec, *out_index, rec_idx| {
-        const rec_start = rec_idx * @sizeOf(macho.compact_unwind_entry);
-        const rec_end = rec_start + @sizeOf(macho.compact_unwind_entry);
+        const rec_start = rec_idx * @sizeof(macho.compact_unwind_entry);
+        const rec_end = rec_start + @sizeof(macho.compact_unwind_entry);
         const reloc_start = reloc_idx;
         while (reloc_idx < relocs.len and
             relocs[reloc_idx].offset < rec_end) : (reloc_idx += 1)
@@ -1042,12 +1042,12 @@ fn initUnwindRecords(self: *Object, sect_id: u8, macho_file: *MachO) !void {
                 0 => switch (rel.tag) { // target symbol
                     .@"extern" => {
                         out.atom = self.symtab.items(.atom)[rel.meta.symbolnum];
-                        out.atom_offset = @intCast(rec.rangeStart);
+                        out.atom_offset = @intcast(rec.rangeStart);
                     },
                     .local => if (self.findAtom(rec.rangeStart)) |atom_index| {
                         out.atom = atom_index;
                         const atom = out.getAtom(macho_file);
-                        out.atom_offset = @intCast(rec.rangeStart - atom.getInputAddress(macho_file));
+                        out.atom_offset = @intcast(rec.rangeStart - atom.getInputAddress(macho_file));
                     } else {
                         try macho_file.reportParseError2(self.index, "{s},{s}: 0x{x}: bad relocation", .{
                             header.segName(), header.sectName(), rel.offset,
@@ -1071,12 +1071,12 @@ fn initUnwindRecords(self: *Object, sect_id: u8, macho_file: *MachO) !void {
                 24 => switch (rel.tag) { // lsda
                     .@"extern" => {
                         out.lsda = self.symtab.items(.atom)[rel.meta.symbolnum];
-                        out.lsda_offset = @intCast(rec.lsda);
+                        out.lsda_offset = @intcast(rec.lsda);
                     },
                     .local => if (self.findAtom(rec.lsda)) |atom_index| {
                         out.lsda = atom_index;
                         const atom = out.getLsdaAtom(macho_file).?;
-                        out.lsda_offset = @intCast(rec.lsda - atom.getInputAddress(macho_file));
+                        out.lsda_offset = @intcast(rec.lsda - atom.getInputAddress(macho_file));
                     } else {
                         try macho_file.reportParseError2(self.index, "{s},{s}: 0x{x}: bad relocation", .{
                             header.segName(), header.sectName(), rel.offset,
@@ -1129,7 +1129,7 @@ fn parseUnwindRecords(self: *Object, macho_file: *MachO) !void {
     for (self.fdes.items, 0..) |fde, fde_index| {
         const atom = fde.getAtom(macho_file);
         const addr = atom.getInputAddress(macho_file) + fde.atom_offset;
-        superposition.getPtr(addr).?.fde = @intCast(fde_index);
+        superposition.getPtr(addr).?.fde = @intcast(fde_index);
     }
 
     for (superposition.keys(), superposition.values()) |addr, meta| {
@@ -1150,7 +1150,7 @@ fn parseUnwindRecords(self: *Object, macho_file: *MachO) !void {
                 const rec_index = try macho_file.addUnwindRecord();
                 const rec = macho_file.getUnwindRecord(rec_index);
                 try self.unwind_records.append(gpa, rec_index);
-                rec.length = @intCast(meta.size);
+                rec.length = @intcast(meta.size);
                 rec.atom = fde.atom;
                 rec.atom_offset = fde.atom_offset;
                 rec.fde = fde_index;
@@ -1167,9 +1167,9 @@ fn parseUnwindRecords(self: *Object, macho_file: *MachO) !void {
             const rec = macho_file.getUnwindRecord(rec_index);
             const atom = macho_file.getAtom(meta.atom).?;
             try self.unwind_records.append(gpa, rec_index);
-            rec.length = @intCast(meta.size);
+            rec.length = @intcast(meta.size);
             rec.atom = meta.atom;
-            rec.atom_offset = @intCast(addr - atom.getInputAddress(macho_file));
+            rec.atom_offset = @intcast(addr - atom.getInputAddress(macho_file));
             rec.file = self.index;
         }
     }
@@ -1224,11 +1224,11 @@ pub fn parseDebugInfo(self: *Object, macho_file: *MachO) !void {
 
     if (debug_info_index == null or debug_abbrev_index == null) return;
 
-    const debug_info = try self.getSectionData(@intCast(debug_info_index.?), macho_file);
+    const debug_info = try self.getSectionData(@intcast(debug_info_index.?), macho_file);
     defer gpa.free(debug_info);
-    const debug_abbrev = try self.getSectionData(@intCast(debug_abbrev_index.?), macho_file);
+    const debug_abbrev = try self.getSectionData(@intcast(debug_abbrev_index.?), macho_file);
     defer gpa.free(debug_abbrev);
-    const debug_str = if (debug_str_index) |index| try self.getSectionData(@intCast(index), macho_file) else &[0]u8{};
+    const debug_str = if (debug_str_index) |index| try self.getSectionData(@intcast(index), macho_file) else &[0]u8{};
     defer gpa.free(debug_str);
 
     self.compile_unit = self.findCompileUnit(.{
@@ -1339,7 +1339,7 @@ pub fn resolveSymbols(self: *Object, macho_file: *MachO) void {
     defer tracy.end();
 
     for (self.symbols.items, 0..) |index, i| {
-        const nlist_idx = @as(Symbol.Index, @intCast(i));
+        const nlist_idx = @as(Symbol.Index, @intcast(i));
         const nlist = self.symtab.items(.nlist)[nlist_idx];
         const atom_index = self.symtab.items(.atom)[nlist_idx];
 
@@ -1477,7 +1477,7 @@ pub fn convertTentativeDefinitions(self: *Object, macho_file: *MachO) !void {
         const sym_file = sym.getFile(macho_file).?;
         if (sym_file.getIndex() != self.index) continue;
 
-        const nlist_idx = @as(Symbol.Index, @intCast(i));
+        const nlist_idx = @as(Symbol.Index, @intcast(i));
         const nlist = &self.symtab.items(.nlist)[nlist_idx];
         const nlist_atom = &self.symtab.items(.atom)[nlist_idx];
 
@@ -1517,7 +1517,7 @@ pub fn convertTentativeDefinitions(self: *Object, macho_file: *MachO) !void {
 }
 
 fn addSection(self: *Object, allocator: Allocator, segname: []const u8, sectname: []const u8) !u32 {
-    const n_sect = @as(u32, @intCast(try self.sections.addOne(allocator)));
+    const n_sect = @as(u32, @intcast(try self.sections.addOne(allocator)));
     self.sections.set(n_sect, .{
         .header = .{
             .sectname = MachO.makeStaticString(sectname),
@@ -1535,12 +1535,12 @@ pub fn parseAr(self: *Object, macho_file: *MachO) !void {
     const offset = if (self.archive) |ar| ar.offset else 0;
     const handle = macho_file.getFileHandle(self.file_handle);
 
-    var header_buffer: [@sizeOf(macho.mach_header_64)]u8 = undefined;
+    var header_buffer: [@sizeof(macho.mach_header_64)]u8 = undefined;
     {
         const amt = try handle.preadAll(&header_buffer, offset);
-        if (amt != @sizeOf(macho.mach_header_64)) return error.InputOutput;
+        if (amt != @sizeof(macho.mach_header_64)) return error.InputOutput;
     }
-    self.header = @as(*align(1) const macho.mach_header_64, @ptrCast(&header_buffer)).*;
+    self.header = @as(*align(1) const macho.mach_header_64, @ptrcast(&header_buffer)).*;
 
     const this_cpu_arch: std.Target.Cpu.Arch = switch (self.header.?.cputype) {
         macho.CPU_TYPE_ARM64 => .aarch64,
@@ -1551,14 +1551,14 @@ pub fn parseAr(self: *Object, macho_file: *MachO) !void {
         },
     };
     if (macho_file.getTarget().cpu.arch != this_cpu_arch) {
-        try macho_file.reportParseError2(self.index, "invalid cpu architecture: {s}", .{@tagName(this_cpu_arch)});
+        try macho_file.reportParseError2(self.index, "invalid cpu architecture: {s}", .{@tagname(this_cpu_arch)});
         return error.InvalidCpuArch;
     }
 
     const lc_buffer = try gpa.alloc(u8, self.header.?.sizeofcmds);
     defer gpa.free(lc_buffer);
     {
-        const amt = try handle.preadAll(lc_buffer, offset + @sizeOf(macho.mach_header_64));
+        const amt = try handle.preadAll(lc_buffer, offset + @sizeof(macho.mach_header_64));
         if (amt != self.header.?.sizeofcmds) return error.InputOutput;
     }
 
@@ -1575,13 +1575,13 @@ pub fn parseAr(self: *Object, macho_file: *MachO) !void {
                 if (amt != self.strtab.items.len) return error.InputOutput;
             }
 
-            const symtab_buffer = try gpa.alloc(u8, cmd.nsyms * @sizeOf(macho.nlist_64));
+            const symtab_buffer = try gpa.alloc(u8, cmd.nsyms * @sizeof(macho.nlist_64));
             defer gpa.free(symtab_buffer);
             {
                 const amt = try handle.preadAll(symtab_buffer, cmd.symoff + offset);
                 if (amt != symtab_buffer.len) return error.InputOutput;
             }
-            const symtab = @as([*]align(1) const macho.nlist_64, @ptrCast(symtab_buffer.ptr))[0..cmd.nsyms];
+            const symtab = @as([*]align(1) const macho.nlist_64, @ptrcast(symtab_buffer.ptr))[0..cmd.nsyms];
             try self.symtab.ensureUnusedCapacity(gpa, symtab.len);
             for (symtab) |nlist| {
                 self.symtab.appendAssumeCapacity(.{
@@ -1664,7 +1664,7 @@ pub fn calcSymtabSize(self: *Object, macho_file: *MachO) !void {
             try sym.addExtra(.{ .symtab = self.output_symtab_ctx.nimports }, macho_file);
             self.output_symtab_ctx.nimports += 1;
         }
-        self.output_symtab_ctx.strsize += @as(u32, @intCast(sym.getName(macho_file).len + 1));
+        self.output_symtab_ctx.strsize += @as(u32, @intcast(sym.getName(macho_file).len + 1));
     }
 
     if (macho_file.base.comp.config.debug_format != .strip and self.hasDebugInfo())
@@ -1677,13 +1677,13 @@ pub fn calcStabsSize(self: *Object, macho_file: *MachO) error{Overflow}!void {
         const tu_name = cu.getTuName(self);
 
         self.output_symtab_ctx.nstabs += 4; // N_SO, N_SO, N_OSO, N_SO
-        self.output_symtab_ctx.strsize += @as(u32, @intCast(comp_dir.len + 1)); // comp_dir
-        self.output_symtab_ctx.strsize += @as(u32, @intCast(tu_name.len + 1)); // tu_name
+        self.output_symtab_ctx.strsize += @as(u32, @intcast(comp_dir.len + 1)); // comp_dir
+        self.output_symtab_ctx.strsize += @as(u32, @intcast(tu_name.len + 1)); // tu_name
 
         if (self.archive) |ar| {
-            self.output_symtab_ctx.strsize += @as(u32, @intCast(ar.path.len + 1 + self.path.len + 1 + 1));
+            self.output_symtab_ctx.strsize += @as(u32, @intcast(ar.path.len + 1 + self.path.len + 1 + 1));
         } else {
-            self.output_symtab_ctx.strsize += @as(u32, @intCast(self.path.len + 1));
+            self.output_symtab_ctx.strsize += @as(u32, @intcast(self.path.len + 1));
         }
 
         for (self.symbols.items) |sym_index| {
@@ -1709,9 +1709,9 @@ pub fn calcStabsSize(self: *Object, macho_file: *MachO) error{Overflow}!void {
 
         for (self.stab_files.items) |sf| {
             self.output_symtab_ctx.nstabs += 4; // N_SO, N_SO, N_OSO, N_SO
-            self.output_symtab_ctx.strsize += @as(u32, @intCast(sf.getCompDir(self).len + 1)); // comp_dir
-            self.output_symtab_ctx.strsize += @as(u32, @intCast(sf.getTuName(self).len + 1)); // tu_name
-            self.output_symtab_ctx.strsize += @as(u32, @intCast(sf.getOsoPath(self).len + 1)); // path
+            self.output_symtab_ctx.strsize += @as(u32, @intcast(sf.getCompDir(self).len + 1)); // comp_dir
+            self.output_symtab_ctx.strsize += @as(u32, @intcast(sf.getTuName(self).len + 1)); // tu_name
+            self.output_symtab_ctx.strsize += @as(u32, @intcast(sf.getOsoPath(self).len + 1)); // path
 
             for (sf.stabs.items) |stab| {
                 const sym = stab.getSymbol(macho_file) orelse continue;
@@ -1734,7 +1734,7 @@ pub fn writeSymtab(self: Object, macho_file: *MachO, ctx: anytype) error{Overflo
         const file = sym.getFile(macho_file) orelse continue;
         if (file.getIndex() != self.index) continue;
         const idx = sym.getOutputSymtabIndex(macho_file) orelse continue;
-        const n_strx = @as(u32, @intCast(ctx.strtab.items.len));
+        const n_strx = @as(u32, @intcast(ctx.strtab.items.len));
         ctx.strtab.appendSliceAssumeCapacity(sym.getName(macho_file));
         ctx.strtab.appendAssumeCapacity(0);
         const out_sym = &ctx.symtab.items[idx];
@@ -1795,7 +1795,7 @@ pub fn writeStabs(self: *const Object, macho_file: *MachO, ctx: anytype) error{O
 
         // Open scope
         // N_SO comp_dir
-        var n_strx = @as(u32, @intCast(ctx.strtab.items.len));
+        var n_strx = @as(u32, @intcast(ctx.strtab.items.len));
         ctx.strtab.appendSliceAssumeCapacity(comp_dir);
         ctx.strtab.appendAssumeCapacity(0);
         ctx.symtab.items[index] = .{
@@ -1807,7 +1807,7 @@ pub fn writeStabs(self: *const Object, macho_file: *MachO, ctx: anytype) error{O
         };
         index += 1;
         // N_SO tu_name
-        n_strx = @as(u32, @intCast(ctx.strtab.items.len));
+        n_strx = @as(u32, @intcast(ctx.strtab.items.len));
         ctx.strtab.appendSliceAssumeCapacity(tu_name);
         ctx.strtab.appendAssumeCapacity(0);
         ctx.symtab.items[index] = .{
@@ -1819,7 +1819,7 @@ pub fn writeStabs(self: *const Object, macho_file: *MachO, ctx: anytype) error{O
         };
         index += 1;
         // N_OSO path
-        n_strx = @as(u32, @intCast(ctx.strtab.items.len));
+        n_strx = @as(u32, @intcast(ctx.strtab.items.len));
         if (self.archive) |ar| {
             ctx.strtab.appendSliceAssumeCapacity(ar.path);
             ctx.strtab.appendAssumeCapacity('(');
@@ -1854,7 +1854,7 @@ pub fn writeStabs(self: *const Object, macho_file: *MachO, ctx: anytype) error{O
                 const osym = ctx.symtab.items[symtab_index];
                 break :n_strx osym.n_strx;
             };
-            const sym_n_sect: u8 = if (!sym.flags.abs) @intCast(sym.out_n_sect + 1) else 0;
+            const sym_n_sect: u8 = if (!sym.flags.abs) @intcast(sym.out_n_sect + 1) else 0;
             const sym_n_value = sym.getAddress(.{}, macho_file);
             const sym_size = sym.getSize(macho_file);
             if (sect.isCode()) {
@@ -1896,7 +1896,7 @@ pub fn writeStabs(self: *const Object, macho_file: *MachO, ctx: anytype) error{O
         for (self.stab_files.items) |sf| {
             // Open scope
             // N_SO comp_dir
-            var n_strx = @as(u32, @intCast(ctx.strtab.items.len));
+            var n_strx = @as(u32, @intcast(ctx.strtab.items.len));
             ctx.strtab.appendSliceAssumeCapacity(sf.getCompDir(self));
             ctx.strtab.appendAssumeCapacity(0);
             ctx.symtab.items[index] = .{
@@ -1908,7 +1908,7 @@ pub fn writeStabs(self: *const Object, macho_file: *MachO, ctx: anytype) error{O
             };
             index += 1;
             // N_SO tu_name
-            n_strx = @as(u32, @intCast(ctx.strtab.items.len));
+            n_strx = @as(u32, @intcast(ctx.strtab.items.len));
             ctx.strtab.appendSliceAssumeCapacity(sf.getTuName(self));
             ctx.strtab.appendAssumeCapacity(0);
             ctx.symtab.items[index] = .{
@@ -1920,7 +1920,7 @@ pub fn writeStabs(self: *const Object, macho_file: *MachO, ctx: anytype) error{O
             };
             index += 1;
             // N_OSO path
-            n_strx = @as(u32, @intCast(ctx.strtab.items.len));
+            n_strx = @as(u32, @intcast(ctx.strtab.items.len));
             ctx.strtab.appendSliceAssumeCapacity(sf.getOsoPath(self));
             ctx.strtab.appendAssumeCapacity(0);
             ctx.symtab.items[index] = .{
@@ -1942,7 +1942,7 @@ pub fn writeStabs(self: *const Object, macho_file: *MachO, ctx: anytype) error{O
                     const osym = ctx.symtab.items[symtab_index];
                     break :n_strx osym.n_strx;
                 };
-                const sym_n_sect: u8 = if (!sym.flags.abs) @intCast(sym.out_n_sect + 1) else 0;
+                const sym_n_sect: u8 = if (!sym.flags.abs) @intcast(sym.out_n_sect + 1) else 0;
                 const sym_n_value = sym.getAddress(.{}, macho_file);
                 const sym_size = sym.getSize(macho_file);
                 if (stab.is_func) {
@@ -2016,7 +2016,7 @@ pub fn getAtomRelocs(self: *const Object, atom: Atom, macho_file: *MachO) []cons
 }
 
 fn addString(self: *Object, allocator: Allocator, name: [:0]const u8) error{OutOfMemory}!u32 {
-    const off: u32 = @intCast(self.strtab.items.len);
+    const off: u32 = @intcast(self.strtab.items.len);
     try self.strtab.ensureUnusedCapacity(allocator, name.len + 1);
     self.strtab.appendSliceAssumeCapacity(name);
     self.strtab.appendAssumeCapacity(0);
@@ -2025,7 +2025,7 @@ fn addString(self: *Object, allocator: Allocator, name: [:0]const u8) error{OutO
 
 pub fn getString(self: Object, off: u32) [:0]const u8 {
     assert(off < self.strtab.items.len);
-    return mem.sliceTo(@as([*:0]const u8, @ptrCast(self.strtab.items.ptr + off)), 0);
+    return mem.sliceTo(@as([*:0]const u8, @ptrcast(self.strtab.items.ptr + off)), 0);
 }
 
 pub fn hasUnwindRecords(self: Object) bool {
@@ -2078,7 +2078,7 @@ pub fn format(
     _ = unused_fmt_string;
     _ = options;
     _ = writer;
-    @compileError("do not format objects directly");
+    @compileerror("do not format objects directly");
 }
 
 const FormatContext = struct {
@@ -2301,15 +2301,15 @@ const x86_64 = struct {
 
         const handle = macho_file.getFileHandle(self.file_handle);
         const offset = if (self.archive) |ar| ar.offset else 0;
-        const relocs_buffer = try gpa.alloc(u8, sect.nreloc * @sizeOf(macho.relocation_info));
+        const relocs_buffer = try gpa.alloc(u8, sect.nreloc * @sizeof(macho.relocation_info));
         defer gpa.free(relocs_buffer);
         {
             const amt = try handle.preadAll(relocs_buffer, sect.reloff + offset);
             if (amt != relocs_buffer.len) return error.InputOutput;
         }
-        const relocs = @as([*]align(1) const macho.relocation_info, @ptrCast(relocs_buffer.ptr))[0..sect.nreloc];
+        const relocs = @as([*]align(1) const macho.relocation_info, @ptrcast(relocs_buffer.ptr))[0..sect.nreloc];
 
-        const code = try self.getSectionData(@intCast(n_sect), macho_file);
+        const code = try self.getSectionData(@intcast(n_sect), macho_file);
         defer gpa.free(code);
 
         try out.ensureTotalCapacityPrecise(gpa, relocs.len);
@@ -2317,8 +2317,8 @@ const x86_64 = struct {
         var i: usize = 0;
         while (i < relocs.len) : (i += 1) {
             const rel = relocs[i];
-            const rel_type: macho.reloc_type_x86_64 = @enumFromInt(rel.r_type);
-            const rel_offset = @as(u32, @intCast(rel.r_address));
+            const rel_type: macho.reloc_type_x86_64 = @enumfromint(rel.r_type);
+            const rel_offset = @as(u32, @intcast(rel.r_address));
 
             var addend = switch (rel.r_length) {
                 0 => code[rel_offset],
@@ -2326,7 +2326,7 @@ const x86_64 = struct {
                 2 => mem.readInt(i32, code[rel_offset..][0..4], .little),
                 3 => mem.readInt(i64, code[rel_offset..][0..8], .little),
             };
-            addend += switch (@as(macho.reloc_type_x86_64, @enumFromInt(rel.r_type))) {
+            addend += switch (@as(macho.reloc_type_x86_64, @enumfromint(rel.r_type))) {
                 .X86_64_RELOC_SIGNED_1 => 1,
                 .X86_64_RELOC_SIGNED_2 => 2,
                 .X86_64_RELOC_SIGNED_4 => 4,
@@ -2336,25 +2336,25 @@ const x86_64 = struct {
             const target = if (rel.r_extern == 0) blk: {
                 const nsect = rel.r_symbolnum - 1;
                 const taddr: i64 = if (rel.r_pcrel == 1)
-                    @as(i64, @intCast(sect.addr)) + rel.r_address + addend + 4
+                    @as(i64, @intcast(sect.addr)) + rel.r_address + addend + 4
                 else
                     addend;
-                const target = self.findAtomInSection(@intCast(taddr), @intCast(nsect)) orelse {
+                const target = self.findAtomInSection(@intcast(taddr), @intcast(nsect)) orelse {
                     try macho_file.reportParseError2(self.index, "{s},{s}: 0x{x}: bad relocation", .{
                         sect.segName(), sect.sectName(), rel.r_address,
                     });
                     return error.MalformedObject;
                 };
-                addend = taddr - @as(i64, @intCast(macho_file.getAtom(target).?.getInputAddress(macho_file)));
+                addend = taddr - @as(i64, @intcast(macho_file.getAtom(target).?.getInputAddress(macho_file)));
                 break :blk target;
             } else self.symbols.items[rel.r_symbolnum];
 
             const has_subtractor = if (i > 0 and
-                @as(macho.reloc_type_x86_64, @enumFromInt(relocs[i - 1].r_type)) == .X86_64_RELOC_SUBTRACTOR)
+                @as(macho.reloc_type_x86_64, @enumfromint(relocs[i - 1].r_type)) == .X86_64_RELOC_SUBTRACTOR)
             blk: {
                 if (rel_type != .X86_64_RELOC_UNSIGNED) {
                     try macho_file.reportParseError2(self.index, "{s},{s}: 0x{x}: X86_64_RELOC_SUBTRACTOR followed by {s}", .{
-                        sect.segName(), sect.sectName(), rel_offset, @tagName(rel_type),
+                        sect.segName(), sect.sectName(), rel_offset, @tagname(rel_type),
                     });
                     return error.MalformedObject;
                 }
@@ -2366,22 +2366,22 @@ const x86_64 = struct {
                     error.Pcrel => try macho_file.reportParseError2(
                         self.index,
                         "{s},{s}: 0x{x}: PC-relative {s} relocation",
-                        .{ sect.segName(), sect.sectName(), rel_offset, @tagName(rel_type) },
+                        .{ sect.segName(), sect.sectName(), rel_offset, @tagname(rel_type) },
                     ),
                     error.NonPcrel => try macho_file.reportParseError2(
                         self.index,
                         "{s},{s}: 0x{x}: non-PC-relative {s} relocation",
-                        .{ sect.segName(), sect.sectName(), rel_offset, @tagName(rel_type) },
+                        .{ sect.segName(), sect.sectName(), rel_offset, @tagname(rel_type) },
                     ),
                     error.InvalidLength => try macho_file.reportParseError2(
                         self.index,
                         "{s},{s}: 0x{x}: invalid length of {d} in {s} relocation",
-                        .{ sect.segName(), sect.sectName(), rel_offset, @as(u8, 1) << rel.r_length, @tagName(rel_type) },
+                        .{ sect.segName(), sect.sectName(), rel_offset, @as(u8, 1) << rel.r_length, @tagname(rel_type) },
                     ),
                     error.NonExtern => try macho_file.reportParseError2(
                         self.index,
                         "{s},{s}: 0x{x}: non-extern target in {s} relocation",
-                        .{ sect.segName(), sect.sectName(), rel_offset, @tagName(rel_type) },
+                        .{ sect.segName(), sect.sectName(), rel_offset, @tagname(rel_type) },
                     ),
                 }
                 return error.MalformedObject;
@@ -2389,7 +2389,7 @@ const x86_64 = struct {
 
             out.appendAssumeCapacity(.{
                 .tag = if (rel.r_extern == 1) .@"extern" else .local,
-                .offset = @as(u32, @intCast(rel.r_address)),
+                .offset = @as(u32, @intcast(rel.r_address)),
                 .target = target,
                 .addend = addend,
                 .type = @"type",
@@ -2464,15 +2464,15 @@ const aarch64 = struct {
 
         const handle = macho_file.getFileHandle(self.file_handle);
         const offset = if (self.archive) |ar| ar.offset else 0;
-        const relocs_buffer = try gpa.alloc(u8, sect.nreloc * @sizeOf(macho.relocation_info));
+        const relocs_buffer = try gpa.alloc(u8, sect.nreloc * @sizeof(macho.relocation_info));
         defer gpa.free(relocs_buffer);
         {
             const amt = try handle.preadAll(relocs_buffer, sect.reloff + offset);
             if (amt != relocs_buffer.len) return error.InputOutput;
         }
-        const relocs = @as([*]align(1) const macho.relocation_info, @ptrCast(relocs_buffer.ptr))[0..sect.nreloc];
+        const relocs = @as([*]align(1) const macho.relocation_info, @ptrcast(relocs_buffer.ptr))[0..sect.nreloc];
 
-        const code = try self.getSectionData(@intCast(n_sect), macho_file);
+        const code = try self.getSectionData(@intcast(n_sect), macho_file);
         defer gpa.free(code);
 
         try out.ensureTotalCapacityPrecise(gpa, relocs.len);
@@ -2480,11 +2480,11 @@ const aarch64 = struct {
         var i: usize = 0;
         while (i < relocs.len) : (i += 1) {
             var rel = relocs[i];
-            const rel_offset = @as(u32, @intCast(rel.r_address));
+            const rel_offset = @as(u32, @intcast(rel.r_address));
 
             var addend: i64 = 0;
 
-            switch (@as(macho.reloc_type_arm64, @enumFromInt(rel.r_type))) {
+            switch (@as(macho.reloc_type_arm64, @enumfromint(rel.r_type))) {
                 .ARM64_RELOC_ADDEND => {
                     addend = rel.r_symbolnum;
                     i += 1;
@@ -2495,13 +2495,13 @@ const aarch64 = struct {
                         return error.MalformedObject;
                     }
                     rel = relocs[i];
-                    switch (@as(macho.reloc_type_arm64, @enumFromInt(rel.r_type))) {
+                    switch (@as(macho.reloc_type_arm64, @enumfromint(rel.r_type))) {
                         .ARM64_RELOC_PAGE21, .ARM64_RELOC_PAGEOFF12 => {},
                         else => |x| {
                             try macho_file.reportParseError2(
                                 self.index,
                                 "{s},{s}: 0x{x}: ARM64_RELOC_ADDEND followed by {s}",
-                                .{ sect.segName(), sect.sectName(), rel_offset, @tagName(x) },
+                                .{ sect.segName(), sect.sectName(), rel_offset, @tagname(x) },
                             );
                             return error.MalformedObject;
                         },
@@ -2518,30 +2518,30 @@ const aarch64 = struct {
                 else => {},
             }
 
-            const rel_type: macho.reloc_type_arm64 = @enumFromInt(rel.r_type);
+            const rel_type: macho.reloc_type_arm64 = @enumfromint(rel.r_type);
 
             const target = if (rel.r_extern == 0) blk: {
                 const nsect = rel.r_symbolnum - 1;
                 const taddr: i64 = if (rel.r_pcrel == 1)
-                    @as(i64, @intCast(sect.addr)) + rel.r_address + addend
+                    @as(i64, @intcast(sect.addr)) + rel.r_address + addend
                 else
                     addend;
-                const target = self.findAtomInSection(@intCast(taddr), @intCast(nsect)) orelse {
+                const target = self.findAtomInSection(@intcast(taddr), @intcast(nsect)) orelse {
                     try macho_file.reportParseError2(self.index, "{s},{s}: 0x{x}: bad relocation", .{
                         sect.segName(), sect.sectName(), rel.r_address,
                     });
                     return error.MalformedObject;
                 };
-                addend = taddr - @as(i64, @intCast(macho_file.getAtom(target).?.getInputAddress(macho_file)));
+                addend = taddr - @as(i64, @intcast(macho_file.getAtom(target).?.getInputAddress(macho_file)));
                 break :blk target;
             } else self.symbols.items[rel.r_symbolnum];
 
             const has_subtractor = if (i > 0 and
-                @as(macho.reloc_type_arm64, @enumFromInt(relocs[i - 1].r_type)) == .ARM64_RELOC_SUBTRACTOR)
+                @as(macho.reloc_type_arm64, @enumfromint(relocs[i - 1].r_type)) == .ARM64_RELOC_SUBTRACTOR)
             blk: {
                 if (rel_type != .ARM64_RELOC_UNSIGNED) {
                     try macho_file.reportParseError2(self.index, "{s},{s}: 0x{x}: ARM64_RELOC_SUBTRACTOR followed by {s}", .{
-                        sect.segName(), sect.sectName(), rel_offset, @tagName(rel_type),
+                        sect.segName(), sect.sectName(), rel_offset, @tagname(rel_type),
                     });
                     return error.MalformedObject;
                 }
@@ -2553,22 +2553,22 @@ const aarch64 = struct {
                     error.Pcrel => try macho_file.reportParseError2(
                         self.index,
                         "{s},{s}: 0x{x}: PC-relative {s} relocation",
-                        .{ sect.segName(), sect.sectName(), rel_offset, @tagName(rel_type) },
+                        .{ sect.segName(), sect.sectName(), rel_offset, @tagname(rel_type) },
                     ),
                     error.NonPcrel => try macho_file.reportParseError2(
                         self.index,
                         "{s},{s}: 0x{x}: non-PC-relative {s} relocation",
-                        .{ sect.segName(), sect.sectName(), rel_offset, @tagName(rel_type) },
+                        .{ sect.segName(), sect.sectName(), rel_offset, @tagname(rel_type) },
                     ),
                     error.InvalidLength => try macho_file.reportParseError2(
                         self.index,
                         "{s},{s}: 0x{x}: invalid length of {d} in {s} relocation",
-                        .{ sect.segName(), sect.sectName(), rel_offset, @as(u8, 1) << rel.r_length, @tagName(rel_type) },
+                        .{ sect.segName(), sect.sectName(), rel_offset, @as(u8, 1) << rel.r_length, @tagname(rel_type) },
                     ),
                     error.NonExtern => try macho_file.reportParseError2(
                         self.index,
                         "{s},{s}: 0x{x}: non-extern target in {s} relocation",
-                        .{ sect.segName(), sect.sectName(), rel_offset, @tagName(rel_type) },
+                        .{ sect.segName(), sect.sectName(), rel_offset, @tagname(rel_type) },
                     ),
                 }
                 return error.MalformedObject;
@@ -2576,7 +2576,7 @@ const aarch64 = struct {
 
             out.appendAssumeCapacity(.{
                 .tag = if (rel.r_extern == 1) .@"extern" else .local,
-                .offset = @as(u32, @intCast(rel.r_address)),
+                .offset = @as(u32, @intcast(rel.r_address)),
                 .target = target,
                 .addend = addend,
                 .type = @"type",

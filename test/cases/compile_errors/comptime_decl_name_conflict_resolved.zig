@@ -1,5 +1,5 @@
 comptime {
-    @compileError("should be reached");
+    @compileerror("should be reached");
 }
 const comptime_0 = {};
 

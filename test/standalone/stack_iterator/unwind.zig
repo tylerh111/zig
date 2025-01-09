@@ -4,7 +4,7 @@ const debug = std.debug;
 const testing = std.testing;
 
 noinline fn frame3(expected: *[4]usize, unwound: *[4]usize) void {
-    expected[0] = @returnAddress();
+    expected[0] = @returnaddress();
 
     var context: debug.ThreadContext = undefined;
     testing.expect(debug.getContext(&context)) catch @panic("failed to getContext");
@@ -66,23 +66,23 @@ noinline fn frame2(expected: *[4]usize, unwound: *[4]usize) void {
         }
     }
 
-    expected[1] = @returnAddress();
+    expected[1] = @returnaddress();
     frame3(expected, unwound);
 }
 
 noinline fn frame1(expected: *[4]usize, unwound: *[4]usize) void {
-    expected[2] = @returnAddress();
+    expected[2] = @returnaddress();
 
     // Use a stack frame that is too big to encode in __unwind_info's stack-immediate encoding
     // to exercise the stack-indirect encoding path
-    var pad: [std.math.maxInt(u8) * @sizeOf(usize) + 1]u8 = undefined;
+    var pad: [std.math.maxInt(u8) * @sizeof(usize) + 1]u8 = undefined;
     _ = std.mem.doNotOptimizeAway(&pad);
 
     frame2(expected, unwound);
 }
 
 noinline fn frame0(expected: *[4]usize, unwound: *[4]usize) void {
-    expected[3] = @returnAddress();
+    expected[3] = @returnaddress();
     frame1(expected, unwound);
 }
 

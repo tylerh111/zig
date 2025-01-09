@@ -240,14 +240,14 @@ test "File.stat on a File that is a symlink returns Kind.sym_link" {
                         .fd = undefined,
                     };
 
-                    const path_len_bytes = @as(u16, @intCast(sub_path_w.span().len * 2));
+                    const path_len_bytes = @as(u16, @intcast(sub_path_w.span().len * 2));
                     var nt_name = windows.UNICODE_STRING{
                         .Length = path_len_bytes,
                         .MaximumLength = path_len_bytes,
-                        .Buffer = @constCast(&sub_path_w.data),
+                        .Buffer = @constcast(&sub_path_w.data),
                     };
                     var attr = windows.OBJECT_ATTRIBUTES{
-                        .Length = @sizeOf(windows.OBJECT_ATTRIBUTES),
+                        .Length = @sizeof(windows.OBJECT_ATTRIBUTES),
                         .RootDirectory = if (fs.path.isAbsoluteWindowsW(sub_path_w.span())) null else ctx.dir.fd,
                         .Attributes = 0,
                         .ObjectName = &nt_name,

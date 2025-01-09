@@ -219,7 +219,7 @@ pub fn buildCRTFile(comp: *Compilation, crt_file: CRTFile, prog_node: std.Progre
 
             const target = comp.root_mod.resolved_target.result;
             const arch_define = try std.fmt.allocPrint(arena, "-DARCH_{s}", .{
-                @tagName(target.cpu.arch),
+                @tagname(target.cpu.arch),
             });
             const cc_argv: []const []const u8 = if (target.ptrBitWidth() == 64)
                 &.{ "-DPTR64", arch_define }
@@ -383,7 +383,7 @@ fn addCcArgs(
 ) error{OutOfMemory}!void {
     const target = comp.getTarget();
     const arch_name = archName(target.cpu.arch);
-    const os_name = @tagName(target.os.tag);
+    const os_name = @tagname(target.os.tag);
     const triple = try std.fmt.allocPrint(arena, "{s}-{s}-musl", .{
         std.zig.target.muslArchNameHeaders(target.cpu.arch), os_name,
     });

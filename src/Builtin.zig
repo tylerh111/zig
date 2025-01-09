@@ -28,11 +28,11 @@ pub fn append(opts: @This(), buffer: *std.ArrayList(u8)) Allocator.Error!void {
     const generic_arch_name = target.cpu.arch.genericName();
     const zig_backend = opts.zig_backend;
 
-    @setEvalBranchQuota(4000);
+    @setevalbranchquota(4000);
     try buffer.writer().print(
         \\const std = @import("std");
         \\/// Zig version. When writing code that supports multiple versions of Zig, prefer
-        \\/// feature detection (i.e. with `@hasDecl` or `@hasField`) over version checks.
+        \\/// feature detection (i.e. with `@hasdecl` or `@hasfield`) over version checks.
         \\pub const zig_version = std.SemanticVersion.parse(zig_version_string) catch unreachable;
         \\pub const zig_version_string = "{s}";
         \\pub const zig_backend = std.builtin.CompilerBackend.{p_};
@@ -49,13 +49,13 @@ pub fn append(opts: @This(), buffer: *std.ArrayList(u8)) Allocator.Error!void {
         \\
     , .{
         build_options.version,
-        std.zig.fmtId(@tagName(zig_backend)),
-        std.zig.fmtId(@tagName(opts.output_mode)),
-        std.zig.fmtId(@tagName(opts.link_mode)),
+        std.zig.fmtId(@tagname(zig_backend)),
+        std.zig.fmtId(@tagname(opts.output_mode)),
+        std.zig.fmtId(@tagname(opts.link_mode)),
         opts.is_test,
         opts.single_threaded,
-        std.zig.fmtId(@tagName(target.abi)),
-        std.zig.fmtId(@tagName(target.cpu.arch)),
+        std.zig.fmtId(@tagname(target.abi)),
+        std.zig.fmtId(@tagname(target.cpu.arch)),
         std.zig.fmtId(generic_arch_name),
         std.zig.fmtId(target.cpu.model.name),
         std.zig.fmtId(generic_arch_name),
@@ -63,7 +63,7 @@ pub fn append(opts: @This(), buffer: *std.ArrayList(u8)) Allocator.Error!void {
     });
 
     for (target.cpu.arch.allFeaturesList(), 0..) |feature, index_usize| {
-        const index = @as(std.Target.Cpu.Feature.Set.Index, @intCast(index_usize));
+        const index = @as(std.Target.Cpu.Feature.Set.Index, @intcast(index_usize));
         const is_enabled = target.cpu.features.isEnabled(index);
         if (is_enabled) {
             try buffer.writer().print("        .{p_},\n", .{std.zig.fmtId(feature.name)});
@@ -76,7 +76,7 @@ pub fn append(opts: @This(), buffer: *std.ArrayList(u8)) Allocator.Error!void {
         \\    .tag = .{p_},
         \\    .version_range = .{{
     ,
-        .{std.zig.fmtId(@tagName(target.os.tag))},
+        .{std.zig.fmtId(@tagname(target.os.tag))},
     );
 
     switch (target.os.getVersionRange()) {
@@ -192,8 +192,8 @@ pub fn append(opts: @This(), buffer: *std.ArrayList(u8)) Allocator.Error!void {
         \\pub const omit_frame_pointer = {};
         \\
     , .{
-        std.zig.fmtId(@tagName(target.ofmt)),
-        std.zig.fmtId(@tagName(opts.optimize_mode)),
+        std.zig.fmtId(@tagname(target.ofmt)),
+        std.zig.fmtId(@tagname(opts.optimize_mode)),
         link_libc,
         opts.link_libcpp,
         opts.error_tracing,
@@ -202,7 +202,7 @@ pub fn append(opts: @This(), buffer: *std.ArrayList(u8)) Allocator.Error!void {
         opts.pic,
         opts.pie,
         opts.strip,
-        std.zig.fmtId(@tagName(opts.code_model)),
+        std.zig.fmtId(@tagname(opts.code_model)),
         opts.omit_frame_pointer,
     });
 
@@ -210,7 +210,7 @@ pub fn append(opts: @This(), buffer: *std.ArrayList(u8)) Allocator.Error!void {
         try buffer.writer().print(
             \\pub const wasi_exec_model = std.builtin.WasiExecModel.{p_};
             \\
-        , .{std.zig.fmtId(@tagName(opts.wasi_exec_model))});
+        , .{std.zig.fmtId(@tagname(opts.wasi_exec_model))});
     }
 
     if (opts.is_test) {

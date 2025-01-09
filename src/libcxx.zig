@@ -145,10 +145,10 @@ pub fn buildLibCXX(comp: *Compilation, prog_node: std.Progress.Node) BuildError!
     const cxx_include_path = try comp.zig_lib_directory.join(arena, &[_][]const u8{ "libcxx", "include" });
     const cxx_src_include_path = try comp.zig_lib_directory.join(arena, &[_][]const u8{ "libcxx", "src" });
     const abi_version_arg = try std.fmt.allocPrint(arena, "-D_LIBCPP_ABI_VERSION={d}", .{
-        @intFromEnum(comp.libcxx_abi_version),
+        @intfromenum(comp.libcxx_abi_version),
     });
     const abi_namespace_arg = try std.fmt.allocPrint(arena, "-D_LIBCPP_ABI_NAMESPACE=__{d}", .{
-        @intFromEnum(comp.libcxx_abi_version),
+        @intfromenum(comp.libcxx_abi_version),
     });
 
     const optimize_mode = comp.compilerRtOptMode();
@@ -170,7 +170,7 @@ pub fn buildLibCXX(comp: *Compilation, prog_node: std.Progress.Node) BuildError!
         comp.setMiscFailure(
             .libcxx,
             "unable to build libc++: resolving configuration failed: {s}",
-            .{@errorName(err)},
+            .{@errorname(err)},
         );
         return error.SubCompilationFailed;
     };
@@ -205,7 +205,7 @@ pub fn buildLibCXX(comp: *Compilation, prog_node: std.Progress.Node) BuildError!
         comp.setMiscFailure(
             .libcxx,
             "unable to build libc++: creating module failed: {s}",
-            .{@errorName(err)},
+            .{@errorname(err)},
         );
         return error.SubCompilationFailed;
     };
@@ -335,7 +335,7 @@ pub fn buildLibCXX(comp: *Compilation, prog_node: std.Progress.Node) BuildError!
         comp.setMiscFailure(
             .libcxx,
             "unable to build libc++: create compilation failed: {s}",
-            .{@errorName(err)},
+            .{@errorname(err)},
         );
         return error.SubCompilationFailed;
     };
@@ -347,7 +347,7 @@ pub fn buildLibCXX(comp: *Compilation, prog_node: std.Progress.Node) BuildError!
             comp.setMiscFailure(
                 .libcxx,
                 "unable to build libc++: compilation failed: {s}",
-                .{@errorName(e)},
+                .{@errorname(e)},
             );
             return error.SubCompilationFailed;
         },
@@ -389,10 +389,10 @@ pub fn buildLibCXXABI(comp: *Compilation, prog_node: std.Progress.Node) BuildErr
     const cxx_include_path = try comp.zig_lib_directory.join(arena, &[_][]const u8{ "libcxx", "include" });
     const cxx_src_include_path = try comp.zig_lib_directory.join(arena, &[_][]const u8{ "libcxx", "src" });
     const abi_version_arg = try std.fmt.allocPrint(arena, "-D_LIBCPP_ABI_VERSION={d}", .{
-        @intFromEnum(comp.libcxx_abi_version),
+        @intfromenum(comp.libcxx_abi_version),
     });
     const abi_namespace_arg = try std.fmt.allocPrint(arena, "-D_LIBCPP_ABI_NAMESPACE=__{d}", .{
-        @intFromEnum(comp.libcxx_abi_version),
+        @intfromenum(comp.libcxx_abi_version),
     });
 
     const optimize_mode = comp.compilerRtOptMode();
@@ -416,7 +416,7 @@ pub fn buildLibCXXABI(comp: *Compilation, prog_node: std.Progress.Node) BuildErr
         comp.setMiscFailure(
             .libcxxabi,
             "unable to build libc++abi: resolving configuration failed: {s}",
-            .{@errorName(err)},
+            .{@errorname(err)},
         );
         return error.SubCompilationFailed;
     };
@@ -452,7 +452,7 @@ pub fn buildLibCXXABI(comp: *Compilation, prog_node: std.Progress.Node) BuildErr
         comp.setMiscFailure(
             .libcxxabi,
             "unable to build libc++abi: creating module failed: {s}",
-            .{@errorName(err)},
+            .{@errorname(err)},
         );
         return error.SubCompilationFailed;
     };
@@ -565,7 +565,7 @@ pub fn buildLibCXXABI(comp: *Compilation, prog_node: std.Progress.Node) BuildErr
         comp.setMiscFailure(
             .libcxxabi,
             "unable to build libc++abi: create compilation failed: {s}",
-            .{@errorName(err)},
+            .{@errorname(err)},
         );
         return error.SubCompilationFailed;
     };
@@ -577,7 +577,7 @@ pub fn buildLibCXXABI(comp: *Compilation, prog_node: std.Progress.Node) BuildErr
             comp.setMiscFailure(
                 .libcxxabi,
                 "unable to build libc++abi: compilation failed: {s}",
-                .{@errorName(e)},
+                .{@errorname(e)},
             );
             return error.SubCompilationFailed;
         },

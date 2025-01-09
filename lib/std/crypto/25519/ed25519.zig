@@ -97,7 +97,7 @@ pub const Ed25519 = struct {
             self.h.final(&hram64);
             const hram = Curve.scalar.reduce64(hram64);
 
-            const s = Curve.scalar.mulAdd(hram, self.scalar, self.nonce);
+            const s = Curve.scalar.muladd(hram, self.scalar, self.nonce);
 
             return Signature{ .r = self.r_bytes, .s = s };
         }
@@ -189,7 +189,7 @@ pub const Ed25519 = struct {
     /// An Ed25519 signature.
     pub const Signature = struct {
         /// Length (in bytes) of a raw signature.
-        pub const encoded_length = Curve.encoded_length + @sizeOf(CompressedScalar);
+        pub const encoded_length = Curve.encoded_length + @sizeof(CompressedScalar);
 
         /// The R component of an EdDSA signature.
         r: [Curve.encoded_length]u8,

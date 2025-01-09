@@ -21,7 +21,7 @@ pub fn Frexp(comptime T: type) type {
 pub fn frexp(x: anytype) Frexp(@TypeOf(x)) {
     const T: type = @TypeOf(x);
 
-    const bits: comptime_int = @typeInfo(T).Float.bits;
+    const bits: comptime_int = @typeinfo(T).Float.bits;
     const Int: type = std.meta.Int(.unsigned, bits);
 
     const exp_bits: comptime_int = math.floatExponentBits(T);
@@ -43,7 +43,7 @@ pub fn frexp(x: anytype) Frexp(@TypeOf(x)) {
     const extra_denorm_shift: comptime_int = 1 - ones_place;
 
     var result: Frexp(T) = undefined;
-    var v: Int = @bitCast(x);
+    var v: Int = @bitcast(x);
 
     const m: MantInt = @truncate(v);
     const e: ExpInt = @truncate(v >> mant_bits);
@@ -81,7 +81,7 @@ pub fn frexp(x: anytype) Frexp(@TypeOf(x)) {
         },
     }
 
-    result.significand = @bitCast(v);
+    result.significand = @bitcast(v);
     return result;
 }
 

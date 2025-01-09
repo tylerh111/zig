@@ -164,7 +164,7 @@ const RegistryWtf8 = struct {
     /// Closes key, after that usage is invalid
     pub fn closeKey(reg: RegistryWtf8) void {
         const return_code_int: windows.HRESULT = windows.advapi32.RegCloseKey(reg.key);
-        const return_code: windows.Win32Error = @enumFromInt(return_code_int);
+        const return_code: windows.Win32Error = @enumfromint(return_code_int);
         switch (return_code) {
             .SUCCESS => {},
             else => {},
@@ -258,7 +258,7 @@ const RegistryWtf16Le = struct {
             access,
             &key,
         );
-        const return_code: windows.Win32Error = @enumFromInt(return_code_int);
+        const return_code: windows.Win32Error = @enumfromint(return_code_int);
         switch (return_code) {
             .SUCCESS => {},
             .FILE_NOT_FOUND => return error.KeyNotFound,
@@ -271,7 +271,7 @@ const RegistryWtf16Le = struct {
     /// Closes key, after that usage is invalid
     fn closeKey(reg: RegistryWtf16Le) void {
         const return_code_int: windows.HRESULT = windows.advapi32.RegCloseKey(reg.key);
-        const return_code: windows.Win32Error = @enumFromInt(return_code_int);
+        const return_code: windows.Win32Error = @enumfromint(return_code_int);
         switch (return_code) {
             .SUCCESS => {},
             else => {},
@@ -295,7 +295,7 @@ const RegistryWtf16Le = struct {
         );
 
         // Check returned code and type
-        var return_code: windows.Win32Error = @enumFromInt(return_code_int);
+        var return_code: windows.Win32Error = @enumfromint(return_code_int);
         switch (return_code) {
             .SUCCESS => std.debug.assert(value_wtf16le_buf_size != 0),
             .MORE_DATA => unreachable, // We are only reading length
@@ -322,7 +322,7 @@ const RegistryWtf16Le = struct {
         );
 
         // Check returned code and (just in case) type again.
-        return_code = @enumFromInt(return_code_int);
+        return_code = @enumfromint(return_code_int);
         switch (return_code) {
             .SUCCESS => {},
             .MORE_DATA => unreachable, // Calculated first time length should be enough, even overestimated
@@ -339,7 +339,7 @@ const RegistryWtf16Le = struct {
             // note(bratishkaerik): somehow returned value in `buf_len` is overestimated by Windows and contains extra space
             // we will just search for zero termination and forget length
             // Windows sure is strange
-            const value_wtf16le_overestimated: [*:0]const u16 = @ptrCast(value_wtf16le_buf.ptr);
+            const value_wtf16le_overestimated: [*:0]const u16 = @ptrcast(value_wtf16le_buf.ptr);
             break :value_wtf16le std.mem.span(value_wtf16le_overestimated);
         };
 
@@ -350,7 +350,7 @@ const RegistryWtf16Le = struct {
     /// Get DWORD (u32) from registry.
     fn getDword(reg: RegistryWtf16Le, subkey_wtf16le: [:0]const u16, value_name_wtf16le: [:0]const u16) error{ ValueNameNotFound, NotADword, DwordTooLong, DwordNotFound }!u32 {
         var actual_type: windows.ULONG = undefined;
-        var reg_size: u32 = @sizeOf(u32);
+        var reg_size: u32 = @sizeof(u32);
         var reg_value: u32 = 0;
 
         const return_code_int: windows.HRESULT = windows.advapi32.RegGetValueW(
@@ -362,7 +362,7 @@ const RegistryWtf16Le = struct {
             &reg_value,
             &reg_size,
         );
-        const return_code: windows.Win32Error = @enumFromInt(return_code_int);
+        const return_code: windows.Win32Error = @enumfromint(return_code_int);
         switch (return_code) {
             .SUCCESS => {},
             .MORE_DATA => return error.DwordTooLong,
@@ -392,7 +392,7 @@ const RegistryWtf16Le = struct {
             0,
             0,
         );
-        const return_code: windows.Win32Error = @enumFromInt(return_code_int);
+        const return_code: windows.Win32Error = @enumfromint(return_code_int);
         switch (return_code) {
             .SUCCESS => {},
             else => return error.KeyNotFound,
@@ -583,7 +583,7 @@ pub const Installation = struct {
             .aarch64 => "OptionId.DesktopCPParm64",
             .x86_64 => "OptionId.DesktopCPPx64",
             .x86 => "OptionId.DesktopCPPx86",
-            else => |tag| @compileError("Windows SDK cannot be detected on architecture " ++ tag),
+            else => |tag| @compileerror("Windows SDK cannot be detected on architecture " ++ tag),
         };
 
         const reg_value = options_key.getDword("", option_name) catch return false;
@@ -827,7 +827,7 @@ const MsvcLibDir = struct {
             .x86_64 => "x64",
             .arm, .armeb => "arm",
             .aarch64 => "arm64",
-            else => |tag| @compileError("MSVC lib dir cannot be detected on architecture " ++ tag),
+            else => |tag| @compileerror("MSVC lib dir cannot be detected on architecture " ++ tag),
         };
         try lib_dir_buf.appendSlice(folder_with_arch);
 
@@ -912,7 +912,7 @@ const MsvcLibDir = struct {
                 .x86_64 => "x64",
                 .arm, .armeb => "arm",
                 .aarch64 => "arm64",
-                else => |tag| @compileError("MSVC lib dir cannot be detected on architecture " ++ tag),
+                else => |tag| @compileerror("MSVC lib dir cannot be detected on architecture " ++ tag),
             };
 
             try msvc_dir.appendSlice(folder_with_arch);
@@ -980,7 +980,7 @@ const MsvcLibDir = struct {
             .x86_64 => "amd64",
             .arm, .armeb => "arm",
             .aarch64 => "arm64",
-            else => |tag| @compileError("MSVC lib dir cannot be detected on architecture " ++ tag),
+            else => |tag| @compileerror("MSVC lib dir cannot be detected on architecture " ++ tag),
         };
         try base_path.appendSlice(folder_with_arch);
 

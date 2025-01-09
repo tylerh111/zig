@@ -6,7 +6,7 @@ pub fn main() void {
     if (result) |number| {
         print("got number: {}\n", .{number});
     } else |err| {
-        print("got error: {s}\n", .{@errorName(err)});
+        print("got error: {s}\n", .{@errorname(err)});
     }
 }
 

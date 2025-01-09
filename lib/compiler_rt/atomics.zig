@@ -30,11 +30,11 @@ const largest_atomic_size = switch (arch) {
     // On SPARC systems that lacks CAS and/or swap instructions, the only
     // available atomic operation is a test-and-set (`ldstub`), so we force
     // every atomic memory access to go through the lock.
-    .sparc, .sparcel => if (cpu.features.featureSetHas(.hasleoncasa)) @sizeOf(usize) else 0,
+    .sparc, .sparcel => if (cpu.features.featureSetHas(.hasleoncasa)) @sizeof(usize) else 0,
 
     // XXX: On x86/x86_64 we could check the presence of cmpxchg8b/cmpxchg16b
     // and set this parameter accordingly.
-    else => @sizeOf(usize),
+    else => @sizeof(usize),
 };
 
 // The size (in bytes) of the smallest atomic object that the architecture can
@@ -44,8 +44,8 @@ const largest_atomic_size = switch (arch) {
 const smallest_atomic_fetch_exch_size = switch (arch) {
     // On AMDGPU, there are no instructions for atomic operations other than load and store
     // (as of LLVM 15), and so these need to be implemented in terms of atomic CAS.
-    .amdgcn => @sizeOf(u32),
-    else => @sizeOf(u8),
+    .amdgcn => @sizeof(u32),
+    else => @sizeof(u8),
 };
 
 const cache_line_size = 64;
@@ -74,7 +74,7 @@ const SpinlockTable = struct {
                         : "memory"
                     );
                 } else flag: {
-                    break :flag @atomicRmw(@TypeOf(self.v), &self.v, .Xchg, .Locked, .acquire);
+                    break :flag @atomicrmw(@TypeOf(self.v), &self.v, .Xchg, .Locked, .acquire);
                 };
 
                 switch (flag) {
@@ -91,7 +91,7 @@ const SpinlockTable = struct {
                     : "memory"
                 );
             } else {
-                @atomicStore(@TypeOf(self.v), &self.v, .Unlocked, .release);
+                @atomicstore(@TypeOf(self.v), &self.v, .Unlocked, .release);
             }
         }
     };
@@ -119,21 +119,21 @@ var spinlocks: SpinlockTable = SpinlockTable{};
 
 fn __atomic_load(size: u32, src: [*]u8, dest: [*]u8, model: i32) callconv(.C) void {
     _ = model;
-    var sl = spinlocks.get(@intFromPtr(src));
+    var sl = spinlocks.get(@intfromptr(src));
     defer sl.release();
     @memcpy(dest[0..size], src);
 }
 
 fn __atomic_store(size: u32, dest: [*]u8, src: [*]u8, model: i32) callconv(.C) void {
     _ = model;
-    var sl = spinlocks.get(@intFromPtr(dest));
+    var sl = spinlocks.get(@intfromptr(dest));
     defer sl.release();
     @memcpy(dest[0..size], src);
 }
 
 fn __atomic_exchange(size: u32, ptr: [*]u8, val: [*]u8, old: [*]u8, model: i32) callconv(.C) void {
     _ = model;
-    var sl = spinlocks.get(@intFromPtr(ptr));
+    var sl = spinlocks.get(@intfromptr(ptr));
     defer sl.release();
     @memcpy(old[0..size], ptr);
     @memcpy(ptr[0..size], val);
@@ -149,7 +149,7 @@ fn __atomic_compare_exchange(
 ) callconv(.C) i32 {
     _ = success;
     _ = failure;
-    var sl = spinlocks.get(@intFromPtr(ptr));
+    var sl = spinlocks.get(@intfromptr(ptr));
     defer sl.release();
     for (ptr[0..size], 0..) |b, i| {
         if (expected[i] != b) break;
@@ -167,12 +167,12 @@ fn __atomic_compare_exchange(
 // aligned.
 inline fn atomic_load_N(comptime T: type, src: *T, model: i32) T {
     _ = model;
-    if (@sizeOf(T) > largest_atomic_size) {
-        var sl = spinlocks.get(@intFromPtr(src));
+    if (@sizeof(T) > largest_atomic_size) {
+        var sl = spinlocks.get(@intfromptr(src));
         defer sl.release();
         return src.*;
     } else {
-        return @atomicLoad(T, src, .seq_cst);
+        return @atomicload(T, src, .seq_cst);
     }
 }
 
@@ -198,12 +198,12 @@ fn __atomic_load_16(src: *u128, model: i32) callconv(.C) u128 {
 
 inline fn atomic_store_N(comptime T: type, dst: *T, value: T, model: i32) void {
     _ = model;
-    if (@sizeOf(T) > largest_atomic_size) {
-        var sl = spinlocks.get(@intFromPtr(dst));
+    if (@sizeof(T) > largest_atomic_size) {
+        var sl = spinlocks.get(@intfromptr(dst));
         defer sl.release();
         dst.* = value;
     } else {
-        @atomicStore(T, dst, value, .seq_cst);
+        @atomicstore(T, dst, value, .seq_cst);
     }
 }
 
@@ -230,21 +230,21 @@ fn __atomic_store_16(dst: *u128, value: u128, model: i32) callconv(.C) void {
 fn wideUpdate(comptime T: type, ptr: *T, val: T, update: anytype) T {
     const WideAtomic = std.meta.Int(.unsigned, smallest_atomic_fetch_exch_size * 8);
 
-    const addr = @intFromPtr(ptr);
+    const addr = @intfromptr(ptr);
     const wide_addr = addr & ~(@as(T, smallest_atomic_fetch_exch_size) - 1);
-    const wide_ptr: *align(smallest_atomic_fetch_exch_size) WideAtomic = @alignCast(@as(*WideAtomic, @ptrFromInt(wide_addr)));
+    const wide_ptr: *align(smallest_atomic_fetch_exch_size) WideAtomic = @aligncast(@as(*WideAtomic, @ptrfromint(wide_addr)));
 
     const inner_offset = addr & (@as(T, smallest_atomic_fetch_exch_size) - 1);
-    const inner_shift = @as(std.math.Log2Int(T), @intCast(inner_offset * 8));
+    const inner_shift = @as(std.math.Log2Int(T), @intcast(inner_offset * 8));
 
     const mask = @as(WideAtomic, std.math.maxInt(T)) << inner_shift;
 
-    var wide_old = @atomicLoad(WideAtomic, wide_ptr, .seq_cst);
+    var wide_old = @atomicload(WideAtomic, wide_ptr, .seq_cst);
     while (true) {
         const old = @as(T, @truncate((wide_old & mask) >> inner_shift));
         const new = update(val, old);
         const wide_new = wide_old & ~mask | (@as(WideAtomic, new) << inner_shift);
-        if (@cmpxchgWeak(WideAtomic, wide_ptr, wide_old, wide_new, .seq_cst, .seq_cst)) |new_wide_old| {
+        if (@cmpxchgweak(WideAtomic, wide_ptr, wide_old, wide_new, .seq_cst, .seq_cst)) |new_wide_old| {
             wide_old = new_wide_old;
         } else {
             return old;
@@ -254,13 +254,13 @@ fn wideUpdate(comptime T: type, ptr: *T, val: T, update: anytype) T {
 
 inline fn atomic_exchange_N(comptime T: type, ptr: *T, val: T, model: i32) T {
     _ = model;
-    if (@sizeOf(T) > largest_atomic_size) {
-        var sl = spinlocks.get(@intFromPtr(ptr));
+    if (@sizeof(T) > largest_atomic_size) {
+        var sl = spinlocks.get(@intfromptr(ptr));
         defer sl.release();
         const value = ptr.*;
         ptr.* = val;
         return value;
-    } else if (@sizeOf(T) < smallest_atomic_fetch_exch_size) {
+    } else if (@sizeof(T) < smallest_atomic_fetch_exch_size) {
         // Machine does not support this type, but it does support a larger type.
         const Updater = struct {
             fn update(new: T, old: T) T {
@@ -270,7 +270,7 @@ inline fn atomic_exchange_N(comptime T: type, ptr: *T, val: T, model: i32) T {
         };
         return wideUpdate(T, ptr, val, Updater.update);
     } else {
-        return @atomicRmw(T, ptr, .Xchg, val, .seq_cst);
+        return @atomicrmw(T, ptr, .Xchg, val, .seq_cst);
     }
 }
 
@@ -304,8 +304,8 @@ inline fn atomic_compare_exchange_N(
 ) i32 {
     _ = success;
     _ = failure;
-    if (@sizeOf(T) > largest_atomic_size) {
-        var sl = spinlocks.get(@intFromPtr(ptr));
+    if (@sizeof(T) > largest_atomic_size) {
+        var sl = spinlocks.get(@intfromptr(ptr));
         defer sl.release();
         const value = ptr.*;
         if (value == expected.*) {
@@ -315,7 +315,7 @@ inline fn atomic_compare_exchange_N(
         expected.* = value;
         return 0;
     } else {
-        if (@cmpxchgStrong(T, ptr, expected.*, desired, .seq_cst, .seq_cst)) |old_value| {
+        if (@cmpxchgstrong(T, ptr, expected.*, desired, .seq_cst, .seq_cst)) |old_value| {
             expected.* = old_value;
             return 0;
         }
@@ -356,24 +356,24 @@ inline fn fetch_op_N(comptime T: type, comptime op: std.builtin.AtomicRmwOp, ptr
                 .Xor => old ^ new,
                 .Max => @max(old, new),
                 .Min => @min(old, new),
-                else => @compileError("unsupported atomic op"),
+                else => @compileerror("unsupported atomic op"),
             };
         }
     };
 
-    if (@sizeOf(T) > largest_atomic_size) {
-        var sl = spinlocks.get(@intFromPtr(ptr));
+    if (@sizeof(T) > largest_atomic_size) {
+        var sl = spinlocks.get(@intfromptr(ptr));
         defer sl.release();
 
         const value = ptr.*;
         ptr.* = Updater.update(val, value);
         return value;
-    } else if (@sizeOf(T) < smallest_atomic_fetch_exch_size) {
+    } else if (@sizeof(T) < smallest_atomic_fetch_exch_size) {
         // Machine does not support this type, but it does support a larger type.
         return wideUpdate(T, ptr, val, Updater.update);
     }
 
-    return @atomicRmw(T, ptr, op, val, .seq_cst);
+    return @atomicrmw(T, ptr, op, val, .seq_cst);
 }
 
 fn __atomic_fetch_add_1(ptr: *u8, val: u8, model: i32) callconv(.C) u8 {

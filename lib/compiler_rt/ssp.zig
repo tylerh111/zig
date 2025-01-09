@@ -43,14 +43,14 @@ fn __chk_fail() callconv(.C) noreturn {
 
 // TODO: Initialize the canary with random data
 var __stack_chk_guard: usize = blk: {
-    var buf = [1]u8{0} ** @sizeOf(usize);
-    buf[@sizeOf(usize) - 1] = 255;
-    buf[@sizeOf(usize) - 2] = '\n';
-    break :blk @as(usize, @bitCast(buf));
+    var buf = [1]u8{0} ** @sizeof(usize);
+    buf[@sizeof(usize) - 1] = 255;
+    buf[@sizeof(usize) - 2] = '\n';
+    break :blk @as(usize, @bitcast(buf));
 };
 
 fn __strcpy_chk(dest: [*:0]u8, src: [*:0]const u8, dest_n: usize) callconv(.C) [*:0]u8 {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
 
     var i: usize = 0;
     while (i < dest_n and src[i] != 0) : (i += 1) {
@@ -65,7 +65,7 @@ fn __strcpy_chk(dest: [*:0]u8, src: [*:0]const u8, dest_n: usize) callconv(.C) [
 }
 
 fn __strncpy_chk(dest: [*:0]u8, src: [*:0]const u8, n: usize, dest_n: usize) callconv(.C) [*:0]u8 {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     if (dest_n < n) __chk_fail();
     var i: usize = 0;
     while (i < n and src[i] != 0) : (i += 1) {
@@ -78,7 +78,7 @@ fn __strncpy_chk(dest: [*:0]u8, src: [*:0]const u8, n: usize, dest_n: usize) cal
 }
 
 fn __strcat_chk(dest: [*:0]u8, src: [*:0]const u8, dest_n: usize) callconv(.C) [*:0]u8 {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
 
     var avail = dest_n;
 
@@ -103,7 +103,7 @@ fn __strcat_chk(dest: [*:0]u8, src: [*:0]const u8, dest_n: usize) callconv(.C) [
 }
 
 fn __strncat_chk(dest: [*:0]u8, src: [*:0]const u8, n: usize, dest_n: usize) callconv(.C) [*:0]u8 {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
 
     var avail = dest_n;
 

@@ -87,10 +87,10 @@ pub const RTLD = struct {
     pub const FIRST = 0x02000;
     pub const CONFGEN = 0x10000;
 
-    pub const NEXT = @as(*anyopaque, @ptrFromInt(@as(usize, @bitCast(@as(isize, -1)))));
-    pub const DEFAULT = @as(*anyopaque, @ptrFromInt(@as(usize, @bitCast(@as(isize, -2)))));
-    pub const SELF = @as(*anyopaque, @ptrFromInt(@as(usize, @bitCast(@as(isize, -3)))));
-    pub const PROBE = @as(*anyopaque, @ptrFromInt(@as(usize, @bitCast(@as(isize, -4)))));
+    pub const NEXT = @as(*anyopaque, @ptrfromint(@as(usize, @bitcast(@as(isize, -1)))));
+    pub const DEFAULT = @as(*anyopaque, @ptrfromint(@as(usize, @bitcast(@as(isize, -2)))));
+    pub const SELF = @as(*anyopaque, @ptrfromint(@as(usize, @bitcast(@as(isize, -3)))));
+    pub const PROBE = @as(*anyopaque, @ptrfromint(@as(usize, @bitcast(@as(isize, -4)))));
 };
 
 pub const Flock = extern struct {
@@ -414,8 +414,8 @@ pub const sockaddr = extern struct {
         padding: [254]u8 = undefined,
 
         comptime {
-            assert(@sizeOf(storage) == SS_MAXSIZE);
-            assert(@alignOf(storage) == 8);
+            assert(@sizeof(storage) == SS_MAXSIZE);
+            assert(@alignof(storage) == 8);
         }
     };
 
@@ -535,7 +535,7 @@ pub const W = struct {
     pub const NOWAIT = 0o200;
 
     pub fn EXITSTATUS(s: u32) u8 {
-        return @as(u8, @intCast((s >> 8) & 0xff));
+        return @as(u8, @intcast((s >> 8) & 0xff));
     }
     pub fn TERMSIG(s: u32) u32 {
         return s & 0x7f;
@@ -798,10 +798,10 @@ pub const winsize = extern struct {
 const NSIG = 75;
 
 pub const SIG = struct {
-    pub const DFL: ?Sigaction.handler_fn = @ptrFromInt(0);
-    pub const ERR: ?Sigaction.handler_fn = @ptrFromInt(maxInt(usize));
-    pub const IGN: ?Sigaction.handler_fn = @ptrFromInt(1);
-    pub const HOLD: ?Sigaction.handler_fn = @ptrFromInt(2);
+    pub const DFL: ?Sigaction.handler_fn = @ptrfromint(0);
+    pub const ERR: ?Sigaction.handler_fn = @ptrfromint(maxInt(usize));
+    pub const IGN: ?Sigaction.handler_fn = @ptrfromint(1);
+    pub const HOLD: ?Sigaction.handler_fn = @ptrfromint(2);
 
     pub const WORDS = 4;
     pub const MAXSIG = 75;
@@ -938,13 +938,13 @@ pub const siginfo_t = extern struct {
         rctl: extern struct {
             entity: i32,
         },
-        __pad: [256 - 4 * @sizeOf(c_int)]u8,
-    } align(@sizeOf(usize)),
+        __pad: [256 - 4 * @sizeof(c_int)]u8,
+    } align(@sizeof(usize)),
 };
 
 comptime {
-    std.debug.assert(@sizeOf(siginfo_t) == 256);
-    std.debug.assert(@alignOf(siginfo_t) == @sizeOf(usize));
+    std.debug.assert(@sizeof(siginfo_t) == 256);
+    std.debug.assert(@alignof(siginfo_t) == @sizeof(usize));
 }
 
 pub const sigset_t = extern struct {
@@ -1816,9 +1816,9 @@ const IoCtlCommand = enum(u32) {
 };
 
 fn ioImpl(cmd: IoCtlCommand, io_type: u8, nr: u8, comptime IOT: type) i32 {
-    const size = @as(u32, @intCast(@as(u8, @truncate(@sizeOf(IOT))))) << 16;
-    const t = @as(u32, @intCast(io_type)) << 8;
-    return @as(i32, @bitCast(@intFromEnum(cmd) | size | t | nr));
+    const size = @as(u32, @intcast(@as(u8, @truncate(@sizeof(IOT))))) << 16;
+    const t = @as(u32, @intcast(io_type)) << 8;
+    return @as(i32, @bitcast(@intfromenum(cmd) | size | t | nr));
 }
 
 pub fn IO(io_type: u8, nr: u8) i32 {

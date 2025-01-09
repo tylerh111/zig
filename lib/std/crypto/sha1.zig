@@ -75,7 +75,7 @@ pub const Sha1 = struct {
 
         // Copy any remainder for next pass.
         @memcpy(d.buf[d.buf_len..][0 .. b.len - off], b[off..]);
-        d.buf_len += @as(u8, @intCast(b[off..].len));
+        d.buf_len += @as(u8, @intcast(b[off..].len));
 
         d.total_len += b.len;
     }
@@ -102,9 +102,9 @@ pub const Sha1 = struct {
         // Append message length.
         var i: usize = 1;
         var len = d.total_len >> 5;
-        d.buf[63] = @as(u8, @intCast(d.total_len & 0x1f)) << 3;
+        d.buf[63] = @as(u8, @intcast(d.total_len & 0x1f)) << 3;
         while (i < 8) : (i += 1) {
-            d.buf[63 - i] = @as(u8, @intCast(len & 0xff));
+            d.buf[63 - i] = @as(u8, @intcast(len & 0xff));
             len >>= 8;
         }
 

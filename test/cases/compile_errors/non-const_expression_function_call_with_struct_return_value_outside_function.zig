@@ -9,7 +9,7 @@ fn get_it() Foo {
 var global_side_effect = false;
 
 export fn entry() usize {
-    return @sizeOf(@TypeOf(a));
+    return @sizeof(@TypeOf(a));
 }
 
 // error

@@ -49,7 +49,7 @@ pub fn main() !void {
 
     var dest_dir = fs.cwd().openDir(dest_dir_path, .{ .iterate = true }) catch |err| {
         fatal("unable to open destination directory '{s}': {s}", .{
-            dest_dir_path, @errorName(err),
+            dest_dir_path, @errorname(err),
         });
     };
     defer dest_dir.close();
@@ -76,7 +76,7 @@ pub fn main() !void {
                 log.warn("unable to copy '{s}/{s}' to '{s}/{s}': {s}", .{
                     glibc_src_path,  entry.path,
                     dest_dir_path,   entry.path,
-                    @errorName(err),
+                    @errorname(err),
                 });
                 if (err == error.FileNotFound) {
                     try dest_dir.deleteFile(entry.path);
@@ -90,7 +90,7 @@ pub fn main() !void {
 
     var include_dir = dest_dir.openDir("include", .{ .iterate = true }) catch |err| {
         fatal("unable to open directory '{s}/include': {s}", .{
-            dest_dir_path, @errorName(err),
+            dest_dir_path, @errorname(err),
         });
     };
     defer include_dir.close();
@@ -122,7 +122,7 @@ pub fn main() !void {
         ) catch |err| switch (err) {
             error.FileNotFound => continue,
             else => |e| fatal("unable to load '{s}/include/{s}': {s}", .{
-                generic_glibc_path, entry.path, @errorName(e),
+                generic_glibc_path, entry.path, @errorname(e),
             }),
         };
         const glibc_include_contents = include_dir.readFileAlloc(
@@ -131,7 +131,7 @@ pub fn main() !void {
             max_file_size,
         ) catch |err| {
             fatal("unable to load '{s}/include/{s}': {s}", .{
-                dest_dir_path, entry.path, @errorName(err),
+                dest_dir_path, entry.path, @errorname(err),
             });
         };
 

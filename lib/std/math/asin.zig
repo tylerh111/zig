@@ -18,7 +18,7 @@ pub fn asin(x: anytype) @TypeOf(x) {
     return switch (T) {
         f32 => asin32(x),
         f64 => asin64(x),
-        else => @compileError("asin not implemented for " ++ @typeName(T)),
+        else => @compileerror("asin not implemented for " ++ @typename(T)),
     };
 }
 
@@ -36,7 +36,7 @@ fn r32(z: f32) f32 {
 fn asin32(x: f32) f32 {
     const pio2 = 1.570796326794896558e+00;
 
-    const hx: u32 = @as(u32, @bitCast(x));
+    const hx: u32 = @as(u32, @bitcast(x));
     const ix: u32 = hx & 0x7FFFFFFF;
 
     // |x| >= 1
@@ -92,13 +92,13 @@ fn asin64(x: f64) f64 {
     const pio2_hi: f64 = 1.57079632679489655800e+00;
     const pio2_lo: f64 = 6.12323399573676603587e-17;
 
-    const ux = @as(u64, @bitCast(x));
-    const hx = @as(u32, @intCast(ux >> 32));
+    const ux = @as(u64, @bitcast(x));
+    const hx = @as(u32, @intcast(ux >> 32));
     const ix = hx & 0x7FFFFFFF;
 
     // |x| >= 1 or nan
     if (ix >= 0x3FF00000) {
-        const lx = @as(u32, @intCast(ux & 0xFFFFFFFF));
+        const lx = @as(u32, @intcast(ux & 0xFFFFFFFF));
 
         // asin(1) = +-pi/2 with inexact
         if ((ix - 0x3FF00000) | lx == 0) {
@@ -128,8 +128,8 @@ fn asin64(x: f64) f64 {
     if (ix >= 0x3FEF3333) {
         fx = pio2_hi - 2 * (s + s * r);
     } else {
-        const jx = @as(u64, @bitCast(s));
-        const df = @as(f64, @bitCast(jx & 0xFFFFFFFF00000000));
+        const jx = @as(u64, @bitcast(s));
+        const df = @as(f64, @bitcast(jx & 0xFFFFFFFF00000000));
         const c = (z - df * df) / (s + df);
         fx = 0.5 * pio2_hi - (2 * s * r - (pio2_lo - 2 * c) - (0.5 * pio2_hi - 2 * df));
     }

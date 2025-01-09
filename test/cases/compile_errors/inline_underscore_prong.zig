@@ -2,8 +2,8 @@ const E = enum(u8) { a, b, c, d, _ };
 pub export fn entry() void {
     var x: E = .a;
     switch (x) {
-        inline .a, .b => |aorb| @compileLog(aorb),
-        .c, .d => |cord| @compileLog(cord),
+        inline .a, .b => |aorb| @compilelog(aorb),
+        .c, .d => |cord| @compilelog(cord),
         inline _ => {},
     }
 }

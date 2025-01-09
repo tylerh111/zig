@@ -155,8 +155,8 @@ pub const Address = extern union {
     /// on the address family.
     pub fn initPosix(addr: *align(4) const posix.sockaddr) Address {
         switch (addr.family) {
-            posix.AF.INET => return Address{ .in = Ip4Address{ .sa = @as(*const posix.sockaddr.in, @ptrCast(addr)).* } },
-            posix.AF.INET6 => return Address{ .in6 = Ip6Address{ .sa = @as(*const posix.sockaddr.in6, @ptrCast(addr)).* } },
+            posix.AF.INET => return Address{ .in = Ip4Address{ .sa = @as(*const posix.sockaddr.in, @ptrcast(addr)).* } },
+            posix.AF.INET6 => return Address{ .in6 = Ip6Address{ .sa = @as(*const posix.sockaddr.in6, @ptrcast(addr)).* } },
             else => unreachable,
         }
     }
@@ -183,8 +183,8 @@ pub const Address = extern union {
     }
 
     pub fn eql(a: Address, b: Address) bool {
-        const a_bytes = @as([*]const u8, @ptrCast(&a.any))[0..a.getOsSockLen()];
-        const b_bytes = @as([*]const u8, @ptrCast(&b.any))[0..b.getOsSockLen()];
+        const a_bytes = @as([*]const u8, @ptrcast(&a.any))[0..a.getOsSockLen()];
+        const b_bytes = @as([*]const u8, @ptrcast(&b.any))[0..b.getOsSockLen()];
         return mem.eql(u8, a_bytes, b_bytes);
     }
 
@@ -205,7 +205,7 @@ pub const Address = extern union {
                 // provide the full buffer size (e.g. getsockname, getpeername, recvfrom, accept).
                 //
                 // To access the path, std.mem.sliceTo(&address.un.path, 0) should be used.
-                return @as(posix.socklen_t, @intCast(@sizeOf(posix.sockaddr.un)));
+                return @as(posix.socklen_t, @intcast(@sizeof(posix.sockaddr.un)));
             },
 
             else => unreachable,
@@ -333,7 +333,7 @@ pub const Ip4Address = extern struct {
         return Ip4Address{
             .sa = posix.sockaddr.in{
                 .port = mem.nativeToBig(u16, port),
-                .addr = @as(*align(1) const u32, @ptrCast(&addr)).*,
+                .addr = @as(*align(1) const u32, @ptrcast(&addr)).*,
             },
         };
     }
@@ -358,7 +358,7 @@ pub const Ip4Address = extern struct {
     ) !void {
         if (fmt.len != 0) std.fmt.invalidFmtError(fmt, self);
         _ = options;
-        const bytes = @as(*const [4]u8, @ptrCast(&self.sa.addr));
+        const bytes = @as(*const [4]u8, @ptrcast(&self.sa.addr));
         try std.fmt.format(out_stream, "{}.{}.{}.{}:{}", .{
             bytes[0],
             bytes[1],
@@ -370,7 +370,7 @@ pub const Ip4Address = extern struct {
 
     pub fn getOsSockLen(self: Ip4Address) posix.socklen_t {
         _ = self;
-        return @sizeOf(posix.sockaddr.in);
+        return @sizeof(posix.sockaddr.in);
     }
 };
 
@@ -403,12 +403,12 @@ pub const Ip6Address = extern struct {
                 if (c >= '0' and c <= '9') {
                     const digit = c - '0';
                     {
-                        const ov = @mulWithOverflow(result.sa.scope_id, 10);
+                        const ov = @mulwithoverflow(result.sa.scope_id, 10);
                         if (ov[1] != 0) return error.Overflow;
                         result.sa.scope_id = ov[0];
                     }
                     {
-                        const ov = @addWithOverflow(result.sa.scope_id, digit);
+                        const ov = @addwithoverflow(result.sa.scope_id, digit);
                         if (ov[1] != 0) return error.Overflow;
                         result.sa.scope_id = ov[0];
                     }
@@ -463,12 +463,12 @@ pub const Ip6Address = extern struct {
             } else {
                 const digit = try std.fmt.charToDigit(c, 16);
                 {
-                    const ov = @mulWithOverflow(x, 16);
+                    const ov = @mulwithoverflow(x, 16);
                     if (ov[1] != 0) return error.Overflow;
                     x = ov[0];
                 }
                 {
-                    const ov = @addWithOverflow(x, digit);
+                    const ov = @addwithoverflow(x, digit);
                     if (ov[1] != 0) return error.Overflow;
                     x = ov[0];
                 }
@@ -585,12 +585,12 @@ pub const Ip6Address = extern struct {
             } else {
                 const digit = try std.fmt.charToDigit(c, 16);
                 {
-                    const ov = @mulWithOverflow(x, 16);
+                    const ov = @mulwithoverflow(x, 16);
                     if (ov[1] != 0) return error.Overflow;
                     x = ov[0];
                 }
                 {
-                    const ov = @addWithOverflow(x, digit);
+                    const ov = @addwithoverflow(x, digit);
                     if (ov[1] != 0) return error.Overflow;
                     x = ov[0];
                 }
@@ -673,7 +673,7 @@ pub const Ip6Address = extern struct {
             });
             return;
         }
-        const big_endian_parts = @as(*align(1) const [8]u16, @ptrCast(&self.sa.addr));
+        const big_endian_parts = @as(*align(1) const [8]u16, @ptrcast(&self.sa.addr));
         const native_endian_parts = switch (native_endian) {
             .big => big_endian_parts.*,
             .little => blk: {
@@ -705,7 +705,7 @@ pub const Ip6Address = extern struct {
 
     pub fn getOsSockLen(self: Ip6Address) posix.socklen_t {
         _ = self;
-        return @sizeOf(posix.sockaddr.in6);
+        return @sizeof(posix.sockaddr.in6);
     }
 };
 
@@ -736,7 +736,7 @@ fn if_nametoindex(name: []const u8) IPv6InterfaceError!u32 {
         // TODO investigate if this needs to be integrated with evented I/O.
         try posix.ioctl_SIOCGIFINDEX(sockfd, &ifr);
 
-        return @bitCast(ifr.ifru.ivalue);
+        return @bitcast(ifr.ifru.ivalue);
     }
 
     if (native_os.isDarwin()) {
@@ -750,10 +750,10 @@ fn if_nametoindex(name: []const u8) IPv6InterfaceError!u32 {
         const index = std.c.if_nametoindex(if_slice);
         if (index == 0)
             return error.InterfaceNotFound;
-        return @as(u32, @bitCast(index));
+        return @as(u32, @bitcast(index));
     }
 
-    @compileError("std.net.if_nametoindex unimplemented for this OS");
+    @compileerror("std.net.if_nametoindex unimplemented for this OS");
 }
 
 pub const AddressList = struct {
@@ -867,8 +867,8 @@ pub fn getAddressList(allocator: mem.Allocator, name: []const u8, port: u16) Get
         var first = true;
         while (true) {
             const rc = ws2_32.getaddrinfo(name_c.ptr, port_c.ptr, &hints, &res);
-            switch (@as(windows.ws2_32.WinsockError, @enumFromInt(@as(u16, @intCast(rc))))) {
-                @as(windows.ws2_32.WinsockError, @enumFromInt(0)) => break,
+            switch (@as(windows.ws2_32.WinsockError, @enumfromint(@as(u16, @intcast(rc))))) {
+                @as(windows.ws2_32.WinsockError, @enumfromint(0)) => break,
                 .WSATRY_AGAIN => return error.TemporaryNameServerFailure,
                 .WSANO_RECOVERY => return error.NameServerFailure,
                 .WSAEAFNOSUPPORT => return error.AddressFamilyNotSupported,
@@ -904,7 +904,7 @@ pub fn getAddressList(allocator: mem.Allocator, name: []const u8, port: u16) Get
         var i: usize = 0;
         while (it) |info| : (it = info.next) {
             const addr = info.addr orelse continue;
-            result.addrs[i] = Address.initPosix(@alignCast(addr));
+            result.addrs[i] = Address.initPosix(@aligncast(addr));
 
             if (info.canonname) |n| {
                 if (result.canon_name == null) {
@@ -937,7 +937,7 @@ pub fn getAddressList(allocator: mem.Allocator, name: []const u8, port: u16) Get
         };
         var res: ?*posix.addrinfo = null;
         switch (sys.getaddrinfo(name_c.ptr, port_c.ptr, &hints, &res)) {
-            @as(sys.EAI, @enumFromInt(0)) => {},
+            @as(sys.EAI, @enumfromint(0)) => {},
             .ADDRFAMILY => return error.HostLacksNetworkAddresses,
             .AGAIN => return error.TemporaryNameServerFailure,
             .BADFLAGS => unreachable, // Invalid hints
@@ -971,7 +971,7 @@ pub fn getAddressList(allocator: mem.Allocator, name: []const u8, port: u16) Get
         var i: usize = 0;
         while (it) |info| : (it = info.next) {
             const addr = info.addr orelse continue;
-            result.addrs[i] = Address.initPosix(@alignCast(addr));
+            result.addrs[i] = Address.initPosix(@aligncast(addr));
 
             if (info.canonname) |n| {
                 if (result.canon_name == null) {
@@ -1007,7 +1007,7 @@ pub fn getAddressList(allocator: mem.Allocator, name: []const u8, port: u16) Get
 
         return result;
     }
-    @compileError("std.net.getAddressList unimplemented for this OS");
+    @compileerror("std.net.getAddressList unimplemented for this OS");
 }
 
 const LookupAddr = struct {
@@ -1083,7 +1083,7 @@ fn linuxLookupName(
     for (addrs.items, 0..) |*addr, i| {
         var key: i32 = 0;
         var sa6: posix.sockaddr.in6 = undefined;
-        @memset(@as([*]u8, @ptrCast(&sa6))[0..@sizeOf(posix.sockaddr.in6)], 0);
+        @memset(@as([*]u8, @ptrcast(&sa6))[0..@sizeof(posix.sockaddr.in6)], 0);
         var da6 = posix.sockaddr.in6{
             .family = posix.AF.INET6,
             .scope_id = addr.addr.in6.sa.scope_id,
@@ -1092,7 +1092,7 @@ fn linuxLookupName(
             .addr = [1]u8{0} ** 16,
         };
         var sa4: posix.sockaddr.in = undefined;
-        @memset(@as([*]u8, @ptrCast(&sa4))[0..@sizeOf(posix.sockaddr.in)], 0);
+        @memset(@as([*]u8, @ptrcast(&sa4))[0..@sizeof(posix.sockaddr.in)], 0);
         var da4 = posix.sockaddr.in{
             .family = posix.AF.INET,
             .port = 65535,
@@ -1105,19 +1105,19 @@ fn linuxLookupName(
         var dalen: posix.socklen_t = undefined;
         if (addr.addr.any.family == posix.AF.INET6) {
             da6.addr = addr.addr.in6.sa.addr;
-            da = @ptrCast(&da6);
-            dalen = @sizeOf(posix.sockaddr.in6);
-            sa = @ptrCast(&sa6);
-            salen = @sizeOf(posix.sockaddr.in6);
+            da = @ptrcast(&da6);
+            dalen = @sizeof(posix.sockaddr.in6);
+            sa = @ptrcast(&sa6);
+            salen = @sizeof(posix.sockaddr.in6);
         } else {
             sa6.addr[0..12].* = "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\xff".*;
             da6.addr[0..12].* = "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\xff".*;
             mem.writeInt(u32, da6.addr[12..], addr.addr.in.sa.addr, native_endian);
             da4.addr = addr.addr.in.sa.addr;
-            da = @ptrCast(&da4);
-            dalen = @sizeOf(posix.sockaddr.in);
-            sa = @ptrCast(&sa4);
-            salen = @sizeOf(posix.sockaddr.in);
+            da = @ptrcast(&da4);
+            dalen = @sizeof(posix.sockaddr.in);
+            sa = @ptrcast(&sa4);
+            salen = @sizeof(posix.sockaddr.in);
         }
         const dpolicy = policyOf(da6.addr);
         const dscope: i32 = scopeOf(da6.addr);
@@ -1141,7 +1141,7 @@ fn linuxLookupName(
         key |= dprec << DAS_PREC_SHIFT;
         key |= (15 - dscope) << DAS_SCOPE_SHIFT;
         key |= prefixlen << DAS_PREFIX_SHIFT;
-        key |= (MAXADDRS - @as(i32, @intCast(i))) << DAS_ORDER_SHIFT;
+        key |= (MAXADDRS - @as(i32, @intcast(i))) << DAS_ORDER_SHIFT;
         addr.sortkey = key;
     }
     mem.sort(LookupAddr, addrs.items, {}, addrCmpLessThan);
@@ -1233,7 +1233,7 @@ fn prefixMatch(s: [16]u8, d: [16]u8) u8 {
     // address. However the definition of the source prefix length is
     // not clear and thus this limiting is not yet implemented.
     var i: u8 = 0;
-    while (i < 128 and ((s[i / 8] ^ d[i / 8]) & (@as(u8, 128) >> @as(u3, @intCast(i % 8)))) == 0) : (i += 1) {}
+    while (i < 128 and ((s[i / 8] ^ d[i / 8]) & (@as(u8, 128) >> @as(u3, @intcast(i % 8)))) == 0) : (i += 1) {}
     return i;
 }
 
@@ -1583,7 +1583,7 @@ fn resMSendRc(
     const timeout = 1000 * rc.timeout;
     const attempts = rc.attempts;
 
-    var sl: posix.socklen_t = @sizeOf(posix.sockaddr.in);
+    var sl: posix.socklen_t = @sizeof(posix.sockaddr.in);
     var family: posix.sa_family_t = posix.AF.INET;
 
     var ns_list = std.ArrayList(Address).init(rc.ns.allocator);
@@ -1634,12 +1634,12 @@ fn resMSendRc(
             ns[i].in6.sa.flowinfo = 0;
             ns[i].in6.sa.scope_id = 0;
         }
-        sl = @sizeOf(posix.sockaddr.in6);
+        sl = @sizeof(posix.sockaddr.in6);
     }
 
     // Get local address and open/bind a socket
     var sa: Address = undefined;
-    @memset(@as([*]u8, @ptrCast(&sa))[0..@sizeOf(Address)], 0);
+    @memset(@as([*]u8, @ptrcast(&sa))[0..@sizeof(Address)], 0);
     sa.any.family = family;
     try posix.bind(fd, &sa.any, sl);
 
@@ -1650,13 +1650,13 @@ fn resMSendRc(
     }};
     const retry_interval = timeout / attempts;
     var next: u32 = 0;
-    var t2: u64 = @bitCast(std.time.milliTimestamp());
+    var t2: u64 = @bitcast(std.time.milliTimestamp());
     const t0 = t2;
     var t1 = t2 - retry_interval;
 
     var servfail_retry: usize = undefined;
 
-    outer: while (t2 - t0 < timeout) : (t2 = @as(u64, @bitCast(std.time.milliTimestamp()))) {
+    outer: while (t2 - t0 < timeout) : (t2 = @as(u64, @bitcast(std.time.milliTimestamp()))) {
         if (t2 - t1 >= retry_interval) {
             // Query all configured nameservers in parallel
             var i: usize = 0;
@@ -1739,19 +1739,19 @@ fn dnsParse(
     if (qdcount + ancount > 64) return error.InvalidDnsPacket;
     while (qdcount != 0) {
         qdcount -= 1;
-        while (@intFromPtr(p) - @intFromPtr(r.ptr) < r.len and p[0] -% 1 < 127) p += 1;
-        if (p[0] > 193 or (p[0] == 193 and p[1] > 254) or @intFromPtr(p) > @intFromPtr(r.ptr) + r.len - 6)
+        while (@intfromptr(p) - @intfromptr(r.ptr) < r.len and p[0] -% 1 < 127) p += 1;
+        if (p[0] > 193 or (p[0] == 193 and p[1] > 254) or @intfromptr(p) > @intfromptr(r.ptr) + r.len - 6)
             return error.InvalidDnsPacket;
-        p += @as(usize, 5) + @intFromBool(p[0] != 0);
+        p += @as(usize, 5) + @intfrombool(p[0] != 0);
     }
     while (ancount != 0) {
         ancount -= 1;
-        while (@intFromPtr(p) - @intFromPtr(r.ptr) < r.len and p[0] -% 1 < 127) p += 1;
-        if (p[0] > 193 or (p[0] == 193 and p[1] > 254) or @intFromPtr(p) > @intFromPtr(r.ptr) + r.len - 6)
+        while (@intfromptr(p) - @intfromptr(r.ptr) < r.len and p[0] -% 1 < 127) p += 1;
+        if (p[0] > 193 or (p[0] == 193 and p[1] > 254) or @intfromptr(p) > @intfromptr(r.ptr) + r.len - 6)
             return error.InvalidDnsPacket;
-        p += @as(usize, 1) + @intFromBool(p[0] != 0);
+        p += @as(usize, 1) + @intfrombool(p[0] != 0);
         const len = p[8] * @as(usize, 256) + p[9];
-        if (@intFromPtr(p) + len > @intFromPtr(r.ptr) + r.len) return error.InvalidDnsPacket;
+        if (@intfromptr(p) + len > @intfromptr(r.ptr) + r.len) return error.InvalidDnsPacket;
         try callback(ctx, p[1], p[10..][0..len], r);
         p += 10 + len;
     }
@@ -1920,7 +1920,7 @@ pub const Server = struct {
     /// an open stream.
     pub fn accept(s: *Server) AcceptError!Connection {
         var accepted_addr: Address = undefined;
-        var addr_len: posix.socklen_t = @sizeOf(Address);
+        var addr_len: posix.socklen_t = @sizeof(Address);
         const fd = try posix.accept(s.stream.handle, &accepted_addr.any, &addr_len, posix.SOCK.CLOEXEC);
         return .{
             .stream = .{ .handle = fd },

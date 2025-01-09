@@ -124,7 +124,7 @@ pub fn format(
         const f = switch (fmt_string[0]) {
             'q' => "",
             '\'' => '\'',
-            else => @compileError("unsupported format string: " ++ fmt_string),
+            else => @compileerror("unsupported format string: " ++ fmt_string),
         };
         if (self.root_dir.path) |p| {
             try stringEscape(p, f, options, writer);

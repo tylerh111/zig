@@ -571,7 +571,7 @@ enum ZigClangCK {
     ZigClangCK_IntegralToFloating,
     ZigClangCK_FloatingToFixedPoint,
     ZigClangCK_FixedPointToFloating,
-    ZigClangCK_FixedPointCast,
+    ZigClangCK_FixedPointcast,
     ZigClangCK_FixedPointToIntegral,
     ZigClangCK_IntegralToFixedPoint,
     ZigClangCK_FixedPointToBoolean,

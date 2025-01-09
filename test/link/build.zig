@@ -23,18 +23,18 @@ pub fn build(b: *std.Build) void {
         const dep_name, const dep_hash = available_dep;
 
         const all_pkgs = @import("root").dependencies.packages;
-        inline for (@typeInfo(all_pkgs).Struct.decls) |decl| {
+        inline for (@typeinfo(all_pkgs).Struct.decls) |decl| {
             const pkg_hash = decl.name;
             if (std.mem.eql(u8, dep_hash, pkg_hash)) {
                 const pkg = @field(all_pkgs, pkg_hash);
-                if (!@hasDecl(pkg, "build_zig")) {
+                if (!@hasdecl(pkg, "build_zig")) {
                     std.debug.panic("link test case '{s}' is missing a 'build.zig' file", .{dep_name});
                 }
-                const requires_ios_sdk = @hasDecl(pkg.build_zig, "requires_ios_sdk") and
+                const requires_ios_sdk = @hasdecl(pkg.build_zig, "requires_ios_sdk") and
                     pkg.build_zig.requires_ios_sdk;
-                const requires_macos_sdk = @hasDecl(pkg.build_zig, "requires_macos_sdk") and
+                const requires_macos_sdk = @hasdecl(pkg.build_zig, "requires_macos_sdk") and
                     pkg.build_zig.requires_macos_sdk;
-                const requires_symlinks = @hasDecl(pkg.build_zig, "requires_symlinks") and
+                const requires_symlinks = @hasdecl(pkg.build_zig, "requires_symlinks") and
                     pkg.build_zig.requires_symlinks;
                 if ((requires_symlinks and !has_symlinks) or
                     (requires_macos_sdk and !enable_macos_sdk) or

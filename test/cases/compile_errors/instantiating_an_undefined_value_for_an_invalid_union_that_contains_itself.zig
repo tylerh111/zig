@@ -5,7 +5,7 @@ const Foo = union {
 var foo: Foo = undefined;
 
 export fn entry() usize {
-    return @sizeOf(@TypeOf(foo.x));
+    return @sizeof(@TypeOf(foo.x));
 }
 
 // error

@@ -1,5 +1,5 @@
 const common = @import("./common.zig");
-const floatFromInt = @import("./float_from_int.zig").floatFromInt;
+const floatfromint = @import("./float_from_int.zig").floatfromint;
 
 pub const panic = common.panic;
 
@@ -8,5 +8,5 @@ comptime {
 }
 
 fn __floatdihf(a: i64) callconv(.C) f16 {
-    return floatFromInt(f16, a);
+    return floatfromint(f16, a);
 }

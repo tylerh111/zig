@@ -37,7 +37,7 @@ fn verifyBody(self: *Verify, body: []const Air.Inst.Index) Error!void {
             continue;
         }
 
-        switch (tags[@intFromEnum(inst)]) {
+        switch (tags[@intfromenum(inst)]) {
             // no operands
             .arg,
             .alloc,
@@ -108,7 +108,7 @@ fn verifyBody(self: *Verify, body: []const Air.Inst.Index) Error!void {
             .c_va_copy,
             .abs,
             => {
-                const ty_op = data[@intFromEnum(inst)].ty_op;
+                const ty_op = data[@intfromenum(inst)].ty_op;
                 try self.verifyInstOperands(inst, .{ ty_op.operand, .none, .none });
             },
             .is_null,
@@ -143,14 +143,14 @@ fn verifyBody(self: *Verify, body: []const Air.Inst.Index) Error!void {
             .set_err_return_trace,
             .c_va_end,
             => {
-                const un_op = data[@intFromEnum(inst)].un_op;
+                const un_op = data[@intfromenum(inst)].un_op;
                 try self.verifyInstOperands(inst, .{ un_op, .none, .none });
             },
             .ret,
             .ret_safe,
             .ret_load,
             => {
-                const un_op = data[@intFromEnum(inst)].un_op;
+                const un_op = data[@intfromenum(inst)].un_op;
                 try self.verifyInstOperands(inst, .{ un_op, .none, .none });
                 // This instruction terminates the function, so everything should be dead
                 if (self.live.count() > 0) return invalid("%{}: instructions still alive", .{inst});
@@ -159,36 +159,36 @@ fn verifyBody(self: *Verify, body: []const Air.Inst.Index) Error!void {
             .dbg_var_val,
             .wasm_memory_grow,
             => {
-                const pl_op = data[@intFromEnum(inst)].pl_op;
+                const pl_op = data[@intfromenum(inst)].pl_op;
                 try self.verifyInstOperands(inst, .{ pl_op.operand, .none, .none });
             },
             .prefetch => {
-                const prefetch = data[@intFromEnum(inst)].prefetch;
+                const prefetch = data[@intfromenum(inst)].prefetch;
                 try self.verifyInstOperands(inst, .{ prefetch.ptr, .none, .none });
             },
             .reduce,
             .reduce_optimized,
             => {
-                const reduce = data[@intFromEnum(inst)].reduce;
+                const reduce = data[@intfromenum(inst)].reduce;
                 try self.verifyInstOperands(inst, .{ reduce.operand, .none, .none });
             },
             .union_init => {
-                const ty_pl = data[@intFromEnum(inst)].ty_pl;
+                const ty_pl = data[@intfromenum(inst)].ty_pl;
                 const extra = self.air.extraData(Air.UnionInit, ty_pl.payload).data;
                 try self.verifyInstOperands(inst, .{ extra.init, .none, .none });
             },
             .struct_field_ptr, .struct_field_val => {
-                const ty_pl = data[@intFromEnum(inst)].ty_pl;
+                const ty_pl = data[@intfromenum(inst)].ty_pl;
                 const extra = self.air.extraData(Air.StructField, ty_pl.payload).data;
                 try self.verifyInstOperands(inst, .{ extra.struct_operand, .none, .none });
             },
             .field_parent_ptr => {
-                const ty_pl = data[@intFromEnum(inst)].ty_pl;
+                const ty_pl = data[@intfromenum(inst)].ty_pl;
                 const extra = self.air.extraData(Air.FieldParentPtr, ty_pl.payload).data;
                 try self.verifyInstOperands(inst, .{ extra.field_ptr, .none, .none });
             },
             .atomic_load => {
-                const atomic_load = data[@intFromEnum(inst)].atomic_load;
+                const atomic_load = data[@intfromenum(inst)].atomic_load;
                 try self.verifyInstOperands(inst, .{ atomic_load.ptr, .none, .none });
             },
 
@@ -258,7 +258,7 @@ fn verifyBody(self: *Verify, body: []const Air.Inst.Index) Error!void {
             .memset_safe,
             .memcpy,
             => {
-                const bin_op = data[@intFromEnum(inst)].bin_op;
+                const bin_op = data[@intfromenum(inst)].bin_op;
                 try self.verifyInstOperands(inst, .{ bin_op.lhs, bin_op.rhs, .none });
             },
             .add_with_overflow,
@@ -271,58 +271,58 @@ fn verifyBody(self: *Verify, body: []const Air.Inst.Index) Error!void {
             .slice_elem_ptr,
             .slice,
             => {
-                const ty_pl = data[@intFromEnum(inst)].ty_pl;
+                const ty_pl = data[@intfromenum(inst)].ty_pl;
                 const extra = self.air.extraData(Air.Bin, ty_pl.payload).data;
                 try self.verifyInstOperands(inst, .{ extra.lhs, extra.rhs, .none });
             },
             .shuffle => {
-                const ty_pl = data[@intFromEnum(inst)].ty_pl;
+                const ty_pl = data[@intfromenum(inst)].ty_pl;
                 const extra = self.air.extraData(Air.Shuffle, ty_pl.payload).data;
                 try self.verifyInstOperands(inst, .{ extra.a, extra.b, .none });
             },
             .cmp_vector,
             .cmp_vector_optimized,
             => {
-                const ty_pl = data[@intFromEnum(inst)].ty_pl;
+                const ty_pl = data[@intfromenum(inst)].ty_pl;
                 const extra = self.air.extraData(Air.VectorCmp, ty_pl.payload).data;
                 try self.verifyInstOperands(inst, .{ extra.lhs, extra.rhs, .none });
             },
             .atomic_rmw => {
-                const pl_op = data[@intFromEnum(inst)].pl_op;
+                const pl_op = data[@intfromenum(inst)].pl_op;
                 const extra = self.air.extraData(Air.AtomicRmw, pl_op.payload).data;
                 try self.verifyInstOperands(inst, .{ pl_op.operand, extra.operand, .none });
             },
 
             // ternary
             .select => {
-                const pl_op = data[@intFromEnum(inst)].pl_op;
+                const pl_op = data[@intfromenum(inst)].pl_op;
                 const extra = self.air.extraData(Air.Bin, pl_op.payload).data;
                 try self.verifyInstOperands(inst, .{ pl_op.operand, extra.lhs, extra.rhs });
             },
             .mul_add => {
-                const pl_op = data[@intFromEnum(inst)].pl_op;
+                const pl_op = data[@intfromenum(inst)].pl_op;
                 const extra = self.air.extraData(Air.Bin, pl_op.payload).data;
                 try self.verifyInstOperands(inst, .{ extra.lhs, extra.rhs, pl_op.operand });
             },
             .vector_store_elem => {
-                const vector_store_elem = data[@intFromEnum(inst)].vector_store_elem;
+                const vector_store_elem = data[@intfromenum(inst)].vector_store_elem;
                 const extra = self.air.extraData(Air.Bin, vector_store_elem.payload).data;
                 try self.verifyInstOperands(inst, .{ vector_store_elem.vector_ptr, extra.lhs, extra.rhs });
             },
             .cmpxchg_strong,
             .cmpxchg_weak,
             => {
-                const ty_pl = data[@intFromEnum(inst)].ty_pl;
+                const ty_pl = data[@intfromenum(inst)].ty_pl;
                 const extra = self.air.extraData(Air.Cmpxchg, ty_pl.payload).data;
                 try self.verifyInstOperands(inst, .{ extra.ptr, extra.expected_value, extra.new_value });
             },
 
             // big tombs
             .aggregate_init => {
-                const ty_pl = data[@intFromEnum(inst)].ty_pl;
+                const ty_pl = data[@intfromenum(inst)].ty_pl;
                 const aggregate_ty = ty_pl.ty.toType();
-                const len = @as(usize, @intCast(aggregate_ty.arrayLenIp(ip)));
-                const elements = @as([]const Air.Inst.Ref, @ptrCast(self.air.extra[ty_pl.payload..][0..len]));
+                const len = @as(usize, @intcast(aggregate_ty.arrayLenIp(ip)));
+                const elements = @as([]const Air.Inst.Ref, @ptrcast(self.air.extra[ty_pl.payload..][0..len]));
 
                 var bt = self.liveness.iterateBigTomb(inst);
                 for (elements) |element| {
@@ -331,11 +331,11 @@ fn verifyBody(self: *Verify, body: []const Air.Inst.Index) Error!void {
                 try self.verifyInst(inst);
             },
             .call, .call_always_tail, .call_never_tail, .call_never_inline => {
-                const pl_op = data[@intFromEnum(inst)].pl_op;
+                const pl_op = data[@intfromenum(inst)].pl_op;
                 const extra = self.air.extraData(Air.Call, pl_op.payload);
                 const args = @as(
                     []const Air.Inst.Ref,
-                    @ptrCast(self.air.extra[extra.end..][0..extra.data.args_len]),
+                    @ptrcast(self.air.extra[extra.end..][0..extra.data.args_len]),
                 );
 
                 var bt = self.liveness.iterateBigTomb(inst);
@@ -346,17 +346,17 @@ fn verifyBody(self: *Verify, body: []const Air.Inst.Index) Error!void {
                 try self.verifyInst(inst);
             },
             .assembly => {
-                const ty_pl = data[@intFromEnum(inst)].ty_pl;
+                const ty_pl = data[@intfromenum(inst)].ty_pl;
                 const extra = self.air.extraData(Air.Asm, ty_pl.payload);
                 var extra_i = extra.end;
                 const outputs = @as(
                     []const Air.Inst.Ref,
-                    @ptrCast(self.air.extra[extra_i..][0..extra.data.outputs_len]),
+                    @ptrcast(self.air.extra[extra_i..][0..extra.data.outputs_len]),
                 );
                 extra_i += outputs.len;
                 const inputs = @as(
                     []const Air.Inst.Ref,
-                    @ptrCast(self.air.extra[extra_i..][0..extra.data.inputs_len]),
+                    @ptrcast(self.air.extra[extra_i..][0..extra.data.inputs_len]),
                 );
                 extra_i += inputs.len;
 
@@ -374,9 +374,9 @@ fn verifyBody(self: *Verify, body: []const Air.Inst.Index) Error!void {
 
             // control flow
             .@"try" => {
-                const pl_op = data[@intFromEnum(inst)].pl_op;
+                const pl_op = data[@intfromenum(inst)].pl_op;
                 const extra = self.air.extraData(Air.Try, pl_op.payload);
-                const try_body: []const Air.Inst.Index = @ptrCast(self.air.extra[extra.end..][0..extra.data.body_len]);
+                const try_body: []const Air.Inst.Index = @ptrcast(self.air.extra[extra.end..][0..extra.data.body_len]);
 
                 const cond_br_liveness = self.liveness.getCondBr(inst);
 
@@ -396,9 +396,9 @@ fn verifyBody(self: *Verify, body: []const Air.Inst.Index) Error!void {
                 try self.verifyInst(inst);
             },
             .try_ptr => {
-                const ty_pl = data[@intFromEnum(inst)].ty_pl;
+                const ty_pl = data[@intfromenum(inst)].ty_pl;
                 const extra = self.air.extraData(Air.TryPtr, ty_pl.payload);
-                const try_body: []const Air.Inst.Index = @ptrCast(self.air.extra[extra.end..][0..extra.data.body_len]);
+                const try_body: []const Air.Inst.Index = @ptrcast(self.air.extra[extra.end..][0..extra.data.body_len]);
 
                 const cond_br_liveness = self.liveness.getCondBr(inst);
 
@@ -418,7 +418,7 @@ fn verifyBody(self: *Verify, body: []const Air.Inst.Index) Error!void {
                 try self.verifyInst(inst);
             },
             .br => {
-                const br = data[@intFromEnum(inst)].br;
+                const br = data[@intfromenum(inst)].br;
                 const gop = try self.blocks.getOrPut(self.gpa, br.block_inst);
 
                 try self.verifyOperand(inst, br.operand, self.liveness.operandDies(inst, 0));
@@ -430,9 +430,9 @@ fn verifyBody(self: *Verify, body: []const Air.Inst.Index) Error!void {
                 try self.verifyInst(inst);
             },
             .block, .dbg_inline_block => |tag| {
-                const ty_pl = data[@intFromEnum(inst)].ty_pl;
+                const ty_pl = data[@intfromenum(inst)].ty_pl;
                 const block_ty = ty_pl.ty.toType();
-                const block_body: []const Air.Inst.Index = @ptrCast(switch (tag) {
+                const block_body: []const Air.Inst.Index = @ptrcast(switch (tag) {
                     inline .block, .dbg_inline_block => |comptime_tag| body: {
                         const extra = self.air.extraData(switch (comptime_tag) {
                             .block => Air.Block,
@@ -470,9 +470,9 @@ fn verifyBody(self: *Verify, body: []const Air.Inst.Index) Error!void {
                 try self.verifyInstOperands(inst, .{ .none, .none, .none });
             },
             .loop => {
-                const ty_pl = data[@intFromEnum(inst)].ty_pl;
+                const ty_pl = data[@intfromenum(inst)].ty_pl;
                 const extra = self.air.extraData(Air.Block, ty_pl.payload);
-                const loop_body: []const Air.Inst.Index = @ptrCast(self.air.extra[extra.end..][0..extra.data.body_len]);
+                const loop_body: []const Air.Inst.Index = @ptrcast(self.air.extra[extra.end..][0..extra.data.body_len]);
 
                 var live = try self.live.clone(self.gpa);
                 defer live.deinit(self.gpa);
@@ -485,10 +485,10 @@ fn verifyBody(self: *Verify, body: []const Air.Inst.Index) Error!void {
                 try self.verifyInstOperands(inst, .{ .none, .none, .none });
             },
             .cond_br => {
-                const pl_op = data[@intFromEnum(inst)].pl_op;
+                const pl_op = data[@intfromenum(inst)].pl_op;
                 const extra = self.air.extraData(Air.CondBr, pl_op.payload);
-                const then_body: []const Air.Inst.Index = @ptrCast(self.air.extra[extra.end..][0..extra.data.then_body_len]);
-                const else_body: []const Air.Inst.Index = @ptrCast(self.air.extra[extra.end + then_body.len ..][0..extra.data.else_body_len]);
+                const then_body: []const Air.Inst.Index = @ptrcast(self.air.extra[extra.end..][0..extra.data.then_body_len]);
+                const else_body: []const Air.Inst.Index = @ptrcast(self.air.extra[extra.end + then_body.len ..][0..extra.data.else_body_len]);
                 const cond_br_liveness = self.liveness.getCondBr(inst);
 
                 try self.verifyOperand(inst, pl_op.operand, self.liveness.operandDies(inst, 0));
@@ -508,7 +508,7 @@ fn verifyBody(self: *Verify, body: []const Air.Inst.Index) Error!void {
                 try self.verifyInst(inst);
             },
             .switch_br => {
-                const pl_op = data[@intFromEnum(inst)].pl_op;
+                const pl_op = data[@intfromenum(inst)].pl_op;
                 const switch_br = self.air.extraData(Air.SwitchBr, pl_op.payload);
                 var extra_index = switch_br.end;
                 var case_i: u32 = 0;
@@ -528,9 +528,9 @@ fn verifyBody(self: *Verify, body: []const Air.Inst.Index) Error!void {
                     const case = self.air.extraData(Air.SwitchBr.Case, extra_index);
                     const items = @as(
                         []const Air.Inst.Ref,
-                        @ptrCast(self.air.extra[case.end..][0..case.data.items_len]),
+                        @ptrcast(self.air.extra[case.end..][0..case.data.items_len]),
                     );
-                    const case_body: []const Air.Inst.Index = @ptrCast(self.air.extra[case.end + items.len ..][0..case.data.body_len]);
+                    const case_body: []const Air.Inst.Index = @ptrcast(self.air.extra[case.end + items.len ..][0..case.data.body_len]);
                     extra_index = case.end + items.len + case_body.len;
 
                     self.live.deinit(self.gpa);
@@ -540,7 +540,7 @@ fn verifyBody(self: *Verify, body: []const Air.Inst.Index) Error!void {
                     try self.verifyBody(case_body);
                 }
 
-                const else_body: []const Air.Inst.Index = @ptrCast(self.air.extra[extra_index..][0..switch_br.data.else_body_len]);
+                const else_body: []const Air.Inst.Index = @ptrcast(self.air.extra[extra_index..][0..switch_br.data.else_body_len]);
                 if (else_body.len > 0) {
                     self.live.deinit(self.gpa);
                     self.live = try live.clone(self.gpa);
@@ -577,7 +577,7 @@ fn verifyInstOperands(
     operands: [Liveness.bpi - 1]Air.Inst.Ref,
 ) Error!void {
     for (operands, 0..) |operand, operand_index| {
-        const dies = self.liveness.operandDies(inst, @as(Liveness.OperandInt, @intCast(operand_index)));
+        const dies = self.liveness.operandDies(inst, @as(Liveness.OperandInt, @intcast(operand_index)));
         try self.verifyOperand(inst, operand, dies);
     }
     try self.verifyInst(inst);

@@ -31,11 +31,11 @@ fn alloc(_: *anyopaque, n: usize, log2_align: u8, ra: usize) ?[*]u8 {
             windows.MEM_COMMIT | windows.MEM_RESERVE,
             windows.PAGE_READWRITE,
         ) catch return null;
-        return @ptrCast(addr);
+        return @ptrcast(addr);
     }
 
     const aligned_len = mem.alignForward(usize, n, mem.page_size);
-    const hint = @atomicLoad(@TypeOf(std.heap.next_mmap_addr_hint), &std.heap.next_mmap_addr_hint, .unordered);
+    const hint = @atomicload(@TypeOf(std.heap.next_mmap_addr_hint), &std.heap.next_mmap_addr_hint, .unordered);
     const slice = posix.mmap(
         hint,
         aligned_len,
@@ -44,9 +44,9 @@ fn alloc(_: *anyopaque, n: usize, log2_align: u8, ra: usize) ?[*]u8 {
         -1,
         0,
     ) catch return null;
-    assert(mem.isAligned(@intFromPtr(slice.ptr), mem.page_size));
-    const new_hint: [*]align(mem.page_size) u8 = @alignCast(slice.ptr + aligned_len);
-    _ = @cmpxchgStrong(@TypeOf(std.heap.next_mmap_addr_hint), &std.heap.next_mmap_addr_hint, hint, new_hint, .monotonic, .monotonic);
+    assert(mem.isAligned(@intfromptr(slice.ptr), mem.page_size));
+    const new_hint: [*]align(mem.page_size) u8 = @aligncast(slice.ptr + aligned_len);
+    _ = @cmpxchgstrong(@TypeOf(std.heap.next_mmap_addr_hint), &std.heap.next_mmap_addr_hint, hint, new_hint, .monotonic, .monotonic);
     return slice.ptr;
 }
 
@@ -63,14 +63,14 @@ fn resize(
 
     if (native_os == .windows) {
         if (new_size <= buf_unaligned.len) {
-            const base_addr = @intFromPtr(buf_unaligned.ptr);
+            const base_addr = @intfromptr(buf_unaligned.ptr);
             const old_addr_end = base_addr + buf_unaligned.len;
             const new_addr_end = mem.alignForward(usize, base_addr + new_size, mem.page_size);
             if (old_addr_end > new_addr_end) {
                 // For shrinking that is not releasing, we will only
                 // decommit the pages not needed anymore.
                 windows.VirtualFree(
-                    @as(*anyopaque, @ptrFromInt(new_addr_end)),
+                    @as(*anyopaque, @ptrfromint(new_addr_end)),
                     old_addr_end - new_addr_end,
                     windows.MEM_DECOMMIT,
                 );
@@ -91,7 +91,7 @@ fn resize(
     if (new_size_aligned < buf_aligned_len) {
         const ptr = buf_unaligned.ptr + new_size_aligned;
         // TODO: if the next_mmap_addr_hint is within the unmapped range, update it
-        posix.munmap(@alignCast(ptr[0 .. buf_aligned_len - new_size_aligned]));
+        posix.munmap(@aligncast(ptr[0 .. buf_aligned_len - new_size_aligned]));
         return true;
     }
 
@@ -108,6 +108,6 @@ fn free(_: *anyopaque, slice: []u8, log2_buf_align: u8, return_address: usize) v
         windows.VirtualFree(slice.ptr, 0, windows.MEM_RELEASE);
     } else {
         const buf_aligned_len = mem.alignForward(usize, slice.len, mem.page_size);
-        posix.munmap(@alignCast(slice.ptr[0..buf_aligned_len]));
+        posix.munmap(@aligncast(slice.ptr[0..buf_aligned_len]));
     }
 }

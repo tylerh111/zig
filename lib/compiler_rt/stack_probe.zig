@@ -41,7 +41,7 @@ comptime {
 
 // Zig's own stack-probe routine (available only on x86 and x86_64)
 pub fn zig_probe_stack() callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
 
     // Versions of the Linux kernel before 5.1 treat any access below SP as
     // invalid so let's update it on the go, otherwise we'll get a segfault
@@ -97,7 +97,7 @@ pub fn zig_probe_stack() callconv(.Naked) void {
 }
 
 fn win_probe_stack_only() void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
 
     switch (arch) {
         .x86_64 => {
@@ -164,7 +164,7 @@ fn win_probe_stack_only() void {
 }
 
 fn win_probe_stack_adjust_sp() void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
 
     switch (arch) {
         .x86_64 => {
@@ -235,11 +235,11 @@ fn win_probe_stack_adjust_sp() void {
 // ___chkstk_ms         | no     | no     |
 
 pub fn _chkstk() callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     @call(.always_inline, win_probe_stack_adjust_sp, .{});
 }
 pub fn __chkstk() callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     if (comptime arch.isAARCH64()) {
         @call(.always_inline, win_probe_stack_only, .{});
     } else switch (arch) {
@@ -249,14 +249,14 @@ pub fn __chkstk() callconv(.Naked) void {
     }
 }
 pub fn ___chkstk() callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     @call(.always_inline, win_probe_stack_adjust_sp, .{});
 }
 pub fn __chkstk_ms() callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     @call(.always_inline, win_probe_stack_only, .{});
 }
 pub fn ___chkstk_ms() callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     @call(.always_inline, win_probe_stack_only, .{});
 }

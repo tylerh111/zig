@@ -5,7 +5,7 @@ atoms: std.ArrayListUnmanaged(Atom.Index) = .{},
 symbols: std.ArrayListUnmanaged(Symbol.Index) = .{},
 
 objc_methnames: std.ArrayListUnmanaged(u8) = .{},
-objc_selrefs: [@sizeOf(u64)]u8 = [_]u8{0} ** @sizeOf(u64),
+objc_selrefs: [@sizeof(u64)]u8 = [_]u8{0} ** @sizeof(u64),
 
 num_rebase_relocs: u32 = 0,
 output_symtab_ctx: MachO.SymtabCtx = .{},
@@ -60,7 +60,7 @@ fn addObjcMethnameSection(self: *InternalObject, methname: []const u8, macho_fil
     atom.n_sect = n_sect;
     self.sections.items(.extra)[n_sect].is_objc_methname = true;
 
-    sect.offset = @intCast(self.objc_methnames.items.len);
+    sect.offset = @intcast(self.objc_methnames.items.len);
     try self.objc_methnames.ensureUnusedCapacity(gpa, methname.len + 1);
     self.objc_methnames.writer(gpa).print("{s}\x00", .{methname}) catch unreachable;
 
@@ -75,7 +75,7 @@ fn addObjcSelrefsSection(self: *InternalObject, methname_atom_index: Atom.Index,
     const atom = macho_file.getAtom(atom_index).?;
     atom.atom_index = atom_index;
     atom.file = self.index;
-    atom.size = @sizeOf(u64);
+    atom.size = @sizeof(u64);
     atom.alignment = .@"8";
 
     const n_sect = try self.addSection(gpa, "__DATA", "__objc_selrefs");
@@ -118,7 +118,7 @@ pub fn resolveLiterals(self: InternalObject, lp: *MachO.LiteralPool, macho_file:
     const slice = self.sections.slice();
     for (slice.items(.header), self.atoms.items, 0..) |header, atom_index, n_sect| {
         if (Object.isCstringLiteral(header) or Object.isFixedSizeLiteral(header)) {
-            const data = try self.getSectionData(@intCast(n_sect));
+            const data = try self.getSectionData(@intcast(n_sect));
             const atom = macho_file.getAtom(atom_index).?;
             const res = try lp.insert(gpa, header.type(), data);
             if (!res.found_existing) {
@@ -221,7 +221,7 @@ pub fn calcSymtabSize(self: *InternalObject, macho_file: *MachO) !void {
             try sym.addExtra(.{ .symtab = self.output_symtab_ctx.nimports }, macho_file);
             self.output_symtab_ctx.nimports += 1;
         }
-        self.output_symtab_ctx.strsize += @as(u32, @intCast(sym.getName(macho_file).len + 1));
+        self.output_symtab_ctx.strsize += @as(u32, @intcast(sym.getName(macho_file).len + 1));
     }
 }
 
@@ -230,7 +230,7 @@ pub fn writeSymtab(self: InternalObject, macho_file: *MachO, ctx: anytype) void 
         const sym = macho_file.getSymbol(sym_index);
         if (sym.getFile(macho_file)) |file| if (file.getIndex() != self.index) continue;
         const idx = sym.getOutputSymtabIndex(macho_file) orelse continue;
-        const n_strx = @as(u32, @intCast(ctx.strtab.items.len));
+        const n_strx = @as(u32, @intcast(ctx.strtab.items.len));
         ctx.strtab.appendSliceAssumeCapacity(sym.getName(macho_file));
         ctx.strtab.appendAssumeCapacity(0);
         const out_sym = &ctx.symtab.items[idx];
@@ -240,7 +240,7 @@ pub fn writeSymtab(self: InternalObject, macho_file: *MachO, ctx: anytype) void 
 }
 
 fn addSection(self: *InternalObject, allocator: Allocator, segname: []const u8, sectname: []const u8) !u32 {
-    const n_sect = @as(u32, @intCast(try self.sections.addOne(allocator)));
+    const n_sect = @as(u32, @intcast(try self.sections.addOne(allocator)));
     self.sections.set(n_sect, .{
         .header = .{
             .sectname = MachO.makeStaticString(sectname),

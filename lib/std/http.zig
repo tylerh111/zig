@@ -32,13 +32,13 @@ pub const Method = enum(u64) {
     /// Asserts that `s` is 24 or fewer bytes.
     pub fn parse(s: []const u8) u64 {
         var x: u64 = 0;
-        const len = @min(s.len, @sizeOf(@TypeOf(x)));
+        const len = @min(s.len, @sizeof(@TypeOf(x)));
         @memcpy(std.mem.asBytes(&x)[0..len], s[0..len]);
         return x;
     }
 
     pub fn write(self: Method, w: anytype) !void {
-        const bytes = std.mem.asBytes(&@intFromEnum(self));
+        const bytes = std.mem.asBytes(&@intfromenum(self));
         const str = std.mem.sliceTo(bytes, 0);
         try w.writeAll(str);
     }
@@ -261,7 +261,7 @@ pub const Status = enum(u10) {
     };
 
     pub fn class(self: Status) Class {
-        return switch (@intFromEnum(self)) {
+        return switch (@intfromenum(self)) {
             100...199 => .informational,
             200...299 => .success,
             300...399 => .redirect,

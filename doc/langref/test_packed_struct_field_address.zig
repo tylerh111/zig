@@ -14,8 +14,8 @@ var bit_field = BitField{
 };
 
 test "pointers of sub-byte-aligned fields share addresses" {
-    try expect(@intFromPtr(&bit_field.a) == @intFromPtr(&bit_field.b));
-    try expect(@intFromPtr(&bit_field.a) == @intFromPtr(&bit_field.c));
+    try expect(@intfromptr(&bit_field.a) == @intfromptr(&bit_field.b));
+    try expect(@intfromptr(&bit_field.a) == @intfromptr(&bit_field.c));
 }
 
 // test

@@ -92,7 +92,7 @@ pub fn getOutputSeparatedDebug(objcopy: *const ObjCopy) ?std.Build.LazyPath {
 
 fn make(step: *Step, prog_node: std.Progress.Node) !void {
     const b = step.owner;
-    const objcopy: *ObjCopy = @fieldParentPtr("step", step);
+    const objcopy: *ObjCopy = @fieldparentptr("step", step);
 
     var man = b.graph.cache.obtain();
     defer man.deinit();
@@ -129,7 +129,7 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
     const full_dest_path = try b.cache_root.join(b.allocator, &.{ cache_path, objcopy.basename });
     const full_dest_path_debug = try b.cache_root.join(b.allocator, &.{ cache_path, b.fmt("{s}.debug", .{objcopy.basename}) });
     b.cache_root.handle.makePath(cache_path) catch |err| {
-        return step.fail("unable to make path {s}: {s}", .{ cache_path, @errorName(err) });
+        return step.fail("unable to make path {s}: {s}", .{ cache_path, @errorname(err) });
     };
 
     var argv = std.ArrayList([]const u8).init(b.allocator);

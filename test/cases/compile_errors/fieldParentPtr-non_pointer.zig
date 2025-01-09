@@ -1,6 +1,6 @@
 const Foo = i32;
 export fn foo(a: *i32) Foo {
-    return @fieldParentPtr("a", a);
+    return @fieldparentptr("a", a);
 }
 
 // error

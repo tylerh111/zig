@@ -215,7 +215,7 @@ pub fn assemble(self: *Assembler) Error!void {
     // Populate the opcode map if it isn't already
     if (self.instruction_map.count() == 0) {
         const instructions = spec.InstructionSet.core.instructions();
-        try self.instruction_map.ensureUnusedCapacity(self.gpa, @intCast(instructions.len));
+        try self.instruction_map.ensureUnusedCapacity(self.gpa, @intcast(instructions.len));
         for (spec.InstructionSet.core.instructions(), 0..) |inst, i| {
             const entry = try self.instruction_map.getOrPut(self.gpa, inst.name);
             assert(entry.index == i);
@@ -317,7 +317,7 @@ fn processTypeInstruction(self: *Assembler) !AsmValue {
                     return self.fail(0, "{} is not a valid bit count for floats (expected 16, 32 or 64)", .{bits});
                 },
             }
-            break :blk try self.spv.floatType(@intCast(bits));
+            break :blk try self.spv.floatType(@intcast(bits));
         },
         .OpTypeVector => blk: {
             const child_type = try self.resolveRefId(operands[1].ref_id);
@@ -329,7 +329,7 @@ fn processTypeInstruction(self: *Assembler) !AsmValue {
             return self.todo("process OpTypeArray", .{});
         },
         .OpTypePointer => blk: {
-            const storage_class: StorageClass = @enumFromInt(operands[1].value);
+            const storage_class: StorageClass = @enumfromint(operands[1].value);
             const child_type = try self.resolveRefId(operands[2].ref_id);
             const result_id = self.spv.allocId();
             try section.emit(self.spv.gpa, .OpTypePointer, .{
@@ -356,7 +356,7 @@ fn processTypeInstruction(self: *Assembler) !AsmValue {
             });
             break :blk result_id;
         },
-        else => return self.todo("process type instruction {s}", .{@tagName(self.inst.opcode)}),
+        else => return self.todo("process type instruction {s}", .{@tagname(self.inst.opcode)}),
     };
 
     return AsmValue{ .ty = id };
@@ -376,7 +376,7 @@ fn processGenericInstruction(self: *Assembler) !?AsmValue {
         else => switch (self.inst.opcode) {
             .OpEntryPoint => unreachable,
             .OpExecutionMode, .OpExecutionModeId => &self.spv.sections.execution_modes,
-            .OpVariable => switch (@as(spec.StorageClass, @enumFromInt(operands[2].value))) {
+            .OpVariable => switch (@as(spec.StorageClass, @enumfromint(operands[2].value))) {
                 .Function => &self.func.prologue,
                 .UniformConstant => &self.spv.sections.types_globals_constants,
                 else => {
@@ -420,7 +420,7 @@ fn processGenericInstruction(self: *Assembler) !?AsmValue {
             },
             .string => |offset| {
                 const text = std.mem.sliceTo(self.inst.string_bytes.items[offset..], 0);
-                const size = std.math.divCeil(usize, text.len + 1, @sizeOf(Word)) catch unreachable;
+                const size = std.math.divCeil(usize, text.len + 1, @sizeof(Word)) catch unreachable;
                 try section.ensureUnusedCapacity(self.spv.gpa, size);
                 section.writeOperand(spec.LiteralString, text);
             },
@@ -428,7 +428,7 @@ fn processGenericInstruction(self: *Assembler) !?AsmValue {
     }
 
     const actual_word_count = section.instructions.items.len - first_word;
-    section.instructions.items[first_word] |= @as(u32, @as(u16, @intCast(actual_word_count))) << 16 | @intFromEnum(self.inst.opcode);
+    section.instructions.items[first_word] |= @as(u32, @as(u16, @intcast(actual_word_count))) << 16 | @intfromenum(self.inst.opcode);
 
     if (maybe_result_id) |result| {
         return AsmValue{ .value = result };
@@ -486,7 +486,7 @@ fn parseInstruction(self: *Assembler) !void {
         if (!entry.found_existing) {
             entry.value_ptr.* = .just_declared;
         }
-        break :blk @intCast(entry.index);
+        break :blk @intcast(entry.index);
     } else null;
 
     const opcode_tok = self.currentToken();
@@ -502,7 +502,7 @@ fn parseInstruction(self: *Assembler) !void {
     };
 
     const inst = spec.InstructionSet.core.instructions()[index];
-    self.inst.opcode = @enumFromInt(inst.opcode);
+    self.inst.opcode = @enumfromint(inst.opcode);
 
     const expected_operands = inst.operands;
     // This is a loop because the result-id is not always the first operand.
@@ -511,12 +511,12 @@ fn parseInstruction(self: *Assembler) !void {
     } else false;
 
     if (requires_lhs_result and maybe_lhs_result == null) {
-        return self.fail(opcode_tok.start, "opcode '{s}' expects result on left-hand side", .{@tagName(self.inst.opcode)});
+        return self.fail(opcode_tok.start, "opcode '{s}' expects result on left-hand side", .{@tagname(self.inst.opcode)});
     } else if (!requires_lhs_result and maybe_lhs_result != null) {
         return self.fail(
             lhs_result_tok.start,
             "opcode '{s}' does not expect a result-id on the left-hand side",
-            .{@tagName(self.inst.opcode)},
+            .{@tagname(self.inst.opcode)},
         );
     }
 
@@ -558,7 +558,7 @@ fn parseOperand(self: *Assembler, kind: spec.OperandKind) Error!void {
             .LiteralContextDependentNumber => try self.parseContextDependentNumber(),
             .LiteralExtInstInteger => try self.parseLiteralExtInstInteger(),
             .PairIdRefIdRef => try self.parsePhiSource(),
-            else => return self.todo("parse operand of type {s}", .{@tagName(kind)}),
+            else => return self.todo("parse operand of type {s}", .{@tagname(kind)}),
         },
     }
 }
@@ -581,7 +581,7 @@ fn parseBitEnum(self: *Assembler, kind: spec.OperandKind) !void {
             if (std.mem.eql(u8, enumerant.name, text))
                 break enumerant;
         } else {
-            return self.fail(tok.start, "'{s}' is not a valid flag for bitmask {s}", .{ text, @tagName(kind) });
+            return self.fail(tok.start, "'{s}' is not a valid flag for bitmask {s}", .{ text, @tagname(kind) });
         };
         mask |= enumerant.value;
         if (!self.eatToken(.pipe))
@@ -624,7 +624,7 @@ fn parseValueEnum(self: *Assembler, kind: spec.OperandKind) !void {
             if (std.mem.eql(u8, enumerant.name, text)) break enumerant;
         }
     } else {
-        return self.fail(tok.start, "'{s}' is not a valid value for enumeration {s}", .{ text, @tagName(kind) });
+        return self.fail(tok.start, "'{s}' is not a valid value for enumeration {s}", .{ text, @tagname(kind) });
     };
 
     try self.inst.operands.append(self.gpa, .{ .value = enumerant.value });
@@ -648,7 +648,7 @@ fn parseRefId(self: *Assembler) !void {
         entry.value_ptr.* = .unresolved_forward_reference;
     }
 
-    const index: AsmValue.Ref = @intCast(entry.index);
+    const index: AsmValue.Ref = @intcast(entry.index);
     try self.inst.operands.append(self.gpa, .{ .ref_id = index });
 }
 
@@ -690,7 +690,7 @@ fn parseString(self: *Assembler) !void {
     else
         text[1..];
 
-    const string_offset: u32 = @intCast(self.inst.string_bytes.items.len);
+    const string_offset: u32 = @intcast(self.inst.string_bytes.items.len);
     try self.inst.string_bytes.ensureUnusedCapacity(self.gpa, literal.len + 1);
     self.inst.string_bytes.appendSliceAssumeCapacity(literal);
     self.inst.string_bytes.appendAssumeCapacity(0);
@@ -747,7 +747,7 @@ fn parseContextDependentInt(self: *Assembler, signedness: std.builtin.Signedness
     const tok = self.currentToken();
     try self.expectToken(.value);
 
-    if (width == 0 or width > 2 * @bitSizeOf(spec.Word)) {
+    if (width == 0 or width > 2 * @bitsizeof(spec.Word)) {
         return self.fail(tok.start, "cannot parse {}-bit integer literal", .{width});
     }
 
@@ -757,23 +757,23 @@ fn parseContextDependentInt(self: *Assembler, signedness: std.builtin.Signedness
         const int = std.fmt.parseInt(i128, text, 0) catch break :invalid;
         const min = switch (signedness) {
             .unsigned => 0,
-            .signed => -(@as(i128, 1) << (@as(u7, @intCast(width)) - 1)),
+            .signed => -(@as(i128, 1) << (@as(u7, @intcast(width)) - 1)),
         };
-        const max = (@as(i128, 1) << (@as(u7, @intCast(width)) - @intFromBool(signedness == .signed))) - 1;
+        const max = (@as(i128, 1) << (@as(u7, @intcast(width)) - @intfrombool(signedness == .signed))) - 1;
         if (int < min or int > max) {
             break :invalid;
         }
 
         // Note, we store the sign-extended version here.
-        if (width <= @bitSizeOf(spec.Word)) {
-            try self.inst.operands.append(self.gpa, .{ .literal32 = @truncate(@as(u128, @bitCast(int))) });
+        if (width <= @bitsizeof(spec.Word)) {
+            try self.inst.operands.append(self.gpa, .{ .literal32 = @truncate(@as(u128, @bitcast(int))) });
         } else {
-            try self.inst.operands.append(self.gpa, .{ .literal64 = @truncate(@as(u128, @bitCast(int))) });
+            try self.inst.operands.append(self.gpa, .{ .literal64 = @truncate(@as(u128, @bitcast(int))) });
         }
         return;
     }
 
-    return self.fail(tok.start, "'{s}' is not a valid {s} {}-bit int literal", .{ text, @tagName(signedness), width });
+    return self.fail(tok.start, "'{s}' is not a valid {s} {}-bit int literal", .{ text, @tagname(signedness), width });
 }
 
 fn parseContextDependentFloat(self: *Assembler, comptime width: u16) !void {
@@ -789,11 +789,11 @@ fn parseContextDependentFloat(self: *Assembler, comptime width: u16) !void {
         return self.fail(tok.start, "'{s}' is not a valid {}-bit float literal", .{ text, width });
     };
 
-    const float_bits: Int = @bitCast(value);
-    if (width <= @bitSizeOf(spec.Word)) {
+    const float_bits: Int = @bitcast(value);
+    if (width <= @bitsizeof(spec.Word)) {
         try self.inst.operands.append(self.gpa, .{ .literal32 = float_bits });
     } else {
-        assert(width <= 2 * @bitSizeOf(spec.Word));
+        assert(width <= 2 * @bitsizeof(spec.Word));
         try self.inst.operands.append(self.gpa, .{ .literal64 = float_bits });
     }
 }

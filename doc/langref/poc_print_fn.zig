@@ -38,23 +38,23 @@ const Writer = struct {
                     's' => {
                         continue;
                     },
-                    else => @compileError("Unknown format character: " ++ [1]u8{c}),
+                    else => @compileerror("Unknown format character: " ++ [1]u8{c}),
                 },
                 State.close_brace => switch (c) {
                     '}' => {
                         state = State.start;
                         start_index = i;
                     },
-                    else => @compileError("Single '}' encountered in format string"),
+                    else => @compileerror("Single '}' encountered in format string"),
                 },
             }
         }
         comptime {
             if (args.len != next_arg) {
-                @compileError("Unused arguments");
+                @compileerror("Unused arguments");
             }
             if (state != State.start) {
-                @compileError("Incomplete format string: " ++ format);
+                @compileerror("Incomplete format string: " ++ format);
             }
         }
         if (start_index < format.len) {

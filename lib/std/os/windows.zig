@@ -26,7 +26,7 @@ pub const ws2_32 = @import("windows/ws2_32.zig");
 pub const crypt32 = @import("windows/crypt32.zig");
 pub const nls = @import("windows/nls.zig");
 
-pub const self_process_handle = @as(HANDLE, @ptrFromInt(maxInt(usize)));
+pub const self_process_handle = @as(HANDLE, @ptrfromint(maxInt(usize)));
 
 const Self = @This();
 
@@ -83,10 +83,10 @@ pub fn OpenFile(sub_path_w: []const u16, options: OpenFileOptions) OpenError!HAN
     var nt_name = UNICODE_STRING{
         .Length = path_len_bytes,
         .MaximumLength = path_len_bytes,
-        .Buffer = @constCast(sub_path_w.ptr),
+        .Buffer = @constcast(sub_path_w.ptr),
     };
     var attr = OBJECT_ATTRIBUTES{
-        .Length = @sizeOf(OBJECT_ATTRIBUTES),
+        .Length = @sizeof(OBJECT_ATTRIBUTES),
         .RootDirectory = if (std.fs.path.isAbsoluteWindowsWTF16(sub_path_w)) null else options.dir,
         .Attributes = if (options.sa) |ptr| blk: { // Note we do not use OBJ_CASE_INSENSITIVE here.
             const inherit: ULONG = if (ptr.bInheritHandle == TRUE) OBJ_INHERIT else 0;
@@ -155,21 +155,21 @@ pub fn OpenFile(sub_path_w: []const u16, options: OpenFileOptions) OpenError!HAN
 }
 
 pub fn GetCurrentProcess() HANDLE {
-    const process_pseudo_handle: usize = @bitCast(@as(isize, -1));
-    return @ptrFromInt(process_pseudo_handle);
+    const process_pseudo_handle: usize = @bitcast(@as(isize, -1));
+    return @ptrfromint(process_pseudo_handle);
 }
 
 pub fn GetCurrentProcessId() DWORD {
-    return @truncate(@intFromPtr(teb().ClientId.UniqueProcess));
+    return @truncate(@intfromptr(teb().ClientId.UniqueProcess));
 }
 
 pub fn GetCurrentThread() HANDLE {
-    const thread_pseudo_handle: usize = @bitCast(@as(isize, -2));
-    return @ptrFromInt(thread_pseudo_handle);
+    const thread_pseudo_handle: usize = @bitcast(@as(isize, -2));
+    return @ptrfromint(thread_pseudo_handle);
 }
 
 pub fn GetCurrentThreadId() DWORD {
-    return @truncate(@intFromPtr(teb().ClientId.UniqueThread));
+    return @truncate(@intfromptr(teb().ClientId.UniqueThread));
 }
 
 pub const CreatePipeError = error{ Unexpected, SystemResources };
@@ -190,18 +190,18 @@ pub fn CreatePipe(rd: *HANDLE, wr: *HANDLE, sattr: *const SECURITY_ATTRIBUTES) C
     // This object is visible under the NPFS but has no filename attached to it.
     //
     // This implementation replicates how `CreatePipe` works in modern Windows versions.
-    const opt_dev_handle = @atomicLoad(?HANDLE, &npfs, .seq_cst);
+    const opt_dev_handle = @atomicload(?HANDLE, &npfs, .seq_cst);
     const dev_handle = opt_dev_handle orelse blk: {
         const str = std.unicode.utf8ToUtf16LeStringLiteral("\\Device\\NamedPipe\\");
-        const len: u16 = @truncate(str.len * @sizeOf(u16));
+        const len: u16 = @truncate(str.len * @sizeof(u16));
         const name = UNICODE_STRING{
             .Length = len,
             .MaximumLength = len,
-            .Buffer = @constCast(@ptrCast(str)),
+            .Buffer = @constcast(@ptrcast(str)),
         };
         const attrs = OBJECT_ATTRIBUTES{
-            .ObjectName = @constCast(&name),
-            .Length = @sizeOf(OBJECT_ATTRIBUTES),
+            .ObjectName = @constcast(&name),
+            .Length = @sizeof(OBJECT_ATTRIBUTES),
             .RootDirectory = null,
             .Attributes = 0,
             .SecurityDescriptor = null,
@@ -213,7 +213,7 @@ pub fn CreatePipe(rd: *HANDLE, wr: *HANDLE, sattr: *const SECURITY_ATTRIBUTES) C
         switch (ntdll.NtCreateFile(
             &handle,
             GENERIC_READ | SYNCHRONIZE,
-            @constCast(&attrs),
+            @constcast(&attrs),
             &iosb,
             null,
             0,
@@ -229,7 +229,7 @@ pub fn CreatePipe(rd: *HANDLE, wr: *HANDLE, sattr: *const SECURITY_ATTRIBUTES) C
             .INVALID_PARAMETER => unreachable,
             else => |e| return unexpectedStatus(e),
         }
-        if (@cmpxchgStrong(?HANDLE, &npfs, null, handle, .seq_cst, .seq_cst)) |xchg| {
+        if (@cmpxchgstrong(?HANDLE, &npfs, null, handle, .seq_cst, .seq_cst)) |xchg| {
             CloseHandle(handle);
             break :blk xchg.?;
         } else break :blk handle;
@@ -237,8 +237,8 @@ pub fn CreatePipe(rd: *HANDLE, wr: *HANDLE, sattr: *const SECURITY_ATTRIBUTES) C
 
     const name = UNICODE_STRING{ .Buffer = null, .Length = 0, .MaximumLength = 0 };
     var attrs = OBJECT_ATTRIBUTES{
-        .ObjectName = @constCast(&name),
-        .Length = @sizeOf(OBJECT_ATTRIBUTES),
+        .ObjectName = @constcast(&name),
+        .Length = @sizeof(OBJECT_ATTRIBUTES),
         .RootDirectory = dev_handle,
         .Attributes = OBJ_CASE_INSENSITIVE,
         .SecurityDescriptor = sattr.lpSecurityDescriptor,
@@ -264,7 +264,7 @@ pub fn CreatePipe(rd: *HANDLE, wr: *HANDLE, sattr: *const SECURITY_ATTRIBUTES) C
         1,
         4096,
         4096,
-        @constCast(&default_timeout),
+        @constcast(&default_timeout),
     )) {
         .SUCCESS => {},
         .INVALID_PARAMETER => unreachable,
@@ -338,9 +338,9 @@ pub fn DeviceIoControl(
 
     var io: IO_STATUS_BLOCK = undefined;
     const in_ptr = if (in) |i| i.ptr else null;
-    const in_len = if (in) |i| @as(ULONG, @intCast(i.len)) else 0;
+    const in_len = if (in) |i| @as(ULONG, @intcast(i.len)) else 0;
     const out_ptr = if (out) |o| o.ptr else null;
-    const out_len = if (out) |o| @as(ULONG, @intCast(o.len)) else 0;
+    const out_len = if (out) |o| @as(ULONG, @intcast(o.len)) else 0;
 
     const rc = blk: {
         if (is_fsctl) {
@@ -384,7 +384,7 @@ pub fn DeviceIoControl(
 
 pub fn GetOverlappedResult(h: HANDLE, overlapped: *OVERLAPPED, wait: bool) !DWORD {
     var bytes: DWORD = undefined;
-    if (kernel32.GetOverlappedResult(h, overlapped, &bytes, @intFromBool(wait)) == 0) {
+    if (kernel32.GetOverlappedResult(h, overlapped, &bytes, @intfrombool(wait)) == 0) {
         switch (kernel32.GetLastError()) {
             .IO_INCOMPLETE => if (!wait) return error.WouldBlock else unreachable,
             else => |err| return unexpectedError(err),
@@ -436,7 +436,7 @@ pub fn WaitForSingleObject(handle: HANDLE, milliseconds: DWORD) WaitForSingleObj
 }
 
 pub fn WaitForSingleObjectEx(handle: HANDLE, milliseconds: DWORD, alertable: bool) WaitForSingleObjectError!void {
-    switch (kernel32.WaitForSingleObjectEx(handle, milliseconds, @intFromBool(alertable))) {
+    switch (kernel32.WaitForSingleObjectEx(handle, milliseconds, @intfrombool(alertable))) {
         WAIT_ABANDONED => return error.WaitAbandoned,
         WAIT_OBJECT_0 => return,
         WAIT_TIMEOUT => return error.WaitTimeOut,
@@ -449,13 +449,13 @@ pub fn WaitForSingleObjectEx(handle: HANDLE, milliseconds: DWORD, alertable: boo
 
 pub fn WaitForMultipleObjectsEx(handles: []const HANDLE, waitAll: bool, milliseconds: DWORD, alertable: bool) !u32 {
     assert(handles.len < MAXIMUM_WAIT_OBJECTS);
-    const nCount: DWORD = @as(DWORD, @intCast(handles.len));
+    const nCount: DWORD = @as(DWORD, @intcast(handles.len));
     switch (kernel32.WaitForMultipleObjectsEx(
         nCount,
         handles.ptr,
-        @intFromBool(waitAll),
+        @intfrombool(waitAll),
         milliseconds,
-        @intFromBool(alertable),
+        @intfrombool(alertable),
     )) {
         WAIT_OBJECT_0...WAIT_OBJECT_0 + MAXIMUM_WAIT_OBJECTS => |n| {
             const handle_index = n - WAIT_OBJECT_0;
@@ -534,7 +534,7 @@ pub fn GetQueuedCompletionStatus(
             .HANDLE_EOF => return GetQueuedCompletionStatusResult.EOF,
             else => |err| {
                 if (std.debug.runtime_safety) {
-                    @setEvalBranchQuota(2500);
+                    @setevalbranchquota(2500);
                     std.debug.panic("unexpected error: {}\n", .{err});
                 }
             },
@@ -561,10 +561,10 @@ pub fn GetQueuedCompletionStatusEx(
     const success = kernel32.GetQueuedCompletionStatusEx(
         completion_port,
         completion_port_entries.ptr,
-        @as(ULONG, @intCast(completion_port_entries.len)),
+        @as(ULONG, @intcast(completion_port_entries.len)),
         &num_entries_removed,
         timeout_ms orelse INFINITE,
-        @intFromBool(alertable),
+        @intfrombool(alertable),
     );
 
     if (success == FALSE) {
@@ -699,7 +699,7 @@ pub fn SetCurrentDirectory(path_name: []const u16) SetCurrentDirectoryError!void
     var nt_name = UNICODE_STRING{
         .Length = path_len_bytes,
         .MaximumLength = path_len_bytes,
-        .Buffer = @constCast(path_name.ptr),
+        .Buffer = @constcast(path_name.ptr),
     };
 
     const rc = ntdll.RtlSetCurrentDirectory_U(&nt_name);
@@ -833,24 +833,24 @@ pub fn CreateSymbolicLink(
 
     // prepare reparse data buffer
     var buffer: [MAXIMUM_REPARSE_DATA_BUFFER_SIZE]u8 = undefined;
-    const buf_len = @sizeOf(SYMLINK_DATA) + final_target_path.len * 4;
-    const header_len = @sizeOf(ULONG) + @sizeOf(USHORT) * 2;
+    const buf_len = @sizeof(SYMLINK_DATA) + final_target_path.len * 4;
+    const header_len = @sizeof(ULONG) + @sizeof(USHORT) * 2;
     const target_is_absolute = std.fs.path.isAbsoluteWindowsWTF16(final_target_path);
     const symlink_data = SYMLINK_DATA{
         .ReparseTag = IO_REPARSE_TAG_SYMLINK,
-        .ReparseDataLength = @intCast(buf_len - header_len),
+        .ReparseDataLength = @intcast(buf_len - header_len),
         .Reserved = 0,
-        .SubstituteNameOffset = @intCast(final_target_path.len * 2),
-        .SubstituteNameLength = @intCast(final_target_path.len * 2),
+        .SubstituteNameOffset = @intcast(final_target_path.len * 2),
+        .SubstituteNameLength = @intcast(final_target_path.len * 2),
         .PrintNameOffset = 0,
-        .PrintNameLength = @intCast(final_target_path.len * 2),
+        .PrintNameLength = @intcast(final_target_path.len * 2),
         .Flags = if (!target_is_absolute) SYMLINK_FLAG_RELATIVE else 0,
     };
 
-    @memcpy(buffer[0..@sizeOf(SYMLINK_DATA)], std.mem.asBytes(&symlink_data));
-    @memcpy(buffer[@sizeOf(SYMLINK_DATA)..][0 .. final_target_path.len * 2], @as([*]const u8, @ptrCast(final_target_path)));
-    const paths_start = @sizeOf(SYMLINK_DATA) + final_target_path.len * 2;
-    @memcpy(buffer[paths_start..][0 .. final_target_path.len * 2], @as([*]const u8, @ptrCast(final_target_path)));
+    @memcpy(buffer[0..@sizeof(SYMLINK_DATA)], std.mem.asBytes(&symlink_data));
+    @memcpy(buffer[@sizeof(SYMLINK_DATA)..][0 .. final_target_path.len * 2], @as([*]const u8, @ptrcast(final_target_path)));
+    const paths_start = @sizeof(SYMLINK_DATA) + final_target_path.len * 2;
+    @memcpy(buffer[paths_start..][0 .. final_target_path.len * 2], @as([*]const u8, @ptrcast(final_target_path)));
     _ = try DeviceIoControl(symlink_handle, FSCTL_SET_REPARSE_POINT, buffer[0..buf_len], null);
 }
 
@@ -872,10 +872,10 @@ pub fn ReadLink(dir: ?HANDLE, sub_path_w: []const u16, out_buffer: []u8) ReadLin
     var nt_name = UNICODE_STRING{
         .Length = path_len_bytes,
         .MaximumLength = path_len_bytes,
-        .Buffer = @constCast(sub_path_w.ptr),
+        .Buffer = @constcast(sub_path_w.ptr),
     };
     var attr = OBJECT_ATTRIBUTES{
-        .Length = @sizeOf(OBJECT_ATTRIBUTES),
+        .Length = @sizeof(OBJECT_ATTRIBUTES),
         .RootDirectory = if (std.fs.path.isAbsoluteWindowsWTF16(sub_path_w)) null else dir,
         .Attributes = 0, // Note we do not use OBJ_CASE_INSENSITIVE here.
         .ObjectName = &nt_name,
@@ -917,17 +917,17 @@ pub fn ReadLink(dir: ?HANDLE, sub_path_w: []const u16, out_buffer: []u8) ReadLin
     }
     defer CloseHandle(result_handle);
 
-    var reparse_buf: [MAXIMUM_REPARSE_DATA_BUFFER_SIZE]u8 align(@alignOf(REPARSE_DATA_BUFFER)) = undefined;
+    var reparse_buf: [MAXIMUM_REPARSE_DATA_BUFFER_SIZE]u8 align(@alignof(REPARSE_DATA_BUFFER)) = undefined;
     _ = DeviceIoControl(result_handle, FSCTL_GET_REPARSE_POINT, null, reparse_buf[0..]) catch |err| switch (err) {
         error.AccessDenied => return error.Unexpected,
         error.UnrecognizedVolume => return error.Unexpected,
         else => |e| return e,
     };
 
-    const reparse_struct: *const REPARSE_DATA_BUFFER = @ptrCast(@alignCast(&reparse_buf[0]));
+    const reparse_struct: *const REPARSE_DATA_BUFFER = @ptrcast(@aligncast(&reparse_buf[0]));
     switch (reparse_struct.ReparseTag) {
         IO_REPARSE_TAG_SYMLINK => {
-            const buf: *const SYMBOLIC_LINK_REPARSE_BUFFER = @ptrCast(@alignCast(&reparse_struct.DataBuffer[0]));
+            const buf: *const SYMBOLIC_LINK_REPARSE_BUFFER = @ptrcast(@aligncast(&reparse_struct.DataBuffer[0]));
             const offset = buf.SubstituteNameOffset >> 1;
             const len = buf.SubstituteNameLength >> 1;
             const path_buf = @as([*]const u16, &buf.PathBuffer);
@@ -935,7 +935,7 @@ pub fn ReadLink(dir: ?HANDLE, sub_path_w: []const u16, out_buffer: []u8) ReadLin
             return parseReadlinkPath(path_buf[offset..][0..len], is_relative, out_buffer);
         },
         IO_REPARSE_TAG_MOUNT_POINT => {
-            const buf: *const MOUNT_POINT_REPARSE_BUFFER = @ptrCast(@alignCast(&reparse_struct.DataBuffer[0]));
+            const buf: *const MOUNT_POINT_REPARSE_BUFFER = @ptrcast(@aligncast(&reparse_struct.DataBuffer[0]));
             const offset = buf.SubstituteNameOffset >> 1;
             const len = buf.SubstituteNameLength >> 1;
             const path_buf = @as([*]const u16, &buf.PathBuffer);
@@ -987,12 +987,12 @@ pub fn DeleteFile(sub_path_w: []const u16, options: DeleteFileOptions) DeleteFil
     else
         FILE_NON_DIRECTORY_FILE | FILE_OPEN_REPARSE_POINT; // would we ever want to delete the target instead?
 
-    const path_len_bytes = @as(u16, @intCast(sub_path_w.len * 2));
+    const path_len_bytes = @as(u16, @intcast(sub_path_w.len * 2));
     var nt_name = UNICODE_STRING{
         .Length = path_len_bytes,
         .MaximumLength = path_len_bytes,
         // The Windows API makes this mutable, but it will not mutate here.
-        .Buffer = @constCast(sub_path_w.ptr),
+        .Buffer = @constcast(sub_path_w.ptr),
     };
 
     if (sub_path_w[0] == '.' and sub_path_w[1] == 0) {
@@ -1005,7 +1005,7 @@ pub fn DeleteFile(sub_path_w: []const u16, options: DeleteFileOptions) DeleteFil
     }
 
     var attr = OBJECT_ATTRIBUTES{
-        .Length = @sizeOf(OBJECT_ATTRIBUTES),
+        .Length = @sizeof(OBJECT_ATTRIBUTES),
         .RootDirectory = if (std.fs.path.isAbsoluteWindowsWTF16(sub_path_w)) null else options.dir,
         .Attributes = 0, // Note we do not use OBJ_CASE_INSENSITIVE here.
         .ObjectName = &nt_name,
@@ -1062,7 +1062,7 @@ pub fn DeleteFile(sub_path_w: []const u16, options: DeleteFileOptions) DeleteFil
             tmp_handle,
             &io,
             &info,
-            @sizeOf(FILE_DISPOSITION_INFORMATION_EX),
+            @sizeof(FILE_DISPOSITION_INFORMATION_EX),
             .FileDispositionInformationEx,
         );
         switch (rc) {
@@ -1084,7 +1084,7 @@ pub fn DeleteFile(sub_path_w: []const u16, options: DeleteFileOptions) DeleteFil
             tmp_handle,
             &io,
             &file_dispo,
-            @sizeOf(FILE_DISPOSITION_INFORMATION),
+            @sizeof(FILE_DISPOSITION_INFORMATION),
             .FileDispositionInformation,
         );
     }
@@ -1139,7 +1139,7 @@ pub fn SetFilePointerEx_BEGIN(handle: HANDLE, offset: u64) SetFilePointerError!v
     // "The starting point is zero or the beginning of the file. If [FILE_BEGIN]
     // is specified, then the liDistanceToMove parameter is interpreted as an unsigned value."
     // https://docs.microsoft.com/en-us/windows/desktop/api/fileapi/nf-fileapi-setfilepointerex
-    const ipos = @as(LARGE_INTEGER, @bitCast(offset));
+    const ipos = @as(LARGE_INTEGER, @bitcast(offset));
     if (kernel32.SetFilePointerEx(handle, ipos, null, FILE_BEGIN) == 0) {
         switch (kernel32.GetLastError()) {
             .INVALID_PARAMETER => unreachable,
@@ -1183,13 +1183,13 @@ pub fn SetFilePointerEx_CURRENT_get(handle: HANDLE) SetFilePointerError!u64 {
     }
     // Based on the docs for FILE_BEGIN, it seems that the returned signed integer
     // should be interpreted as an unsigned integer.
-    return @as(u64, @bitCast(result));
+    return @as(u64, @bitcast(result));
 }
 
 pub fn QueryObjectName(handle: HANDLE, out_buffer: []u16) ![]u16 {
-    const out_buffer_aligned = mem.alignInSlice(out_buffer, @alignOf(OBJECT_NAME_INFORMATION)) orelse return error.NameTooLong;
+    const out_buffer_aligned = mem.alignInSlice(out_buffer, @alignof(OBJECT_NAME_INFORMATION)) orelse return error.NameTooLong;
 
-    const info = @as(*OBJECT_NAME_INFORMATION, @ptrCast(out_buffer_aligned));
+    const info = @as(*OBJECT_NAME_INFORMATION, @ptrcast(out_buffer_aligned));
     // buffer size is specified in bytes
     const out_buffer_len = std.math.cast(ULONG, out_buffer_aligned.len * 2) orelse std.math.maxInt(ULONG);
     // last argument would return the length required for full_buffer, not exposed here
@@ -1199,7 +1199,7 @@ pub fn QueryObjectName(handle: HANDLE, out_buffer: []u16) ![]u16 {
             // if the object was "unnamed", not sure if this can happen for file handles
             if (info.Name.MaximumLength == 0) break :blk error.Unexpected;
             // resulting string length is specified in bytes
-            const path_length_unterminated = @divExact(info.Name.Length, 2);
+            const path_length_unterminated = @divexact(info.Name.Length, 2);
             break :blk info.Name.Buffer.?[0..path_length_unterminated];
         },
         .ACCESS_DENIED => error.AccessDenied,
@@ -1222,7 +1222,7 @@ test QueryObjectName {
     var out_buffer: [PATH_MAX_WIDE]u16 = undefined;
 
     const result_path = try QueryObjectName(handle, &out_buffer);
-    const required_len_in_u16 = result_path.len + @divExact(@intFromPtr(result_path.ptr) - @intFromPtr(&out_buffer), 2) + 1;
+    const required_len_in_u16 = result_path.len + @divexact(@intfromptr(result_path.ptr) - @intfromptr(&out_buffer), 2) + 1;
     //insufficient size
     try std.testing.expectError(error.NameTooLong, QueryObjectName(handle, out_buffer[0 .. required_len_in_u16 - 1]));
     //exactly-sufficient size
@@ -1299,11 +1299,11 @@ pub fn GetFinalPathNameByHandle(
             // Get DOS volume name. DOS volume names are actually symbolic link objects to the
             // actual NT volume. For example:
             // (NT) \Device\HarddiskVolume4 => (DOS) \DosDevices\C: == (DOS) C:
-            const MIN_SIZE = @sizeOf(MOUNTMGR_MOUNT_POINT) + MAX_PATH;
+            const MIN_SIZE = @sizeof(MOUNTMGR_MOUNT_POINT) + MAX_PATH;
             // We initialize the input buffer to all zeros for convenience since
             // `DeviceIoControl` with `IOCTL_MOUNTMGR_QUERY_POINTS` expects this.
-            var input_buf: [MIN_SIZE]u8 align(@alignOf(MOUNTMGR_MOUNT_POINT)) = [_]u8{0} ** MIN_SIZE;
-            var output_buf: [MIN_SIZE * 4]u8 align(@alignOf(MOUNTMGR_MOUNT_POINTS)) = undefined;
+            var input_buf: [MIN_SIZE]u8 align(@alignof(MOUNTMGR_MOUNT_POINT)) = [_]u8{0} ** MIN_SIZE;
+            var output_buf: [MIN_SIZE * 4]u8 align(@alignof(MOUNTMGR_MOUNT_POINTS)) = undefined;
 
             // This surprising path is a filesystem path to the mount manager on Windows.
             // Source: https://stackoverflow.com/questions/3012828/using-ioctl-mountmgr-query-points
@@ -1327,26 +1327,26 @@ pub fn GetFinalPathNameByHandle(
             };
             defer CloseHandle(mgmt_handle);
 
-            var input_struct: *MOUNTMGR_MOUNT_POINT = @ptrCast(&input_buf[0]);
-            input_struct.DeviceNameOffset = @sizeOf(MOUNTMGR_MOUNT_POINT);
-            input_struct.DeviceNameLength = @intCast(volume_name_u16.len * 2);
-            @memcpy(input_buf[@sizeOf(MOUNTMGR_MOUNT_POINT)..][0 .. volume_name_u16.len * 2], @as([*]const u8, @ptrCast(volume_name_u16.ptr)));
+            var input_struct: *MOUNTMGR_MOUNT_POINT = @ptrcast(&input_buf[0]);
+            input_struct.DeviceNameOffset = @sizeof(MOUNTMGR_MOUNT_POINT);
+            input_struct.DeviceNameLength = @intcast(volume_name_u16.len * 2);
+            @memcpy(input_buf[@sizeof(MOUNTMGR_MOUNT_POINT)..][0 .. volume_name_u16.len * 2], @as([*]const u8, @ptrcast(volume_name_u16.ptr)));
 
             DeviceIoControl(mgmt_handle, IOCTL_MOUNTMGR_QUERY_POINTS, &input_buf, &output_buf) catch |err| switch (err) {
                 error.AccessDenied => return error.Unexpected,
                 else => |e| return e,
             };
-            const mount_points_struct: *const MOUNTMGR_MOUNT_POINTS = @ptrCast(&output_buf[0]);
+            const mount_points_struct: *const MOUNTMGR_MOUNT_POINTS = @ptrcast(&output_buf[0]);
 
             const mount_points = @as(
                 [*]const MOUNTMGR_MOUNT_POINT,
-                @ptrCast(&mount_points_struct.MountPoints[0]),
+                @ptrcast(&mount_points_struct.MountPoints[0]),
             )[0..mount_points_struct.NumberOfMountPoints];
 
             for (mount_points) |mount_point| {
                 const symlink = @as(
                     [*]const u16,
-                    @ptrCast(@alignCast(&output_buf[mount_point.SymbolicLinkNameOffset])),
+                    @ptrcast(@aligncast(&output_buf[mount_point.SymbolicLinkNameOffset])),
                 )[0 .. mount_point.SymbolicLinkNameLength / 2];
 
                 // Look for `\DosDevices\` prefix. We don't really care if there are more than one symlinks
@@ -1375,23 +1375,23 @@ pub fn GetFinalPathNameByHandle(
                     // query the mount manager again to get the DOS path for the volume.
 
                     // 49 is the maximum length accepted by mountmgrIsVolumeName
-                    const vol_input_size = @sizeOf(MOUNTMGR_TARGET_NAME) + (49 * 2);
-                    var vol_input_buf: [vol_input_size]u8 align(@alignOf(MOUNTMGR_TARGET_NAME)) = [_]u8{0} ** vol_input_size;
+                    const vol_input_size = @sizeof(MOUNTMGR_TARGET_NAME) + (49 * 2);
+                    var vol_input_buf: [vol_input_size]u8 align(@alignof(MOUNTMGR_TARGET_NAME)) = [_]u8{0} ** vol_input_size;
                     // Note: If the path exceeds MAX_PATH, the Disk Management GUI doesn't accept the full path,
                     // and instead if must be specified using a shortened form (e.g. C:\FOO~1\BAR~1\<...>).
                     // However, just to be sure we can handle any path length, we use PATH_MAX_WIDE here.
-                    const min_output_size = @sizeOf(MOUNTMGR_VOLUME_PATHS) + (PATH_MAX_WIDE * 2);
-                    var vol_output_buf: [min_output_size]u8 align(@alignOf(MOUNTMGR_VOLUME_PATHS)) = undefined;
+                    const min_output_size = @sizeof(MOUNTMGR_VOLUME_PATHS) + (PATH_MAX_WIDE * 2);
+                    var vol_output_buf: [min_output_size]u8 align(@alignof(MOUNTMGR_VOLUME_PATHS)) = undefined;
 
-                    var vol_input_struct: *MOUNTMGR_TARGET_NAME = @ptrCast(&vol_input_buf[0]);
-                    vol_input_struct.DeviceNameLength = @intCast(symlink.len * 2);
+                    var vol_input_struct: *MOUNTMGR_TARGET_NAME = @ptrcast(&vol_input_buf[0]);
+                    vol_input_struct.DeviceNameLength = @intcast(symlink.len * 2);
                     @memcpy(@as([*]WCHAR, &vol_input_struct.DeviceName)[0..symlink.len], symlink);
 
                     DeviceIoControl(mgmt_handle, IOCTL_MOUNTMGR_QUERY_DOS_VOLUME_PATH, &vol_input_buf, &vol_output_buf) catch |err| switch (err) {
                         error.AccessDenied => return error.Unexpected,
                         else => |e| return e,
                     };
-                    const volume_paths_struct: *const MOUNTMGR_VOLUME_PATHS = @ptrCast(&vol_output_buf[0]);
+                    const volume_paths_struct: *const MOUNTMGR_VOLUME_PATHS = @ptrcast(&vol_output_buf[0]);
                     const volume_path = std.mem.sliceTo(@as(
                         [*]const u16,
                         &volume_paths_struct.MultiSz,
@@ -1409,8 +1409,8 @@ pub fn GetFinalPathNameByHandle(
                     // to copy backwards. We also need to do this before copying the volume path because
                     // it could overwrite the file_name_u16 memory.
                     const file_name_dest = out_buffer[volume_path.len..][0..file_name_u16.len];
-                    const file_name_byte_offset = @intFromPtr(file_name_u16.ptr) - @intFromPtr(out_buffer.ptr);
-                    const file_name_index = file_name_byte_offset / @sizeOf(u16);
+                    const file_name_byte_offset = @intfromptr(file_name_u16.ptr) - @intfromptr(out_buffer.ptr);
+                    const file_name_index = file_name_byte_offset / @sizeof(u16);
                     if (volume_path.len > file_name_index)
                         mem.copyBackwards(u16, file_name_dest, file_name_u16)
                     else
@@ -1474,7 +1474,7 @@ test GetFinalPathNameByHandle {
     const nt_path = try GetFinalPathNameByHandle(handle, .{ .volume_name = .Nt }, &buffer);
     _ = try GetFinalPathNameByHandle(handle, .{ .volume_name = .Dos }, &buffer);
 
-    const required_len_in_u16 = nt_path.len + @divExact(@intFromPtr(nt_path.ptr) - @intFromPtr(&buffer), 2) + 1;
+    const required_len_in_u16 = nt_path.len + @divexact(@intfromptr(nt_path.ptr) - @intfromptr(&buffer), 2) + 1;
     //check with insufficient size
     try std.testing.expectError(error.NameTooLong, GetFinalPathNameByHandle(handle, .{ .volume_name = .Nt }, buffer[0 .. required_len_in_u16 - 1]));
     try std.testing.expectError(error.NameTooLong, GetFinalPathNameByHandle(handle, .{ .volume_name = .Dos }, buffer[0 .. required_len_in_u16 - 1]));
@@ -1493,7 +1493,7 @@ pub fn GetFileSizeEx(hFile: HANDLE) GetFileSizeError!u64 {
             else => |err| return unexpectedError(err),
         }
     }
-    return @as(u64, @bitCast(file_size));
+    return @as(u64, @bitcast(file_size));
 }
 
 pub const GetFileAttributesError = error{
@@ -1524,7 +1524,7 @@ pub fn WSAStartup(majorVersion: u8, minorVersion: u8) !ws2_32.WSADATA {
     var wsadata: ws2_32.WSADATA = undefined;
     return switch (ws2_32.WSAStartup((@as(WORD, minorVersion) << 8) | majorVersion, &wsadata)) {
         0 => wsadata,
-        else => |err_int| switch (@as(ws2_32.WinsockError, @enumFromInt(@as(u16, @intCast(err_int))))) {
+        else => |err_int| switch (@as(ws2_32.WinsockError, @enumfromint(@as(u16, @intcast(err_int))))) {
             .WSASYSNOTREADY => return error.SystemNotAvailable,
             .WSAVERNOTSUPPORTED => return error.VersionNotSupported,
             .WSAEINPROGRESS => return error.BlockingOperationInProgress,
@@ -1619,7 +1619,7 @@ pub fn WSASocketW(
 }
 
 pub fn bind(s: ws2_32.SOCKET, name: *const ws2_32.sockaddr, namelen: ws2_32.socklen_t) i32 {
-    return ws2_32.bind(s, name, @as(i32, @intCast(namelen)));
+    return ws2_32.bind(s, name, @as(i32, @intcast(namelen)));
 }
 
 pub fn listen(s: ws2_32.SOCKET, backlog: u31) i32 {
@@ -1638,15 +1638,15 @@ pub fn closesocket(s: ws2_32.SOCKET) !void {
 
 pub fn accept(s: ws2_32.SOCKET, name: ?*ws2_32.sockaddr, namelen: ?*ws2_32.socklen_t) ws2_32.SOCKET {
     assert((name == null) == (namelen == null));
-    return ws2_32.accept(s, name, @as(?*i32, @ptrCast(namelen)));
+    return ws2_32.accept(s, name, @as(?*i32, @ptrcast(namelen)));
 }
 
 pub fn getsockname(s: ws2_32.SOCKET, name: *ws2_32.sockaddr, namelen: *ws2_32.socklen_t) i32 {
-    return ws2_32.getsockname(s, name, @as(*i32, @ptrCast(namelen)));
+    return ws2_32.getsockname(s, name, @as(*i32, @ptrcast(namelen)));
 }
 
 pub fn getpeername(s: ws2_32.SOCKET, name: *ws2_32.sockaddr, namelen: *ws2_32.socklen_t) i32 {
-    return ws2_32.getpeername(s, name, @as(*i32, @ptrCast(namelen)));
+    return ws2_32.getpeername(s, name, @as(*i32, @ptrcast(namelen)));
 }
 
 pub fn sendmsg(
@@ -1658,17 +1658,17 @@ pub fn sendmsg(
     if (ws2_32.WSASendMsg(s, msg, flags, &bytes_send, null, null) == ws2_32.SOCKET_ERROR) {
         return ws2_32.SOCKET_ERROR;
     } else {
-        return @as(i32, @as(u31, @intCast(bytes_send)));
+        return @as(i32, @as(u31, @intcast(bytes_send)));
     }
 }
 
 pub fn sendto(s: ws2_32.SOCKET, buf: [*]const u8, len: usize, flags: u32, to: ?*const ws2_32.sockaddr, to_len: ws2_32.socklen_t) i32 {
-    var buffer = ws2_32.WSABUF{ .len = @as(u31, @truncate(len)), .buf = @constCast(buf) };
+    var buffer = ws2_32.WSABUF{ .len = @as(u31, @truncate(len)), .buf = @constcast(buf) };
     var bytes_send: DWORD = undefined;
-    if (ws2_32.WSASendTo(s, @as([*]ws2_32.WSABUF, @ptrCast(&buffer)), 1, &bytes_send, flags, to, @as(i32, @intCast(to_len)), null, null) == ws2_32.SOCKET_ERROR) {
+    if (ws2_32.WSASendTo(s, @as([*]ws2_32.WSABUF, @ptrcast(&buffer)), 1, &bytes_send, flags, to, @as(i32, @intcast(to_len)), null, null) == ws2_32.SOCKET_ERROR) {
         return ws2_32.SOCKET_ERROR;
     } else {
-        return @as(i32, @as(u31, @intCast(bytes_send)));
+        return @as(i32, @as(u31, @intcast(bytes_send)));
     }
 }
 
@@ -1676,10 +1676,10 @@ pub fn recvfrom(s: ws2_32.SOCKET, buf: [*]u8, len: usize, flags: u32, from: ?*ws
     var buffer = ws2_32.WSABUF{ .len = @as(u31, @truncate(len)), .buf = buf };
     var bytes_received: DWORD = undefined;
     var flags_inout = flags;
-    if (ws2_32.WSARecvFrom(s, @as([*]ws2_32.WSABUF, @ptrCast(&buffer)), 1, &bytes_received, &flags_inout, from, @as(?*i32, @ptrCast(from_len)), null, null) == ws2_32.SOCKET_ERROR) {
+    if (ws2_32.WSARecvFrom(s, @as([*]ws2_32.WSABUF, @ptrcast(&buffer)), 1, &bytes_received, &flags_inout, from, @as(?*i32, @ptrcast(from_len)), null, null) == ws2_32.SOCKET_ERROR) {
         return ws2_32.SOCKET_ERROR;
     } else {
-        return @as(i32, @as(u31, @intCast(bytes_received)));
+        return @as(i32, @as(u31, @intcast(bytes_received)));
     }
 }
 
@@ -1700,9 +1700,9 @@ pub fn WSAIoctl(
         s,
         dwIoControlCode,
         if (inBuffer) |i| i.ptr else null,
-        if (inBuffer) |i| @as(DWORD, @intCast(i.len)) else 0,
+        if (inBuffer) |i| @as(DWORD, @intcast(i.len)) else 0,
         outBuffer.ptr,
-        @as(DWORD, @intCast(outBuffer.len)),
+        @as(DWORD, @intcast(outBuffer.len)),
         &bytes,
         overlapped,
         completionRoutine,
@@ -1961,7 +1961,7 @@ pub const LoadLibraryFlags = enum(DWORD) {
 };
 
 pub fn LoadLibraryExW(lpLibFileName: [*:0]const u16, dwFlags: LoadLibraryFlags) LoadLibraryError!HMODULE {
-    return kernel32.LoadLibraryExW(lpLibFileName, null, @intFromEnum(dwFlags)) orelse {
+    return kernel32.LoadLibraryExW(lpLibFileName, null, @intfromenum(dwFlags)) orelse {
         switch (kernel32.GetLastError()) {
             .FILE_NOT_FOUND => return error.FileNotFound,
             .PATH_NOT_FOUND => return error.FileNotFound,
@@ -1981,7 +1981,7 @@ pub fn QueryPerformanceFrequency() u64 {
     var result: LARGE_INTEGER = undefined;
     assert(ntdll.RtlQueryPerformanceFrequency(&result) != 0);
     // The kernel treats this integer as unsigned.
-    return @as(u64, @bitCast(result));
+    return @as(u64, @bitcast(result));
 }
 
 pub fn QueryPerformanceCounter() u64 {
@@ -1990,7 +1990,7 @@ pub fn QueryPerformanceCounter() u64 {
     var result: LARGE_INTEGER = undefined;
     assert(ntdll.RtlQueryPerformanceCounter(&result) != 0);
     // The kernel treats this integer as unsigned.
-    return @as(u64, @bitCast(result));
+    return @as(u64, @bitcast(result));
 }
 
 pub fn InitOnceExecuteOnce(InitOnce: *INIT_ONCE, InitFn: INIT_ONCE_FN, Parameter: ?*anyopaque, Context: ?*anyopaque) void {
@@ -2092,7 +2092,7 @@ pub fn teb() *TEB {
     return switch (native_arch) {
         .x86 => blk: {
             if (builtin.zig_backend == .stage2_c) {
-                break :blk @ptrCast(@alignCast(zig_x86_windows_teb()));
+                break :blk @ptrcast(@aligncast(zig_x86_windows_teb()));
             } else {
                 break :blk asm (
                     \\ movl %%fs:0x18, %[ptr]
@@ -2102,7 +2102,7 @@ pub fn teb() *TEB {
         },
         .x86_64 => blk: {
             if (builtin.zig_backend == .stage2_c) {
-                break :blk @ptrCast(@alignCast(zig_x86_64_windows_teb()));
+                break :blk @ptrcast(@aligncast(zig_x86_64_windows_teb()));
             } else {
                 break :blk asm (
                     \\ movq %%gs:0x30, %[ptr]
@@ -2114,7 +2114,7 @@ pub fn teb() *TEB {
             \\ mov %[ptr], x18
             : [ptr] "=r" (-> *TEB),
         ),
-        else => @compileError("unsupported arch"),
+        else => @compileerror("unsupported arch"),
     };
 }
 
@@ -2133,8 +2133,8 @@ pub fn fromSysTime(hns: i64) i128 {
 }
 
 pub fn toSysTime(ns: i128) i64 {
-    const hns = @divFloor(ns, 100);
-    return @as(i64, @intCast(hns)) - std.time.epoch.windows * (std.time.ns_per_s / 100);
+    const hns = @divfloor(ns, 100);
+    return @as(i64, @intcast(hns)) - std.time.epoch.windows * (std.time.ns_per_s / 100);
 }
 
 pub fn fileTimeToNanoSeconds(ft: FILETIME) i128 {
@@ -2144,7 +2144,7 @@ pub fn fileTimeToNanoSeconds(ft: FILETIME) i128 {
 
 /// Converts a number of nanoseconds since the POSIX epoch to a Windows FILETIME.
 pub fn nanoSecondsToFileTime(ns: i128) FILETIME {
-    const adjusted: u64 = @bitCast(toSysTime(ns));
+    const adjusted: u64 = @bitcast(toSysTime(ns));
     return FILETIME{
         .dwHighDateTime = @as(u32, @truncate(adjusted >> 32)),
         .dwLowDateTime = @as(u32, @truncate(adjusted)),
@@ -2155,7 +2155,7 @@ pub fn nanoSecondsToFileTime(ns: i128) FILETIME {
 /// `RtlEqualUnicodeString` (with case insensitive comparison enabled).
 /// This function can be called on any target.
 pub fn eqlIgnoreCaseWTF16(a: []const u16, b: []const u16) bool {
-    if (@inComptime() or builtin.os.tag != .windows) {
+    if (@incomptime() or builtin.os.tag != .windows) {
         // This function compares the strings code unit by code unit (aka u16-to-u16),
         // so any length difference implies inequality. In other words, there's no possible
         // conversion that changes the number of WTF-16 code units needed for the uppercase/lowercase
@@ -2176,17 +2176,17 @@ pub fn eqlIgnoreCaseWTF16(a: []const u16, b: []const u16) bool {
     }
     // Use RtlEqualUnicodeString on Windows when not in comptime to avoid including a
     // redundant copy of the uppercase data.
-    const a_bytes = @as(u16, @intCast(a.len * 2));
+    const a_bytes = @as(u16, @intcast(a.len * 2));
     const a_string = UNICODE_STRING{
         .Length = a_bytes,
         .MaximumLength = a_bytes,
-        .Buffer = @constCast(a.ptr),
+        .Buffer = @constcast(a.ptr),
     };
-    const b_bytes = @as(u16, @intCast(b.len * 2));
+    const b_bytes = @as(u16, @intcast(b.len * 2));
     const b_string = UNICODE_STRING{
         .Length = b_bytes,
         .MaximumLength = b_bytes,
-        .Buffer = @constCast(b.ptr),
+        .Buffer = @constcast(b.ptr),
     };
     return ntdll.RtlEqualUnicodeString(&a_string, &b_string, TRUE) == TRUE;
 }
@@ -2207,7 +2207,7 @@ pub fn eqlIgnoreCaseWtf8(a: []const u8, b: []const u8) bool {
     // Use RtlUpcaseUnicodeChar on Windows when not in comptime to avoid including a
     // redundant copy of the uppercase data.
     const upcaseImpl = switch (builtin.os.tag) {
-        .windows => if (@inComptime()) nls.upcaseW else ntdll.RtlUpcaseUnicodeChar,
+        .windows => if (@incomptime()) nls.upcaseW else ntdll.RtlUpcaseUnicodeChar,
         else => nls.upcaseW,
     };
 
@@ -2216,7 +2216,7 @@ pub fn eqlIgnoreCaseWtf8(a: []const u8, b: []const u8) bool {
         const b_cp = b_wtf8_it.nextCodepoint() orelse return false;
 
         if (a_cp <= std.math.maxInt(u16) and b_cp <= std.math.maxInt(u16)) {
-            if (a_cp != b_cp and upcaseImpl(@intCast(a_cp)) != upcaseImpl(@intCast(b_cp))) {
+            if (a_cp != b_cp and upcaseImpl(@intcast(a_cp)) != upcaseImpl(@intcast(b_cp))) {
                 return false;
             }
         } else if (a_cp != b_cp) {
@@ -2449,7 +2449,7 @@ pub fn wToPrefixedFileW(dir: ?HANDLE, path: [:0]const u16) Wtf16ToPrefixedFileWE
                 .unc_absolute => nt_prefix.len + 2,
                 else => nt_prefix.len,
             };
-            const buf_len: u32 = @intCast(path_space.data.len - path_buf_offset);
+            const buf_len: u32 = @intcast(path_space.data.len - path_buf_offset);
             const path_to_get: [:0]const u16 = path_to_get: {
                 // If dir is null, then we don't need to bother with GetFinalPathNameByHandle because
                 // RtlGetFullPathName_U will resolve relative paths against the CWD for us.
@@ -2707,7 +2707,7 @@ fn testNtToWin32Namespace(expected: []const u16, path: []const u16) !void {
 }
 
 fn getFullPathNameW(path: [*:0]const u16, out: []u16) !usize {
-    const result = kernel32.GetFullPathNameW(path, @as(u32, @intCast(out.len)), out.ptr, null);
+    const result = kernel32.GetFullPathNameW(path, @as(u32, @intcast(out.len)), out.ptr, null);
     if (result == 0) {
         switch (kernel32.GetLastError()) {
             else => |err| return unexpectedError(err),
@@ -2729,9 +2729,9 @@ pub fn loadWinsockExtensionFunction(comptime T: type, sock: ws2_32.SOCKET, guid:
         sock,
         ws2_32.SIO_GET_EXTENSION_FUNCTION_POINTER,
         &guid,
-        @sizeOf(GUID),
-        @as(?*anyopaque, @ptrFromInt(@intFromPtr(&function))),
-        @sizeOf(T),
+        @sizeof(GUID),
+        @as(?*anyopaque, @ptrfromint(@intfromptr(&function))),
+        @sizeof(T),
         &num_bytes,
         null,
         null,
@@ -2745,7 +2745,7 @@ pub fn loadWinsockExtensionFunction(comptime T: type, sock: ws2_32.SOCKET, guid:
         };
     }
 
-    if (num_bytes != @sizeOf(T)) {
+    if (num_bytes != @sizeof(T)) {
         return error.ShortRead;
     }
 
@@ -2768,24 +2768,24 @@ pub fn unexpectedError(err: Win32Error) UnexpectedError {
             null,
         );
         std.debug.print("error.Unexpected: GetLastError({}): {}\n", .{
-            @intFromEnum(err),
+            @intfromenum(err),
             std.unicode.fmtUtf16Le(buf_wstr[0..len]),
         });
-        std.debug.dumpCurrentStackTrace(@returnAddress());
+        std.debug.dumpCurrentStackTrace(@returnaddress());
     }
     return error.Unexpected;
 }
 
 pub fn unexpectedWSAError(err: ws2_32.WinsockError) UnexpectedError {
-    return unexpectedError(@as(Win32Error, @enumFromInt(@intFromEnum(err))));
+    return unexpectedError(@as(Win32Error, @enumfromint(@intfromenum(err))));
 }
 
 /// Call this when you made a windows NtDll call
 /// and you get an unexpected status.
 pub fn unexpectedStatus(status: NTSTATUS) UnexpectedError {
     if (std.posix.unexpected_error_tracing) {
-        std.debug.print("error.Unexpected NTSTATUS=0x{x}\n", .{@intFromEnum(status)});
-        std.debug.dumpCurrentStackTrace(@returnAddress());
+        std.debug.print("error.Unexpected NTSTATUS=0x{x}\n", .{@intfromenum(status)});
+        std.debug.dumpCurrentStackTrace(@returnaddress());
     }
     return error.Unexpected;
 }
@@ -2868,11 +2868,11 @@ pub const LRESULT = LONG_PTR;
 
 pub const va_list = *opaque {};
 
-pub const TCHAR = @compileError("Deprecated: choose between `CHAR` or `WCHAR` directly instead.");
-pub const LPTSTR = @compileError("Deprecated: choose between `LPSTR` or `LPWSTR` directly instead.");
-pub const LPCTSTR = @compileError("Deprecated: choose between `LPCSTR` or `LPCWSTR` directly instead.");
-pub const PTSTR = @compileError("Deprecated: choose between `PSTR` or `PWSTR` directly instead.");
-pub const PCTSTR = @compileError("Deprecated: choose between `PCSTR` or `PCWSTR` directly instead.");
+pub const TCHAR = @compileerror("Deprecated: choose between `CHAR` or `WCHAR` directly instead.");
+pub const LPTSTR = @compileerror("Deprecated: choose between `LPSTR` or `LPWSTR` directly instead.");
+pub const LPCTSTR = @compileerror("Deprecated: choose between `LPCSTR` or `LPCWSTR` directly instead.");
+pub const PTSTR = @compileerror("Deprecated: choose between `PSTR` or `PWSTR` directly instead.");
+pub const PCTSTR = @compileerror("Deprecated: choose between `PCSTR` or `PCWSTR` directly instead.");
 
 pub const TRUE = 1;
 pub const FALSE = 0;
@@ -2981,10 +2981,10 @@ pub fn CTL_CODE(deviceType: u16, function: u12, method: TransferType, access: u2
     return (@as(DWORD, deviceType) << 16) |
         (@as(DWORD, access) << 14) |
         (@as(DWORD, function) << 2) |
-        @intFromEnum(method);
+        @intfromenum(method);
 }
 
-pub const INVALID_HANDLE_VALUE = @as(HANDLE, @ptrFromInt(maxInt(usize)));
+pub const INVALID_HANDLE_VALUE = @as(HANDLE, @ptrfromint(maxInt(usize)));
 
 pub const INVALID_FILE_ATTRIBUTES = @as(DWORD, maxInt(DWORD));
 
@@ -3622,7 +3622,7 @@ pub const GUID = extern struct {
             bytes[i] = (try std.fmt.charToDigit(s[hex_offset], 16)) << 4 |
                 try std.fmt.charToDigit(s[hex_offset + 1], 16);
         }
-        return @as(GUID, @bitCast(bytes));
+        return @as(GUID, @bitcast(bytes));
     }
 };
 
@@ -3654,19 +3654,19 @@ pub const KF_FLAG_ALIAS_ONLY = -2147483648;
 
 pub const S_OK = 0;
 pub const S_FALSE = 0x00000001;
-pub const E_NOTIMPL = @as(c_long, @bitCast(@as(c_ulong, 0x80004001)));
-pub const E_NOINTERFACE = @as(c_long, @bitCast(@as(c_ulong, 0x80004002)));
-pub const E_POINTER = @as(c_long, @bitCast(@as(c_ulong, 0x80004003)));
-pub const E_ABORT = @as(c_long, @bitCast(@as(c_ulong, 0x80004004)));
-pub const E_FAIL = @as(c_long, @bitCast(@as(c_ulong, 0x80004005)));
-pub const E_UNEXPECTED = @as(c_long, @bitCast(@as(c_ulong, 0x8000FFFF)));
-pub const E_ACCESSDENIED = @as(c_long, @bitCast(@as(c_ulong, 0x80070005)));
-pub const E_HANDLE = @as(c_long, @bitCast(@as(c_ulong, 0x80070006)));
-pub const E_OUTOFMEMORY = @as(c_long, @bitCast(@as(c_ulong, 0x8007000E)));
-pub const E_INVALIDARG = @as(c_long, @bitCast(@as(c_ulong, 0x80070057)));
+pub const E_NOTIMPL = @as(c_long, @bitcast(@as(c_ulong, 0x80004001)));
+pub const E_NOINTERFACE = @as(c_long, @bitcast(@as(c_ulong, 0x80004002)));
+pub const E_POINTER = @as(c_long, @bitcast(@as(c_ulong, 0x80004003)));
+pub const E_ABORT = @as(c_long, @bitcast(@as(c_ulong, 0x80004004)));
+pub const E_FAIL = @as(c_long, @bitcast(@as(c_ulong, 0x80004005)));
+pub const E_UNEXPECTED = @as(c_long, @bitcast(@as(c_ulong, 0x8000FFFF)));
+pub const E_ACCESSDENIED = @as(c_long, @bitcast(@as(c_ulong, 0x80070005)));
+pub const E_HANDLE = @as(c_long, @bitcast(@as(c_ulong, 0x80070006)));
+pub const E_OUTOFMEMORY = @as(c_long, @bitcast(@as(c_ulong, 0x8007000E)));
+pub const E_INVALIDARG = @as(c_long, @bitcast(@as(c_ulong, 0x80070057)));
 
 pub fn HRESULT_CODE(hr: HRESULT) Win32Error {
-    return @enumFromInt(hr & 0xFFFF);
+    return @enumfromint(hr & 0xFFFF);
 }
 
 pub const FILE_FLAG_BACKUP_SEMANTICS = 0x02000000;
@@ -3758,16 +3758,16 @@ pub const SEC_LARGE_PAGES = 0x80000000;
 
 pub const HKEY = *opaque {};
 
-pub const HKEY_CLASSES_ROOT: HKEY = @ptrFromInt(0x80000000);
-pub const HKEY_CURRENT_USER: HKEY = @ptrFromInt(0x80000001);
-pub const HKEY_LOCAL_MACHINE: HKEY = @ptrFromInt(0x80000002);
-pub const HKEY_USERS: HKEY = @ptrFromInt(0x80000003);
-pub const HKEY_PERFORMANCE_DATA: HKEY = @ptrFromInt(0x80000004);
-pub const HKEY_PERFORMANCE_TEXT: HKEY = @ptrFromInt(0x80000050);
-pub const HKEY_PERFORMANCE_NLSTEXT: HKEY = @ptrFromInt(0x80000060);
-pub const HKEY_CURRENT_CONFIG: HKEY = @ptrFromInt(0x80000005);
-pub const HKEY_DYN_DATA: HKEY = @ptrFromInt(0x80000006);
-pub const HKEY_CURRENT_USER_LOCAL_SETTINGS: HKEY = @ptrFromInt(0x80000007);
+pub const HKEY_CLASSES_ROOT: HKEY = @ptrfromint(0x80000000);
+pub const HKEY_CURRENT_USER: HKEY = @ptrfromint(0x80000001);
+pub const HKEY_LOCAL_MACHINE: HKEY = @ptrfromint(0x80000002);
+pub const HKEY_USERS: HKEY = @ptrfromint(0x80000003);
+pub const HKEY_PERFORMANCE_DATA: HKEY = @ptrfromint(0x80000004);
+pub const HKEY_PERFORMANCE_TEXT: HKEY = @ptrfromint(0x80000050);
+pub const HKEY_PERFORMANCE_NLSTEXT: HKEY = @ptrfromint(0x80000060);
+pub const HKEY_CURRENT_CONFIG: HKEY = @ptrfromint(0x80000005);
+pub const HKEY_DYN_DATA: HKEY = @ptrfromint(0x80000006);
+pub const HKEY_CURRENT_USER_LOCAL_SETTINGS: HKEY = @ptrfromint(0x80000007);
 
 /// Combines the STANDARD_RIGHTS_REQUIRED, KEY_QUERY_VALUE, KEY_SET_VALUE, KEY_CREATE_SUB_KEY,
 /// KEY_ENUMERATE_SUB_KEYS, KEY_NOTIFY, and KEY_CREATE_LINK access rights.
@@ -4057,7 +4057,7 @@ pub const FLOATING_SAVE_AREA = switch (native_arch) {
         RegisterArea: [80]BYTE,
         Cr0NpxState: DWORD,
     },
-    else => @compileError("FLOATING_SAVE_AREA only defined on x86"),
+    else => @compileerror("FLOATING_SAVE_AREA only defined on x86"),
 };
 
 pub const M128A = switch (native_arch) {
@@ -4065,7 +4065,7 @@ pub const M128A = switch (native_arch) {
         Low: ULONGLONG,
         High: LONGLONG,
     },
-    else => @compileError("M128A only defined on x86_64"),
+    else => @compileerror("M128A only defined on x86_64"),
 };
 
 pub const XMM_SAVE_AREA32 = switch (native_arch) {
@@ -4087,7 +4087,7 @@ pub const XMM_SAVE_AREA32 = switch (native_arch) {
         XmmRegisters: [16]M128A,
         Reserved4: [96]BYTE,
     },
-    else => @compileError("XMM_SAVE_AREA32 only defined on x86_64"),
+    else => @compileerror("XMM_SAVE_AREA32 only defined on x86_64"),
 };
 
 pub const NEON128 = switch (native_arch) {
@@ -4101,7 +4101,7 @@ pub const NEON128 = switch (native_arch) {
         H: [8]WORD,
         B: [16]BYTE,
     },
-    else => @compileError("NEON128 only defined on aarch64"),
+    else => @compileerror("NEON128 only defined on aarch64"),
 };
 
 pub const CONTEXT = switch (native_arch) {
@@ -4284,7 +4284,7 @@ pub const CONTEXT = switch (native_arch) {
             ctx.Sp = sp;
         }
     },
-    else => @compileError("CONTEXT is not defined for this architecture"),
+    else => @compileerror("CONTEXT is not defined for this architecture"),
 };
 
 pub const RUNTIME_FUNCTION = switch (native_arch) {
@@ -4308,7 +4308,7 @@ pub const RUNTIME_FUNCTION = switch (native_arch) {
             },
         },
     },
-    else => @compileError("RUNTIME_FUNCTION is not defined for this architecture"),
+    else => @compileerror("RUNTIME_FUNCTION is not defined for this architecture"),
 };
 
 pub const KNONVOLATILE_CONTEXT_POINTERS = switch (native_arch) {
@@ -4338,7 +4338,7 @@ pub const KNONVOLATILE_CONTEXT_POINTERS = switch (native_arch) {
         D14: ?*DWORD64,
         D15: ?*DWORD64,
     },
-    else => @compileError("KNONVOLATILE_CONTEXT_POINTERS is not defined for this architecture"),
+    else => @compileerror("KNONVOLATILE_CONTEXT_POINTERS is not defined for this architecture"),
 };
 
 pub const EXCEPTION_POINTERS = extern struct {
@@ -4443,19 +4443,19 @@ pub const TEB = extern struct {
 comptime {
     // Offsets taken from WinDbg info and Geoff Chappell[1] (RIP)
     // [1]: https://www.geoffchappell.com/studies/windows/km/ntoskrnl/inc/api/pebteb/teb/index.htm
-    assert(@offsetOf(TEB, "NtTib") == 0x00);
-    if (@sizeOf(usize) == 4) {
-        assert(@offsetOf(TEB, "EnvironmentPointer") == 0x1C);
-        assert(@offsetOf(TEB, "ClientId") == 0x20);
-        assert(@offsetOf(TEB, "ActiveRpcHandle") == 0x28);
-        assert(@offsetOf(TEB, "ThreadLocalStoragePointer") == 0x2C);
-        assert(@offsetOf(TEB, "ProcessEnvironmentBlock") == 0x30);
-    } else if (@sizeOf(usize) == 8) {
-        assert(@offsetOf(TEB, "EnvironmentPointer") == 0x38);
-        assert(@offsetOf(TEB, "ClientId") == 0x40);
-        assert(@offsetOf(TEB, "ActiveRpcHandle") == 0x50);
-        assert(@offsetOf(TEB, "ThreadLocalStoragePointer") == 0x58);
-        assert(@offsetOf(TEB, "ProcessEnvironmentBlock") == 0x60);
+    assert(@offsetof(TEB, "NtTib") == 0x00);
+    if (@sizeof(usize) == 4) {
+        assert(@offsetof(TEB, "EnvironmentPointer") == 0x1C);
+        assert(@offsetof(TEB, "ClientId") == 0x20);
+        assert(@offsetof(TEB, "ActiveRpcHandle") == 0x28);
+        assert(@offsetof(TEB, "ThreadLocalStoragePointer") == 0x2C);
+        assert(@offsetof(TEB, "ProcessEnvironmentBlock") == 0x30);
+    } else if (@sizeof(usize) == 8) {
+        assert(@offsetof(TEB, "EnvironmentPointer") == 0x38);
+        assert(@offsetof(TEB, "ClientId") == 0x40);
+        assert(@offsetof(TEB, "ActiveRpcHandle") == 0x50);
+        assert(@offsetof(TEB, "ThreadLocalStoragePointer") == 0x58);
+        assert(@offsetof(TEB, "ProcessEnvironmentBlock") == 0x60);
     }
 }
 
@@ -4575,7 +4575,7 @@ pub const PEB = extern struct {
     // note: there is padding here on 64 bit
     ActiveProcessAffinityMask: KAFFINITY,
     GdiHandleBuffer: [
-        switch (@sizeOf(usize)) {
+        switch (@sizeof(usize)) {
             4 => 0x22,
             8 => 0x3C,
             else => unreachable,
@@ -4764,11 +4764,11 @@ pub const FILE_BOTH_DIRECTORY_INFORMATION = FILE_BOTH_DIR_INFORMATION;
 pub fn FileInformationIterator(comptime FileInformationType: type) type {
     return struct {
         byte_offset: usize = 0,
-        buf: []u8 align(@alignOf(FileInformationType)),
+        buf: []u8 align(@alignof(FileInformationType)),
 
         pub fn next(self: *@This()) ?*FileInformationType {
             if (self.byte_offset >= self.buf.len) return null;
-            const cur: *FileInformationType = @ptrCast(@alignCast(&self.buf[self.byte_offset]));
+            const cur: *FileInformationType = @ptrcast(@aligncast(&self.buf[self.byte_offset]));
             if (cur.NextEntryOffset == 0) {
                 self.byte_offset = self.buf.len;
             } else {
@@ -4848,7 +4848,7 @@ pub const GetProcessMemoryInfoError = error{
 
 pub fn GetProcessMemoryInfo(hProcess: HANDLE) GetProcessMemoryInfoError!VM_COUNTERS {
     var vmc: VM_COUNTERS = undefined;
-    const rc = ntdll.NtQueryInformationProcess(hProcess, .ProcessVmCounters, &vmc, @sizeOf(VM_COUNTERS), null);
+    const rc = ntdll.NtQueryInformationProcess(hProcess, .ProcessVmCounters, &vmc, @sizeof(VM_COUNTERS), null);
     switch (rc) {
         .SUCCESS => return vmc,
         .ACCESS_DENIED => return error.AccessDenied,
@@ -5293,11 +5293,11 @@ pub const KUSER_SHARED_DATA = extern struct {
 /// Read-only user-mode address for the shared data.
 /// https://www.geoffchappell.com/studies/windows/km/ntoskrnl/inc/api/ntexapi_x/kuser_shared_data/index.htm
 /// https://msrc-blog.microsoft.com/2022/04/05/randomizing-the-kuser_shared_data-structure-on-windows/
-pub const SharedUserData: *const KUSER_SHARED_DATA = @as(*const KUSER_SHARED_DATA, @ptrFromInt(0x7FFE0000));
+pub const SharedUserData: *const KUSER_SHARED_DATA = @as(*const KUSER_SHARED_DATA, @ptrfromint(0x7FFE0000));
 
 pub fn IsProcessorFeaturePresent(feature: PF) bool {
-    if (@intFromEnum(feature) >= PROCESSOR_FEATURE_MAX) return false;
-    return SharedUserData.ProcessorFeatures[@intFromEnum(feature)] == 1;
+    if (@intfromenum(feature) >= PROCESSOR_FEATURE_MAX) return false;
+    return SharedUserData.ProcessorFeatures[@intfromenum(feature)] == 1;
 }
 
 pub const TH32CS_SNAPHEAPLIST = 0x00000001;
@@ -5514,7 +5514,7 @@ pub fn ProcessBaseAddress(handle: HANDLE) ProcessBaseAddressError!HMODULE {
         handle,
         .ProcessBasicInformation,
         &info,
-        @sizeOf(PROCESS_BASIC_INFORMATION),
+        @sizeof(PROCESS_BASIC_INFORMATION),
         &nread,
     );
     switch (rc) {
@@ -5525,8 +5525,8 @@ pub fn ProcessBaseAddress(handle: HANDLE) ProcessBaseAddressError!HMODULE {
         else => return unexpectedStatus(rc),
     }
 
-    var peb_buf: [@sizeOf(PEB)]u8 align(@alignOf(PEB)) = undefined;
+    var peb_buf: [@sizeof(PEB)]u8 align(@alignof(PEB)) = undefined;
     const peb_out = try ReadProcessMemory(handle, info.PebBaseAddress, &peb_buf);
-    const ppeb: *const PEB = @ptrCast(@alignCast(peb_out.ptr));
+    const ppeb: *const PEB = @ptrcast(@aligncast(peb_out.ptr));
     return ppeb.ImageBaseAddress;
 }

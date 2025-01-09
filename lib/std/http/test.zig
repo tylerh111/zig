@@ -178,7 +178,7 @@ test "echo content server" {
                     handleRequest(&request) catch |err| {
                         // This message helps the person troubleshooting determine whether
                         // output comes from the server thread or the client thread.
-                        std.debug.print("handleRequest failed with '{s}'\n", .{@errorName(err)});
+                        std.debug.print("handleRequest failed with '{s}'\n", .{@errorname(err)});
                         return err;
                     };
                 }
@@ -187,8 +187,8 @@ test "echo content server" {
 
         fn handleRequest(request: *http.Server.Request) !void {
             //std.debug.print("server received {s} {s} {s}\n", .{
-            //    @tagName(request.head.method),
-            //    @tagName(request.head.version),
+            //    @tagname(request.head.method),
+            //    @tagname(request.head.version),
             //    request.head.target,
             //});
 
@@ -382,7 +382,7 @@ test "general client/server API coverage" {
 
             log.info("{} {s} {s}", .{
                 request.head.method,
-                @tagName(request.head.version),
+                @tagname(request.head.version),
                 request.head.target,
             });
 

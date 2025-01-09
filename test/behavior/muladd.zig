@@ -5,7 +5,7 @@ const expect = std.testing.expect;
 const no_x86_64_hardware_fma_support = builtin.zig_backend == .stage2_x86_64 and
     !std.Target.x86.featureSetHas(builtin.cpu.features, .fma);
 
-test "@mulAdd" {
+test "@muladd" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     if (no_x86_64_hardware_fma_support) return error.SkipZigTest; // TODO
@@ -23,18 +23,18 @@ fn testMulAdd() !void {
         var b: f32 = 2.5;
         var c: f32 = 6.25;
         _ = .{ &a, &b, &c };
-        try expect(@mulAdd(f32, a, b, c) == 20);
+        try expect(@muladd(f32, a, b, c) == 20);
     }
     {
         var a: f64 = 5.5;
         var b: f64 = 2.5;
         var c: f64 = 6.25;
         _ = .{ &a, &b, &c };
-        try expect(@mulAdd(f64, a, b, c) == 20);
+        try expect(@muladd(f64, a, b, c) == 20);
     }
 }
 
-test "@mulAdd f16" {
+test "@muladd f16" {
     if (builtin.zig_backend == .stage2_arm) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_aarch64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
@@ -50,10 +50,10 @@ fn testMulAdd16() !void {
     var b: f16 = 2.5;
     var c: f16 = 6.25;
     _ = .{ &a, &b, &c };
-    try expect(@mulAdd(f16, a, b, c) == 20);
+    try expect(@muladd(f16, a, b, c) == 20);
 }
 
-test "@mulAdd f80" {
+test "@muladd f80" {
     if (builtin.zig_backend == .stage2_arm) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_aarch64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
@@ -71,10 +71,10 @@ fn testMulAdd80() !void {
     var b: f80 = 2.5;
     var c: f80 = 6.25;
     _ = .{ &a, &b, &c };
-    try expect(@mulAdd(f80, a, b, c) == 20);
+    try expect(@muladd(f80, a, b, c) == 20);
 }
 
-test "@mulAdd f128" {
+test "@muladd f128" {
     if (builtin.zig_backend == .stage2_arm) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_aarch64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
@@ -92,7 +92,7 @@ fn testMulAdd128() !void {
     var b: f128 = 2.5;
     var c: f128 = 6.25;
     _ = .{ &a, &b, &c };
-    try expect(@mulAdd(f128, a, b, c) == 20);
+    try expect(@muladd(f128, a, b, c) == 20);
 }
 
 fn vector16() !void {
@@ -100,7 +100,7 @@ fn vector16() !void {
     var b = @Vector(4, f16){ 2.5, 2.5, 2.5, 2.5 };
     var c = @Vector(4, f16){ 6.25, 6.25, 6.25, 6.25 };
     _ = .{ &a, &b, &c };
-    const x = @mulAdd(@Vector(4, f16), a, b, c);
+    const x = @muladd(@Vector(4, f16), a, b, c);
 
     try expect(x[0] == 20);
     try expect(x[1] == 20);
@@ -125,7 +125,7 @@ fn vector32() !void {
     var b = @Vector(4, f32){ 2.5, 2.5, 2.5, 2.5 };
     var c = @Vector(4, f32){ 6.25, 6.25, 6.25, 6.25 };
     _ = .{ &a, &b, &c };
-    const x = @mulAdd(@Vector(4, f32), a, b, c);
+    const x = @muladd(@Vector(4, f32), a, b, c);
 
     try expect(x[0] == 20);
     try expect(x[1] == 20);
@@ -150,7 +150,7 @@ fn vector64() !void {
     var b = @Vector(4, f64){ 2.5, 2.5, 2.5, 2.5 };
     var c = @Vector(4, f64){ 6.25, 6.25, 6.25, 6.25 };
     _ = .{ &a, &b, &c };
-    const x = @mulAdd(@Vector(4, f64), a, b, c);
+    const x = @muladd(@Vector(4, f64), a, b, c);
 
     try expect(x[0] == 20);
     try expect(x[1] == 20);
@@ -175,7 +175,7 @@ fn vector80() !void {
     var b = @Vector(4, f80){ 2.5, 2.5, 2.5, 2.5 };
     var c = @Vector(4, f80){ 6.25, 6.25, 6.25, 6.25 };
     _ = .{ &a, &b, &c };
-    const x = @mulAdd(@Vector(4, f80), a, b, c);
+    const x = @muladd(@Vector(4, f80), a, b, c);
     try expect(x[0] == 20);
     try expect(x[1] == 20);
     try expect(x[2] == 20);
@@ -201,7 +201,7 @@ fn vector128() !void {
     var b = @Vector(4, f128){ 2.5, 2.5, 2.5, 2.5 };
     var c = @Vector(4, f128){ 6.25, 6.25, 6.25, 6.25 };
     _ = .{ &a, &b, &c };
-    const x = @mulAdd(@Vector(4, f128), a, b, c);
+    const x = @muladd(@Vector(4, f128), a, b, c);
 
     try expect(x[0] == 20);
     try expect(x[1] == 20);

@@ -343,8 +343,8 @@ pub fn createEmpty(
     assert(self.llvm_object == null);
     const gpa = comp.gpa;
 
-    try self.strtab.buffer.ensureUnusedCapacity(gpa, @sizeOf(u32));
-    self.strtab.buffer.appendNTimesAssumeCapacity(0, @sizeOf(u32));
+    try self.strtab.buffer.ensureUnusedCapacity(gpa, @sizeof(u32));
+    self.strtab.buffer.appendNTimesAssumeCapacity(0, @sizeof(u32));
 
     try self.temp_strtab.buffer.append(gpa, 0);
 
@@ -359,7 +359,7 @@ pub fn createEmpty(
     });
 
     if (self.text_section_index == null) {
-        const file_size: u32 = @intCast(options.program_code_size_hint);
+        const file_size: u32 = @intcast(options.program_code_size_hint);
         self.text_section_index = try self.allocateSection(".text", file_size, .{
             .CNT_CODE = 1,
             .MEM_EXECUTE = 1,
@@ -368,7 +368,7 @@ pub fn createEmpty(
     }
 
     if (self.got_section_index == null) {
-        const file_size = @as(u32, @intCast(options.symbol_count_hint)) * self.ptr_width.size();
+        const file_size = @as(u32, @intcast(options.symbol_count_hint)) * self.ptr_width.size();
         self.got_section_index = try self.allocateSection(".got", file_size, .{
             .CNT_INITIALIZED_DATA = 1,
             .MEM_READ = 1,
@@ -393,7 +393,7 @@ pub fn createEmpty(
     }
 
     if (self.idata_section_index == null) {
-        const file_size = @as(u32, @intCast(options.symbol_count_hint)) * self.ptr_width.size();
+        const file_size = @as(u32, @intcast(options.symbol_count_hint)) * self.ptr_width.size();
         self.idata_section_index = try self.allocateSection(".idata", file_size, .{
             .CNT_INITIALIZED_DATA = 1,
             .MEM_READ = 1,
@@ -401,7 +401,7 @@ pub fn createEmpty(
     }
 
     if (self.reloc_section_index == null) {
-        const file_size = @as(u32, @intCast(options.symbol_count_hint)) * @sizeOf(coff.BaseRelocation);
+        const file_size = @as(u32, @intcast(options.symbol_count_hint)) * @sizeof(coff.BaseRelocation);
         self.reloc_section_index = try self.allocateSection(".reloc", file_size, .{
             .CNT_INITIALIZED_DATA = 1,
             .MEM_DISCARDABLE = 1,
@@ -410,8 +410,8 @@ pub fn createEmpty(
     }
 
     if (self.strtab_offset == null) {
-        const file_size = @as(u32, @intCast(self.strtab.buffer.items.len));
-        self.strtab_offset = self.findFreeSpace(file_size, @alignOf(u32)); // 4bytes aligned seems like a good idea here
+        const file_size = @as(u32, @intcast(self.strtab.buffer.items.len));
+        self.strtab_offset = self.findFreeSpace(file_size, @alignof(u32)); // 4bytes aligned seems like a good idea here
         log.debug("found strtab free space 0x{x} to 0x{x}", .{ self.strtab_offset.?, self.strtab_offset.? + file_size });
     }
 
@@ -516,7 +516,7 @@ pub fn deinit(self: *Coff) void {
 }
 
 fn allocateSection(self: *Coff, name: []const u8, size: u32, flags: coff.SectionHeaderFlags) !u16 {
-    const index = @as(u16, @intCast(self.sections.slice().len));
+    const index = @as(u16, @intcast(self.sections.slice().len));
     const off = self.findFreeSpace(size, default_file_alignment);
     // Memory is always allocated in sequence
     // TODO: investigate if we can allocate .text last; this way it would never need to grow in memory!
@@ -625,7 +625,7 @@ fn allocateAtom(self: *Coff, atom_index: Atom.Index, new_atom_size: u32, alignme
     defer tracy.end();
 
     const atom = self.getAtom(atom_index);
-    const sect_id = @intFromEnum(atom.getSymbol(self).section_number) - 1;
+    const sect_id = @intfromenum(atom.getSymbol(self).section_number) - 1;
     const header = &self.sections.items(.header)[sect_id];
     const free_list = &self.sections.items(.free_list)[sect_id];
     const maybe_last_atom_index = &self.sections.items(.last_atom_index)[sect_id];
@@ -739,7 +739,7 @@ pub fn allocateSymbol(self: *Coff) !u32 {
             break :blk index;
         } else {
             log.debug("  (allocating symbol index {d})", .{self.locals.items.len});
-            const index = @as(u32, @intCast(self.locals.items.len));
+            const index = @as(u32, @intcast(self.locals.items.len));
             _ = self.locals.addOneAssumeCapacity();
             break :blk index;
         }
@@ -767,7 +767,7 @@ fn allocateGlobal(self: *Coff) !u32 {
             break :blk index;
         } else {
             log.debug("  (allocating global index {d})", .{self.globals.items.len});
-            const index = @as(u32, @intCast(self.globals.items.len));
+            const index = @as(u32, @intcast(self.globals.items.len));
             _ = self.globals.addOneAssumeCapacity();
             break :blk index;
         }
@@ -792,7 +792,7 @@ fn addGotEntry(self: *Coff, target: SymbolWithLoc) !void {
 
 pub fn createAtom(self: *Coff) !Atom.Index {
     const gpa = self.base.comp.gpa;
-    const atom_index = @as(Atom.Index, @intCast(self.atoms.items.len));
+    const atom_index = @as(Atom.Index, @intcast(self.atoms.items.len));
     const atom = try self.atoms.addOne(gpa);
     const sym_index = try self.allocateSymbol();
     try self.atom_by_index_table.putNoClobber(gpa, sym_index, atom_index);
@@ -827,7 +827,7 @@ fn shrinkAtom(self: *Coff, atom_index: Atom.Index, new_block_size: u32) void {
 fn writeAtom(self: *Coff, atom_index: Atom.Index, code: []u8) !void {
     const atom = self.getAtom(atom_index);
     const sym = atom.getSymbol(self);
-    const section = self.sections.get(@intFromEnum(sym.section_number) - 1);
+    const section = self.sections.get(@intfromenum(sym.section_number) - 1);
     const file_offset = section.header.pointer_to_raw_data + sym.value - section.header.virtual_address;
 
     log.debug("writing atom for symbol {s} at file offset 0x{x} to 0x{x}", .{
@@ -857,14 +857,14 @@ fn writeAtom(self: *Coff, atom_index: Atom.Index, code: []u8) !void {
 
     if (is_hot_update_compatible) {
         if (self.base.child_pid) |handle| {
-            const slide = @intFromPtr(self.hot_state.loaded_base_address.?);
+            const slide = @intfromptr(self.hot_state.loaded_base_address.?);
 
             const mem_code = try gpa.dupe(u8, code);
             defer gpa.free(mem_code);
             self.resolveRelocs(atom_index, relocs.items, mem_code, slide);
 
             const vaddr = sym.value + slide;
-            const pvaddr = @as(*anyopaque, @ptrFromInt(vaddr));
+            const pvaddr = @as(*anyopaque, @ptrfromint(vaddr));
 
             log.debug("writing to memory at address {x}", .{vaddr});
 
@@ -874,11 +874,11 @@ fn writeAtom(self: *Coff, atom_index: Atom.Index, code: []u8) !void {
 
             if (section.header.flags.MEM_WRITE == 0) {
                 writeMemProtected(handle, pvaddr, mem_code) catch |err| {
-                    log.warn("writing to protected memory failed with error: {s}", .{@errorName(err)});
+                    log.warn("writing to protected memory failed with error: {s}", .{@errorname(err)});
                 };
             } else {
                 writeMem(handle, pvaddr, mem_code) catch |err| {
-                    log.warn("writing to protected memory failed with error: {s}", .{@errorName(err)});
+                    log.warn("writing to protected memory failed with error: {s}", .{@errorname(err)});
                 };
             }
         }
@@ -918,7 +918,7 @@ fn writeOffsetTableEntry(self: *Coff, index: usize) !void {
     const sect_id = self.got_section_index.?;
 
     if (self.got_table_count_dirty) {
-        const needed_size = @as(u32, @intCast(self.got_table.entries.items.len * self.ptr_width.size()));
+        const needed_size = @as(u32, @intcast(self.got_table.entries.items.len * self.ptr_width.size()));
         try self.growSection(sect_id, needed_size);
         self.got_table_count_dirty = false;
     }
@@ -935,7 +935,7 @@ fn writeOffsetTableEntry(self: *Coff, index: usize) !void {
     switch (self.ptr_width) {
         .p32 => {
             var buf: [4]u8 = undefined;
-            mem.writeInt(u32, &buf, @as(u32, @intCast(entry_value + self.image_base)), .little);
+            mem.writeInt(u32, &buf, @as(u32, @intcast(entry_value + self.image_base)), .little);
             try self.base.file.?.pwriteAll(&buf, file_offset);
         },
         .p64 => {
@@ -948,9 +948,9 @@ fn writeOffsetTableEntry(self: *Coff, index: usize) !void {
     if (is_hot_update_compatible) {
         if (self.base.child_pid) |handle| {
             const gpa = self.base.comp.gpa;
-            const slide = @intFromPtr(self.hot_state.loaded_base_address.?);
+            const slide = @intfromptr(self.hot_state.loaded_base_address.?);
             const actual_vmaddr = vmaddr + slide;
-            const pvaddr = @as(*anyopaque, @ptrFromInt(actual_vmaddr));
+            const pvaddr = @as(*anyopaque, @ptrfromint(actual_vmaddr));
             log.debug("writing GOT entry to memory at address {x}", .{actual_vmaddr});
             if (build_options.enable_logging) {
                 switch (self.ptr_width) {
@@ -968,16 +968,16 @@ fn writeOffsetTableEntry(self: *Coff, index: usize) !void {
             switch (self.ptr_width) {
                 .p32 => {
                     var buf: [4]u8 = undefined;
-                    mem.writeInt(u32, &buf, @as(u32, @intCast(entry_value + slide)), .little);
+                    mem.writeInt(u32, &buf, @as(u32, @intcast(entry_value + slide)), .little);
                     writeMem(handle, pvaddr, &buf) catch |err| {
-                        log.warn("writing to protected memory failed with error: {s}", .{@errorName(err)});
+                        log.warn("writing to protected memory failed with error: {s}", .{@errorname(err)});
                     };
                 },
                 .p64 => {
                     var buf: [8]u8 = undefined;
                     mem.writeInt(u64, &buf, entry_value + slide, .little);
                     writeMem(handle, pvaddr, &buf) catch |err| {
-                        log.warn("writing to protected memory failed with error: {s}", .{@errorName(err)});
+                        log.warn("writing to protected memory failed with error: {s}", .{@errorname(err)});
                     };
                 },
             }
@@ -1036,7 +1036,7 @@ pub fn ptraceAttach(self: *Coff, handle: std.process.Child.Id) !void {
 
     log.debug("attaching to process with handle {*}", .{handle});
     self.hot_state.loaded_base_address = std.os.windows.ProcessBaseAddress(handle) catch |err| {
-        log.warn("failed to get base address for the process with error: {s}", .{@errorName(err)});
+        log.warn("failed to get base address for the process with error: {s}", .{@errorname(err)});
         return;
     };
 }
@@ -1058,7 +1058,7 @@ fn freeAtom(self: *Coff, atom_index: Atom.Index) void {
 
     const atom = self.getAtom(atom_index);
     const sym = atom.getSymbol(self);
-    const sect_id = @intFromEnum(sym.section_number) - 1;
+    const sect_id = @intfromenum(sym.section_number) - 1;
     const free_list = &self.sections.items(.free_list)[sect_id];
     var already_have_free_list_node = false;
     {
@@ -1208,7 +1208,7 @@ fn lowerConst(self: *Coff, name: []const u8, val: Value, required_alignment: Int
     const atom_index = try self.createAtom();
     const sym = self.getAtom(atom_index).getSymbolPtr(self);
     try self.setSymbolName(sym, name);
-    sym.section_number = @as(coff.SectionNumber, @enumFromInt(sect_id + 1));
+    sym.section_number = @as(coff.SectionNumber, @enumfromint(sect_id + 1));
 
     const res = try codegen.generateSymbol(&self.base, src_loc, val, &code_buffer, .none, .{
         .parent_atom_index = self.getAtom(atom_index).getSymbolIndex().?,
@@ -1219,11 +1219,11 @@ fn lowerConst(self: *Coff, name: []const u8, val: Value, required_alignment: Int
     };
 
     const atom = self.getAtomPtr(atom_index);
-    atom.size = @as(u32, @intCast(code.len));
+    atom.size = @as(u32, @intcast(code.len));
     atom.getSymbolPtr(self).value = try self.allocateAtom(
         atom_index,
         atom.size,
-        @intCast(required_alignment.toByteUnits().?),
+        @intcast(required_alignment.toByteUnits().?),
     );
     errdefer self.freeAtom(atom_index);
 
@@ -1305,7 +1305,7 @@ fn updateLazySymbolAtom(
     defer code_buffer.deinit();
 
     const name = try std.fmt.allocPrint(gpa, "__lazy_{s}_{}", .{
-        @tagName(sym.kind),
+        @tagname(sym.kind),
         sym.ty.fmt(mod),
     });
     defer gpa.free(name);
@@ -1338,13 +1338,13 @@ fn updateLazySymbolAtom(
         },
     };
 
-    const code_len = @as(u32, @intCast(code.len));
+    const code_len = @as(u32, @intcast(code.len));
     const symbol = atom.getSymbolPtr(self);
     try self.setSymbolName(symbol, name);
-    symbol.section_number = @as(coff.SectionNumber, @enumFromInt(section_index + 1));
+    symbol.section_number = @as(coff.SectionNumber, @enumfromint(section_index + 1));
     symbol.type = .{ .complex_type = .NULL, .base_type = .NULL };
 
-    const vaddr = try self.allocateAtom(atom_index, code_len, @intCast(required_alignment.toByteUnits() orelse 0));
+    const vaddr = try self.allocateAtom(atom_index, code_len, @intcast(required_alignment.toByteUnits() orelse 0));
     errdefer self.freeAtom(atom_index);
 
     log.debug("allocated atom for {s} at 0x{x}", .{ name, vaddr });
@@ -1428,19 +1428,19 @@ fn updateDeclCode(self: *Coff, decl_index: InternPool.DeclIndex, code: []u8, com
     const decl_name = try decl.fullyQualifiedName(mod);
 
     log.debug("updateDeclCode {}{*}", .{ decl_name.fmt(&mod.intern_pool), decl });
-    const required_alignment: u32 = @intCast(decl.getAlignment(mod).toByteUnits() orelse 0);
+    const required_alignment: u32 = @intcast(decl.getAlignment(mod).toByteUnits() orelse 0);
 
     const decl_metadata = self.decls.get(decl_index).?;
     const atom_index = decl_metadata.atom;
     const atom = self.getAtom(atom_index);
     const sym_index = atom.getSymbolIndex().?;
     const sect_index = decl_metadata.section;
-    const code_len = @as(u32, @intCast(code.len));
+    const code_len = @as(u32, @intcast(code.len));
 
     if (atom.size != 0) {
         const sym = atom.getSymbolPtr(self);
         try self.setSymbolName(sym, decl_name.toSlice(&mod.intern_pool));
-        sym.section_number = @as(coff.SectionNumber, @enumFromInt(sect_index + 1));
+        sym.section_number = @as(coff.SectionNumber, @enumfromint(sect_index + 1));
         sym.type = .{ .complex_type = complex_type, .base_type = .NULL };
 
         const capacity = atom.capacity(self);
@@ -1464,7 +1464,7 @@ fn updateDeclCode(self: *Coff, decl_index: InternPool.DeclIndex, code: []u8, com
     } else {
         const sym = atom.getSymbolPtr(self);
         try self.setSymbolName(sym, decl_name.toSlice(&mod.intern_pool));
-        sym.section_number = @as(coff.SectionNumber, @enumFromInt(sect_index + 1));
+        sym.section_number = @as(coff.SectionNumber, @enumfromint(sect_index + 1));
         sym.type = .{ .complex_type = complex_type, .base_type = .NULL };
 
         const vaddr = try self.allocateAtom(atom_index, code_len, required_alignment);
@@ -1625,7 +1625,7 @@ pub fn updateExports(
         const sym = self.getSymbolPtr(sym_loc);
         try self.setSymbolName(sym, exp_name);
         sym.value = atom.getSymbol(self).value;
-        sym.section_number = @as(coff.SectionNumber, @enumFromInt(metadata.section + 1));
+        sym.section_number = @as(coff.SectionNumber, @enumfromint(metadata.section + 1));
         sym.type = atom.getSymbol(self).type;
 
         switch (exp.opts.linkage) {
@@ -1791,7 +1791,7 @@ pub fn flushModule(self: *Coff, arena: Allocator, prog_node: std.Progress.Node) 
 
         const atom = self.getAtom(atom_index);
         const sym = atom.getSymbol(self);
-        const section = self.sections.get(@intFromEnum(sym.section_number) - 1).header;
+        const section = self.sections.get(@intfromenum(sym.section_number) - 1).header;
         const file_offset = section.pointer_to_raw_data + sym.value - section.virtual_address;
 
         var code = std.ArrayList(u8).init(gpa);
@@ -1852,12 +1852,12 @@ pub fn getDeclVAddr(self: *Coff, decl_index: InternPool.DeclIndex, reloc_info: l
     try Atom.addRelocation(self, atom_index, .{
         .type = .direct,
         .target = target,
-        .offset = @as(u32, @intCast(reloc_info.offset)),
+        .offset = @as(u32, @intcast(reloc_info.offset)),
         .addend = reloc_info.addend,
         .pcrel = false,
         .length = 3,
     });
-    try Atom.addBaseRelocation(self, atom_index, @as(u32, @intCast(reloc_info.offset)));
+    try Atom.addBaseRelocation(self, atom_index, @as(u32, @intcast(reloc_info.offset)));
 
     return 0;
 }
@@ -1884,7 +1884,7 @@ pub fn lowerAnonDecl(
     const val = Value.fromInterned(decl_val);
     var name_buf: [32]u8 = undefined;
     const name = std.fmt.bufPrint(&name_buf, "__anon_{d}", .{
-        @intFromEnum(decl_val),
+        @intfromenum(decl_val),
     }) catch unreachable;
     const res = self.lowerConst(
         name,
@@ -1898,7 +1898,7 @@ pub fn lowerAnonDecl(
             gpa,
             src_loc,
             "lowerAnonDecl failed with error: {s}",
-            .{@errorName(e)},
+            .{@errorname(e)},
         ) },
     };
     const atom_index = switch (res) {
@@ -1919,12 +1919,12 @@ pub fn getAnonDeclVAddr(self: *Coff, decl_val: InternPool.Index, reloc_info: lin
     try Atom.addRelocation(self, atom_index, .{
         .type = .direct,
         .target = target,
-        .offset = @as(u32, @intCast(reloc_info.offset)),
+        .offset = @as(u32, @intcast(reloc_info.offset)),
         .addend = reloc_info.addend,
         .pcrel = false,
         .length = 3,
     });
-    try Atom.addBaseRelocation(self, atom_index, @as(u32, @intCast(reloc_info.offset)));
+    try Atom.addBaseRelocation(self, atom_index, @as(u32, @intcast(reloc_info.offset)));
 
     return 0;
 }
@@ -1995,7 +1995,7 @@ fn writeBaseRelocations(self: *Coff) !void {
                     gop.value_ptr.* = std.ArrayList(coff.BaseRelocation).init(gpa);
                 }
                 try gop.value_ptr.append(.{
-                    .offset = @as(u12, @intCast(rva - page)),
+                    .offset = @as(u12, @intcast(rva - page)),
                     .type = .DIR64,
                 });
             }
@@ -2009,14 +2009,14 @@ fn writeBaseRelocations(self: *Coff) !void {
                 const sym = self.getSymbol(entry);
                 if (sym.section_number == .UNDEFINED) continue;
 
-                const rva = @as(u32, @intCast(header.virtual_address + index * self.ptr_width.size()));
+                const rva = @as(u32, @intcast(header.virtual_address + index * self.ptr_width.size()));
                 const page = mem.alignBackward(u32, rva, self.page_size);
                 const gop = try page_table.getOrPut(page);
                 if (!gop.found_existing) {
                     gop.value_ptr.* = std.ArrayList(coff.BaseRelocation).init(gpa);
                 }
                 try gop.value_ptr.append(.{
-                    .offset = @as(u12, @intCast(rva - page)),
+                    .offset = @as(u12, @intcast(rva - page)),
                     .type = .DIR64,
                 });
             }
@@ -2042,8 +2042,8 @@ fn writeBaseRelocations(self: *Coff) !void {
         // Pad to required 4byte alignment
         if (!mem.isAlignedGeneric(
             usize,
-            entries.items.len * @sizeOf(coff.BaseRelocation),
-            @sizeOf(u32),
+            entries.items.len * @sizeof(coff.BaseRelocation),
+            @sizeof(u32),
         )) {
             try entries.append(.{
                 .offset = 0,
@@ -2053,7 +2053,7 @@ fn writeBaseRelocations(self: *Coff) !void {
 
         const block_size = @as(
             u32,
-            @intCast(entries.items.len * @sizeOf(coff.BaseRelocation) + @sizeOf(coff.BaseRelocationDirectoryEntry)),
+            @intcast(entries.items.len * @sizeof(coff.BaseRelocation) + @sizeof(coff.BaseRelocationDirectoryEntry)),
         );
         try buffer.ensureUnusedCapacity(block_size);
         buffer.appendSliceAssumeCapacity(mem.asBytes(&coff.BaseRelocationDirectoryEntry{
@@ -2064,12 +2064,12 @@ fn writeBaseRelocations(self: *Coff) !void {
     }
 
     const header = &self.sections.items(.header)[self.reloc_section_index.?];
-    const needed_size = @as(u32, @intCast(buffer.items.len));
+    const needed_size = @as(u32, @intcast(buffer.items.len));
     try self.growSection(self.reloc_section_index.?, needed_size);
 
     try self.base.file.?.pwriteAll(buffer.items, header.pointer_to_raw_data);
 
-    self.data_directories[@intFromEnum(coff.DirectoryEntry.BASERELOC)] = .{
+    self.data_directories[@intfromenum(coff.DirectoryEntry.BASERELOC)] = .{
         .virtual_address = header.virtual_address,
         .size = needed_size,
     };
@@ -2086,7 +2086,7 @@ fn writeImportTables(self: *Coff) !void {
 
     // Calculate needed size
     var iat_size: u32 = 0;
-    var dir_table_size: u32 = @sizeOf(coff.ImportDirectoryEntry); // sentinel
+    var dir_table_size: u32 = @sizeof(coff.ImportDirectoryEntry); // sentinel
     var lookup_table_size: u32 = 0;
     var names_table_size: u32 = 0;
     var dll_names_size: u32 = 0;
@@ -2094,13 +2094,13 @@ fn writeImportTables(self: *Coff) !void {
         const lib_name = self.temp_strtab.getAssumeExists(off);
         const itable = self.import_tables.values()[i];
         iat_size += itable.size() + 8;
-        dir_table_size += @sizeOf(coff.ImportDirectoryEntry);
-        lookup_table_size += @as(u32, @intCast(itable.entries.items.len + 1)) * @sizeOf(coff.ImportLookupEntry64.ByName);
+        dir_table_size += @sizeof(coff.ImportDirectoryEntry);
+        lookup_table_size += @as(u32, @intcast(itable.entries.items.len + 1)) * @sizeof(coff.ImportLookupEntry64.ByName);
         for (itable.entries.items) |entry| {
             const sym_name = self.getSymbolName(entry);
-            names_table_size += 2 + mem.alignForward(u32, @as(u32, @intCast(sym_name.len + 1)), 2);
+            names_table_size += 2 + mem.alignForward(u32, @as(u32, @intcast(sym_name.len + 1)), 2);
         }
-        dll_names_size += @as(u32, @intCast(lib_name.len + ext.len + 1));
+        dll_names_size += @as(u32, @intcast(lib_name.len + ext.len + 1));
     }
 
     const needed_size = iat_size + dir_table_size + lookup_table_size + names_table_size + dll_names_size;
@@ -2112,8 +2112,8 @@ fn writeImportTables(self: *Coff) !void {
     try buffer.ensureTotalCapacityPrecise(needed_size);
     buffer.resize(needed_size) catch unreachable;
 
-    const dir_header_size = @sizeOf(coff.ImportDirectoryEntry);
-    const lookup_entry_size = @sizeOf(coff.ImportLookupEntry64.ByName);
+    const dir_header_size = @sizeof(coff.ImportDirectoryEntry);
+    const lookup_entry_size = @sizeof(coff.ImportLookupEntry64.ByName);
 
     var iat_offset: u32 = 0;
     var dir_table_offset = iat_size;
@@ -2132,21 +2132,21 @@ fn writeImportTables(self: *Coff) !void {
             .name_rva = header.virtual_address + dll_names_offset,
             .import_address_table_rva = header.virtual_address + iat_offset,
         };
-        @memcpy(buffer.items[dir_table_offset..][0..@sizeOf(coff.ImportDirectoryEntry)], mem.asBytes(&lookup_header));
+        @memcpy(buffer.items[dir_table_offset..][0..@sizeof(coff.ImportDirectoryEntry)], mem.asBytes(&lookup_header));
         dir_table_offset += dir_header_size;
 
         for (itable.entries.items) |entry| {
             const import_name = self.getSymbolName(entry);
 
             // IAT and lookup table entry
-            const lookup = coff.ImportLookupEntry64.ByName{ .name_table_rva = @as(u31, @intCast(header.virtual_address + names_table_offset)) };
+            const lookup = coff.ImportLookupEntry64.ByName{ .name_table_rva = @as(u31, @intcast(header.virtual_address + names_table_offset)) };
             @memcpy(
-                buffer.items[iat_offset..][0..@sizeOf(coff.ImportLookupEntry64.ByName)],
+                buffer.items[iat_offset..][0..@sizeof(coff.ImportLookupEntry64.ByName)],
                 mem.asBytes(&lookup),
             );
             iat_offset += lookup_entry_size;
             @memcpy(
-                buffer.items[lookup_table_offset..][0..@sizeOf(coff.ImportLookupEntry64.ByName)],
+                buffer.items[lookup_table_offset..][0..@sizeof(coff.ImportLookupEntry64.ByName)],
                 mem.asBytes(&lookup),
             );
             lookup_table_offset += lookup_entry_size;
@@ -2155,10 +2155,10 @@ fn writeImportTables(self: *Coff) !void {
             mem.writeInt(u16, buffer.items[names_table_offset..][0..2], 0, .little); // Hint set to 0 until we learn how to parse DLLs
             names_table_offset += 2;
             @memcpy(buffer.items[names_table_offset..][0..import_name.len], import_name);
-            names_table_offset += @as(u32, @intCast(import_name.len));
+            names_table_offset += @as(u32, @intcast(import_name.len));
             buffer.items[names_table_offset] = 0;
             names_table_offset += 1;
-            if (!mem.isAlignedGeneric(usize, names_table_offset, @sizeOf(u16))) {
+            if (!mem.isAlignedGeneric(usize, names_table_offset, @sizeof(u16))) {
                 buffer.items[names_table_offset] = 0;
                 names_table_offset += 1;
             }
@@ -2170,16 +2170,16 @@ fn writeImportTables(self: *Coff) !void {
 
         // Lookup table sentinel
         @memcpy(
-            buffer.items[lookup_table_offset..][0..@sizeOf(coff.ImportLookupEntry64.ByName)],
+            buffer.items[lookup_table_offset..][0..@sizeof(coff.ImportLookupEntry64.ByName)],
             mem.asBytes(&coff.ImportLookupEntry64.ByName{ .name_table_rva = 0 }),
         );
         lookup_table_offset += lookup_entry_size;
 
         // DLL name
         @memcpy(buffer.items[dll_names_offset..][0..lib_name.len], lib_name);
-        dll_names_offset += @as(u32, @intCast(lib_name.len));
+        dll_names_offset += @as(u32, @intcast(lib_name.len));
         @memcpy(buffer.items[dll_names_offset..][0..ext.len], ext);
-        dll_names_offset += @as(u32, @intCast(ext.len));
+        dll_names_offset += @as(u32, @intcast(ext.len));
         buffer.items[dll_names_offset] = 0;
         dll_names_offset += 1;
     }
@@ -2193,7 +2193,7 @@ fn writeImportTables(self: *Coff) !void {
         .import_address_table_rva = 0,
     };
     @memcpy(
-        buffer.items[dir_table_offset..][0..@sizeOf(coff.ImportDirectoryEntry)],
+        buffer.items[dir_table_offset..][0..@sizeof(coff.ImportDirectoryEntry)],
         mem.asBytes(&lookup_header),
     );
     dir_table_offset += dir_header_size;
@@ -2202,11 +2202,11 @@ fn writeImportTables(self: *Coff) !void {
 
     try self.base.file.?.pwriteAll(buffer.items, header.pointer_to_raw_data);
 
-    self.data_directories[@intFromEnum(coff.DirectoryEntry.IMPORT)] = .{
+    self.data_directories[@intfromenum(coff.DirectoryEntry.IMPORT)] = .{
         .virtual_address = header.virtual_address + iat_size,
         .size = dir_table_size,
     };
-    self.data_directories[@intFromEnum(coff.DirectoryEntry.IAT)] = .{
+    self.data_directories[@intfromenum(coff.DirectoryEntry.IAT)] = .{
         .virtual_address = header.virtual_address,
         .size = iat_size,
     };
@@ -2218,11 +2218,11 @@ fn writeStrtab(self: *Coff) !void {
     if (self.strtab_offset == null) return;
 
     const allocated_size = self.allocatedSize(self.strtab_offset.?);
-    const needed_size = @as(u32, @intCast(self.strtab.buffer.items.len));
+    const needed_size = @as(u32, @intcast(self.strtab.buffer.items.len));
 
     if (needed_size > allocated_size) {
         self.strtab_offset = null;
-        self.strtab_offset = @as(u32, @intCast(self.findFreeSpace(needed_size, @alignOf(u32))));
+        self.strtab_offset = @as(u32, @intcast(self.findFreeSpace(needed_size, @alignof(u32))));
     }
 
     log.debug("writing strtab from 0x{x} to 0x{x}", .{ self.strtab_offset.?, self.strtab_offset.? + needed_size });
@@ -2234,7 +2234,7 @@ fn writeStrtab(self: *Coff) !void {
     buffer.appendSliceAssumeCapacity(self.strtab.buffer.items);
     // Here, we do a trick in that we do not commit the size of the strtab to strtab buffer, instead
     // we write the length of the strtab to a temporary buffer that goes to file.
-    mem.writeInt(u32, buffer.items[0..4], @as(u32, @intCast(self.strtab.buffer.items.len)), .little);
+    mem.writeInt(u32, buffer.items[0..4], @as(u32, @intcast(self.strtab.buffer.items.len)), .little);
 
     try self.base.file.?.pwriteAll(buffer.items, self.strtab_offset.?);
 }
@@ -2274,11 +2274,11 @@ fn writeHeader(self: *Coff) !void {
     }
 
     const timestamp = std.time.timestamp();
-    const size_of_optional_header = @as(u16, @intCast(self.getOptionalHeaderSize() + self.getDataDirectoryHeadersSize()));
+    const size_of_optional_header = @as(u16, @intcast(self.getOptionalHeaderSize() + self.getDataDirectoryHeadersSize()));
     var coff_header = coff.CoffHeader{
         .machine = coff.MachineType.fromTargetCpuArch(target.cpu.arch),
-        .number_of_sections = @as(u16, @intCast(self.sections.slice().len)), // TODO what if we prune a section
-        .time_date_stamp = @as(u32, @truncate(@as(u64, @bitCast(timestamp)))),
+        .number_of_sections = @as(u16, @intcast(self.sections.slice().len)), // TODO what if we prune a section
+        .time_date_stamp = @as(u32, @truncate(@as(u64, @bitcast(timestamp)))),
         .pointer_to_symbol_table = self.strtab_offset orelse 0,
         .number_of_symbols = 0,
         .size_of_optional_header = size_of_optional_header,
@@ -2326,15 +2326,15 @@ fn writeHeader(self: *Coff) !void {
                 .address_of_entry_point = self.entry_addr orelse 0,
                 .base_of_code = base_of_code,
                 .base_of_data = base_of_data,
-                .image_base = @intCast(self.image_base),
+                .image_base = @intcast(self.image_base),
                 .section_alignment = self.page_size,
                 .file_alignment = default_file_alignment,
                 .major_operating_system_version = 6,
                 .minor_operating_system_version = 0,
                 .major_image_version = 0,
                 .minor_image_version = 0,
-                .major_subsystem_version = @intCast(self.major_subsystem_version),
-                .minor_subsystem_version = @intCast(self.minor_subsystem_version),
+                .major_subsystem_version = @intcast(self.major_subsystem_version),
+                .minor_subsystem_version = @intcast(self.minor_subsystem_version),
                 .win32_version_value = 0,
                 .size_of_image = size_of_image,
                 .size_of_headers = size_of_headers,
@@ -2346,7 +2346,7 @@ fn writeHeader(self: *Coff) !void {
                 .size_of_heap_reserve = default_size_of_heap_reserve,
                 .size_of_heap_commit = default_size_of_heap_commit,
                 .loader_flags = 0,
-                .number_of_rva_and_sizes = @intCast(self.data_directories.len),
+                .number_of_rva_and_sizes = @intcast(self.data_directories.len),
             };
             writer.writeAll(mem.asBytes(&opt_header)) catch unreachable;
         },
@@ -2380,7 +2380,7 @@ fn writeHeader(self: *Coff) !void {
                 .size_of_heap_reserve = default_size_of_heap_reserve,
                 .size_of_heap_commit = default_size_of_heap_commit,
                 .loader_flags = 0,
-                .number_of_rva_and_sizes = @intCast(self.data_directories.len),
+                .number_of_rva_and_sizes = @intcast(self.data_directories.len),
             };
             writer.writeAll(mem.asBytes(&opt_header)) catch unreachable;
         },
@@ -2401,7 +2401,7 @@ fn detectAllocCollision(self: *Coff, start: u32, size: u32) ?u32 {
     const end = start + padToIdeal(size);
 
     if (self.strtab_offset) |off| {
-        const tight_size = @as(u32, @intCast(self.strtab.buffer.items.len));
+        const tight_size = @as(u32, @intcast(self.strtab.buffer.items.len));
         const increased_size = padToIdeal(tight_size);
         const test_end = off + increased_size;
         if (end > off and start < test_end) {
@@ -2456,28 +2456,28 @@ fn allocatedVirtualSize(self: *Coff, start: u32) u32 {
 
 inline fn getSizeOfHeaders(self: Coff) u32 {
     const msdos_hdr_size = msdos_stub.len + 4;
-    return @as(u32, @intCast(msdos_hdr_size + @sizeOf(coff.CoffHeader) + self.getOptionalHeaderSize() +
+    return @as(u32, @intcast(msdos_hdr_size + @sizeof(coff.CoffHeader) + self.getOptionalHeaderSize() +
         self.getDataDirectoryHeadersSize() + self.getSectionHeadersSize()));
 }
 
 inline fn getOptionalHeaderSize(self: Coff) u32 {
     return switch (self.ptr_width) {
-        .p32 => @as(u32, @intCast(@sizeOf(coff.OptionalHeaderPE32))),
-        .p64 => @as(u32, @intCast(@sizeOf(coff.OptionalHeaderPE64))),
+        .p32 => @as(u32, @intcast(@sizeof(coff.OptionalHeaderPE32))),
+        .p64 => @as(u32, @intcast(@sizeof(coff.OptionalHeaderPE64))),
     };
 }
 
 inline fn getDataDirectoryHeadersSize(self: Coff) u32 {
-    return @as(u32, @intCast(self.data_directories.len * @sizeOf(coff.ImageDataDirectory)));
+    return @as(u32, @intcast(self.data_directories.len * @sizeof(coff.ImageDataDirectory)));
 }
 
 inline fn getSectionHeadersSize(self: Coff) u32 {
-    return @as(u32, @intCast(self.sections.slice().len * @sizeOf(coff.SectionHeader)));
+    return @as(u32, @intcast(self.sections.slice().len * @sizeof(coff.SectionHeader)));
 }
 
 inline fn getDataDirectoryHeadersOffset(self: Coff) u32 {
     const msdos_hdr_size = msdos_stub.len + 4;
-    return @as(u32, @intCast(msdos_hdr_size + @sizeOf(coff.CoffHeader) + self.getOptionalHeaderSize()));
+    return @as(u32, @intcast(msdos_hdr_size + @sizeof(coff.CoffHeader) + self.getOptionalHeaderSize()));
 }
 
 inline fn getSectionHeadersOffset(self: Coff) u32 {
@@ -2668,11 +2668,11 @@ fn logSymtab(self: *Coff) void {
             .UNDEFINED => 0, // TODO
             .ABSOLUTE => unreachable, // TODO
             .DEBUG => unreachable, // TODO
-            else => @intFromEnum(sym.section_number),
+            else => @intfromenum(sym.section_number),
         };
         log.debug("    %{d}: {?s} @{x} in {s}({d}), {s}", .{
             sym_id,
-            self.getSymbolName(.{ .sym_index = @as(u32, @intCast(sym_id)), .file = null }),
+            self.getSymbolName(.{ .sym_index = @as(u32, @intcast(sym_id)), .file = null }),
             sym.value,
             where,
             def_index,
@@ -2751,4 +2751,4 @@ const Value = @import("../Value.zig");
 
 pub const base_tag: link.File.Tag = .coff;
 
-const msdos_stub = @embedFile("msdos-stub.bin");
+const msdos_stub = @embedfile("msdos-stub.bin");

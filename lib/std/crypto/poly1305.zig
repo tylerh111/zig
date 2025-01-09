@@ -33,14 +33,14 @@ pub const Poly1305 = struct {
     }
 
     inline fn add(a: u64, b: u64, c: u1) struct { u64, u1 } {
-        const v1 = @addWithOverflow(a, b);
-        const v2 = @addWithOverflow(v1[0], c);
+        const v1 = @addwithoverflow(a, b);
+        const v2 = @addwithoverflow(v1[0], c);
         return .{ v2[0], v1[1] | v2[1] };
     }
 
     inline fn sub(a: u64, b: u64, c: u1) struct { u64, u1 } {
-        const v1 = @subWithOverflow(a, b);
-        const v2 = @subWithOverflow(v1[0], c);
+        const v1 = @subwithoverflow(a, b);
+        const v2 = @subwithoverflow(v1[0], c);
         return .{ v2[0], v1[1] | v2[1] };
     }
 
@@ -60,7 +60,7 @@ pub const Poly1305 = struct {
             const in1 = mem.readInt(u64, m[i + 8 ..][0..8], .little);
 
             // Add the input message to H
-            var v = @addWithOverflow(h0, in0);
+            var v = @addwithoverflow(h0, in0);
             h0 = v[0];
             v = add(h1, in1, v[1]);
             h1 = v[0];
@@ -77,7 +77,7 @@ pub const Poly1305 = struct {
             const m2 = h2r0 +% h1r1;
 
             const t0 = @as(u64, @truncate(m0));
-            v = @addWithOverflow(@as(u64, @truncate(m1)), @as(u64, @truncate(m0 >> 64)));
+            v = @addwithoverflow(@as(u64, @truncate(m1)), @as(u64, @truncate(m0 >> 64)));
             const t1 = v[0];
             v = add(@as(u64, @truncate(m2)), @as(u64, @truncate(m1 >> 64)), v[1]);
             const t2 = v[0];
@@ -92,13 +92,13 @@ pub const Poly1305 = struct {
             // Add c*(4+1)
             const cclo = t2 & ~@as(u64, 3);
             const cchi = t3;
-            v = @addWithOverflow(h0, cclo);
+            v = @addwithoverflow(h0, cclo);
             h0 = v[0];
             v = add(h1, cchi, v[1]);
             h1 = v[0];
             h2 +%= v[1];
             const cc = (cclo | (@as(u128, cchi) << 64)) >> 2;
-            v = @addWithOverflow(h0, @as(u64, @truncate(cc)));
+            v = @addwithoverflow(h0, @as(u64, @truncate(cc)));
             h0 = v[0];
             v = add(h1, @as(u64, @truncate(cc >> 64)), v[1]);
             h1 = v[0];
@@ -166,7 +166,7 @@ pub const Poly1305 = struct {
         const h2 = st.h[2];
 
         // H - (2^130 - 5)
-        var v = @subWithOverflow(h0, 0xfffffffffffffffb);
+        var v = @subwithoverflow(h0, 0xfffffffffffffffb);
         const h_p0 = v[0];
         v = sub(h1, 0xffffffffffffffff, v[1]);
         const h_p1 = v[0];
@@ -177,7 +177,7 @@ pub const Poly1305 = struct {
         h0 ^= mask & (h0 ^ h_p0);
         h1 ^= mask & (h1 ^ h_p1);
 
-        // Add the first half of the key, we intentionally don't use @addWithOverflow() here.
+        // Add the first half of the key, we intentionally don't use @addwithoverflow() here.
         st.h[0] = h0 +% st.pad[0];
         const c = ((h0 & st.pad[0]) | ((h0 | st.pad[0]) & ~st.h[0])) >> 63;
         st.h[1] = h1 +% st.pad[1] +% c;
@@ -185,7 +185,7 @@ pub const Poly1305 = struct {
         mem.writeInt(u64, out[0..8], st.h[0], .little);
         mem.writeInt(u64, out[8..16], st.h[1], .little);
 
-        utils.secureZero(u8, @as([*]u8, @ptrCast(st))[0..@sizeOf(Poly1305)]);
+        utils.secureZero(u8, @as([*]u8, @ptrcast(st))[0..@sizeof(Poly1305)]);
     }
 
     pub fn create(out: *[mac_length]u8, msg: []const u8, key: *const [key_length]u8) void {

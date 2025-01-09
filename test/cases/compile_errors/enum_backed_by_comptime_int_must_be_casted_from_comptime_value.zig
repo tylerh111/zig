@@ -3,7 +3,7 @@ export fn entry() void {
 
     var v: u32 = 0;
     _ = &v;
-    _ = @as(Tag, @enumFromInt(v));
+    _ = @as(Tag, @enumfromint(v));
 }
 
 // error

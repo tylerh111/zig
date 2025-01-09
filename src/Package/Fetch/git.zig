@@ -206,7 +206,7 @@ pub const Repository = struct {
                 permission: u9,
                 unused: u3,
                 type: u4,
-            } = @bitCast(std.fmt.parseUnsigned(u16, iterator.data[iterator.pos..mode_end], 8) catch return error.InvalidTree);
+            } = @bitcast(std.fmt.parseUnsigned(u16, iterator.data[iterator.pos..mode_end], 8) catch return error.InvalidTree);
             const @"type" = std.meta.intToEnum(Entry.Type, mode.type) catch return error.InvalidTree;
             const executable = switch (mode.permission) {
                 0 => if (@"type" == .file) return error.InvalidTree else false,
@@ -320,7 +320,7 @@ const Odb = struct {
         const n_objects = odb.index_header.fan_out_table[255];
         const offset_values_start = IndexHeader.size + n_objects * (oid_length + 4);
         try odb.index_file.seekTo(offset_values_start + found_index * 4);
-        const l1_offset: packed struct { value: u31, big: bool } = @bitCast(try odb.index_file.reader().readInt(u32, .big));
+        const l1_offset: packed struct { value: u31, big: bool } = @bitcast(try odb.index_file.reader().readInt(u32, .big));
         const pack_offset = pack_offset: {
             if (l1_offset.big) {
                 const l2_offset_values_start = offset_values_start + n_objects * 4;
@@ -551,7 +551,7 @@ pub const Session = struct {
 
         const max_redirects = 3;
         var request = try session.transport.open(.GET, info_refs_uri, .{
-            .redirect_behavior = @enumFromInt(max_redirects),
+            .redirect_behavior = @enumfromint(max_redirects),
             .server_header_buffer = http_headers_buffer,
             .extra_headers = &.{
                 .{ .name = "Git-Protocol", .value = "version=2" },
@@ -866,7 +866,7 @@ pub const Session = struct {
                 while (true) {
                     switch (try Packet.read(stream.request.reader(), &stream.buf)) {
                         .flush => return 0,
-                        .data => |data| if (data.len > 1) switch (@as(StreamCode, @enumFromInt(data[0]))) {
+                        .data => |data| if (data.len > 1) switch (@as(StreamCode, @enumfromint(data[0]))) {
                             .pack_data => {
                                 stream.pos = 1;
                                 stream.len = data.len;
@@ -946,7 +946,7 @@ const EntryHeader = union(Type) {
 
     fn objectType(header: EntryHeader) Object.Type {
         return switch (header) {
-            inline .commit, .tree, .blob, .tag => |_, tag| @field(Object.Type, @tagName(tag)),
+            inline .commit, .tree, .blob, .tag => |_, tag| @field(Object.Type, @tagname(tag)),
             else => unreachable,
         };
     }
@@ -959,16 +959,16 @@ const EntryHeader = union(Type) {
 
     fn read(reader: anytype) !EntryHeader {
         const InitialByte = packed struct { len: u4, type: u3, has_next: bool };
-        const initial: InitialByte = @bitCast(reader.readByte() catch |e| switch (e) {
+        const initial: InitialByte = @bitcast(reader.readByte() catch |e| switch (e) {
             error.EndOfStream => return error.InvalidFormat,
             else => |other| return other,
         });
         const rest_len = if (initial.has_next) try readSizeVarInt(reader) else 0;
         var uncompressed_length: u64 = initial.len;
-        uncompressed_length |= std.math.shlExact(u64, rest_len, 4) catch return error.InvalidFormat;
+        uncompressed_length |= std.math.shlexact(u64, rest_len, 4) catch return error.InvalidFormat;
         const @"type" = std.meta.intToEnum(EntryHeader.Type, initial.type) catch return error.InvalidFormat;
         return switch (@"type") {
-            inline .commit, .tree, .blob, .tag => |tag| @unionInit(EntryHeader, @tagName(tag), .{
+            inline .commit, .tree, .blob, .tag => |tag| @unioninit(EntryHeader, @tagname(tag), .{
                 .uncompressed_length = uncompressed_length,
             }),
             .ofs_delta => .{ .ofs_delta = .{
@@ -988,11 +988,11 @@ const EntryHeader = union(Type) {
 
 fn readSizeVarInt(r: anytype) !u64 {
     const Byte = packed struct { value: u7, has_next: bool };
-    var b: Byte = @bitCast(try r.readByte());
+    var b: Byte = @bitcast(try r.readByte());
     var value: u64 = b.value;
     var shift: u6 = 0;
     while (b.has_next) {
-        b = @bitCast(try r.readByte());
+        b = @bitcast(try r.readByte());
         shift = std.math.add(u6, shift, 7) catch return error.InvalidFormat;
         value |= @as(u64, b.value) << shift;
     }
@@ -1001,11 +1001,11 @@ fn readSizeVarInt(r: anytype) !u64 {
 
 fn readOffsetVarInt(r: anytype) !u64 {
     const Byte = packed struct { value: u7, has_next: bool };
-    var b: Byte = @bitCast(try r.readByte());
+    var b: Byte = @bitcast(try r.readByte());
     var value: u64 = b.value;
     while (b.has_next) {
-        b = @bitCast(try r.readByte());
-        value = std.math.shlExact(u64, value + 1, 7) catch return error.InvalidFormat;
+        b = @bitcast(try r.readByte());
+        value = std.math.shlexact(u64, value + 1, 7) catch return error.InvalidFormat;
         value |= b.value;
     }
     return value;
@@ -1016,7 +1016,7 @@ const IndexHeader = struct {
 
     const signature = "\xFFtOc";
     const supported_version = 2;
-    const size = 4 + 4 + @sizeOf([256]u32);
+    const size = 4 + 4 + @sizeof([256]u32);
 
     fn read(reader: anytype) !IndexHeader {
         var header_bytes = try reader.readBytesNoEof(size);
@@ -1114,11 +1114,11 @@ pub fn indexPack(allocator: Allocator, pack: std.fs.File, index_writer: anytype)
     for (oids.items) |oid| {
         const offset = index_entries.get(oid).?.offset;
         if (offset <= std.math.maxInt(u31)) {
-            try writer.writeInt(u32, @intCast(offset), .big);
+            try writer.writeInt(u32, @intcast(offset), .big);
         } else {
             const index = big_offsets.items.len;
             try big_offsets.append(allocator, offset);
-            try writer.writeInt(u32, @as(u32, @intCast(index)) | (1 << 31), .big);
+            try writer.writeInt(u32, @as(u32, @intcast(index)) | (1 << 31), .big);
         }
     }
     for (big_offsets.items) |offset| {
@@ -1160,7 +1160,7 @@ fn indexPackFirstPass(
                 const entry_writer = entry_hashed_writer.writer();
                 // The object header is not included in the pack data but is
                 // part of the object's ID
-                try entry_writer.print("{s} {}\x00", .{ @tagName(entry_header), object.uncompressed_length });
+                try entry_writer.print("{s} {}\x00", .{ @tagname(entry_header), object.uncompressed_length });
                 var fifo = std.fifo.LinearFifo(u8, .{ .Static = 4096 }).init();
                 try fifo.pump(entry_counting_reader.reader(), entry_writer);
                 if (entry_counting_reader.bytes_read != object.uncompressed_length) {
@@ -1243,7 +1243,7 @@ fn indexPackHashDelta(
 
     var entry_hasher = Sha1.init(.{});
     var entry_hashed_writer = hashedWriter(std.io.null_writer, &entry_hasher);
-    try entry_hashed_writer.writer().print("{s} {}\x00", .{ @tagName(base_object.type), base_data.len });
+    try entry_hashed_writer.writer().print("{s} {}\x00", .{ @tagname(base_object.type), base_data.len });
     entry_hasher.update(base_data);
     return entry_hasher.finalResult();
 }
@@ -1312,7 +1312,7 @@ fn readObjectRaw(allocator: Allocator, reader: anytype, size: u64) ![]u8 {
 /// [pack-format](https://git-scm.com/docs/pack-format).
 fn expandDelta(base_object: anytype, delta_reader: anytype, writer: anytype) !void {
     while (true) {
-        const inst: packed struct { value: u7, copy: bool } = @bitCast(delta_reader.readByte() catch |e| switch (e) {
+        const inst: packed struct { value: u7, copy: bool } = @bitcast(delta_reader.readByte() catch |e| switch (e) {
             error.EndOfStream => return,
             else => |other| return other,
         });
@@ -1325,20 +1325,20 @@ fn expandDelta(base_object: anytype, delta_reader: anytype, writer: anytype) !vo
                 size1: bool,
                 size2: bool,
                 size3: bool,
-            } = @bitCast(inst.value);
+            } = @bitcast(inst.value);
             const offset_parts: packed struct { offset1: u8, offset2: u8, offset3: u8, offset4: u8 } = .{
                 .offset1 = if (available.offset1) try delta_reader.readByte() else 0,
                 .offset2 = if (available.offset2) try delta_reader.readByte() else 0,
                 .offset3 = if (available.offset3) try delta_reader.readByte() else 0,
                 .offset4 = if (available.offset4) try delta_reader.readByte() else 0,
             };
-            const offset: u32 = @bitCast(offset_parts);
+            const offset: u32 = @bitcast(offset_parts);
             const size_parts: packed struct { size1: u8, size2: u8, size3: u8 } = .{
                 .size1 = if (available.size1) try delta_reader.readByte() else 0,
                 .size2 = if (available.size2) try delta_reader.readByte() else 0,
                 .size3 = if (available.size3) try delta_reader.readByte() else 0,
             };
-            var size: u24 = @bitCast(size_parts);
+            var size: u24 = @bitcast(size_parts);
             if (size == 0) size = 0x10000;
             try base_object.seekTo(offset);
             var copy_reader = std.io.limitedReader(base_object.reader(), size);
@@ -1393,7 +1393,7 @@ test "packfile indexing and checkout" {
     // 3. `git fsck` -> note the "dangling commit" ID (which matches the commit
     //    checked out below)
     // 4. `git checkout dd582c0720819ab7130b103635bd7271b9fd4feb`
-    const testrepo_pack = @embedFile("git/testdata/testrepo.pack");
+    const testrepo_pack = @embedfile("git/testdata/testrepo.pack");
 
     var git_dir = testing.tmpDir(.{});
     defer git_dir.cleanup();
@@ -1414,7 +1414,7 @@ test "packfile indexing and checkout" {
     // testrepo.idx is generated by Git. The index created by this file should
     // match it exactly. Running `git verify-pack -v testrepo.pack` can verify
     // this.
-    const testrepo_idx = @embedFile("git/testdata/testrepo.idx");
+    const testrepo_idx = @embedfile("git/testdata/testrepo.idx");
     try testing.expectEqualSlices(u8, testrepo_idx, index_file_data);
 
     var repository = try Repository.init(testing.allocator, pack_file, index_file);

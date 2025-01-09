@@ -93,7 +93,7 @@ pub const AbiError = error{
 
 fn RegValueReturnType(comptime ContextPtrType: type, comptime T: type) type {
     const reg_bytes_type = comptime RegBytesReturnType(ContextPtrType);
-    const info = @typeInfo(reg_bytes_type).Pointer;
+    const info = @typeinfo(reg_bytes_type).Pointer;
     return @Type(.{
         .Pointer = .{
             .size = .One,
@@ -116,14 +116,14 @@ pub fn regValueNative(
     reg_context: ?RegisterContext,
 ) !RegValueReturnType(@TypeOf(thread_context_ptr), T) {
     const reg_bytes = try regBytes(thread_context_ptr, reg_number, reg_context);
-    if (@sizeOf(T) != reg_bytes.len) return error.IncompatibleRegisterSize;
-    return mem.bytesAsValue(T, reg_bytes[0..@sizeOf(T)]);
+    if (@sizeof(T) != reg_bytes.len) return error.IncompatibleRegisterSize;
+    return mem.bytesAsValue(T, reg_bytes[0..@sizeof(T)]);
 }
 
 fn RegBytesReturnType(comptime ContextPtrType: type) type {
-    const info = @typeInfo(ContextPtrType);
+    const info = @typeinfo(ContextPtrType);
     if (info != .Pointer or info.Pointer.child != std.debug.ThreadContext) {
-        @compileError("Expected a pointer to std.debug.ThreadContext, got " ++ @typeName(@TypeOf(ContextPtrType)));
+        @compileerror("Expected a pointer to std.debug.ThreadContext, got " ++ @typename(@TypeOf(ContextPtrType)));
     }
 
     return if (info.Pointer.is_const) return []const u8 else []u8;

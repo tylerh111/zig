@@ -150,13 +150,13 @@ fn printType(options: *Options, out: anytype, comptime T: type, value: T, indent
         else => {},
     }
 
-    switch (@typeInfo(T)) {
+    switch (@typeinfo(T)) {
         .Array => {
             if (name) |some| {
-                try out.print("pub const {}: {s} = ", .{ std.zig.fmtId(some), @typeName(T) });
+                try out.print("pub const {}: {s} = ", .{ std.zig.fmtId(some), @typename(T) });
             }
 
-            try out.print("{s} {{\n", .{@typeName(T)});
+            try out.print("{s} {{\n", .{@typename(T)});
             for (value) |item| {
                 try out.writeByteNTimes(' ', indent + 4);
                 try printType(options, out, @TypeOf(item), item, indent + 4, null);
@@ -173,14 +173,14 @@ fn printType(options: *Options, out: anytype, comptime T: type, value: T, indent
         },
         .Pointer => |p| {
             if (p.size != .Slice) {
-                @compileError("Non-slice pointers are not yet supported in build options");
+                @compileerror("Non-slice pointers are not yet supported in build options");
             }
 
             if (name) |some| {
-                try out.print("pub const {}: {s} = ", .{ std.zig.fmtId(some), @typeName(T) });
+                try out.print("pub const {}: {s} = ", .{ std.zig.fmtId(some), @typename(T) });
             }
 
-            try out.print("&[_]{s} {{\n", .{@typeName(p.child)});
+            try out.print("&[_]{s} {{\n", .{@typename(p.child)});
             for (value) |item| {
                 try out.writeByteNTimes(' ', indent + 4);
                 try printType(options, out, @TypeOf(item), item, indent + 4, null);
@@ -197,7 +197,7 @@ fn printType(options: *Options, out: anytype, comptime T: type, value: T, indent
         },
         .Optional => {
             if (name) |some| {
-                try out.print("pub const {}: {s} = ", .{ std.zig.fmtId(some), @typeName(T) });
+                try out.print("pub const {}: {s} = ", .{ std.zig.fmtId(some), @typename(T) });
             }
 
             if (value) |inner| {
@@ -224,7 +224,7 @@ fn printType(options: *Options, out: anytype, comptime T: type, value: T, indent
         .Null,
         => {
             if (name) |some| {
-                try out.print("pub const {}: {s} = {any};\n", .{ std.zig.fmtId(some), @typeName(T), value });
+                try out.print("pub const {}: {s} = {any};\n", .{ std.zig.fmtId(some), @typename(T), value });
             } else {
                 try out.print("{any},\n", .{value});
             }
@@ -236,8 +236,8 @@ fn printType(options: *Options, out: anytype, comptime T: type, value: T, indent
             if (name) |some| {
                 try out.print("pub const {}: {} = .{p_};\n", .{
                     std.zig.fmtId(some),
-                    std.zig.fmtId(@typeName(T)),
-                    std.zig.fmtId(@tagName(value)),
+                    std.zig.fmtId(@typename(T)),
+                    std.zig.fmtId(@tagname(value)),
                 });
             }
             return;
@@ -248,18 +248,18 @@ fn printType(options: *Options, out: anytype, comptime T: type, value: T, indent
             if (name) |some| {
                 try out.print("pub const {}: {} = ", .{
                     std.zig.fmtId(some),
-                    std.zig.fmtId(@typeName(T)),
+                    std.zig.fmtId(@typename(T)),
                 });
                 try printStructValue(options, out, info, value, indent);
             }
             return;
         },
-        else => @compileError(std.fmt.comptimePrint("`{s}` are not yet supported as build options", .{@tagName(@typeInfo(T))})),
+        else => @compileerror(std.fmt.comptimePrint("`{s}` are not yet supported as build options", .{@tagname(@typeinfo(T))})),
     }
 }
 
 fn printUserDefinedType(options: *Options, out: anytype, comptime T: type, indent: u8) !void {
-    switch (@typeInfo(T)) {
+    switch (@typeinfo(T)) {
         .Enum => |info| {
             return try printEnum(options, out, T, info, indent);
         },
@@ -271,11 +271,11 @@ fn printUserDefinedType(options: *Options, out: anytype, comptime T: type, inden
 }
 
 fn printEnum(options: *Options, out: anytype, comptime T: type, comptime val: std.builtin.Type.Enum, indent: u8) !void {
-    const gop = try options.encountered_types.getOrPut(@typeName(T));
+    const gop = try options.encountered_types.getOrPut(@typename(T));
     if (gop.found_existing) return;
 
     try out.writeByteNTimes(' ', indent);
-    try out.print("pub const {} = enum ({s}) {{\n", .{ std.zig.fmtId(@typeName(T)), @typeName(val.tag_type) });
+    try out.print("pub const {} = enum ({s}) {{\n", .{ std.zig.fmtId(@typename(T)), @typename(val.tag_type) });
 
     inline for (val.fields) |field| {
         try out.writeByteNTimes(' ', indent);
@@ -292,11 +292,11 @@ fn printEnum(options: *Options, out: anytype, comptime T: type, comptime val: st
 }
 
 fn printStruct(options: *Options, out: anytype, comptime T: type, comptime val: std.builtin.Type.Struct, indent: u8) !void {
-    const gop = try options.encountered_types.getOrPut(@typeName(T));
+    const gop = try options.encountered_types.getOrPut(@typename(T));
     if (gop.found_existing) return;
 
     try out.writeByteNTimes(' ', indent);
-    try out.print("pub const {} = ", .{std.zig.fmtId(@typeName(T))});
+    try out.print("pub const {} = ", .{std.zig.fmtId(@typename(T))});
 
     switch (val.layout) {
         .@"extern" => try out.writeAll("extern struct"),
@@ -309,7 +309,7 @@ fn printStruct(options: *Options, out: anytype, comptime T: type, comptime val: 
     inline for (val.fields) |field| {
         try out.writeByteNTimes(' ', indent);
 
-        const type_name = @typeName(field.type);
+        const type_name = @typename(field.type);
 
         // If the type name doesn't contains a '.' the type is from zig builtins.
         if (std.mem.containsAtLeast(u8, type_name, 1, ".")) {
@@ -319,11 +319,11 @@ fn printStruct(options: *Options, out: anytype, comptime T: type, comptime val: 
         }
 
         if (field.default_value != null) {
-            const default_value = @as(*field.type, @ptrCast(@alignCast(@constCast(field.default_value.?)))).*;
+            const default_value = @as(*field.type, @ptrcast(@aligncast(@constcast(field.default_value.?)))).*;
 
             try out.writeAll(" = ");
-            switch (@typeInfo(@TypeOf(default_value))) {
-                .Enum => try out.print(".{s},\n", .{@tagName(default_value)}),
+            switch (@typeinfo(@TypeOf(default_value))) {
+                .Enum => try out.print(".{s},\n", .{@tagname(default_value)}),
                 .Struct => |info| {
                     try printStructValue(options, out, info, default_value, indent + 4);
                 },
@@ -358,8 +358,8 @@ fn printStructValue(options: *Options, out: anytype, comptime struct_val: std.bu
             try out.print("    .{p_} = ", .{std.zig.fmtId(field.name)});
 
             const field_name = @field(val, field.name);
-            switch (@typeInfo(@TypeOf(field_name))) {
-                .Enum => try out.print(".{s},\n", .{@tagName(field_name)}),
+            switch (@typeinfo(@TypeOf(field_name))) {
+                .Enum => try out.print(".{s},\n", .{@tagname(field_name)}),
                 .Struct => |struct_info| {
                     try printStructValue(options, out, struct_info, field_name, indent + 4);
                 },
@@ -415,7 +415,7 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
     _ = prog_node;
 
     const b = step.owner;
-    const options: *Options = @fieldParentPtr("step", step);
+    const options: *Options = @fieldparentptr("step", step);
 
     for (options.args.items) |item| {
         options.addOption(
@@ -448,7 +448,7 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
             const sub_dirname = fs.path.dirname(sub_path).?;
             b.cache_root.handle.makePath(sub_dirname) catch |e| {
                 return step.fail("unable to make path '{}{s}': {s}", .{
-                    b.cache_root, sub_dirname, @errorName(e),
+                    b.cache_root, sub_dirname, @errorname(e),
                 });
             };
 
@@ -460,13 +460,13 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
 
             b.cache_root.handle.makePath(tmp_sub_path_dirname) catch |err| {
                 return step.fail("unable to make temporary directory '{}{s}': {s}", .{
-                    b.cache_root, tmp_sub_path_dirname, @errorName(err),
+                    b.cache_root, tmp_sub_path_dirname, @errorname(err),
                 });
             };
 
             b.cache_root.handle.writeFile(.{ .sub_path = tmp_sub_path, .data = options.contents.items }) catch |err| {
                 return step.fail("unable to write options to '{}{s}': {s}", .{
-                    b.cache_root, tmp_sub_path, @errorName(err),
+                    b.cache_root, tmp_sub_path, @errorname(err),
                 });
             };
 
@@ -475,7 +475,7 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
                     // Other process beat us to it. Clean up the temp file.
                     b.cache_root.handle.deleteFile(tmp_sub_path) catch |e| {
                         try step.addError("warning: unable to delete temp file '{}{s}': {s}", .{
-                            b.cache_root, tmp_sub_path, @errorName(e),
+                            b.cache_root, tmp_sub_path, @errorname(e),
                         });
                     };
                     step.result_cached = true;
@@ -485,13 +485,13 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
                     return step.fail("unable to rename options from '{}{s}' to '{}{s}': {s}", .{
                         b.cache_root,    tmp_sub_path,
                         b.cache_root,    sub_path,
-                        @errorName(err),
+                        @errorname(err),
                     });
                 },
             };
         },
         else => |e| return step.fail("unable to access options file '{}{s}': {s}", .{
-            b.cache_root, sub_path, @errorName(e),
+            b.cache_root, sub_path, @errorname(e),
         }),
     }
 }

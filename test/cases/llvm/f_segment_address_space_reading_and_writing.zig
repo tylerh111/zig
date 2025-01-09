@@ -20,7 +20,7 @@ fn getFs() c_ulong {
         :
         : [number] "{rax}" (158),
           [code] "{rdi}" (0x1003),
-          [ptr] "{rsi}" (@intFromPtr(&result)),
+          [ptr] "{rsi}" (@intfromptr(&result)),
         : "rcx", "r11", "memory"
     );
     return result;
@@ -31,10 +31,10 @@ var test_value: u64 = 12345;
 pub fn main() void {
     const orig_fs = getFs();
 
-    setFs(@intFromPtr(&test_value));
-    assert(getFs() == @intFromPtr(&test_value));
+    setFs(@intfromptr(&test_value));
+    assert(getFs() == @intfromptr(&test_value));
 
-    var test_ptr: *allowzero addrspace(.fs) u64 = @ptrFromInt(0);
+    var test_ptr: *allowzero addrspace(.fs) u64 = @ptrfromint(0);
     _ = &test_ptr;
     assert(test_ptr.* == 12345);
     test_ptr.* = 98765;

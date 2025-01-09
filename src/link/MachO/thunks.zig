@@ -9,7 +9,7 @@ pub fn createThunks(sect_id: u8, macho_file: *MachO) !void {
     assert(atoms.len > 0);
 
     for (atoms) |atom_index| {
-        macho_file.getAtom(atom_index).?.value = @bitCast(@as(i64, -1));
+        macho_file.getAtom(atom_index).?.value = @bitcast(@as(i64, -1));
     }
 
     var i: usize = 0;
@@ -66,9 +66,9 @@ fn isReachable(atom: *const Atom, rel: Relocation, macho_file: *MachO) bool {
     if (target.flags.stubs or target.flags.objc_stubs) return false;
     if (atom.out_n_sect != target.out_n_sect) return false;
     const target_atom = target.getAtom(macho_file).?;
-    if (target_atom.value == @as(u64, @bitCast(@as(i64, -1)))) return false;
-    const saddr = @as(i64, @intCast(atom.getAddress(macho_file))) + @as(i64, @intCast(rel.offset - atom.off));
-    const taddr: i64 = @intCast(rel.getTargetAddress(macho_file));
+    if (target_atom.value == @as(u64, @bitcast(@as(i64, -1)))) return false;
+    const saddr = @as(i64, @intcast(atom.getAddress(macho_file))) + @as(i64, @intcast(rel.offset - atom.off));
+    const taddr: i64 = @intcast(rel.getTargetAddress(macho_file));
     _ = math.cast(i28, taddr + rel.addend - saddr) orelse return false;
     return true;
 }
@@ -100,7 +100,7 @@ pub const Thunk = struct {
             const sym = macho_file.getSymbol(sym_index);
             const saddr = thunk.getAddress(macho_file) + i * trampoline_size;
             const taddr = sym.getAddress(.{}, macho_file);
-            const pages = try aarch64.calcNumberOfPages(@intCast(saddr), @intCast(taddr));
+            const pages = try aarch64.calcNumberOfPages(@intcast(saddr), @intcast(taddr));
             try writer.writeInt(u32, aarch64.Instruction.adrp(.x16, pages).toU32(), .little);
             const off: u12 = @truncate(taddr);
             try writer.writeInt(u32, aarch64.Instruction.add(.x16, .x16, off, false).toU32(), .little);
@@ -118,7 +118,7 @@ pub const Thunk = struct {
         _ = unused_fmt_string;
         _ = options;
         _ = writer;
-        @compileError("do not format Thunk directly");
+        @compileerror("do not format Thunk directly");
     }
 
     pub fn fmt(thunk: Thunk, macho_file: *MachO) std.fmt.Formatter(format2) {
@@ -150,13 +150,13 @@ pub const Thunk = struct {
         }
     }
 
-    const trampoline_size = 3 * @sizeOf(u32);
+    const trampoline_size = 3 * @sizeof(u32);
 
     pub const Index = u32;
 };
 
 /// Branch instruction has 26 bits immediate but is 4 byte aligned.
-const jump_bits = @bitSizeOf(i28);
+const jump_bits = @bitsizeof(i28);
 const max_distance = (1 << (jump_bits - 1));
 
 /// A branch will need an extender if its target is larger than

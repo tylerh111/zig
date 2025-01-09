@@ -5,7 +5,7 @@ export fn entry() void {
 fn inner(comptime n: usize) void {
     comptime var i = 0;
     inline while (i < n) : (i += 1) {
-        @compileLog("!@#$");
+        @compilelog("!@#$");
     }
 }
 

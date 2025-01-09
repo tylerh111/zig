@@ -91,7 +91,7 @@ fn testBasicWriteStream(w: anytype, slice_stream: anytype) !void {
 
 fn getJsonObject(allocator: std.mem.Allocator) !Value {
     var value = Value{ .object = ObjectMap.init(allocator) };
-    try value.object.put("one", Value{ .integer = @as(i64, @intCast(1)) });
+    try value.object.put("one", Value{ .integer = @as(i64, @intcast(1)) });
     try value.object.put("two", Value{ .float = 2.0 });
     return value;
 }

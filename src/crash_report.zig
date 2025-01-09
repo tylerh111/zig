@@ -55,7 +55,7 @@ pub const AnalyzeBody = if (build_options.enable_debug_extensions) struct {
     pub inline fn setBodyIndex(_: @This(), _: usize) void {}
 };
 
-threadlocal var zir_state: ?*AnalyzeBody = if (build_options.enable_debug_extensions) null else @compileError("Cannot use zir_state without debug extensions.");
+threadlocal var zir_state: ?*AnalyzeBody = if (build_options.enable_debug_extensions) null else @compileerror("Cannot use zir_state without debug extensions.");
 
 pub fn prepAnalyzeBody(sema: *Sema, block: *Sema.Block, body: []const Zir.Inst.Index) AnalyzeBody {
     return if (build_options.enable_debug_extensions) .{
@@ -147,7 +147,7 @@ fn writeFullyQualifiedDeclWithFile(mod: *Module, decl: *Decl, writer: anytype) !
 pub fn compilerPanic(msg: []const u8, error_return_trace: ?*std.builtin.StackTrace, maybe_ret_addr: ?usize) noreturn {
     PanicSwitch.preDispatch();
     @setCold(true);
-    const ret_addr = maybe_ret_addr orelse @returnAddress();
+    const ret_addr = maybe_ret_addr orelse @returnaddress();
     const stack_ctx: StackContext = .{ .current = .{ .ret_addr = ret_addr } };
     PanicSwitch.dispatch(error_return_trace, stack_ctx, msg);
 }
@@ -155,7 +155,7 @@ pub fn compilerPanic(msg: []const u8, error_return_trace: ?*std.builtin.StackTra
 /// Attaches a global SIGSEGV handler
 pub fn attachSegfaultHandler() void {
     if (!debug.have_segfault_handling_support) {
-        @compileError("segfault handler not supported for this target");
+        @compileerror("segfault handler not supported for this target");
     }
     if (native_os == .windows) {
         _ = windows.kernel32.AddVectoredExceptionHandler(0, handleSegfaultWindows);
@@ -177,12 +177,12 @@ fn handleSegfaultPosix(sig: i32, info: *const posix.siginfo_t, ctx_ptr: ?*anyopa
     PanicSwitch.preDispatch();
 
     const addr = switch (native_os) {
-        .linux => @intFromPtr(info.fields.sigfault.addr),
-        .freebsd, .macos => @intFromPtr(info.addr),
-        .netbsd => @intFromPtr(info.info.reason.fault.addr),
-        .openbsd => @intFromPtr(info.data.fault.addr),
-        .solaris, .illumos => @intFromPtr(info.reason.fault.addr),
-        else => @compileError("TODO implement handleSegfaultPosix for new POSIX OS"),
+        .linux => @intfromptr(info.fields.sigfault.addr),
+        .freebsd, .macos => @intfromptr(info.addr),
+        .netbsd => @intfromptr(info.info.reason.fault.addr),
+        .openbsd => @intfromptr(info.data.fault.addr),
+        .solaris, .illumos => @intfromptr(info.reason.fault.addr),
+        else => @compileerror("TODO implement handleSegfaultPosix for new POSIX OS"),
     };
 
     var err_buffer: [128]u8 = undefined;
@@ -198,7 +198,7 @@ fn handleSegfaultPosix(sig: i32, info: *const posix.siginfo_t, ctx_ptr: ?*anyopa
         .x86_64,
         .arm,
         .aarch64,
-        => StackContext{ .exception = @ptrCast(@alignCast(ctx_ptr)) },
+        => StackContext{ .exception = @ptrcast(@aligncast(ctx_ptr)) },
         else => .not_supported,
     };
 
@@ -224,10 +224,10 @@ fn handleSegfaultWindows(info: *windows.EXCEPTION_POINTERS) callconv(windows.WIN
 fn handleSegfaultWindowsExtra(info: *windows.EXCEPTION_POINTERS, comptime msg: WindowsSegfaultMessage) noreturn {
     PanicSwitch.preDispatch();
 
-    const stack_ctx = if (@hasDecl(windows, "CONTEXT"))
+    const stack_ctx = if (@hasdecl(windows, "CONTEXT"))
         StackContext{ .exception = info.ContextRecord }
     else ctx: {
-        const addr = @intFromPtr(info.ExceptionRecord.ExceptionAddress);
+        const addr = @intfromptr(info.ExceptionRecord.ExceptionAddress);
         break :ctx StackContext{ .current = .{ .ret_addr = addr } };
     };
 

@@ -199,7 +199,7 @@ pub const Node = struct {
         assert(!self.node_dirty);
         if (self.terminal_info) |info| {
             // Terminal node info: encode export flags and vmaddr offset of this symbol.
-            var info_buf: [@sizeOf(u64) * 2]u8 = undefined;
+            var info_buf: [@sizeof(u64) * 2]u8 = undefined;
             var info_stream = std.io.fixedBufferStream(&info_buf);
             // TODO Implement for special flags.
             assert(info.export_flags & macho.EXPORT_SYMBOL_FLAGS_REEXPORT == 0 and
@@ -208,7 +208,7 @@ pub const Node = struct {
             try leb.writeULEB128(info_stream.writer(), info.vmaddr_offset);
 
             // Encode the size of the terminal node info.
-            var size_buf: [@sizeOf(u64)]u8 = undefined;
+            var size_buf: [@sizeof(u64)]u8 = undefined;
             var size_stream = std.io.fixedBufferStream(&size_buf);
             try leb.writeULEB128(size_stream.writer(), info_stream.pos);
 
@@ -220,7 +220,7 @@ pub const Node = struct {
             try writer.writeByte(0);
         }
         // Write number of edges (max legal number of edges is 256).
-        try writer.writeByte(@as(u8, @intCast(self.edges.items.len)));
+        try writer.writeByte(@as(u8, @intcast(self.edges.items.len)));
 
         for (self.edges.items) |edge| {
             // Write edge label and offset to next node in trie.

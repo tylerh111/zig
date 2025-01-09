@@ -15,7 +15,7 @@ pub fn insert(self: *Self, gpa: Allocator, string: []const u8) !u32 {
     if (gop.found_existing) return gop.key_ptr.*;
 
     try self.buffer.ensureUnusedCapacity(gpa, string.len + 1);
-    const new_off = @as(u32, @intCast(self.buffer.items.len));
+    const new_off = @as(u32, @intcast(self.buffer.items.len));
 
     self.buffer.appendSliceAssumeCapacity(string);
     self.buffer.appendAssumeCapacity(0);
@@ -33,7 +33,7 @@ pub fn getOffset(self: *Self, string: []const u8) ?u32 {
 
 pub fn get(self: Self, off: u32) ?[:0]const u8 {
     if (off >= self.buffer.items.len) return null;
-    return mem.sliceTo(@as([*:0]const u8, @ptrCast(self.buffer.items.ptr + off)), 0);
+    return mem.sliceTo(@as([*:0]const u8, @ptrcast(self.buffer.items.ptr + off)), 0);
 }
 
 pub fn getAssumeExists(self: Self, off: u32) [:0]const u8 {

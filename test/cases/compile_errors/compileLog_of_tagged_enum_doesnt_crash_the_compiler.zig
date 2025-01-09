@@ -3,7 +3,7 @@ const Bar = union(enum(u32)) {
 };
 
 fn testCompileLog(x: Bar) void {
-    @compileLog(x);
+    @compilelog(x);
 }
 
 pub export fn entry() void {

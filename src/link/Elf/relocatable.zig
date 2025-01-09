@@ -24,7 +24,7 @@ pub fn flushStaticLib(elf_file: *Elf, comp: *Compilation, module_obj_path: ?[]co
             else => |e| try elf_file.reportParseError(
                 obj.path,
                 "unexpected error: parsing input file failed with error {s}",
-                .{@errorName(e)},
+                .{@errorname(e)},
             ),
         };
     }
@@ -92,11 +92,11 @@ pub fn flushStaticLib(elf_file: *Elf, comp: *Compilation, module_obj_path: ?[]co
     // Update file offsets of contributing objects.
     const total_size: usize = blk: {
         var pos: usize = elf.ARMAG.len;
-        pos += @sizeOf(elf.ar_hdr) + ar_symtab.size(.p64);
+        pos += @sizeof(elf.ar_hdr) + ar_symtab.size(.p64);
 
         if (ar_strtab.size() > 0) {
             pos = mem.alignForward(usize, pos, 2);
-            pos += @sizeOf(elf.ar_hdr) + ar_strtab.size();
+            pos += @sizeof(elf.ar_hdr) + ar_strtab.size();
         }
 
         for (files.items) |index| {
@@ -108,7 +108,7 @@ pub fn flushStaticLib(elf_file: *Elf, comp: *Compilation, module_obj_path: ?[]co
             };
             pos = mem.alignForward(usize, pos, 2);
             state.file_off = pos;
-            pos += @sizeOf(elf.ar_hdr) + (math.cast(usize, state.size) orelse return error.Overflow);
+            pos += @sizeof(elf.ar_hdr) + (math.cast(usize, state.size) orelse return error.Overflow);
         }
 
         break :blk pos;
@@ -172,7 +172,7 @@ pub fn flushObject(elf_file: *Elf, comp: *Compilation, module_obj_path: ?[]const
             else => |e| try elf_file.reportParseError(
                 obj.path,
                 "unexpected error: parsing input file failed with error {s}",
-                .{@errorName(e)},
+                .{@errorname(e)},
             ),
         };
     }
@@ -234,7 +234,7 @@ fn parseObject(elf_file: *Elf, path: []const u8) Elf.ParseError!void {
     const handle = try std.fs.cwd().openFile(path, .{});
     const fh = try elf_file.addFileHandle(handle);
 
-    const index = @as(File.Index, @intCast(try elf_file.files.addOne(gpa)));
+    const index = @as(File.Index, @intcast(try elf_file.files.addOne(gpa)));
     elf_file.files.set(index, .{ .object = .{
         .path = try gpa.dupe(u8, path),
         .file_handle = fh,
@@ -259,7 +259,7 @@ fn parseArchive(elf_file: *Elf, path: []const u8) Elf.ParseError!void {
     defer gpa.free(objects);
 
     for (objects) |extracted| {
-        const index = @as(File.Index, @intCast(try elf_file.files.addOne(gpa)));
+        const index = @as(File.Index, @intcast(try elf_file.files.addOne(gpa)));
         elf_file.files.set(index, .{ .object = extracted });
         const object = &elf_file.files.items(.data)[index].object;
         object.index = index;
@@ -321,8 +321,8 @@ fn initComdatGroups(elf_file: *Elf) !void {
                 .shndx = try elf_file.addSection(.{
                     .name = ".group",
                     .type = elf.SHT_GROUP,
-                    .entsize = @sizeOf(u32),
-                    .addralign = @alignOf(u32),
+                    .entsize = @sizeof(u32),
+                    .addralign = @alignof(u32),
                     .offset = std.math.maxInt(u64),
                 }),
                 .cg_index = cg_index,
@@ -339,7 +339,7 @@ fn updateSectionSizes(elf_file: *Elf) !void {
             if (!atom_ptr.flags.alive) continue;
             const offset = atom_ptr.alignment.forward(shdr.sh_size);
             const padding = offset - shdr.sh_size;
-            atom_ptr.value = @intCast(offset);
+            atom_ptr.value = @intcast(offset);
             shdr.sh_size += padding + atom_ptr.size;
             shdr.sh_addralign = @max(shdr.sh_addralign, atom_ptr.alignment.toByteUnits() orelse 1);
         }
@@ -409,13 +409,13 @@ fn writeAtoms(elf_file: *Elf) !void {
         if (shdr.sh_type == elf.SHT_NULL) continue;
         if (shdr.sh_type == elf.SHT_NOBITS) continue;
 
-        const atom_list = elf_file.output_sections.get(@intCast(shndx)) orelse continue;
+        const atom_list = elf_file.output_sections.get(@intcast(shndx)) orelse continue;
         if (atom_list.items.len == 0) continue;
 
         log.debug("writing atoms in '{s}' section", .{elf_file.getShString(shdr.sh_name)});
 
         // TODO really, really handle debug section separately
-        const base_offset = if (elf_file.isDebugSection(@intCast(shndx))) blk: {
+        const base_offset = if (elf_file.isDebugSection(@intcast(shndx))) blk: {
             const zig_object = elf_file.zigObjectPtr().?;
             if (shndx == elf_file.debug_info_section_index.?)
                 break :blk zig_object.debug_info_section_zig_size;
@@ -445,7 +445,7 @@ fn writeAtoms(elf_file: *Elf) !void {
             const atom_ptr = elf_file.atom(atom_index).?;
             assert(atom_ptr.flags.alive);
 
-            const offset = math.cast(usize, atom_ptr.value - @as(i64, @intCast(shdr.sh_addr - base_offset))) orelse
+            const offset = math.cast(usize, atom_ptr.value - @as(i64, @intcast(shdr.sh_addr - base_offset))) orelse
                 return error.Overflow;
             const size = math.cast(usize, atom_ptr.size) orelse return error.Overflow;
 
@@ -478,7 +478,7 @@ fn writeSyntheticSections(elf_file: *Elf) !void {
 
         const shdr = elf_file.shdrs.items[sec.shndx];
 
-        const num_relocs = math.cast(usize, @divExact(shdr.sh_size, shdr.sh_entsize)) orelse
+        const num_relocs = math.cast(usize, @divexact(shdr.sh_size, shdr.sh_entsize)) orelse
             return error.Overflow;
         var relocs = try std.ArrayList(elf.Elf64_Rela).initCapacity(gpa, num_relocs);
         defer relocs.deinit();

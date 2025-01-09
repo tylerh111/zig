@@ -30,8 +30,8 @@ fn canFold(macho_file: *MachO, lhs_index: Record.Index, rhs_index: Record.Index)
     const lhs = macho_file.getUnwindRecord(lhs_index);
     const rhs = macho_file.getUnwindRecord(rhs_index);
     if (cpu_arch == .x86_64) {
-        if (lhs.enc.getMode() == @intFromEnum(macho.UNWIND_X86_64_MODE.STACK_IND) or
-            rhs.enc.getMode() == @intFromEnum(macho.UNWIND_X86_64_MODE.STACK_IND)) return false;
+        if (lhs.enc.getMode() == @intfromenum(macho.UNWIND_X86_64_MODE.STACK_IND) or
+            rhs.enc.getMode() == @intfromenum(macho.UNWIND_X86_64_MODE.STACK_IND)) return false;
     }
     const lhs_per = lhs.personality orelse 0;
     const rhs_per = rhs.personality orelse 0;
@@ -64,7 +64,7 @@ pub fn generate(info: *UnwindInfo, macho_file: *MachO) !void {
     for (info.records.items) |index| {
         const rec = macho_file.getUnwindRecord(index);
         if (rec.getFde(macho_file)) |fde| {
-            rec.enc.setDwarfSectionOffset(@intCast(fde.out_offset));
+            rec.enc.setDwarfSectionOffset(@intcast(fde.out_offset));
             if (fde.getLsdaAtom(macho_file)) |lsda| {
                 rec.lsda = lsda.atom_index;
                 rec.lsda_offset = fde.lsda_offset;
@@ -194,7 +194,7 @@ pub fn generate(info: *UnwindInfo, macho_file: *MachO) !void {
             const range_start_max: u64 = rec.getAtomAddress(macho_file) + compressed_entry_func_offset_mask;
             var encoding_count: u9 = info.common_encodings_count;
             var space_left: u32 = second_level_page_words -
-                @sizeOf(macho.unwind_info_compressed_second_level_page_header) / @sizeOf(u32);
+                @sizeof(macho.unwind_info_compressed_second_level_page_header) / @sizeof(u32);
             var page = Page{
                 .kind = undefined,
                 .start = i,
@@ -222,11 +222,11 @@ pub fn generate(info: *UnwindInfo, macho_file: *MachO) !void {
                 }
             }
 
-            page.count = @as(u16, @intCast(i - page.start));
+            page.count = @as(u16, @intcast(i - page.start));
 
             if (i < info.records.items.len and page.count < max_regular_second_level_entries) {
                 page.kind = .regular;
-                page.count = @as(u16, @intCast(@min(
+                page.count = @as(u16, @intcast(@min(
                     max_regular_second_level_entries,
                     info.records.items.len - page.start,
                 )));
@@ -246,22 +246,22 @@ pub fn generate(info: *UnwindInfo, macho_file: *MachO) !void {
     try info.lsdas_lookup.ensureTotalCapacityPrecise(gpa, info.records.items.len);
     for (info.records.items, 0..) |index, i| {
         const rec = macho_file.getUnwindRecord(index);
-        info.lsdas_lookup.appendAssumeCapacity(@intCast(info.lsdas.items.len));
+        info.lsdas_lookup.appendAssumeCapacity(@intcast(info.lsdas.items.len));
         if (rec.getLsdaAtom(macho_file)) |lsda| {
             log.debug("  @{x} => lsda({d})", .{ rec.getAtomAddress(macho_file), lsda.atom_index });
-            try info.lsdas.append(gpa, @intCast(i));
+            try info.lsdas.append(gpa, @intcast(i));
         }
     }
 }
 
 pub fn calcSize(info: UnwindInfo) usize {
     var total_size: usize = 0;
-    total_size += @sizeOf(macho.unwind_info_section_header);
+    total_size += @sizeof(macho.unwind_info_section_header);
     total_size +=
-        @as(usize, @intCast(info.common_encodings_count)) * @sizeOf(macho.compact_unwind_encoding_t);
-    total_size += @as(usize, @intCast(info.personalities_count)) * @sizeOf(u32);
-    total_size += (info.pages.items.len + 1) * @sizeOf(macho.unwind_info_section_header_index_entry);
-    total_size += info.lsdas.items.len * @sizeOf(macho.unwind_info_section_header_lsda_index_entry);
+        @as(usize, @intcast(info.common_encodings_count)) * @sizeof(macho.compact_unwind_encoding_t);
+    total_size += @as(usize, @intcast(info.personalities_count)) * @sizeof(u32);
+    total_size += (info.pages.items.len + 1) * @sizeof(macho.unwind_info_section_header_index_entry);
+    total_size += info.lsdas.items.len * @sizeof(macho.unwind_info_section_header_lsda_index_entry);
     total_size += info.pages.items.len * second_level_page_bytes;
     return total_size;
 }
@@ -273,12 +273,12 @@ pub fn write(info: UnwindInfo, macho_file: *MachO, buffer: []u8) !void {
     var stream = std.io.fixedBufferStream(buffer);
     const writer = stream.writer();
 
-    const common_encodings_offset: u32 = @sizeOf(macho.unwind_info_section_header);
+    const common_encodings_offset: u32 = @sizeof(macho.unwind_info_section_header);
     const common_encodings_count: u32 = info.common_encodings_count;
-    const personalities_offset: u32 = common_encodings_offset + common_encodings_count * @sizeOf(u32);
+    const personalities_offset: u32 = common_encodings_offset + common_encodings_count * @sizeof(u32);
     const personalities_count: u32 = info.personalities_count;
-    const indexes_offset: u32 = personalities_offset + personalities_count * @sizeOf(u32);
-    const indexes_count: u32 = @as(u32, @intCast(info.pages.items.len + 1));
+    const indexes_offset: u32 = personalities_offset + personalities_count * @sizeof(u32);
+    const indexes_count: u32 = @as(u32, @intcast(info.pages.items.len + 1));
 
     try writer.writeStruct(macho.unwind_info_section_header{
         .commonEncodingsArraySectionOffset = common_encodings_offset,
@@ -293,37 +293,37 @@ pub fn write(info: UnwindInfo, macho_file: *MachO, buffer: []u8) !void {
 
     for (info.personalities[0..info.personalities_count]) |sym_index| {
         const sym = macho_file.getSymbol(sym_index);
-        try writer.writeInt(u32, @intCast(sym.getGotAddress(macho_file) - seg.vmaddr), .little);
+        try writer.writeInt(u32, @intcast(sym.getGotAddress(macho_file) - seg.vmaddr), .little);
     }
 
-    const pages_base_offset = @as(u32, @intCast(header.size - (info.pages.items.len * second_level_page_bytes)));
-    const lsda_base_offset = @as(u32, @intCast(pages_base_offset -
-        (info.lsdas.items.len * @sizeOf(macho.unwind_info_section_header_lsda_index_entry))));
+    const pages_base_offset = @as(u32, @intcast(header.size - (info.pages.items.len * second_level_page_bytes)));
+    const lsda_base_offset = @as(u32, @intcast(pages_base_offset -
+        (info.lsdas.items.len * @sizeof(macho.unwind_info_section_header_lsda_index_entry))));
     for (info.pages.items, 0..) |page, i| {
         assert(page.count > 0);
         const rec = macho_file.getUnwindRecord(info.records.items[page.start]);
         try writer.writeStruct(macho.unwind_info_section_header_index_entry{
-            .functionOffset = @as(u32, @intCast(rec.getAtomAddress(macho_file) - seg.vmaddr)),
-            .secondLevelPagesSectionOffset = @as(u32, @intCast(pages_base_offset + i * second_level_page_bytes)),
+            .functionOffset = @as(u32, @intcast(rec.getAtomAddress(macho_file) - seg.vmaddr)),
+            .secondLevelPagesSectionOffset = @as(u32, @intcast(pages_base_offset + i * second_level_page_bytes)),
             .lsdaIndexArraySectionOffset = lsda_base_offset +
-                info.lsdas_lookup.items[page.start] * @sizeOf(macho.unwind_info_section_header_lsda_index_entry),
+                info.lsdas_lookup.items[page.start] * @sizeof(macho.unwind_info_section_header_lsda_index_entry),
         });
     }
 
     const last_rec = macho_file.getUnwindRecord(info.records.items[info.records.items.len - 1]);
-    const sentinel_address = @as(u32, @intCast(last_rec.getAtomAddress(macho_file) + last_rec.length - seg.vmaddr));
+    const sentinel_address = @as(u32, @intcast(last_rec.getAtomAddress(macho_file) + last_rec.length - seg.vmaddr));
     try writer.writeStruct(macho.unwind_info_section_header_index_entry{
         .functionOffset = sentinel_address,
         .secondLevelPagesSectionOffset = 0,
         .lsdaIndexArraySectionOffset = lsda_base_offset +
-            @as(u32, @intCast(info.lsdas.items.len)) * @sizeOf(macho.unwind_info_section_header_lsda_index_entry),
+            @as(u32, @intcast(info.lsdas.items.len)) * @sizeof(macho.unwind_info_section_header_lsda_index_entry),
     });
 
     for (info.lsdas.items) |index| {
         const rec = macho_file.getUnwindRecord(info.records.items[index]);
         try writer.writeStruct(macho.unwind_info_section_header_lsda_index_entry{
-            .functionOffset = @as(u32, @intCast(rec.getAtomAddress(macho_file) - seg.vmaddr)),
-            .lsdaOffset = @as(u32, @intCast(rec.getLsdaAddress(macho_file) - seg.vmaddr)),
+            .functionOffset = @as(u32, @intcast(rec.getAtomAddress(macho_file) - seg.vmaddr)),
+            .lsdaOffset = @as(u32, @intcast(rec.getLsdaAddress(macho_file) - seg.vmaddr)),
         });
     }
 
@@ -383,8 +383,8 @@ pub const Encoding = extern struct {
     pub fn isDwarf(enc: Encoding, macho_file: *MachO) bool {
         const mode = enc.getMode();
         return switch (macho_file.getTarget().cpu.arch) {
-            .aarch64 => @as(macho.UNWIND_ARM64_MODE, @enumFromInt(mode)) == .DWARF,
-            .x86_64 => @as(macho.UNWIND_X86_64_MODE, @enumFromInt(mode)) == .DWARF,
+            .aarch64 => @as(macho.UNWIND_ARM64_MODE, @enumfromint(mode)) == .DWARF,
+            .x86_64 => @as(macho.UNWIND_X86_64_MODE, @enumfromint(mode)) == .DWARF,
             else => unreachable,
         };
     }
@@ -392,7 +392,7 @@ pub const Encoding = extern struct {
     pub fn setMode(enc: *Encoding, mode: anytype) void {
         comptime assert(macho.UNWIND_ARM64_MODE_MASK == macho.UNWIND_X86_64_MODE_MASK);
         const shift = comptime @ctz(macho.UNWIND_ARM64_MODE_MASK);
-        enc.enc |= @as(u32, @intCast(@intFromEnum(mode))) << shift;
+        enc.enc |= @as(u32, @intcast(@intfromenum(mode))) << shift;
     }
 
     pub fn hasLsda(enc: Encoding) bool {
@@ -403,7 +403,7 @@ pub const Encoding = extern struct {
 
     pub fn setHasLsda(enc: *Encoding, has_lsda: bool) void {
         const shift = comptime @ctz(macho.UNWIND_HAS_LSDA);
-        const mask = @as(u32, @intCast(@intFromBool(has_lsda))) << shift;
+        const mask = @as(u32, @intcast(@intfrombool(has_lsda))) << shift;
         enc.enc |= mask;
     }
 
@@ -415,7 +415,7 @@ pub const Encoding = extern struct {
 
     pub fn setPersonalityIndex(enc: *Encoding, index: u2) void {
         const shift = comptime @ctz(macho.UNWIND_PERSONALITY_MASK);
-        const mask = @as(u32, @intCast(index)) << shift;
+        const mask = @as(u32, @intcast(index)) << shift;
         enc.enc |= mask;
     }
 
@@ -503,7 +503,7 @@ pub const Record = struct {
         _ = unused_fmt_string;
         _ = options;
         _ = writer;
-        @compileError("do not format UnwindInfo.Records directly");
+        @compileerror("do not format UnwindInfo.Records directly");
     }
 
     pub fn fmt(rec: Record, macho_file: *MachO) std.fmt.Formatter(format2) {
@@ -544,15 +544,15 @@ const max_common_encodings = 127;
 const max_compact_encodings = 256;
 
 const second_level_page_bytes = 0x1000;
-const second_level_page_words = second_level_page_bytes / @sizeOf(u32);
+const second_level_page_words = second_level_page_bytes / @sizeof(u32);
 
 const max_regular_second_level_entries =
-    (second_level_page_bytes - @sizeOf(macho.unwind_info_regular_second_level_page_header)) /
-    @sizeOf(macho.unwind_info_regular_second_level_entry);
+    (second_level_page_bytes - @sizeof(macho.unwind_info_regular_second_level_page_header)) /
+    @sizeof(macho.unwind_info_regular_second_level_entry);
 
 const max_compressed_second_level_entries =
-    (second_level_page_bytes - @sizeOf(macho.unwind_info_compressed_second_level_page_header)) /
-    @sizeOf(u32);
+    (second_level_page_bytes - @sizeof(macho.unwind_info_compressed_second_level_page_header)) /
+    @sizeof(u32);
 
 const compressed_entry_func_offset_mask = ~@as(u24, 0);
 
@@ -574,7 +574,7 @@ const Page = struct {
         inline while (index < max_compact_encodings) : (index += 1) {
             if (index >= page.page_encodings_count) return null;
             if (page.page_encodings[index].eql(enc)) {
-                return @as(u8, @intCast(index));
+                return @as(u8, @intcast(index));
             }
         }
         return null;
@@ -590,7 +590,7 @@ const Page = struct {
         _ = unused_format_string;
         _ = options;
         _ = writer;
-        @compileError("do not format Page directly; use page.fmt()");
+        @compileerror("do not format Page directly; use page.fmt()");
     }
 
     const FormatPageContext = struct {
@@ -607,7 +607,7 @@ const Page = struct {
         _ = options;
         _ = unused_format_string;
         try writer.writeAll("Page:\n");
-        try writer.print("  kind: {s}\n", .{@tagName(ctx.page.kind)});
+        try writer.print("  kind: {s}\n", .{@tagname(ctx.page.kind)});
         try writer.print("  entries: {d} - {d}\n", .{
             ctx.page.start,
             ctx.page.start + ctx.page.count,
@@ -631,25 +631,25 @@ const Page = struct {
         switch (page.kind) {
             .regular => {
                 try writer.writeStruct(macho.unwind_info_regular_second_level_page_header{
-                    .entryPageOffset = @sizeOf(macho.unwind_info_regular_second_level_page_header),
+                    .entryPageOffset = @sizeof(macho.unwind_info_regular_second_level_page_header),
                     .entryCount = page.count,
                 });
 
                 for (info.records.items[page.start..][0..page.count]) |index| {
                     const rec = macho_file.getUnwindRecord(index);
                     try writer.writeStruct(macho.unwind_info_regular_second_level_entry{
-                        .functionOffset = @as(u32, @intCast(rec.getAtomAddress(macho_file) - seg.vmaddr)),
+                        .functionOffset = @as(u32, @intcast(rec.getAtomAddress(macho_file) - seg.vmaddr)),
                         .encoding = rec.enc.enc,
                     });
                 }
             },
             .compressed => {
-                const entry_offset = @sizeOf(macho.unwind_info_compressed_second_level_page_header) +
-                    @as(u16, @intCast(page.page_encodings_count)) * @sizeOf(u32);
+                const entry_offset = @sizeof(macho.unwind_info_compressed_second_level_page_header) +
+                    @as(u16, @intcast(page.page_encodings_count)) * @sizeof(u32);
                 try writer.writeStruct(macho.unwind_info_compressed_second_level_page_header{
                     .entryPageOffset = entry_offset,
                     .entryCount = page.count,
-                    .encodingsPageOffset = @sizeOf(macho.unwind_info_compressed_second_level_page_header),
+                    .encodingsPageOffset = @sizeof(macho.unwind_info_compressed_second_level_page_header),
                     .encodingsCount = page.page_encodings_count,
                 });
 
@@ -667,8 +667,8 @@ const Page = struct {
                         break :blk ncommon + page.getPageEncoding(rec.enc).?;
                     };
                     const compressed = macho.UnwindInfoCompressedEntry{
-                        .funcOffset = @as(u24, @intCast(rec.getAtomAddress(macho_file) - first_rec.getAtomAddress(macho_file))),
-                        .encodingIndex = @as(u8, @intCast(enc_index)),
+                        .funcOffset = @as(u24, @intcast(rec.getAtomAddress(macho_file) - first_rec.getAtomAddress(macho_file))),
+                        .encodingIndex = @as(u8, @intcast(enc_index)),
                     };
                     try writer.writeStruct(compressed);
                 }

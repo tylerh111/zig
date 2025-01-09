@@ -16,12 +16,12 @@ pub fn addGlobal(self: *LinkerDefined, name: [:0]const u8, elf_file: *Elf) !u32 
     const gpa = comp.gpa;
     try self.symtab.ensureUnusedCapacity(gpa, 1);
     try self.symbols.ensureUnusedCapacity(gpa, 1);
-    const name_off = @as(u32, @intCast(self.strtab.items.len));
+    const name_off = @as(u32, @intcast(self.strtab.items.len));
     try self.strtab.writer(gpa).print("{s}\x00", .{name});
     self.symtab.appendAssumeCapacity(.{
         .st_name = name_off,
         .st_info = elf.STB_GLOBAL << 4,
-        .st_other = @intFromEnum(elf.STV.HIDDEN),
+        .st_other = @intfromenum(elf.STV.HIDDEN),
         .st_shndx = elf.SHN_ABS,
         .st_value = 0,
         .st_size = 0,
@@ -33,7 +33,7 @@ pub fn addGlobal(self: *LinkerDefined, name: [:0]const u8, elf_file: *Elf) !u32 
 
 pub fn resolveSymbols(self: *LinkerDefined, elf_file: *Elf) void {
     for (self.symbols.items, 0..) |index, i| {
-        const sym_idx = @as(Symbol.Index, @intCast(i));
+        const sym_idx = @as(Symbol.Index, @intcast(i));
         const this_sym = self.symtab.items[sym_idx];
 
         if (this_sym.st_shndx == elf.SHN_UNDEF) continue;
@@ -66,7 +66,7 @@ pub fn updateSymtabSize(self: *LinkerDefined, elf_file: *Elf) !void {
             try global.addExtra(.{ .symtab = self.output_symtab_ctx.nglobals }, elf_file);
             self.output_symtab_ctx.nglobals += 1;
         }
-        self.output_symtab_ctx.strsize += @as(u32, @intCast(global.name(elf_file).len)) + 1;
+        self.output_symtab_ctx.strsize += @as(u32, @intcast(global.name(elf_file).len)) + 1;
     }
 }
 
@@ -76,7 +76,7 @@ pub fn writeSymtab(self: LinkerDefined, elf_file: *Elf) void {
         const file_ptr = global.file(elf_file) orelse continue;
         if (file_ptr.index() != self.index) continue;
         const idx = global.outputSymtabIndex(elf_file) orelse continue;
-        const st_name = @as(u32, @intCast(elf_file.strtab.items.len));
+        const st_name = @as(u32, @intcast(elf_file.strtab.items.len));
         elf_file.strtab.appendSliceAssumeCapacity(global.name(elf_file));
         elf_file.strtab.appendAssumeCapacity(0);
         const out_sym = &elf_file.symtab.items[idx];
@@ -91,7 +91,7 @@ pub fn asFile(self: *LinkerDefined) File {
 
 pub fn getString(self: LinkerDefined, off: u32) [:0]const u8 {
     assert(off < self.strtab.items.len);
-    return mem.sliceTo(@as([*:0]const u8, @ptrCast(self.strtab.items.ptr + off)), 0);
+    return mem.sliceTo(@as([*:0]const u8, @ptrcast(self.strtab.items.ptr + off)), 0);
 }
 
 pub fn fmtSymtab(self: *LinkerDefined, elf_file: *Elf) std.fmt.Formatter(formatSymtab) {

@@ -369,7 +369,7 @@ fn KeySchedule(comptime Aes: type) type {
             }
             i = 0;
             inline while (i < round_keys.len * 4) : (i += 1) {
-                round_keys[i / 4].repr[i % 4] = @byteSwap(round_keys[i / 4].repr[i % 4]);
+                round_keys[i / 4].repr[i % 4] = @byteswap(round_keys[i / 4].repr[i % 4]);
             }
             return Self{ .round_keys = round_keys };
         }
@@ -595,7 +595,7 @@ const table_decrypt align(64) = generateTable(true); // 4-byte LUTs for decrypti
 
 // Generate S-box substitution values.
 fn generateSbox(invert: bool) [256]u8 {
-    @setEvalBranchQuota(10000);
+    @setevalbranchquota(10000);
 
     var sbox: [256]u8 = undefined;
 
@@ -647,7 +647,7 @@ fn generateTable(invert: bool) [4][256]u32 {
 
 // Multiply a and b as GF(2) polynomials modulo poly.
 fn mul(a: u8, b: u8) u8 {
-    @setEvalBranchQuota(30000);
+    @setevalbranchquota(30000);
 
     var i: u8 = a;
     var j: u9 = b;
@@ -716,7 +716,7 @@ inline fn table_lookup(table: *align(64) const [4][256]u32, idx0: u8, idx1: u8, 
             table[3][idx3],
         };
     } else {
-        const table_bytes = @sizeOf(@TypeOf(table[0]));
+        const table_bytes = @sizeof(@TypeOf(table[0]));
         const stride = switch (side_channels_mitigations) {
             .none => unreachable,
             .basic => table[0].len / 4,

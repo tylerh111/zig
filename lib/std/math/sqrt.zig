@@ -14,30 +14,30 @@ const maxInt = std.math.maxInt;
 /// TODO Decide if all this logic should be implemented directly in the @sqrt builtin function.
 pub fn sqrt(x: anytype) Sqrt(@TypeOf(x)) {
     const T = @TypeOf(x);
-    switch (@typeInfo(T)) {
+    switch (@typeinfo(T)) {
         .Float, .ComptimeFloat => return @sqrt(x),
         .ComptimeInt => comptime {
             if (x > maxInt(u128)) {
-                @compileError("sqrt not implemented for comptime_int greater than 128 bits");
+                @compileerror("sqrt not implemented for comptime_int greater than 128 bits");
             }
             if (x < 0) {
-                @compileError("sqrt on negative number");
+                @compileerror("sqrt on negative number");
             }
             return @as(T, sqrt_int(u128, x));
         },
         .Int => |IntType| switch (IntType.signedness) {
-            .signed => @compileError("sqrt not implemented for signed integers"),
+            .signed => @compileerror("sqrt not implemented for signed integers"),
             .unsigned => return sqrt_int(T, x),
         },
-        else => @compileError("sqrt not implemented for " ++ @typeName(T)),
+        else => @compileerror("sqrt not implemented for " ++ @typename(T)),
     }
 }
 
 fn sqrt_int(comptime T: type, value: T) Sqrt(T) {
-    if (@typeInfo(T).Int.bits <= 2) {
+    if (@typeinfo(T).Int.bits <= 2) {
         return if (value == 0) 0 else 1; // shortcut for small number of bits to simplify general case
     } else {
-        const bits = @typeInfo(T).Int.bits;
+        const bits = @typeinfo(T).Int.bits;
         const max = math.maxInt(T);
         const minustwo = (@as(T, 2) ^ max) + 1; // unsigned int cannot represent -2
         var op = value;
@@ -57,7 +57,7 @@ fn sqrt_int(comptime T: type, value: T) Sqrt(T) {
             one >>= 2;
         }
 
-        return @as(Sqrt(T), @intCast(res));
+        return @as(Sqrt(T), @intcast(res));
     }
 }
 
@@ -79,7 +79,7 @@ test sqrt_int {
 
 /// Returns the return type `sqrt` will return given an operand of type `T`.
 pub fn Sqrt(comptime T: type) type {
-    return switch (@typeInfo(T)) {
+    return switch (@typeinfo(T)) {
         .Int => |int| std.meta.Int(.unsigned, (int.bits + 1) / 2),
         else => T,
     };

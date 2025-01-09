@@ -12,7 +12,7 @@ pub fn cWriter(c_file: *std.c.FILE) CWriter {
 fn cWriterWrite(c_file: *std.c.FILE, bytes: []const u8) std.fs.File.WriteError!usize {
     const amt_written = std.c.fwrite(bytes.ptr, 1, bytes.len, c_file);
     if (amt_written >= 0) return amt_written;
-    switch (@as(std.c.E, @enumFromInt(std.c._errno().*))) {
+    switch (@as(std.c.E, @enumfromint(std.c._errno().*))) {
         .SUCCESS => unreachable,
         .INVAL => unreachable,
         .FAULT => unreachable,

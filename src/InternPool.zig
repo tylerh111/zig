@@ -97,15 +97,15 @@ pub const TrackedInst = extern struct {
     inst: Zir.Inst.Index,
     comptime {
         // The fields should be tightly packed. See also serialiation logic in `Compilation.saveState`.
-        assert(@sizeOf(@This()) == Cache.bin_digest_len + @sizeOf(Zir.Inst.Index));
+        assert(@sizeof(@This()) == Cache.bin_digest_len + @sizeof(Zir.Inst.Index));
     }
     pub const Index = enum(u32) {
         _,
         pub fn resolve(i: TrackedInst.Index, ip: *const InternPool) Zir.Inst.Index {
-            return ip.tracked_insts.keys()[@intFromEnum(i)].inst;
+            return ip.tracked_insts.keys()[@intfromenum(i)].inst;
         }
         pub fn toOptional(i: TrackedInst.Index) Optional {
-            return @enumFromInt(@intFromEnum(i));
+            return @enumfromint(@intfromenum(i));
         }
         pub const Optional = enum(u32) {
             none = std.math.maxInt(u32),
@@ -113,7 +113,7 @@ pub const TrackedInst = extern struct {
             pub fn unwrap(opt: Optional) ?TrackedInst.Index {
                 return switch (opt) {
                     .none => null,
-                    _ => @enumFromInt(@intFromEnum(opt)),
+                    _ => @enumfromint(@intfromenum(opt)),
                 };
             }
         };
@@ -126,7 +126,7 @@ pub fn trackZir(ip: *InternPool, gpa: Allocator, file: *Module.File, inst: Zir.I
         .inst = inst,
     };
     const gop = try ip.tracked_insts.getOrPut(gpa, key);
-    return @enumFromInt(gop.index);
+    return @enumfromint(gop.index);
 }
 
 /// Reperesents the "source" of a dependency edge, i.e. either a Decl or a
@@ -139,21 +139,21 @@ pub const Depender = enum(u32) {
         func: InternPool.Index,
     };
     pub fn unwrap(dep: Depender) Unwrapped {
-        const tag: u1 = @truncate(@intFromEnum(dep) >> 31);
-        const val: u31 = @truncate(@intFromEnum(dep));
+        const tag: u1 = @truncate(@intfromenum(dep) >> 31);
+        const val: u31 = @truncate(@intfromenum(dep));
         return switch (tag) {
-            0 => .{ .decl = @enumFromInt(val) },
-            1 => .{ .func = @enumFromInt(val) },
+            0 => .{ .decl = @enumfromint(val) },
+            1 => .{ .func = @enumfromint(val) },
         };
     }
     pub fn wrap(raw: Unwrapped) Depender {
-        return @enumFromInt(switch (raw) {
-            .decl => |decl| @intFromEnum(decl),
-            .func => |func| (1 << 31) | @intFromEnum(func),
+        return @enumfromint(switch (raw) {
+            .decl => |decl| @intfromenum(decl),
+            .func => |func| (1 << 31) | @intfromenum(func),
         });
     }
     pub fn toOptional(dep: Depender) Optional {
-        return @enumFromInt(@intFromEnum(dep));
+        return @enumfromint(@intfromenum(dep));
     }
     pub const Optional = enum(u32) {
         none = std.math.maxInt(u32),
@@ -161,7 +161,7 @@ pub const Depender = enum(u32) {
         pub fn unwrap(opt: Optional) ?Depender {
             return switch (opt) {
                 .none => null,
-                _ => @enumFromInt(@intFromEnum(opt)),
+                _ => @enumfromint(@intfromenum(opt)),
             };
         }
     };
@@ -179,19 +179,19 @@ pub fn removeDependenciesForDepender(ip: *InternPool, gpa: Allocator, depender: 
     var opt_idx = (ip.first_dependency.fetchSwapRemove(depender) orelse return).value.toOptional();
 
     while (opt_idx.unwrap()) |idx| {
-        const dep = ip.dep_entries.items[@intFromEnum(idx)];
+        const dep = ip.dep_entries.items[@intfromenum(idx)];
         opt_idx = dep.next_dependee;
 
         const prev_idx = dep.prev.unwrap() orelse {
             // This entry is the start of a list in some `*_deps`.
             // We cannot easily remove this mapping, so this must remain as a dummy entry.
-            ip.dep_entries.items[@intFromEnum(idx)].depender = .none;
+            ip.dep_entries.items[@intfromenum(idx)].depender = .none;
             continue;
         };
 
-        ip.dep_entries.items[@intFromEnum(prev_idx)].next = dep.next;
+        ip.dep_entries.items[@intfromenum(prev_idx)].next = dep.next;
         if (dep.next.unwrap()) |next_idx| {
-            ip.dep_entries.items[@intFromEnum(next_idx)].prev = dep.prev;
+            ip.dep_entries.items[@intfromenum(next_idx)].prev = dep.prev;
         }
 
         ip.free_dep_entries.append(gpa, idx) catch {
@@ -206,7 +206,7 @@ pub const DependencyIterator = struct {
     next_entry: DepEntry.Index.Optional,
     pub fn next(it: *DependencyIterator) ?Depender {
         const idx = it.next_entry.unwrap() orelse return null;
-        const entry = it.ip.dep_entries.items[@intFromEnum(idx)];
+        const entry = it.ip.dep_entries.items[@intfromenum(idx)];
         it.next_entry = entry.next;
         return entry.depender.unwrap().?;
     }
@@ -223,7 +223,7 @@ pub fn dependencyIterator(ip: *const InternPool, dependee: Dependee) DependencyI
         .ip = ip,
         .next_entry = .none,
     };
-    if (ip.dep_entries.items[@intFromEnum(first_entry)].depender == .none) return .{
+    if (ip.dep_entries.items[@intfromenum(first_entry)].depender == .none) return .{
         .ip = ip,
         .next_entry = .none,
     };
@@ -261,25 +261,25 @@ pub fn addDependency(ip: *InternPool, gpa: Allocator, depender: Depender, depend
                 .namespace_name => ip.namespace_name_deps,
             }.getOrPut(gpa, dependee_payload);
 
-            if (gop.found_existing and ip.dep_entries.items[@intFromEnum(gop.value_ptr.*)].depender == .none) {
+            if (gop.found_existing and ip.dep_entries.items[@intfromenum(gop.value_ptr.*)].depender == .none) {
                 // Dummy entry, so we can reuse it rather than allocating a new one!
-                ip.dep_entries.items[@intFromEnum(gop.value_ptr.*)].next = .none;
+                ip.dep_entries.items[@intfromenum(gop.value_ptr.*)].next = .none;
                 break :new_index gop.value_ptr.*;
             }
 
             // Prepend a new dependency.
             const new_index: DepEntry.Index, const ptr = if (ip.free_dep_entries.popOrNull()) |new_index| new: {
-                break :new .{ new_index, &ip.dep_entries.items[@intFromEnum(new_index)] };
-            } else .{ @enumFromInt(ip.dep_entries.items.len), ip.dep_entries.addOneAssumeCapacity() };
+                break :new .{ new_index, &ip.dep_entries.items[@intfromenum(new_index)] };
+            } else .{ @enumfromint(ip.dep_entries.items.len), ip.dep_entries.addOneAssumeCapacity() };
             ptr.next = if (gop.found_existing) gop.value_ptr.*.toOptional() else .none;
             gop.value_ptr.* = new_index;
             break :new_index new_index;
         },
     };
 
-    ip.dep_entries.items[@intFromEnum(new_index)].depender = depender.toOptional();
-    ip.dep_entries.items[@intFromEnum(new_index)].prev = .none;
-    ip.dep_entries.items[@intFromEnum(new_index)].next_dependee = first_depender_dep;
+    ip.dep_entries.items[@intfromenum(new_index)].depender = depender.toOptional();
+    ip.dep_entries.items[@intfromenum(new_index)].prev = .none;
+    ip.dep_entries.items[@intfromenum(new_index)].next_dependee = first_depender_dep;
     ip.first_dependency.putAssumeCapacity(depender, new_index);
 }
 
@@ -313,7 +313,7 @@ pub const DepEntry = extern struct {
     pub const Index = enum(u32) {
         _,
         pub fn toOptional(dep: DepEntry.Index) Optional {
-            return @enumFromInt(@intFromEnum(dep));
+            return @enumfromint(@intfromenum(dep));
         }
         pub const Optional = enum(u32) {
             none = std.math.maxInt(u32),
@@ -321,7 +321,7 @@ pub const DepEntry = extern struct {
             pub fn unwrap(opt: Optional) ?DepEntry.Index {
                 return switch (opt) {
                     .none => null,
-                    _ => @enumFromInt(@intFromEnum(opt)),
+                    _ => @enumfromint(@intfromenum(opt)),
                 };
             }
         };
@@ -351,7 +351,7 @@ const KeyAdapter = struct {
     pub fn eql(ctx: @This(), a: Key, b_void: void, b_map_index: usize) bool {
         _ = b_void;
         if (ctx.intern_pool.items.items(.tag)[b_map_index] == .removed) return false;
-        return ctx.intern_pool.indexToKey(@enumFromInt(b_map_index)).eql(a, ctx.intern_pool);
+        return ctx.intern_pool.indexToKey(@enumfromint(b_map_index)).eql(a, ctx.intern_pool);
     }
 
     pub fn hash(ctx: @This(), a: Key) u32 {
@@ -366,7 +366,7 @@ pub const OptionalMapIndex = enum(u32) {
 
     pub fn unwrap(oi: OptionalMapIndex) ?MapIndex {
         if (oi == .none) return null;
-        return @enumFromInt(@intFromEnum(oi));
+        return @enumfromint(@intfromenum(oi));
     }
 };
 
@@ -375,7 +375,7 @@ pub const MapIndex = enum(u32) {
     _,
 
     pub fn toOptional(i: MapIndex) OptionalMapIndex {
-        return @enumFromInt(@intFromEnum(i));
+        return @enumfromint(@intfromenum(i));
     }
 };
 
@@ -385,7 +385,7 @@ pub const RuntimeIndex = enum(u32) {
     _,
 
     pub fn increment(ri: *RuntimeIndex) void {
-        ri.* = @enumFromInt(@intFromEnum(ri.*) + 1);
+        ri.* = @enumfromint(@intfromenum(ri.*) + 1);
     }
 };
 
@@ -398,7 +398,7 @@ pub const NamespaceIndex = enum(u32) {
     _,
 
     pub fn toOptional(i: NamespaceIndex) OptionalNamespaceIndex {
-        return @enumFromInt(@intFromEnum(i));
+        return @enumfromint(@intfromenum(i));
     }
 };
 
@@ -407,12 +407,12 @@ pub const OptionalNamespaceIndex = enum(u32) {
     _,
 
     pub fn init(oi: ?NamespaceIndex) OptionalNamespaceIndex {
-        return @enumFromInt(@intFromEnum(oi orelse return .none));
+        return @enumfromint(@intfromenum(oi orelse return .none));
     }
 
     pub fn unwrap(oi: OptionalNamespaceIndex) ?NamespaceIndex {
         if (oi == .none) return null;
-        return @enumFromInt(@intFromEnum(oi));
+        return @enumfromint(@intfromenum(oi));
     }
 };
 
@@ -423,17 +423,17 @@ pub const String = enum(u32) {
     _,
 
     pub fn toSlice(string: String, len: u64, ip: *const InternPool) []const u8 {
-        return ip.string_bytes.items[@intFromEnum(string)..][0..@intCast(len)];
+        return ip.string_bytes.items[@intfromenum(string)..][0..@intcast(len)];
     }
 
     pub fn at(string: String, index: u64, ip: *const InternPool) u8 {
-        return ip.string_bytes.items[@intCast(@intFromEnum(string) + index)];
+        return ip.string_bytes.items[@intcast(@intfromenum(string) + index)];
     }
 
     pub fn toNullTerminatedString(string: String, len: u64, ip: *const InternPool) NullTerminatedString {
         assert(std.mem.indexOfScalar(u8, string.toSlice(len, ip), 0) == null);
         assert(string.at(len, ip) == 0);
-        return @enumFromInt(@intFromEnum(string));
+        return @enumfromint(@intfromenum(string));
     }
 };
 
@@ -445,7 +445,7 @@ pub const OptionalString = enum(u32) {
     _,
 
     pub fn unwrap(string: OptionalString) ?String {
-        return if (string != .none) @enumFromInt(@intFromEnum(string)) else null;
+        return if (string != .none) @enumfromint(@intfromenum(string)) else null;
     }
 
     pub fn toSlice(string: OptionalString, len: u64, ip: *const InternPool) ?[]const u8 {
@@ -467,25 +467,25 @@ pub const NullTerminatedString = enum(u32) {
         len: u32,
 
         pub fn get(slice: Slice, ip: *const InternPool) []NullTerminatedString {
-            return @ptrCast(ip.extra.items[slice.start..][0..slice.len]);
+            return @ptrcast(ip.extra.items[slice.start..][0..slice.len]);
         }
     };
 
     pub fn toString(self: NullTerminatedString) String {
-        return @enumFromInt(@intFromEnum(self));
+        return @enumfromint(@intfromenum(self));
     }
 
     pub fn toOptional(self: NullTerminatedString) OptionalNullTerminatedString {
-        return @enumFromInt(@intFromEnum(self));
+        return @enumfromint(@intfromenum(self));
     }
 
     pub fn toSlice(string: NullTerminatedString, ip: *const InternPool) [:0]const u8 {
-        const slice = ip.string_bytes.items[@intFromEnum(string)..];
+        const slice = ip.string_bytes.items[@intfromenum(string)..];
         return slice[0..std.mem.indexOfScalar(u8, slice, 0).? :0];
     }
 
     pub fn length(string: NullTerminatedString, ip: *const InternPool) u32 {
-        return @intCast(string.toSlice(ip).len);
+        return @intcast(string.toSlice(ip).len);
     }
 
     pub fn eqlSlice(string: NullTerminatedString, slice: []const u8, ip: *const InternPool) bool {
@@ -502,14 +502,14 @@ pub const NullTerminatedString = enum(u32) {
 
         pub fn hash(ctx: @This(), a: NullTerminatedString) u32 {
             _ = ctx;
-            return std.hash.uint32(@intFromEnum(a));
+            return std.hash.uint32(@intfromenum(a));
         }
     };
 
     /// Compare based on integer value alone, ignoring the string contents.
     pub fn indexLessThan(ctx: void, a: NullTerminatedString, b: NullTerminatedString) bool {
         _ = ctx;
-        return @intFromEnum(a) < @intFromEnum(b);
+        return @intfromenum(a) < @intfromenum(b);
     }
 
     pub fn toUnsigned(string: NullTerminatedString, ip: *const InternPool) ?u32 {
@@ -534,7 +534,7 @@ pub const NullTerminatedString = enum(u32) {
             try writer.writeAll(slice);
         } else if (comptime std.mem.eql(u8, specifier, "i")) {
             try writer.print("{p}", .{std.zig.fmtId(slice)});
-        } else @compileError("invalid format string '" ++ specifier ++ "' for '" ++ @typeName(NullTerminatedString) ++ "'");
+        } else @compileerror("invalid format string '" ++ specifier ++ "' for '" ++ @typename(NullTerminatedString) ++ "'");
     }
 
     pub fn fmt(self: NullTerminatedString, ip: *const InternPool) std.fmt.Formatter(format) {
@@ -550,7 +550,7 @@ pub const OptionalNullTerminatedString = enum(u32) {
     _,
 
     pub fn unwrap(string: OptionalNullTerminatedString) ?NullTerminatedString {
-        return if (string != .none) @enumFromInt(@intFromEnum(string)) else null;
+        return if (string != .none) @enumfromint(@intfromenum(string)) else null;
     }
 
     pub fn toSlice(string: OptionalNullTerminatedString, ip: *const InternPool) ?[:0]const u8 {
@@ -570,18 +570,18 @@ pub const CaptureValue = packed struct(u32) {
 
     pub fn wrap(val: Unwrapped) CaptureValue {
         return switch (val) {
-            .@"comptime" => |i| .{ .tag = .@"comptime", .idx = @intCast(@intFromEnum(i)) },
-            .runtime => |i| .{ .tag = .runtime, .idx = @intCast(@intFromEnum(i)) },
-            .decl_val => |i| .{ .tag = .decl_val, .idx = @intCast(@intFromEnum(i)) },
-            .decl_ref => |i| .{ .tag = .decl_ref, .idx = @intCast(@intFromEnum(i)) },
+            .@"comptime" => |i| .{ .tag = .@"comptime", .idx = @intcast(@intfromenum(i)) },
+            .runtime => |i| .{ .tag = .runtime, .idx = @intcast(@intfromenum(i)) },
+            .decl_val => |i| .{ .tag = .decl_val, .idx = @intcast(@intfromenum(i)) },
+            .decl_ref => |i| .{ .tag = .decl_ref, .idx = @intcast(@intfromenum(i)) },
         };
     }
     pub fn unwrap(val: CaptureValue) Unwrapped {
         return switch (val.tag) {
-            .@"comptime" => .{ .@"comptime" = @enumFromInt(val.idx) },
-            .runtime => .{ .runtime = @enumFromInt(val.idx) },
-            .decl_val => .{ .decl_val = @enumFromInt(val.idx) },
-            .decl_ref => .{ .decl_ref = @enumFromInt(val.idx) },
+            .@"comptime" => .{ .@"comptime" = @enumfromint(val.idx) },
+            .runtime => .{ .runtime = @enumfromint(val.idx) },
+            .decl_val => .{ .decl_val = @enumfromint(val.idx) },
+            .decl_ref => .{ .decl_ref = @enumfromint(val.idx) },
         };
     }
 
@@ -598,7 +598,7 @@ pub const CaptureValue = packed struct(u32) {
         start: u32,
         len: u32,
         pub fn get(slice: Slice, ip: *const InternPool) []CaptureValue {
-            return @ptrCast(ip.extra.items[slice.start..][0..slice.len]);
+            return @ptrcast(ip.extra.items[slice.start..][0..slice.len]);
         }
     };
 };
@@ -683,10 +683,10 @@ pub const Key = union(enum) {
 
         /// Look up field index based on field name.
         pub fn nameIndex(self: ErrorSetType, ip: *const InternPool, name: NullTerminatedString) ?u32 {
-            const map = &ip.maps.items[@intFromEnum(self.names_map.unwrap().?)];
+            const map = &ip.maps.items[@intfromenum(self.names_map.unwrap().?)];
             const adapter: NullTerminatedString.Adapter = .{ .strings = self.names.get(ip) };
             const field_index = map.getIndexAdapted(name, adapter) orelse return null;
-            return @intCast(field_index);
+            return @intcast(field_index);
         }
     };
 
@@ -740,7 +740,7 @@ pub const Key = union(enum) {
         sentinel: Index = .none,
 
         pub fn lenIncludingSentinel(array_type: ArrayType) u64 {
-            return array_type.len + @intFromBool(array_type.sentinel != .none);
+            return array_type.len + @intfrombool(array_type.sentinel != .none);
         }
     };
 
@@ -939,12 +939,12 @@ pub const Key = union(enum) {
 
         /// Returns a pointer that becomes invalid after any additions to the `InternPool`.
         pub fn analysis(func: *const Func, ip: *const InternPool) *FuncAnalysis {
-            return @ptrCast(&ip.extra.items[func.analysis_extra_index]);
+            return @ptrcast(&ip.extra.items[func.analysis_extra_index]);
         }
 
         /// Returns a pointer that becomes invalid after any additions to the `InternPool`.
         pub fn zirBodyInst(func: *const Func, ip: *const InternPool) *TrackedInst.Index {
-            return @ptrCast(&ip.extra.items[func.zir_body_inst_extra_index]);
+            return @ptrcast(&ip.extra.items[func.zir_body_inst_extra_index]);
         }
 
         /// Returns a pointer that becomes invalid after any additions to the `InternPool`.
@@ -955,7 +955,7 @@ pub const Key = union(enum) {
         /// Returns a pointer that becomes invalid after any additions to the `InternPool`.
         pub fn resolvedErrorSet(func: *const Func, ip: *const InternPool) *Index {
             assert(func.analysis(ip).inferred_error_set);
-            return @ptrCast(&ip.extra.items[func.resolved_error_set_extra_index]);
+            return @ptrcast(&ip.extra.items[func.resolved_error_set_extra_index]);
         }
     };
 
@@ -974,7 +974,7 @@ pub const Key = union(enum) {
             pub const BigIntSpace = struct {
                 /// The +1 is headroom so that operations such as incrementing once
                 /// or decrementing once are possible without using an allocator.
-                limbs: [(@sizeOf(u64) / @sizeOf(std.math.big.Limb)) + 1]std.math.big.Limb,
+                limbs: [(@sizeof(u64) / @sizeof(std.math.big.Limb)) + 1]std.math.big.Limb,
             };
 
             pub fn toBigInt(storage: Storage, space: *BigIntSpace) BigIntConst {
@@ -1032,7 +1032,7 @@ pub const Key = union(enum) {
         byte_offset: u64,
 
         pub const BaseAddr = union(enum) {
-            const Tag = @typeInfo(BaseAddr).Union.tag_type.?;
+            const Tag = @typeinfo(BaseAddr).Union.tag_type.?;
 
             /// Points to the value of a single `Decl`, which may be constant or a `variable`.
             decl: DeclIndex,
@@ -1049,7 +1049,7 @@ pub const Key = union(enum) {
             /// should probably change the language so that this isn't the case.
             comptime_field: Index,
 
-            /// A pointer with a fixed integer address, usually from `@ptrFromInt`.
+            /// A pointer with a fixed integer address, usually from `@ptrfromint`.
             ///
             /// The address is stored entirely by `byte_offset`, which will be positive
             /// and in-range of a `usize`. The base address is, for all intents and purposes, 0.
@@ -1175,8 +1175,8 @@ pub const Key = union(enum) {
 
     pub fn hash64(key: Key, ip: *const InternPool) u64 {
         const asBytes = std.mem.asBytes;
-        const KeyTag = @typeInfo(Key).Union.tag_type.?;
-        const seed = @intFromEnum(@as(KeyTag, key));
+        const KeyTag = @typeinfo(Key).Union.tag_type.?;
+        const seed = @intfromenum(@as(KeyTag, key));
         return switch (key) {
             // TODO: assert no padding in these types
             inline .ptr_type,
@@ -1197,7 +1197,7 @@ pub const Key = union(enum) {
             .un,
             => |x| Hash.hash(seed, asBytes(&x)),
 
-            .int_type => |x| Hash.hash(seed + @intFromEnum(x.signedness), asBytes(&x.bits)),
+            .int_type => |x| Hash.hash(seed + @intfromenum(x.signedness), asBytes(&x.bits)),
 
             .error_union => |x| switch (x.val) {
                 .err_name => |y| Hash.hash(seed + 0, asBytes(&x.ty) ++ asBytes(&y)),
@@ -1251,7 +1251,7 @@ pub const Key = union(enum) {
                     .lazy_align, .lazy_size => |lazy_ty| {
                         std.hash.autoHash(
                             &hasher,
-                            @as(@typeInfo(Key.Int.Storage).Union.tag_type.?, int.storage),
+                            @as(@typeinfo(Key.Int.Storage).Union.tag_type.?, int.storage),
                         );
                         std.hash.autoHash(&hasher, lazy_ty);
                     },
@@ -1265,7 +1265,7 @@ pub const Key = union(enum) {
                 switch (float.storage) {
                     inline else => |val| std.hash.autoHash(
                         &hasher,
-                        @as(std.meta.Int(.unsigned, @bitSizeOf(@TypeOf(val))), @bitCast(val)),
+                        @as(std.meta.Int(.unsigned, @bitsizeof(@TypeOf(val))), @bitcast(val)),
                     ),
                 }
                 return hasher.final();
@@ -1277,7 +1277,7 @@ pub const Key = union(enum) {
                 // Int-to-ptr pointers are hashed separately than decl-referencing pointers.
                 // This is sound due to pointer provenance rules.
                 const addr_tag: Key.Ptr.BaseAddr.Tag = ptr.base_addr;
-                const seed2 = seed + @intFromEnum(addr_tag);
+                const seed2 = seed + @intfromenum(addr_tag);
                 const big_offset: i128 = ptr.byte_offset;
                 const common = asBytes(&ptr.ty) ++ asBytes(&big_offset);
                 return switch (ptr.base_addr) {
@@ -1314,14 +1314,14 @@ pub const Key = union(enum) {
                             std.hash.autoHash(&hasher, KeyTag.int);
                             std.hash.autoHash(&hasher, byte);
                         },
-                        .elems => |elems| for (elems[0..@intCast(len)]) |elem| {
+                        .elems => |elems| for (elems[0..@intcast(len)]) |elem| {
                             const elem_key = ip.indexToKey(elem);
                             std.hash.autoHash(&hasher, @as(KeyTag, elem_key));
                             switch (elem_key) {
                                 .undef => {},
                                 .int => |int| std.hash.autoHash(
                                     &hasher,
-                                    @as(u8, @intCast(int.storage.u64)),
+                                    @as(u8, @intcast(int.storage.u64)),
                                 ),
                                 else => unreachable,
                             }
@@ -1335,7 +1335,7 @@ pub const Key = union(enum) {
                                     .undef => {},
                                     .int => |int| std.hash.autoHash(
                                         &hasher,
-                                        @as(u8, @intCast(int.storage.u64)),
+                                        @as(u8, @intcast(int.storage.u64)),
                                     ),
                                     else => unreachable,
                                 }
@@ -1347,7 +1347,7 @@ pub const Key = union(enum) {
 
                 switch (aggregate.storage) {
                     .bytes => unreachable,
-                    .elems => |elems| for (elems[0..@intCast(len)]) |elem|
+                    .elems => |elems| for (elems[0..@intcast(len)]) |elem|
                         std.hash.autoHash(&hasher, elem),
                     .repeated_elem => |elem| {
                         var remaining = len;
@@ -1388,7 +1388,7 @@ pub const Key = union(enum) {
 
                 if (func.generic_owner == .none and func.resolved_error_set_extra_index == 0) {
                     const bytes = asBytes(&func.owner_decl) ++ asBytes(&func.ty) ++
-                        [1]u8{@intFromBool(func.uncoerced_ty == func.ty)};
+                        [1]u8{@intfrombool(func.uncoerced_ty == func.ty)};
                     return Hash.hash(seed, bytes);
                 }
 
@@ -1411,7 +1411,7 @@ pub const Key = union(enum) {
     }
 
     pub fn eql(a: Key, b: Key, ip: *const InternPool) bool {
-        const KeyTag = @typeInfo(Key).Union.tag_type.?;
+        const KeyTag = @typeinfo(Key).Union.tag_type.?;
         const a_tag: KeyTag = a;
         const b_tag: KeyTag = b;
         if (a_tag != b_tag) return false;
@@ -1613,29 +1613,29 @@ pub const Key = union(enum) {
                     // These are strange: we'll sometimes represent them as f128, even if the
                     // underlying type is smaller. f80 is an exception: see float_c_longdouble_f80.
                     const a_val: u128 = switch (a_info.storage) {
-                        inline else => |val| @bitCast(@as(f128, @floatCast(val))),
+                        inline else => |val| @bitcast(@as(f128, @floatcast(val))),
                     };
                     const b_val: u128 = switch (b_info.storage) {
-                        inline else => |val| @bitCast(@as(f128, @floatCast(val))),
+                        inline else => |val| @bitcast(@as(f128, @floatcast(val))),
                     };
                     return a_val == b_val;
                 }
 
-                const StorageTag = @typeInfo(Key.Float.Storage).Union.tag_type.?;
+                const StorageTag = @typeinfo(Key.Float.Storage).Union.tag_type.?;
                 assert(@as(StorageTag, a_info.storage) == @as(StorageTag, b_info.storage));
 
                 switch (a_info.storage) {
                     inline else => |val, tag| {
-                        const Bits = std.meta.Int(.unsigned, @bitSizeOf(@TypeOf(val)));
-                        const a_bits: Bits = @bitCast(val);
-                        const b_bits: Bits = @bitCast(@field(b_info.storage, @tagName(tag)));
+                        const Bits = std.meta.Int(.unsigned, @bitsizeof(@TypeOf(val)));
+                        const a_bits: Bits = @bitcast(val);
+                        const b_bits: Bits = @bitcast(@field(b_info.storage, @tagname(tag)));
                         return a_bits == b_bits;
                     },
                 }
             },
 
             inline .opaque_type, .enum_type, .union_type, .struct_type => |a_info, a_tag_ct| {
-                const b_info = @field(b, @tagName(a_tag_ct));
+                const b_info = @field(b, @tagname(a_tag_ct));
                 if (std.meta.activeTag(a_info) != b_info) return false;
                 switch (a_info) {
                     .declared => |a_d| {
@@ -1649,7 +1649,7 @@ pub const Key = union(enum) {
                             .owned => |s| s.get(ip),
                             .external => |cvs| cvs,
                         };
-                        return std.mem.eql(u32, @ptrCast(a_captures), @ptrCast(b_captures));
+                        return std.mem.eql(u32, @ptrcast(a_captures), @ptrcast(b_captures));
                     },
                     .generated_tag => |a_gt| return a_gt.union_type == b_info.generated_tag.union_type,
                     .reified => |a_r| {
@@ -1665,9 +1665,9 @@ pub const Key = union(enum) {
                 if (a_info.ty != b_info.ty) return false;
 
                 const len = ip.aggregateTypeLen(a_info.ty);
-                const StorageTag = @typeInfo(Key.Aggregate.Storage).Union.tag_type.?;
+                const StorageTag = @typeinfo(Key.Aggregate.Storage).Union.tag_type.?;
                 if (@as(StorageTag, a_info.storage) != @as(StorageTag, b_info.storage)) {
-                    for (0..@intCast(len)) |elem_index| {
+                    for (0..@intcast(len)) |elem_index| {
                         const a_elem = switch (a_info.storage) {
                             .bytes => |bytes| ip.getIfExists(.{ .int = .{
                                 .ty = .u8_type,
@@ -1699,8 +1699,8 @@ pub const Key = union(enum) {
                         const b_elems = b_info.storage.elems;
                         return std.mem.eql(
                             Index,
-                            a_elems[0..@intCast(len)],
-                            b_elems[0..@intCast(len)],
+                            a_elems[0..@intcast(len)],
+                            b_elems[0..@intcast(len)],
                         );
                     },
                     .repeated_elem => |a_elem| {
@@ -1884,13 +1884,13 @@ pub const LoadedUnionType = struct {
     /// The returned pointer expires with any addition to the `InternPool`.
     pub fn tagTypePtr(self: LoadedUnionType, ip: *const InternPool) *Index {
         const field_index = std.meta.fieldIndex(Tag.TypeUnion, "tag_ty").?;
-        return @ptrCast(&ip.extra.items[self.extra_index + field_index]);
+        return @ptrcast(&ip.extra.items[self.extra_index + field_index]);
     }
 
     /// The returned pointer expires with any addition to the `InternPool`.
     pub fn flagsPtr(self: LoadedUnionType, ip: *const InternPool) *Tag.TypeUnion.Flags {
         const field_index = std.meta.fieldIndex(Tag.TypeUnion, "flags").?;
-        return @ptrCast(&ip.extra.items[self.extra_index + field_index]);
+        return @ptrcast(&ip.extra.items[self.extra_index + field_index]);
     }
 
     /// The returned pointer expires with any addition to the `InternPool`.
@@ -1931,7 +1931,7 @@ pub const LoadedUnionType = struct {
         const flags_field_index = std.meta.fieldIndex(Tag.TypeUnion, "flags").?;
         const zir_index_field_index = std.meta.fieldIndex(Tag.TypeUnion, "zir_index").?;
         const ptr: *TrackedInst.Index.Optional =
-            @ptrCast(&ip.extra.items[self.flags_index - flags_field_index + zir_index_field_index]);
+            @ptrcast(&ip.extra.items[self.flags_index - flags_field_index + zir_index_field_index]);
         ptr.* = new_zir_index;
     }
 
@@ -1947,7 +1947,7 @@ pub const LoadedUnionType = struct {
 };
 
 pub fn loadUnionType(ip: *const InternPool, index: Index) LoadedUnionType {
-    const data = ip.items.items(.data)[@intFromEnum(index)];
+    const data = ip.items.items(.data)[@intfromenum(index)];
     const type_union = ip.extraDataTrail(Tag.TypeUnion, data);
     const fields_len = type_union.data.fields_len;
 
@@ -2026,15 +2026,15 @@ pub const LoadedStructType = struct {
 
         pub fn getBit(this: ComptimeBits, ip: *const InternPool, i: usize) bool {
             if (this.len == 0) return false;
-            return @as(u1, @truncate(this.get(ip)[i / 32] >> @intCast(i % 32))) != 0;
+            return @as(u1, @truncate(this.get(ip)[i / 32] >> @intcast(i % 32))) != 0;
         }
 
         pub fn setBit(this: ComptimeBits, ip: *const InternPool, i: usize) void {
-            this.get(ip)[i / 32] |= @as(u32, 1) << @intCast(i % 32);
+            this.get(ip)[i / 32] |= @as(u32, 1) << @intcast(i % 32);
         }
 
         pub fn clearBit(this: ComptimeBits, ip: *const InternPool, i: usize) void {
-            this.get(ip)[i / 32] &= ~(@as(u32, 1) << @intCast(i % 32));
+            this.get(ip)[i / 32] &= ~(@as(u32, 1) << @intcast(i % 32));
         }
     };
 
@@ -2043,7 +2043,7 @@ pub const LoadedStructType = struct {
         len: u32,
 
         pub fn get(this: Offsets, ip: *const InternPool) []u32 {
-            return @ptrCast(ip.extra.items[this.start..][0..this.len]);
+            return @ptrcast(ip.extra.items[this.start..][0..this.len]);
         }
     };
 
@@ -2059,7 +2059,7 @@ pub const LoadedStructType = struct {
             len: u32,
 
             pub fn get(slice: RuntimeOrder.Slice, ip: *const InternPool) []RuntimeOrder {
-                return @ptrCast(ip.extra.items[slice.start..][0..slice.len]);
+                return @ptrcast(ip.extra.items[slice.start..][0..slice.len]);
             }
         };
 
@@ -2067,7 +2067,7 @@ pub const LoadedStructType = struct {
             return switch (i) {
                 .omitted => null,
                 .unresolved => unreachable,
-                else => @intFromEnum(i),
+                else => @intfromenum(i),
             };
         }
     };
@@ -2079,10 +2079,10 @@ pub const LoadedStructType = struct {
             if (i >= self.field_types.len) return null;
             return i;
         };
-        const map = &ip.maps.items[@intFromEnum(names_map)];
+        const map = &ip.maps.items[@intfromenum(names_map)];
         const adapter: NullTerminatedString.Adapter = .{ .strings = self.field_names.get(ip) };
         const field_index = map.getIndexAdapted(name, adapter) orelse return null;
-        return @intCast(field_index);
+        return @intcast(field_index);
     }
 
     /// Returns the already-existing field with the same name, if any.
@@ -2133,7 +2133,7 @@ pub const LoadedStructType = struct {
     pub fn flagsPtr(self: LoadedStructType, ip: *const InternPool) *Tag.TypeStruct.Flags {
         assert(self.layout != .@"packed");
         const flags_field_index = std.meta.fieldIndex(Tag.TypeStruct, "flags").?;
-        return @ptrCast(&ip.extra.items[self.extra_index + flags_field_index]);
+        return @ptrcast(&ip.extra.items[self.extra_index + flags_field_index]);
     }
 
     /// The returned pointer expires with any addition to the `InternPool`.
@@ -2141,7 +2141,7 @@ pub const LoadedStructType = struct {
     pub fn packedFlagsPtr(self: LoadedStructType, ip: *const InternPool) *Tag.TypeStructPacked.Flags {
         assert(self.layout == .@"packed");
         const flags_field_index = std.meta.fieldIndex(Tag.TypeStructPacked, "flags").?;
-        return @ptrCast(&ip.extra.items[self.extra_index + flags_field_index]);
+        return @ptrcast(&ip.extra.items[self.extra_index + flags_field_index]);
     }
 
     pub fn assumeRuntimeBitsIfFieldTypesWip(s: LoadedStructType, ip: *InternPool) bool {
@@ -2234,7 +2234,7 @@ pub const LoadedStructType = struct {
     pub fn size(self: LoadedStructType, ip: *InternPool) *u32 {
         assert(self.layout != .@"packed");
         const size_field_index = std.meta.fieldIndex(Tag.TypeStruct, "size").?;
-        return @ptrCast(&ip.extra.items[self.extra_index + size_field_index]);
+        return @ptrcast(&ip.extra.items[self.extra_index + size_field_index]);
     }
 
     /// The backing integer type of the packed struct. Whether zig chooses
@@ -2244,14 +2244,14 @@ pub const LoadedStructType = struct {
     pub fn backingIntType(s: LoadedStructType, ip: *const InternPool) *Index {
         assert(s.layout == .@"packed");
         const field_index = std.meta.fieldIndex(Tag.TypeStructPacked, "backing_int_ty").?;
-        return @ptrCast(&ip.extra.items[s.extra_index + field_index]);
+        return @ptrcast(&ip.extra.items[s.extra_index + field_index]);
     }
 
     /// Asserts the struct is not packed.
     pub fn setZirIndex(s: LoadedStructType, ip: *InternPool, new_zir_index: TrackedInst.Index.Optional) void {
         assert(s.layout != .@"packed");
         const field_index = std.meta.fieldIndex(Tag.TypeStruct, "zir_index").?;
-        ip.extra.items[s.extra_index + field_index] = @intFromEnum(new_zir_index);
+        ip.extra.items[s.extra_index + field_index] = @intfromenum(new_zir_index);
     }
 
     pub fn haveFieldTypes(s: LoadedStructType, ip: *const InternPool) bool {
@@ -2369,7 +2369,7 @@ pub const LoadedStructType = struct {
 };
 
 pub fn loadStructType(ip: *const InternPool, index: Index) LoadedStructType {
-    const item = ip.items.get(@intFromEnum(index));
+    const item = ip.items.get(@intfromenum(index));
     switch (item.tag) {
         .type_struct => {
             if (item.data == 0) return .{
@@ -2410,7 +2410,7 @@ pub fn loadStructType(ip: *const InternPool, index: Index) LoadedStructType {
             };
             extra_index += fields_len;
             const names_map: OptionalMapIndex, const names: NullTerminatedString.Slice = if (!extra.data.flags.is_tuple) n: {
-                const names_map: OptionalMapIndex = @enumFromInt(ip.extra.items[extra_index]);
+                const names_map: OptionalMapIndex = @enumfromint(ip.extra.items[extra_index]);
                 extra_index += 1;
                 const names: NullTerminatedString.Slice = .{ .start = extra_index, .len = fields_len };
                 extra_index += fields_len;
@@ -2422,7 +2422,7 @@ pub fn loadStructType(ip: *const InternPool, index: Index) LoadedStructType {
                 break :i inits;
             } else .{ .start = 0, .len = 0 };
             const namespace: OptionalNamespaceIndex = if (extra.data.flags.has_namespace) n: {
-                const n: NamespaceIndex = @enumFromInt(ip.extra.items[extra_index]);
+                const n: NamespaceIndex = @enumfromint(ip.extra.items[extra_index]);
                 extra_index += 1;
                 break :n n.toOptional();
             } else .none;
@@ -2557,10 +2557,10 @@ const LoadedEnumType = struct {
 
     /// Look up field index based on field name.
     pub fn nameIndex(self: LoadedEnumType, ip: *const InternPool, name: NullTerminatedString) ?u32 {
-        const map = &ip.maps.items[@intFromEnum(self.names_map)];
+        const map = &ip.maps.items[@intfromenum(self.names_map)];
         const adapter: NullTerminatedString.Adapter = .{ .strings = self.names.get(ip) };
         const field_index = map.getIndexAdapted(name, adapter) orelse return null;
-        return @intCast(field_index);
+        return @intcast(field_index);
     }
 
     /// Look up field index based on tag value.
@@ -2577,10 +2577,10 @@ const LoadedEnumType = struct {
             else => unreachable,
         };
         if (self.values_map.unwrap()) |values_map| {
-            const map = &ip.maps.items[@intFromEnum(values_map)];
+            const map = &ip.maps.items[@intfromenum(values_map)];
             const adapter: Index.Adapter = .{ .indexes = self.values.get(ip) };
             const field_index = map.getIndexAdapted(int_tag_val, adapter) orelse return null;
-            return @intCast(field_index);
+            return @intcast(field_index);
         }
         // Auto-numbered enum. Convert `int_tag_val` to field index.
         const field_index = switch (ip.indexToKey(int_tag_val).int.storage) {
@@ -2593,11 +2593,11 @@ const LoadedEnumType = struct {
 };
 
 pub fn loadEnumType(ip: *const InternPool, index: Index) LoadedEnumType {
-    const item = ip.items.get(@intFromEnum(index));
+    const item = ip.items.get(@intfromenum(index));
     const tag_mode: LoadedEnumType.TagMode = switch (item.tag) {
         .type_enum_auto => {
             const extra = ip.extraDataTrail(EnumAuto, item.data);
-            var extra_index: u32 = @intCast(extra.end);
+            var extra_index: u32 = @intcast(extra.end);
             if (extra.data.zir_index == .none) {
                 extra_index += 1; // owner_union
             }
@@ -2629,7 +2629,7 @@ pub fn loadEnumType(ip: *const InternPool, index: Index) LoadedEnumType {
         else => unreachable,
     };
     const extra = ip.extraDataTrail(EnumExplicit, item.data);
-    var extra_index: u32 = @intCast(extra.end);
+    var extra_index: u32 = @intcast(extra.end);
     if (extra.data.zir_index == .none) {
         extra_index += 1; // owner_union
     }
@@ -2672,8 +2672,8 @@ pub const LoadedOpaqueType = struct {
 };
 
 pub fn loadOpaqueType(ip: *const InternPool, index: Index) LoadedOpaqueType {
-    assert(ip.items.items(.tag)[@intFromEnum(index)] == .type_opaque);
-    const extra_index = ip.items.items(.data)[@intFromEnum(index)];
+    assert(ip.items.items(.tag)[@intfromenum(index)] == .type_opaque);
+    const extra_index = ip.items.items(.data)[@intfromenum(index)];
     const extra = ip.extraDataTrail(Tag.TypeOpaque, extra_index);
     const captures_len = if (extra.data.captures_len == std.math.maxInt(u32))
         0
@@ -2830,7 +2830,7 @@ pub const Index = enum(u32) {
         len: u32,
 
         pub fn get(slice: Slice, ip: *const InternPool) []Index {
-            return @ptrCast(ip.extra.items[slice.start..][0..slice.len]);
+            return @ptrcast(ip.extra.items[slice.start..][0..slice.len]);
         }
     };
 
@@ -2845,7 +2845,7 @@ pub const Index = enum(u32) {
 
         pub fn hash(ctx: @This(), a: Index) u32 {
             _ = ctx;
-            return std.hash.uint32(@intFromEnum(a));
+            return std.hash.uint32(@intfromenum(a));
         }
     };
 
@@ -3001,13 +3001,13 @@ pub const Index = enum(u32) {
         },
     }) void {
         _ = self;
-        const map_fields = @typeInfo(@typeInfo(@TypeOf(tag_to_encoding_map)).Pointer.child).Struct.fields;
-        @setEvalBranchQuota(2_000);
-        inline for (@typeInfo(Tag).Enum.fields, 0..) |tag, start| {
+        const map_fields = @typeinfo(@typeinfo(@TypeOf(tag_to_encoding_map)).Pointer.child).Struct.fields;
+        @setevalbranchquota(2_000);
+        inline for (@typeinfo(Tag).Enum.fields, 0..) |tag, start| {
             inline for (0..map_fields.len) |offset| {
                 if (comptime std.mem.eql(u8, tag.name, map_fields[(start + offset) % map_fields.len].name)) break;
             } else {
-                @compileError(@typeName(Tag) ++ "." ++ tag.name ++ " missing dbHelper tag_to_encoding_map entry");
+                @compileerror(@typename(Tag) ++ "." ++ tag.name ++ " missing dbHelper tag_to_encoding_map entry");
             }
         }
     }
@@ -3280,7 +3280,7 @@ pub const static_keys = [_]Key{
 /// when compiling.
 pub const static_len = Zir.Inst.Index.static_len;
 comptime {
-    //@compileLog(static_keys.len);
+    //@compilelog(static_keys.len);
     assert(static_len == static_keys.len);
 }
 
@@ -4025,14 +4025,14 @@ pub const Alignment = enum(u6) {
     pub fn toByteUnits(a: Alignment) ?u64 {
         return switch (a) {
             .none => null,
-            else => @as(u64, 1) << @intFromEnum(a),
+            else => @as(u64, 1) << @intfromenum(a),
         };
     }
 
     pub fn fromByteUnits(n: u64) Alignment {
         if (n == 0) return .none;
         assert(std.math.isPowerOfTwo(n));
-        return @enumFromInt(@ctz(n));
+        return @enumfromint(@ctz(n));
     }
 
     pub fn fromNonzeroByteUnits(n: u64) Alignment {
@@ -4042,21 +4042,21 @@ pub const Alignment = enum(u6) {
 
     pub fn toLog2Units(a: Alignment) u6 {
         assert(a != .none);
-        return @intFromEnum(a);
+        return @intfromenum(a);
     }
 
-    /// This is just a glorified `@enumFromInt` but using it can help
+    /// This is just a glorified `@enumfromint` but using it can help
     /// document the intended conversion.
     /// The parameter uses a u32 for convenience at the callsite.
     pub fn fromLog2Units(a: u32) Alignment {
-        assert(a != @intFromEnum(Alignment.none));
-        return @enumFromInt(a);
+        assert(a != @intfromenum(Alignment.none));
+        return @enumfromint(a);
     }
 
     pub fn order(lhs: Alignment, rhs: Alignment) std.math.Order {
         assert(lhs != .none);
         assert(rhs != .none);
-        return std.math.order(@intFromEnum(lhs), @intFromEnum(rhs));
+        return std.math.order(@intfromenum(lhs), @intfromenum(rhs));
     }
 
     /// Relaxed comparison. We have this as default because a lot of callsites
@@ -4070,7 +4070,7 @@ pub const Alignment = enum(u6) {
     pub fn compareStrict(lhs: Alignment, op: std.math.CompareOperator, rhs: Alignment) bool {
         assert(lhs != .none);
         assert(rhs != .none);
-        return std.math.compare(@intFromEnum(lhs), op, @intFromEnum(rhs));
+        return std.math.compare(@intfromenum(lhs), op, @intfromenum(rhs));
     }
 
     /// Treats `none` as zero.
@@ -4085,7 +4085,7 @@ pub const Alignment = enum(u6) {
     pub fn maxStrict(lhs: Alignment, rhs: Alignment) Alignment {
         assert(lhs != .none);
         assert(rhs != .none);
-        return @enumFromInt(@max(@intFromEnum(lhs), @intFromEnum(rhs)));
+        return @enumfromint(@max(@intfromenum(lhs), @intfromenum(rhs)));
     }
 
     /// Treats `none` as zero.
@@ -4100,27 +4100,27 @@ pub const Alignment = enum(u6) {
     pub fn minStrict(lhs: Alignment, rhs: Alignment) Alignment {
         assert(lhs != .none);
         assert(rhs != .none);
-        return @enumFromInt(@min(@intFromEnum(lhs), @intFromEnum(rhs)));
+        return @enumfromint(@min(@intfromenum(lhs), @intfromenum(rhs)));
     }
 
     /// Align an address forwards to this alignment.
     pub fn forward(a: Alignment, addr: u64) u64 {
         assert(a != .none);
-        const x = (@as(u64, 1) << @intFromEnum(a)) - 1;
+        const x = (@as(u64, 1) << @intfromenum(a)) - 1;
         return (addr + x) & ~x;
     }
 
     /// Align an address backwards to this alignment.
     pub fn backward(a: Alignment, addr: u64) u64 {
         assert(a != .none);
-        const x = (@as(u64, 1) << @intFromEnum(a)) - 1;
+        const x = (@as(u64, 1) << @intfromenum(a)) - 1;
         return addr & ~x;
     }
 
     /// Check if an address is aligned to this amount.
     pub fn check(a: Alignment, addr: u64) bool {
         assert(a != .none);
-        return @ctz(addr) >= @intFromEnum(a);
+        return @ctz(addr) >= @intfromenum(a);
     }
 
     /// An array of `Alignment` objects existing within the `extra` array.
@@ -4132,28 +4132,28 @@ pub const Alignment = enum(u6) {
         len: u32,
 
         pub fn get(slice: Slice, ip: *const InternPool) []Alignment {
-            // TODO: implement @ptrCast between slices changing the length
-            //const bytes: []u8 = @ptrCast(ip.extra.items[slice.start..]);
+            // TODO: implement @ptrcast between slices changing the length
+            //const bytes: []u8 = @ptrcast(ip.extra.items[slice.start..]);
             const bytes: []u8 = std.mem.sliceAsBytes(ip.extra.items[slice.start..]);
-            return @ptrCast(bytes[0..slice.len]);
+            return @ptrcast(bytes[0..slice.len]);
         }
     };
 
     pub fn toRelaxedCompareUnits(a: Alignment) u8 {
-        const n: u8 = @intFromEnum(a);
-        assert(n <= @intFromEnum(Alignment.none));
-        if (n == @intFromEnum(Alignment.none)) return 0;
+        const n: u8 = @intfromenum(a);
+        assert(n <= @intfromenum(Alignment.none));
+        if (n == @intfromenum(Alignment.none)) return 0;
         return n + 1;
     }
 
     const LlvmBuilderAlignment = @import("codegen/llvm/Builder.zig").Alignment;
 
     pub fn toLlvm(this: @This()) LlvmBuilderAlignment {
-        return @enumFromInt(@intFromEnum(this));
+        return @enumfromint(@intfromenum(this));
     }
 
     pub fn fromLlvm(other: LlvmBuilderAlignment) @This() {
-        return @enumFromInt(@intFromEnum(other));
+        return @enumfromint(@intfromenum(other));
     }
 };
 
@@ -4236,11 +4236,11 @@ pub const PackedU64 = packed struct(u64) {
     b: u32,
 
     pub fn get(x: PackedU64) u64 {
-        return @bitCast(x);
+        return @bitcast(x);
     }
 
     pub fn init(x: u64) PackedU64 {
-        return @bitCast(x);
+        return @bitcast(x);
     }
 };
 
@@ -4253,7 +4253,7 @@ pub const PtrDecl = struct {
         return .{
             .ty = ty,
             .decl = decl,
-            .byte_offset_a = @intCast(byte_offset >> 32),
+            .byte_offset_a = @intcast(byte_offset >> 32),
             .byte_offset_b = @truncate(byte_offset),
         };
     }
@@ -4271,7 +4271,7 @@ pub const PtrAnonDecl = struct {
         return .{
             .ty = ty,
             .val = val,
-            .byte_offset_a = @intCast(byte_offset >> 32),
+            .byte_offset_a = @intcast(byte_offset >> 32),
             .byte_offset_b = @truncate(byte_offset),
         };
     }
@@ -4292,7 +4292,7 @@ pub const PtrAnonDeclAligned = struct {
             .ty = ty,
             .val = val,
             .orig_ty = orig_ty,
-            .byte_offset_a = @intCast(byte_offset >> 32),
+            .byte_offset_a = @intcast(byte_offset >> 32),
             .byte_offset_b = @truncate(byte_offset),
         };
     }
@@ -4310,7 +4310,7 @@ pub const PtrComptimeAlloc = struct {
         return .{
             .ty = ty,
             .index = index,
-            .byte_offset_a = @intCast(byte_offset >> 32),
+            .byte_offset_a = @intcast(byte_offset >> 32),
             .byte_offset_b = @truncate(byte_offset),
         };
     }
@@ -4328,7 +4328,7 @@ pub const PtrComptimeField = struct {
         return .{
             .ty = ty,
             .field_val = field_val,
-            .byte_offset_a = @intCast(byte_offset >> 32),
+            .byte_offset_a = @intcast(byte_offset >> 32),
             .byte_offset_b = @truncate(byte_offset),
         };
     }
@@ -4346,7 +4346,7 @@ pub const PtrBase = struct {
         return .{
             .ty = ty,
             .base = base,
-            .byte_offset_a = @intCast(byte_offset >> 32),
+            .byte_offset_a = @intcast(byte_offset >> 32),
             .byte_offset_b = @truncate(byte_offset),
         };
     }
@@ -4366,7 +4366,7 @@ pub const PtrBaseIndex = struct {
             .ty = ty,
             .base = base,
             .index = index,
-            .byte_offset_a = @intCast(byte_offset >> 32),
+            .byte_offset_a = @intcast(byte_offset >> 32),
             .byte_offset_b = @truncate(byte_offset),
         };
     }
@@ -4382,7 +4382,7 @@ pub const PtrInt = struct {
     fn init(ty: Index, byte_offset: u64) @This() {
         return .{
             .ty = ty,
-            .byte_offset_a = @intCast(byte_offset >> 32),
+            .byte_offset_a = @intcast(byte_offset >> 32),
             .byte_offset_b = @truncate(byte_offset),
         };
     }
@@ -4423,11 +4423,11 @@ pub const Float64 = struct {
 
     pub fn get(self: Float64) f64 {
         const int_bits = @as(u64, self.piece0) | (@as(u64, self.piece1) << 32);
-        return @bitCast(int_bits);
+        return @bitcast(int_bits);
     }
 
     fn pack(val: f64) Float64 {
-        const bits: u64 = @bitCast(val);
+        const bits: u64 = @bitcast(val);
         return .{
             .piece0 = @truncate(bits),
             .piece1 = @truncate(bits >> 32),
@@ -4445,11 +4445,11 @@ pub const Float80 = struct {
         const int_bits = @as(u80, self.piece0) |
             (@as(u80, self.piece1) << 32) |
             (@as(u80, self.piece2) << 64);
-        return @bitCast(int_bits);
+        return @bitcast(int_bits);
     }
 
     fn pack(val: f80) Float80 {
-        const bits: u80 = @bitCast(val);
+        const bits: u80 = @bitcast(val);
         return .{
             .piece0 = @truncate(bits),
             .piece1 = @truncate(bits >> 32),
@@ -4470,11 +4470,11 @@ pub const Float128 = struct {
             (@as(u128, self.piece1) << 32) |
             (@as(u128, self.piece2) << 64) |
             (@as(u128, self.piece3) << 96);
-        return @bitCast(int_bits);
+        return @bitcast(int_bits);
     }
 
     fn pack(val: f128) Float128 {
-        const bits: u128 = @bitCast(val);
+        const bits: u128 = @bitcast(val);
         return .{
             .piece0 = @truncate(bits),
             .piece1 = @truncate(bits >> 32),
@@ -4505,7 +4505,7 @@ pub fn init(ip: *InternPool, gpa: Allocator) !void {
 
     // This inserts all the statically-known values into the intern pool in the
     // order expected.
-    for (static_keys[0..@intFromEnum(Index.empty_struct_type)]) |key| {
+    for (static_keys[0..@intfromenum(Index.empty_struct_type)]) |key| {
         _ = ip.get(gpa, key) catch unreachable;
     }
     _ = ip.getAnonStructType(gpa, .{
@@ -4513,7 +4513,7 @@ pub fn init(ip: *InternPool, gpa: Allocator) !void {
         .names = &.{},
         .values = &.{},
     }) catch unreachable;
-    for (static_keys[@intFromEnum(Index.empty_struct_type) + 1 ..]) |key| {
+    for (static_keys[@intfromenum(Index.empty_struct_type) + 1 ..]) |key| {
         _ = ip.get(gpa, key) catch unreachable;
     }
 
@@ -4526,13 +4526,13 @@ pub fn init(ip: *InternPool, gpa: Allocator) !void {
         const cc_c = ip.indexToKey(.calling_convention_c).enum_tag.int;
 
         assert(ip.indexToKey(cc_inline).int.storage.u64 ==
-            @intFromEnum(std.builtin.CallingConvention.Inline));
+            @intfromenum(std.builtin.CallingConvention.Inline));
 
         assert(ip.indexToKey(cc_c).int.storage.u64 ==
-            @intFromEnum(std.builtin.CallingConvention.C));
+            @intfromenum(std.builtin.CallingConvention.C));
 
         assert(ip.indexToKey(ip.typeOf(cc_inline)).int_type.bits ==
-            @typeInfo(@typeInfo(std.builtin.CallingConvention).Enum.tag_type).Int.bits);
+            @typeinfo(@typeinfo(std.builtin.CallingConvention).Enum.tag_type).Int.bits);
     }
 
     assert(ip.items.len == static_keys.len);
@@ -4574,20 +4574,20 @@ pub fn deinit(ip: *InternPool, gpa: Allocator) void {
 
 pub fn indexToKey(ip: *const InternPool, index: Index) Key {
     assert(index != .none);
-    const item = ip.items.get(@intFromEnum(index));
+    const item = ip.items.get(@intfromenum(index));
     const data = item.data;
     return switch (item.tag) {
         .removed => unreachable,
         .type_int_signed => .{
             .int_type = .{
                 .signedness = .signed,
-                .bits = @intCast(data),
+                .bits = @intcast(data),
             },
         },
         .type_int_unsigned => .{
             .int_type = .{
                 .signedness = .unsigned,
-                .bits = @intCast(data),
+                .bits = @intcast(data),
             },
         },
         .type_array_big => {
@@ -4606,8 +4606,8 @@ pub fn indexToKey(ip: *const InternPool, index: Index) Key {
                 .sentinel = .none,
             } };
         },
-        .simple_type => .{ .simple_type = @enumFromInt(data) },
-        .simple_value => .{ .simple_value = @enumFromInt(data) },
+        .simple_type => .{ .simple_type = @enumfromint(data) },
+        .simple_value => .{ .simple_value = @enumfromint(data) },
 
         .type_vector => {
             const vector_info = ip.extraData(Vector, data);
@@ -4626,17 +4626,17 @@ pub fn indexToKey(ip: *const InternPool, index: Index) Key {
             return .{ .ptr_type = ptr_info };
         },
 
-        .type_optional => .{ .opt_type = @enumFromInt(data) },
-        .type_anyframe => .{ .anyframe_type = @enumFromInt(data) },
+        .type_optional => .{ .opt_type = @enumfromint(data) },
+        .type_anyframe => .{ .anyframe_type = @enumfromint(data) },
 
         .type_error_union => .{ .error_union_type = ip.extraData(Key.ErrorUnionType, data) },
         .type_anyerror_union => .{ .error_union_type = .{
             .error_set_type = .anyerror_type,
-            .payload_type = @enumFromInt(data),
+            .payload_type = @enumfromint(data),
         } },
         .type_error_set => .{ .error_set_type = ip.extraErrorSet(data) },
         .type_inferred_error_set => .{
-            .inferred_error_set_type = @enumFromInt(data),
+            .inferred_error_set_type = @enumfromint(data),
         },
 
         .type_opaque => .{ .opaque_type = ns: {
@@ -4717,7 +4717,7 @@ pub fn indexToKey(ip: *const InternPool, index: Index) Key {
             const zir_index = extra.data.zir_index.unwrap() orelse {
                 assert(extra.data.captures_len == 0);
                 break :ns .{ .generated_tag = .{
-                    .union_type = @enumFromInt(ip.extra.items[extra.end]),
+                    .union_type = @enumfromint(ip.extra.items[extra.end]),
                 } };
             };
             if (extra.data.captures_len == std.math.maxInt(u32)) {
@@ -4739,7 +4739,7 @@ pub fn indexToKey(ip: *const InternPool, index: Index) Key {
             const zir_index = extra.data.zir_index.unwrap() orelse {
                 assert(extra.data.captures_len == 0);
                 break :ns .{ .generated_tag = .{
-                    .union_type = @enumFromInt(ip.extra.items[extra.end]),
+                    .union_type = @enumfromint(ip.extra.items[extra.end]),
                 } };
             };
             if (extra.data.captures_len == std.math.maxInt(u32)) {
@@ -4758,9 +4758,9 @@ pub fn indexToKey(ip: *const InternPool, index: Index) Key {
         } },
         .type_function => .{ .func_type = ip.extraFuncType(data) },
 
-        .undef => .{ .undef = @enumFromInt(data) },
+        .undef => .{ .undef = @enumfromint(data) },
         .opt_null => .{ .opt = .{
-            .ty = @enumFromInt(data),
+            .ty = @enumfromint(data),
             .val = .none,
         } },
         .opt_payload => {
@@ -4815,7 +4815,7 @@ pub fn indexToKey(ip: *const InternPool, index: Index) Key {
         .ptr_elem => {
             // Avoid `indexToKey` recursion by asserting the tag encoding.
             const info = ip.extraData(PtrBaseIndex, data);
-            const index_item = ip.items.get(@intFromEnum(info.index));
+            const index_item = ip.items.get(@intfromenum(info.index));
             return switch (index_item.tag) {
                 .int_usize => .{ .ptr = .{ .ty = info.ty, .base_addr = .{ .arr_elem = .{
                     .base = info.base,
@@ -4828,7 +4828,7 @@ pub fn indexToKey(ip: *const InternPool, index: Index) Key {
         .ptr_field => {
             // Avoid `indexToKey` recursion by asserting the tag encoding.
             const info = ip.extraData(PtrBaseIndex, data);
-            const index_item = ip.items.get(@intFromEnum(info.index));
+            const index_item = ip.items.get(@intfromenum(info.index));
             return switch (index_item.tag) {
                 .int_usize => .{ .ptr = .{ .ty = info.ty, .base_addr = .{ .field = .{
                     .base = info.base,
@@ -4860,7 +4860,7 @@ pub fn indexToKey(ip: *const InternPool, index: Index) Key {
         } },
         .int_i32 => .{ .int = .{
             .ty = .i32_type,
-            .storage = .{ .i64 = @as(i32, @bitCast(data)) },
+            .storage = .{ .i64 = @as(i32, @bitcast(data)) },
         } },
         .int_usize => .{ .int = .{
             .ty = .usize_type,
@@ -4872,7 +4872,7 @@ pub fn indexToKey(ip: *const InternPool, index: Index) Key {
         } },
         .int_comptime_int_i32 => .{ .int = .{
             .ty = .comptime_int_type,
-            .storage = .{ .i64 = @as(i32, @bitCast(data)) },
+            .storage = .{ .i64 = @as(i32, @bitcast(data)) },
         } },
         .int_positive => ip.indexToKeyBigInt(data, true),
         .int_negative => ip.indexToKeyBigInt(data, false),
@@ -4896,11 +4896,11 @@ pub fn indexToKey(ip: *const InternPool, index: Index) Key {
         },
         .float_f16 => .{ .float = .{
             .ty = .f16_type,
-            .storage = .{ .f16 = @bitCast(@as(u16, @intCast(data))) },
+            .storage = .{ .f16 = @bitcast(@as(u16, @intcast(data))) },
         } },
         .float_f32 => .{ .float = .{
             .ty = .f32_type,
-            .storage = .{ .f32 = @bitCast(data) },
+            .storage = .{ .f32 = @bitcast(data) },
         } },
         .float_f64 => .{ .float = .{
             .ty = .f64_type,
@@ -4944,17 +4944,17 @@ pub fn indexToKey(ip: *const InternPool, index: Index) Key {
         .func_decl => .{ .func = ip.extraFuncDecl(data) },
         .func_coerced => .{ .func = ip.extraFuncCoerced(data) },
         .only_possible_value => {
-            const ty: Index = @enumFromInt(data);
-            const ty_item = ip.items.get(@intFromEnum(ty));
+            const ty: Index = @enumfromint(data);
+            const ty_item = ip.items.get(@intfromenum(ty));
             return switch (ty_item.tag) {
                 .type_array_big => {
                     const sentinel = @as(
                         *const [1]Index,
-                        @ptrCast(&ip.extra.items[ty_item.data + std.meta.fieldIndex(Array, "sentinel").?]),
+                        @ptrcast(&ip.extra.items[ty_item.data + std.meta.fieldIndex(Array, "sentinel").?]),
                     );
                     return .{ .aggregate = .{
                         .ty = ty,
-                        .storage = .{ .elems = sentinel[0..@intFromBool(sentinel[0] != .none)] },
+                        .storage = .{ .elems = sentinel[0..@intfrombool(sentinel[0] != .none)] },
                     } };
                 },
                 .type_array_small,
@@ -4971,7 +4971,7 @@ pub fn indexToKey(ip: *const InternPool, index: Index) Key {
                     const info = loadStructType(ip, ty);
                     return .{ .aggregate = .{
                         .ty = ty,
-                        .storage = .{ .elems = @ptrCast(info.field_inits.get(ip)) },
+                        .storage = .{ .elems = @ptrcast(info.field_inits.get(ip)) },
                     } };
                 },
 
@@ -4983,7 +4983,7 @@ pub fn indexToKey(ip: *const InternPool, index: Index) Key {
                     const values = ip.extra.items[type_struct_anon.end + fields_len ..][0..fields_len];
                     return .{ .aggregate = .{
                         .ty = ty,
-                        .storage = .{ .elems = @ptrCast(values) },
+                        .storage = .{ .elems = @ptrcast(values) },
                     } };
                 },
 
@@ -5004,8 +5004,8 @@ pub fn indexToKey(ip: *const InternPool, index: Index) Key {
         },
         .aggregate => {
             const extra = ip.extraDataTrail(Tag.Aggregate, data);
-            const len: u32 = @intCast(ip.aggregateTypeLenIncludingSentinel(extra.data.ty));
-            const fields: []const Index = @ptrCast(ip.extra.items[extra.end..][0..len]);
+            const len: u32 = @intcast(ip.aggregateTypeLenIncludingSentinel(extra.data.ty));
+            const fields: []const Index = @ptrcast(ip.extra.items[extra.end..][0..len]);
             return .{ .aggregate = .{
                 .ty = extra.data.ty,
                 .storage = .{ .elems = fields },
@@ -5034,14 +5034,14 @@ pub fn indexToKey(ip: *const InternPool, index: Index) Key {
                 .val = .{ .payload = extra.val },
             } };
         },
-        .enum_literal => .{ .enum_literal = @enumFromInt(data) },
+        .enum_literal => .{ .enum_literal = @enumfromint(data) },
         .enum_tag => .{ .enum_tag = ip.extraData(Tag.EnumTag, data) },
 
         .memoized_call => {
             const extra = ip.extraDataTrail(MemoizedCall, data);
             return .{ .memoized_call = .{
                 .func = extra.data.func,
-                .arg_values = @ptrCast(ip.extra.items[extra.end..][0..extra.data.args_len]),
+                .arg_values = @ptrcast(ip.extra.items[extra.end..][0..extra.data.args_len]),
                 .result = extra.data.result,
             } };
         },
@@ -5052,7 +5052,7 @@ fn extraErrorSet(ip: *const InternPool, extra_index: u32) Key.ErrorSetType {
     const error_set = ip.extraDataTrail(Tag.ErrorSet, extra_index);
     return .{
         .names = .{
-            .start = @intCast(error_set.end),
+            .start = @intcast(error_set.end),
             .len = error_set.data.names_len,
         },
         .names_map = error_set.data.names_map.toOptional(),
@@ -5112,7 +5112,7 @@ fn extraFuncType(ip: *const InternPool, extra_index: u32) Key.FuncType {
     };
     return .{
         .param_types = .{
-            .start = @intCast(index),
+            .start = @intcast(index),
             .len = type_function.data.params_len,
         },
         .return_type = type_function.data.return_type,
@@ -5168,7 +5168,7 @@ fn extraFuncInstance(ip: *const InternPool, extra_index: u32) Key.Func {
         .rbrace_column = func_decl.rbrace_column,
         .generic_owner = fi.data.generic_owner,
         .comptime_args = .{
-            .start = fi.end + @intFromBool(fi.data.analysis.inferred_error_set),
+            .start = fi.end + @intfrombool(fi.data.analysis.inferred_error_set),
             .len = ip.funcTypeParamsLen(func_decl.ty),
         },
     };
@@ -5176,7 +5176,7 @@ fn extraFuncInstance(ip: *const InternPool, extra_index: u32) Key.Func {
 
 fn extraFuncCoerced(ip: *const InternPool, extra_index: u32) Key.Func {
     const func_coerced = ip.extraData(Tag.FuncCoerced, extra_index);
-    const sub_item = ip.items.get(@intFromEnum(func_coerced.func));
+    const sub_item = ip.items.get(@intfromenum(func_coerced.func));
     var func: Key.Func = switch (sub_item.tag) {
         .func_instance => ip.extraFuncInstance(sub_item.data),
         .func_decl => ip.extraFuncDecl(sub_item.data),
@@ -5200,7 +5200,7 @@ fn indexToKeyBigInt(ip: *const InternPool, limb_index: u32, positive: bool) Key 
 pub fn get(ip: *InternPool, gpa: Allocator, key: Key) Allocator.Error!Index {
     const adapter: KeyAdapter = .{ .intern_pool = ip };
     const gop = try ip.map.getOrPutAdapted(gpa, key, adapter);
-    if (gop.found_existing) return @enumFromInt(gop.index);
+    if (gop.found_existing) return @enumfromint(gop.index);
     try ip.items.ensureUnusedCapacity(gpa, 1);
     switch (key) {
         .int_type => |int_type| {
@@ -5226,9 +5226,9 @@ pub fn get(ip: *InternPool, gpa: Allocator, key: Key) Allocator.Error!Index {
                 try ip.items.ensureUnusedCapacity(gpa, 1);
                 ip.items.appendAssumeCapacity(.{
                     .tag = .type_slice,
-                    .data = @intFromEnum(ptr_type_index),
+                    .data = @intfromenum(ptr_type_index),
                 });
-                return @enumFromInt(ip.items.len - 1);
+                return @enumfromint(ip.items.len - 1);
             }
 
             var ptr_type_adjusted = ptr_type;
@@ -5252,7 +5252,7 @@ pub fn get(ip: *InternPool, gpa: Allocator, key: Key) Allocator.Error!Index {
                             .child = array_type.child,
                         }),
                     });
-                    return @enumFromInt(ip.items.len - 1);
+                    return @enumfromint(ip.items.len - 1);
                 }
             }
 
@@ -5280,20 +5280,20 @@ pub fn get(ip: *InternPool, gpa: Allocator, key: Key) Allocator.Error!Index {
             assert(payload_type != .none);
             ip.items.appendAssumeCapacity(.{
                 .tag = .type_optional,
-                .data = @intFromEnum(payload_type),
+                .data = @intfromenum(payload_type),
             });
         },
         .anyframe_type => |payload_type| {
             // payload_type might be none, indicating the type is `anyframe`.
             ip.items.appendAssumeCapacity(.{
                 .tag = .type_anyframe,
-                .data = @intFromEnum(payload_type),
+                .data = @intfromenum(payload_type),
             });
         },
         .error_union_type => |error_union_type| {
             ip.items.appendAssumeCapacity(if (error_union_type.error_set_type == .anyerror_type) .{
                 .tag = .type_anyerror_union,
-                .data = @intFromEnum(error_union_type.payload_type),
+                .data = @intfromenum(error_union_type.payload_type),
             } else .{
                 .tag = .type_error_union,
                 .data = try ip.addExtra(gpa, error_union_type),
@@ -5306,7 +5306,7 @@ pub fn get(ip: *InternPool, gpa: Allocator, key: Key) Allocator.Error!Index {
             const names_map = try ip.addMap(gpa, names.len);
             addStringsToMap(ip, names_map, names);
             const names_len = error_set_type.names.len;
-            try ip.extra.ensureUnusedCapacity(gpa, @typeInfo(Tag.ErrorSet).Struct.fields.len + names_len);
+            try ip.extra.ensureUnusedCapacity(gpa, @typeinfo(Tag.ErrorSet).Struct.fields.len + names_len);
             ip.items.appendAssumeCapacity(.{
                 .tag = .type_error_set,
                 .data = ip.addExtraAssumeCapacity(Tag.ErrorSet{
@@ -5314,31 +5314,31 @@ pub fn get(ip: *InternPool, gpa: Allocator, key: Key) Allocator.Error!Index {
                     .names_map = names_map,
                 }),
             });
-            ip.extra.appendSliceAssumeCapacity(@ptrCast(error_set_type.names.get(ip)));
+            ip.extra.appendSliceAssumeCapacity(@ptrcast(error_set_type.names.get(ip)));
         },
         .inferred_error_set_type => |ies_index| {
             ip.items.appendAssumeCapacity(.{
                 .tag = .type_inferred_error_set,
-                .data = @intFromEnum(ies_index),
+                .data = @intfromenum(ies_index),
             });
         },
         .simple_type => |simple_type| {
             ip.items.appendAssumeCapacity(.{
                 .tag = .simple_type,
-                .data = @intFromEnum(simple_type),
+                .data = @intfromenum(simple_type),
             });
         },
         .simple_value => |simple_value| {
             ip.items.appendAssumeCapacity(.{
                 .tag = .simple_value,
-                .data = @intFromEnum(simple_value),
+                .data = @intfromenum(simple_value),
             });
         },
         .undef => |ty| {
             assert(ty != .none);
             ip.items.appendAssumeCapacity(.{
                 .tag = .undef,
-                .data = @intFromEnum(ty),
+                .data = @intfromenum(ty),
             });
         },
 
@@ -5403,7 +5403,7 @@ pub fn get(ip: *InternPool, gpa: Allocator, key: Key) Allocator.Error!Index {
                         var new_key = key;
                         new_key.ptr.base_addr.anon_decl.orig_ty = ptr.ty;
                         const new_gop = try ip.map.getOrPutAdapted(gpa, new_key, adapter);
-                        if (new_gop.found_existing) return @enumFromInt(new_gop.index);
+                        if (new_gop.found_existing) return @enumfromint(new_gop.index);
                     }
                     break :item .{
                         .tag = .ptr_anon_decl,
@@ -5497,7 +5497,7 @@ pub fn get(ip: *InternPool, gpa: Allocator, key: Key) Allocator.Error!Index {
             assert(opt.val == .none or ip.indexToKey(opt.ty).opt_type == ip.typeOf(opt.val));
             ip.items.appendAssumeCapacity(if (opt.val == .none) .{
                 .tag = .opt_null,
-                .data = @intFromEnum(opt.ty),
+                .data = @intfromenum(opt.ty),
             } else .{
                 .tag = .opt_payload,
                 .data = try ip.addExtra(gpa, Tag.TypeValue{
@@ -5523,7 +5523,7 @@ pub fn get(ip: *InternPool, gpa: Allocator, key: Key) Allocator.Error!Index {
                             .lazy_ty = lazy_ty,
                         }),
                     });
-                    return @enumFromInt(ip.items.len - 1);
+                    return @enumfromint(ip.items.len - 1);
                 },
             }
             switch (int.ty) {
@@ -5538,7 +5538,7 @@ pub fn get(ip: *InternPool, gpa: Allocator, key: Key) Allocator.Error!Index {
                     inline .u64, .i64 => |x| {
                         ip.items.appendAssumeCapacity(.{
                             .tag = .int_u8,
-                            .data = @as(u8, @intCast(x)),
+                            .data = @as(u8, @intcast(x)),
                         });
                         break :b;
                     },
@@ -5555,7 +5555,7 @@ pub fn get(ip: *InternPool, gpa: Allocator, key: Key) Allocator.Error!Index {
                     inline .u64, .i64 => |x| {
                         ip.items.appendAssumeCapacity(.{
                             .tag = .int_u16,
-                            .data = @as(u16, @intCast(x)),
+                            .data = @as(u16, @intcast(x)),
                         });
                         break :b;
                     },
@@ -5572,7 +5572,7 @@ pub fn get(ip: *InternPool, gpa: Allocator, key: Key) Allocator.Error!Index {
                     inline .u64, .i64 => |x| {
                         ip.items.appendAssumeCapacity(.{
                             .tag = .int_u32,
-                            .data = @as(u32, @intCast(x)),
+                            .data = @as(u32, @intcast(x)),
                         });
                         break :b;
                     },
@@ -5583,14 +5583,14 @@ pub fn get(ip: *InternPool, gpa: Allocator, key: Key) Allocator.Error!Index {
                         const casted = big_int.to(i32) catch unreachable;
                         ip.items.appendAssumeCapacity(.{
                             .tag = .int_i32,
-                            .data = @as(u32, @bitCast(casted)),
+                            .data = @as(u32, @bitcast(casted)),
                         });
                         break :b;
                     },
                     inline .u64, .i64 => |x| {
                         ip.items.appendAssumeCapacity(.{
                             .tag = .int_i32,
-                            .data = @as(u32, @bitCast(@as(i32, @intCast(x)))),
+                            .data = @as(u32, @bitcast(@as(i32, @intcast(x)))),
                         });
                         break :b;
                     },
@@ -5629,7 +5629,7 @@ pub fn get(ip: *InternPool, gpa: Allocator, key: Key) Allocator.Error!Index {
                         if (big_int.to(i32)) |casted| {
                             ip.items.appendAssumeCapacity(.{
                                 .tag = .int_comptime_int_i32,
-                                .data = @as(u32, @bitCast(casted)),
+                                .data = @as(u32, @bitcast(casted)),
                             });
                             break :b;
                         } else |_| {}
@@ -5645,7 +5645,7 @@ pub fn get(ip: *InternPool, gpa: Allocator, key: Key) Allocator.Error!Index {
                         if (std.math.cast(i32, x)) |casted| {
                             ip.items.appendAssumeCapacity(.{
                                 .tag = .int_comptime_int_i32,
-                                .data = @as(u32, @bitCast(casted)),
+                                .data = @as(u32, @bitcast(casted)),
                             });
                             break :b;
                         }
@@ -5664,7 +5664,7 @@ pub fn get(ip: *InternPool, gpa: Allocator, key: Key) Allocator.Error!Index {
                                 .value = casted,
                             }),
                         });
-                        return @enumFromInt(ip.items.len - 1);
+                        return @enumfromint(ip.items.len - 1);
                     } else |_| {}
 
                     const tag: Tag = if (big_int.positive) .int_positive else .int_negative;
@@ -5679,7 +5679,7 @@ pub fn get(ip: *InternPool, gpa: Allocator, key: Key) Allocator.Error!Index {
                                 .value = casted,
                             }),
                         });
-                        return @enumFromInt(ip.items.len - 1);
+                        return @enumfromint(ip.items.len - 1);
                     }
 
                     var buf: [2]Limb = undefined;
@@ -5721,7 +5721,7 @@ pub fn get(ip: *InternPool, gpa: Allocator, key: Key) Allocator.Error!Index {
 
         .enum_literal => |enum_literal| ip.items.appendAssumeCapacity(.{
             .tag = .enum_literal,
-            .data = @intFromEnum(enum_literal),
+            .data = @intfromenum(enum_literal),
         }),
 
         .enum_tag => |enum_tag| {
@@ -5739,18 +5739,18 @@ pub fn get(ip: *InternPool, gpa: Allocator, key: Key) Allocator.Error!Index {
 
         .empty_enum_value => |enum_or_union_ty| ip.items.appendAssumeCapacity(.{
             .tag = .only_possible_value,
-            .data = @intFromEnum(enum_or_union_ty),
+            .data = @intfromenum(enum_or_union_ty),
         }),
 
         .float => |float| {
             switch (float.ty) {
                 .f16_type => ip.items.appendAssumeCapacity(.{
                     .tag = .float_f16,
-                    .data = @as(u16, @bitCast(float.storage.f16)),
+                    .data = @as(u16, @bitcast(float.storage.f16)),
                 }),
                 .f32_type => ip.items.appendAssumeCapacity(.{
                     .tag = .float_f32,
-                    .data = @as(u32, @bitCast(float.storage.f32)),
+                    .data = @as(u32, @bitcast(float.storage.f32)),
                 }),
                 .f64_type => ip.items.appendAssumeCapacity(.{
                     .tag = .float_f64,
@@ -5796,18 +5796,18 @@ pub fn get(ip: *InternPool, gpa: Allocator, key: Key) Allocator.Error!Index {
                 .vector_type, .anon_struct_type, .struct_type => .none,
                 else => unreachable,
             };
-            const len_including_sentinel = len + @intFromBool(sentinel != .none);
+            const len_including_sentinel = len + @intfrombool(sentinel != .none);
             switch (aggregate.storage) {
                 .bytes => |bytes| {
                     assert(child == .u8_type);
                     if (sentinel != .none) {
-                        assert(bytes.at(@intCast(len), ip) == ip.indexToKey(sentinel).int.storage.u64);
+                        assert(bytes.at(@intcast(len), ip) == ip.indexToKey(sentinel).int.storage.u64);
                     }
                 },
                 .elems => |elems| {
                     if (elems.len != len) {
                         assert(elems.len == len_including_sentinel);
-                        assert(elems[@intCast(len)] == sentinel);
+                        assert(elems[@intcast(len)] == sentinel);
                     }
                 },
                 .repeated_elem => |elem| {
@@ -5836,9 +5836,9 @@ pub fn get(ip: *InternPool, gpa: Allocator, key: Key) Allocator.Error!Index {
             if (len == 0) {
                 ip.items.appendAssumeCapacity(.{
                     .tag = .only_possible_value,
-                    .data = @intFromEnum(aggregate.ty),
+                    .data = @intfromenum(aggregate.ty),
                 });
-                return @enumFromInt(ip.items.len - 1);
+                return @enumfromint(ip.items.len - 1);
             }
 
             switch (ty_key) {
@@ -5869,9 +5869,9 @@ pub fn get(ip: *InternPool, gpa: Allocator, key: Key) Allocator.Error!Index {
                     // in the aggregate fields.
                     ip.items.appendAssumeCapacity(.{
                         .tag = .only_possible_value,
-                        .data = @intFromEnum(aggregate.ty),
+                        .data = @intfromenum(aggregate.ty),
                     });
-                    return @enumFromInt(ip.items.len - 1);
+                    return @enumfromint(ip.items.len - 1);
                 },
                 else => {},
             }
@@ -5880,7 +5880,7 @@ pub fn get(ip: *InternPool, gpa: Allocator, key: Key) Allocator.Error!Index {
                 switch (aggregate.storage) {
                     .bytes => |bytes| for (bytes.toSlice(len, ip)[1..]) |byte|
                         if (byte != bytes.at(0, ip)) break :repeated,
-                    .elems => |elems| for (elems[1..@intCast(len)]) |elem|
+                    .elems => |elems| for (elems[1..@intcast(len)]) |elem|
                         if (elem != elems[0]) break :repeated,
                     .repeated_elem => {},
                 }
@@ -5901,7 +5901,7 @@ pub fn get(ip: *InternPool, gpa: Allocator, key: Key) Allocator.Error!Index {
 
                 try ip.extra.ensureUnusedCapacity(
                     gpa,
-                    @typeInfo(Repeated).Struct.fields.len,
+                    @typeinfo(Repeated).Struct.fields.len,
                 );
                 ip.items.appendAssumeCapacity(.{
                     .tag = .repeated,
@@ -5910,40 +5910,40 @@ pub fn get(ip: *InternPool, gpa: Allocator, key: Key) Allocator.Error!Index {
                         .elem_val = elem,
                     }),
                 });
-                return @enumFromInt(ip.items.len - 1);
+                return @enumfromint(ip.items.len - 1);
             }
 
             if (child == .u8_type) bytes: {
                 const string_bytes_index = ip.string_bytes.items.len;
-                try ip.string_bytes.ensureUnusedCapacity(gpa, @intCast(len_including_sentinel + 1));
-                try ip.extra.ensureUnusedCapacity(gpa, @typeInfo(Bytes).Struct.fields.len);
+                try ip.string_bytes.ensureUnusedCapacity(gpa, @intcast(len_including_sentinel + 1));
+                try ip.extra.ensureUnusedCapacity(gpa, @typeinfo(Bytes).Struct.fields.len);
                 switch (aggregate.storage) {
                     .bytes => |bytes| ip.string_bytes.appendSliceAssumeCapacity(bytes.toSlice(len, ip)),
-                    .elems => |elems| for (elems[0..@intCast(len)]) |elem| switch (ip.indexToKey(elem)) {
+                    .elems => |elems| for (elems[0..@intcast(len)]) |elem| switch (ip.indexToKey(elem)) {
                         .undef => {
                             ip.string_bytes.shrinkRetainingCapacity(string_bytes_index);
                             break :bytes;
                         },
                         .int => |int| ip.string_bytes.appendAssumeCapacity(
-                            @intCast(int.storage.u64),
+                            @intcast(int.storage.u64),
                         ),
                         else => unreachable,
                     },
                     .repeated_elem => |elem| switch (ip.indexToKey(elem)) {
                         .undef => break :bytes,
                         .int => |int| @memset(
-                            ip.string_bytes.addManyAsSliceAssumeCapacity(@intCast(len)),
-                            @intCast(int.storage.u64),
+                            ip.string_bytes.addManyAsSliceAssumeCapacity(@intcast(len)),
+                            @intcast(int.storage.u64),
                         ),
                         else => unreachable,
                     },
                 }
                 if (sentinel != .none) ip.string_bytes.appendAssumeCapacity(
-                    @intCast(ip.indexToKey(sentinel).int.storage.u64),
+                    @intcast(ip.indexToKey(sentinel).int.storage.u64),
                 );
                 const string = try ip.getOrPutTrailingString(
                     gpa,
-                    @intCast(len_including_sentinel),
+                    @intcast(len_including_sentinel),
                     .maybe_embedded_nulls,
                 );
                 ip.items.appendAssumeCapacity(.{
@@ -5953,12 +5953,12 @@ pub fn get(ip: *InternPool, gpa: Allocator, key: Key) Allocator.Error!Index {
                         .bytes = string,
                     }),
                 });
-                return @enumFromInt(ip.items.len - 1);
+                return @enumfromint(ip.items.len - 1);
             }
 
             try ip.extra.ensureUnusedCapacity(
                 gpa,
-                @typeInfo(Tag.Aggregate).Struct.fields.len + @as(usize, @intCast(len_including_sentinel + 1)),
+                @typeinfo(Tag.Aggregate).Struct.fields.len + @as(usize, @intcast(len_including_sentinel + 1)),
             );
             ip.items.appendAssumeCapacity(.{
                 .tag = .aggregate,
@@ -5966,8 +5966,8 @@ pub fn get(ip: *InternPool, gpa: Allocator, key: Key) Allocator.Error!Index {
                     .ty = aggregate.ty,
                 }),
             });
-            ip.extra.appendSliceAssumeCapacity(@ptrCast(aggregate.storage.elems));
-            if (sentinel != .none) ip.extra.appendAssumeCapacity(@intFromEnum(sentinel));
+            ip.extra.appendSliceAssumeCapacity(@ptrcast(aggregate.storage.elems));
+            if (sentinel != .none) ip.extra.appendAssumeCapacity(@intfromenum(sentinel));
         },
 
         .un => |un| {
@@ -5981,20 +5981,20 @@ pub fn get(ip: *InternPool, gpa: Allocator, key: Key) Allocator.Error!Index {
 
         .memoized_call => |memoized_call| {
             for (memoized_call.arg_values) |arg| assert(arg != .none);
-            try ip.extra.ensureUnusedCapacity(gpa, @typeInfo(MemoizedCall).Struct.fields.len +
+            try ip.extra.ensureUnusedCapacity(gpa, @typeinfo(MemoizedCall).Struct.fields.len +
                 memoized_call.arg_values.len);
             ip.items.appendAssumeCapacity(.{
                 .tag = .memoized_call,
                 .data = ip.addExtraAssumeCapacity(MemoizedCall{
                     .func = memoized_call.func,
-                    .args_len = @intCast(memoized_call.arg_values.len),
+                    .args_len = @intcast(memoized_call.arg_values.len),
                     .result = memoized_call.result,
                 }),
             });
-            ip.extra.appendSliceAssumeCapacity(@ptrCast(memoized_call.arg_values));
+            ip.extra.appendSliceAssumeCapacity(@ptrcast(memoized_call.arg_values));
         },
     }
-    return @enumFromInt(ip.items.len - 1);
+    return @enumfromint(ip.items.len - 1);
 }
 
 pub const UnionTypeInit = struct {
@@ -6041,16 +6041,16 @@ pub fn getUnionType(ip: *InternPool, gpa: Allocator, ini: UnionTypeInit) Allocat
             .type_hash = r.type_hash,
         } },
     } }, adapter);
-    if (gop.found_existing) return .{ .existing = @enumFromInt(gop.index) };
+    if (gop.found_existing) return .{ .existing = @enumfromint(gop.index) };
     errdefer _ = ip.map.pop();
 
     const align_elements_len = if (ini.flags.any_aligned_fields) (ini.fields_len + 3) / 4 else 0;
-    const align_element: u32 = @bitCast([1]u8{@intFromEnum(Alignment.none)} ** 4);
-    try ip.extra.ensureUnusedCapacity(gpa, @typeInfo(Tag.TypeUnion).Struct.fields.len +
+    const align_element: u32 = @bitcast([1]u8{@intfromenum(Alignment.none)} ** 4);
+    try ip.extra.ensureUnusedCapacity(gpa, @typeinfo(Tag.TypeUnion).Struct.fields.len +
         // TODO: fmt bug
         // zig fmt: off
         switch (ini.key) {
-            .declared => |d| @intFromBool(d.captures.len != 0) + d.captures.len,
+            .declared => |d| @intfrombool(d.captures.len != 0) + d.captures.len,
             .reified => 2, // type_hash: PackedU64
         } +
         // zig fmt: on
@@ -6089,8 +6089,8 @@ pub fn getUnionType(ip: *InternPool, gpa: Allocator, ini: UnionTypeInit) Allocat
 
     switch (ini.key) {
         .declared => |d| if (d.captures.len != 0) {
-            ip.extra.appendAssumeCapacity(@intCast(d.captures.len));
-            ip.extra.appendSliceAssumeCapacity(@ptrCast(d.captures));
+            ip.extra.appendAssumeCapacity(@intcast(d.captures.len));
+            ip.extra.appendSliceAssumeCapacity(@ptrcast(d.captures));
         },
         .reified => |r| _ = ip.addExtraAssumeCapacity(PackedU64.init(r.type_hash)),
     }
@@ -6098,9 +6098,9 @@ pub fn getUnionType(ip: *InternPool, gpa: Allocator, ini: UnionTypeInit) Allocat
     // field types
     if (ini.field_types.len > 0) {
         assert(ini.field_types.len == ini.fields_len);
-        ip.extra.appendSliceAssumeCapacity(@ptrCast(ini.field_types));
+        ip.extra.appendSliceAssumeCapacity(@ptrcast(ini.field_types));
     } else {
-        ip.extra.appendNTimesAssumeCapacity(@intFromEnum(Index.none), ini.fields_len);
+        ip.extra.appendNTimesAssumeCapacity(@intfromenum(Index.none), ini.fields_len);
     }
 
     // field alignments
@@ -6109,8 +6109,8 @@ pub fn getUnionType(ip: *InternPool, gpa: Allocator, ini: UnionTypeInit) Allocat
         if (ini.field_aligns.len > 0) {
             assert(ini.field_aligns.len == ini.fields_len);
             @memcpy((Alignment.Slice{
-                .start = @intCast(ip.extra.items.len - align_elements_len),
-                .len = @intCast(ini.field_aligns.len),
+                .start = @intcast(ip.extra.items.len - align_elements_len),
+                .len = @intcast(ini.field_aligns.len),
             }).get(ip), ini.field_aligns);
         }
     } else {
@@ -6118,7 +6118,7 @@ pub fn getUnionType(ip: *InternPool, gpa: Allocator, ini: UnionTypeInit) Allocat
     }
 
     return .{ .wip = .{
-        .index = @enumFromInt(ip.items.len - 1),
+        .index = @enumfromint(ip.items.len - 1),
         .decl_extra_index = extra_index + std.meta.fieldIndex(Tag.TypeUnion, "decl").?,
         .namespace_extra_index = if (ini.has_namespace)
             extra_index + std.meta.fieldIndex(Tag.TypeUnion, "namespace").?
@@ -6132,9 +6132,9 @@ pub const WipNamespaceType = struct {
     decl_extra_index: u32,
     namespace_extra_index: ?u32,
     pub fn finish(wip: WipNamespaceType, ip: *InternPool, decl: DeclIndex, namespace: OptionalNamespaceIndex) Index {
-        ip.extra.items[wip.decl_extra_index] = @intFromEnum(decl);
+        ip.extra.items[wip.decl_extra_index] = @intfromenum(decl);
         if (wip.namespace_extra_index) |i| {
-            ip.extra.items[i] = @intFromEnum(namespace.unwrap().?);
+            ip.extra.items[i] = @intfromenum(namespace.unwrap().?);
         } else {
             assert(namespace == .none);
         }
@@ -6190,7 +6190,7 @@ pub fn getStructType(
         } },
     } };
     const gop = try ip.map.getOrPutAdapted(gpa, key, adapter);
-    if (gop.found_existing) return .{ .existing = @enumFromInt(gop.index) };
+    if (gop.found_existing) return .{ .existing = @enumfromint(gop.index) };
     errdefer _ = ip.map.pop();
 
     const names_map = try ip.addMap(gpa, ini.fields_len);
@@ -6204,11 +6204,11 @@ pub fn getStructType(
         .auto => false,
         .@"extern" => true,
         .@"packed" => {
-            try ip.extra.ensureUnusedCapacity(gpa, @typeInfo(Tag.TypeStructPacked).Struct.fields.len +
+            try ip.extra.ensureUnusedCapacity(gpa, @typeinfo(Tag.TypeStructPacked).Struct.fields.len +
                 // TODO: fmt bug
                 // zig fmt: off
                 switch (ini.key) {
-                    .declared => |d| @intFromBool(d.captures.len != 0) + d.captures.len,
+                    .declared => |d| @intfrombool(d.captures.len != 0) + d.captures.len,
                     .reified => 2, // type_hash: PackedU64
                 } +
                 // zig fmt: on
@@ -6235,20 +6235,20 @@ pub fn getStructType(
             });
             switch (ini.key) {
                 .declared => |d| if (d.captures.len != 0) {
-                    ip.extra.appendAssumeCapacity(@intCast(d.captures.len));
-                    ip.extra.appendSliceAssumeCapacity(@ptrCast(d.captures));
+                    ip.extra.appendAssumeCapacity(@intcast(d.captures.len));
+                    ip.extra.appendSliceAssumeCapacity(@ptrcast(d.captures));
                 },
                 .reified => |r| {
                     _ = ip.addExtraAssumeCapacity(PackedU64.init(r.type_hash));
                 },
             }
-            ip.extra.appendNTimesAssumeCapacity(@intFromEnum(Index.none), ini.fields_len);
-            ip.extra.appendNTimesAssumeCapacity(@intFromEnum(OptionalNullTerminatedString.none), ini.fields_len);
+            ip.extra.appendNTimesAssumeCapacity(@intfromenum(Index.none), ini.fields_len);
+            ip.extra.appendNTimesAssumeCapacity(@intfromenum(OptionalNullTerminatedString.none), ini.fields_len);
             if (ini.any_default_inits) {
-                ip.extra.appendNTimesAssumeCapacity(@intFromEnum(Index.none), ini.fields_len);
+                ip.extra.appendNTimesAssumeCapacity(@intfromenum(Index.none), ini.fields_len);
             }
             return .{ .wip = .{
-                .index = @enumFromInt(ip.items.len - 1),
+                .index = @enumfromint(ip.items.len - 1),
                 .decl_extra_index = extra_index + std.meta.fieldIndex(Tag.TypeStructPacked, "decl").?,
                 .namespace_extra_index = if (ini.has_namespace)
                     extra_index + std.meta.fieldIndex(Tag.TypeStructPacked, "namespace").?
@@ -6259,14 +6259,14 @@ pub fn getStructType(
     };
 
     const align_elements_len = if (ini.any_aligned_fields) (ini.fields_len + 3) / 4 else 0;
-    const align_element: u32 = @bitCast([1]u8{@intFromEnum(Alignment.none)} ** 4);
+    const align_element: u32 = @bitcast([1]u8{@intfromenum(Alignment.none)} ** 4);
     const comptime_elements_len = if (ini.any_comptime_fields) (ini.fields_len + 31) / 32 else 0;
 
-    try ip.extra.ensureUnusedCapacity(gpa, @typeInfo(Tag.TypeStruct).Struct.fields.len +
+    try ip.extra.ensureUnusedCapacity(gpa, @typeinfo(Tag.TypeStruct).Struct.fields.len +
         // TODO: fmt bug
         // zig fmt: off
         switch (ini.key) {
-            .declared => |d| @intFromBool(d.captures.len != 0) + d.captures.len,
+            .declared => |d| @intfrombool(d.captures.len != 0) + d.captures.len,
             .reified => 2, // type_hash: PackedU64
         } +
         // zig fmt: on
@@ -6307,24 +6307,24 @@ pub fn getStructType(
     });
     switch (ini.key) {
         .declared => |d| if (d.captures.len != 0) {
-            ip.extra.appendAssumeCapacity(@intCast(d.captures.len));
-            ip.extra.appendSliceAssumeCapacity(@ptrCast(d.captures));
+            ip.extra.appendAssumeCapacity(@intcast(d.captures.len));
+            ip.extra.appendSliceAssumeCapacity(@ptrcast(d.captures));
         },
         .reified => |r| {
             _ = ip.addExtraAssumeCapacity(PackedU64.init(r.type_hash));
         },
     }
-    ip.extra.appendNTimesAssumeCapacity(@intFromEnum(Index.none), ini.fields_len);
+    ip.extra.appendNTimesAssumeCapacity(@intfromenum(Index.none), ini.fields_len);
     if (!ini.is_tuple) {
-        ip.extra.appendAssumeCapacity(@intFromEnum(names_map));
-        ip.extra.appendNTimesAssumeCapacity(@intFromEnum(OptionalNullTerminatedString.none), ini.fields_len);
+        ip.extra.appendAssumeCapacity(@intfromenum(names_map));
+        ip.extra.appendNTimesAssumeCapacity(@intfromenum(OptionalNullTerminatedString.none), ini.fields_len);
     }
     if (ini.any_default_inits) {
-        ip.extra.appendNTimesAssumeCapacity(@intFromEnum(Index.none), ini.fields_len);
+        ip.extra.appendNTimesAssumeCapacity(@intfromenum(Index.none), ini.fields_len);
     }
     const namespace_extra_index: ?u32 = if (ini.has_namespace) i: {
         ip.extra.appendAssumeCapacity(undefined); // set by `finish`
-        break :i @intCast(ip.extra.items.len - 1);
+        break :i @intcast(ip.extra.items.len - 1);
     } else null;
     if (ini.any_aligned_fields) {
         ip.extra.appendNTimesAssumeCapacity(align_element, align_elements_len);
@@ -6333,11 +6333,11 @@ pub fn getStructType(
         ip.extra.appendNTimesAssumeCapacity(0, comptime_elements_len);
     }
     if (ini.layout == .auto) {
-        ip.extra.appendNTimesAssumeCapacity(@intFromEnum(LoadedStructType.RuntimeOrder.unresolved), ini.fields_len);
+        ip.extra.appendNTimesAssumeCapacity(@intfromenum(LoadedStructType.RuntimeOrder.unresolved), ini.fields_len);
     }
     ip.extra.appendNTimesAssumeCapacity(std.math.maxInt(u32), ini.fields_len);
     return .{ .wip = .{
-        .index = @enumFromInt(ip.items.len - 1),
+        .index = @enumfromint(ip.items.len - 1),
         .decl_extra_index = extra_index + std.meta.fieldIndex(Tag.TypeStruct, "decl").?,
         .namespace_extra_index = namespace_extra_index,
     } };
@@ -6356,38 +6356,38 @@ pub fn getAnonStructType(ip: *InternPool, gpa: Allocator, ini: AnonStructTypeIni
     for (ini.types) |elem| assert(elem != .none);
 
     const prev_extra_len = ip.extra.items.len;
-    const fields_len: u32 = @intCast(ini.types.len);
+    const fields_len: u32 = @intcast(ini.types.len);
 
     try ip.extra.ensureUnusedCapacity(
         gpa,
-        @typeInfo(TypeStructAnon).Struct.fields.len + (fields_len * 3),
+        @typeinfo(TypeStructAnon).Struct.fields.len + (fields_len * 3),
     );
     try ip.items.ensureUnusedCapacity(gpa, 1);
 
     const extra_index = ip.addExtraAssumeCapacity(TypeStructAnon{
         .fields_len = fields_len,
     });
-    ip.extra.appendSliceAssumeCapacity(@ptrCast(ini.types));
-    ip.extra.appendSliceAssumeCapacity(@ptrCast(ini.values));
+    ip.extra.appendSliceAssumeCapacity(@ptrcast(ini.types));
+    ip.extra.appendSliceAssumeCapacity(@ptrcast(ini.values));
 
     const adapter: KeyAdapter = .{ .intern_pool = ip };
     const key: Key = .{
         .anon_struct_type = if (ini.names.len == 0) extraTypeTupleAnon(ip, extra_index) else k: {
             assert(ini.names.len == ini.types.len);
-            ip.extra.appendSliceAssumeCapacity(@ptrCast(ini.names));
+            ip.extra.appendSliceAssumeCapacity(@ptrcast(ini.names));
             break :k extraTypeStructAnon(ip, extra_index);
         },
     };
     const gop = try ip.map.getOrPutAdapted(gpa, key, adapter);
     if (gop.found_existing) {
         ip.extra.items.len = prev_extra_len;
-        return @enumFromInt(gop.index);
+        return @enumfromint(gop.index);
     }
     ip.items.appendAssumeCapacity(.{
         .tag = if (ini.names.len == 0) .type_tuple_anon else .type_struct_anon,
         .data = extra_index,
     });
-    return @enumFromInt(ip.items.len - 1);
+    return @enumfromint(ip.items.len - 1);
 }
 
 /// This is equivalent to `Key.FuncType` but adjusted to have a slice for `param_types`.
@@ -6414,11 +6414,11 @@ pub fn getFuncType(ip: *InternPool, gpa: Allocator, key: GetFuncTypeKey) Allocat
     // ask if it already exists, and if so, revert the lengths of the mutated
     // arrays. This is similar to what `getOrPutTrailingString` does.
     const prev_extra_len = ip.extra.items.len;
-    const params_len: u32 = @intCast(key.param_types.len);
+    const params_len: u32 = @intcast(key.param_types.len);
 
-    try ip.extra.ensureUnusedCapacity(gpa, @typeInfo(Tag.TypeFunction).Struct.fields.len +
-        @intFromBool(key.comptime_bits != 0) +
-        @intFromBool(key.noalias_bits != 0) +
+    try ip.extra.ensureUnusedCapacity(gpa, @typeinfo(Tag.TypeFunction).Struct.fields.len +
+        @intfrombool(key.comptime_bits != 0) +
+        @intfrombool(key.noalias_bits != 0) +
         params_len);
     try ip.items.ensureUnusedCapacity(gpa, 1);
 
@@ -6440,7 +6440,7 @@ pub fn getFuncType(ip: *InternPool, gpa: Allocator, key: GetFuncTypeKey) Allocat
 
     if (key.comptime_bits != 0) ip.extra.appendAssumeCapacity(key.comptime_bits);
     if (key.noalias_bits != 0) ip.extra.appendAssumeCapacity(key.noalias_bits);
-    ip.extra.appendSliceAssumeCapacity(@ptrCast(key.param_types));
+    ip.extra.appendSliceAssumeCapacity(@ptrcast(key.param_types));
 
     const adapter: KeyAdapter = .{ .intern_pool = ip };
     const gop = try ip.map.getOrPutAdapted(gpa, Key{
@@ -6448,20 +6448,20 @@ pub fn getFuncType(ip: *InternPool, gpa: Allocator, key: GetFuncTypeKey) Allocat
     }, adapter);
     if (gop.found_existing) {
         ip.extra.items.len = prev_extra_len;
-        return @enumFromInt(gop.index);
+        return @enumfromint(gop.index);
     }
 
     ip.items.appendAssumeCapacity(.{
         .tag = .type_function,
         .data = func_type_extra_index,
     });
-    return @enumFromInt(ip.items.len - 1);
+    return @enumfromint(ip.items.len - 1);
 }
 
 pub fn getExternFunc(ip: *InternPool, gpa: Allocator, key: Key.ExternFunc) Allocator.Error!Index {
     const adapter: KeyAdapter = .{ .intern_pool = ip };
     const gop = try ip.map.getOrPutAdapted(gpa, Key{ .extern_func = key }, adapter);
-    if (gop.found_existing) return @enumFromInt(gop.index);
+    if (gop.found_existing) return @enumfromint(gop.index);
     errdefer _ = ip.map.pop();
     const prev_extra_len = ip.extra.items.len;
     const extra_index = try ip.addExtra(gpa, @as(Tag.ExternFunc, key));
@@ -6471,7 +6471,7 @@ pub fn getExternFunc(ip: *InternPool, gpa: Allocator, key: Key.ExternFunc) Alloc
         .data = extra_index,
     });
     errdefer ip.items.len -= 1;
-    return @enumFromInt(ip.items.len - 1);
+    return @enumfromint(ip.items.len - 1);
 }
 
 pub const GetFuncDeclKey = struct {
@@ -6492,7 +6492,7 @@ pub fn getFuncDecl(ip: *InternPool, gpa: Allocator, key: GetFuncDeclKey) Allocat
     // arrays. This is similar to what `getOrPutTrailingString` does.
     const prev_extra_len = ip.extra.items.len;
 
-    try ip.extra.ensureUnusedCapacity(gpa, @typeInfo(Tag.FuncDecl).Struct.fields.len);
+    try ip.extra.ensureUnusedCapacity(gpa, @typeinfo(Tag.FuncDecl).Struct.fields.len);
     try ip.items.ensureUnusedCapacity(gpa, 1);
     try ip.map.ensureUnusedCapacity(gpa, 1);
 
@@ -6521,14 +6521,14 @@ pub fn getFuncDecl(ip: *InternPool, gpa: Allocator, key: GetFuncDeclKey) Allocat
 
     if (gop.found_existing) {
         ip.extra.items.len = prev_extra_len;
-        return @enumFromInt(gop.index);
+        return @enumfromint(gop.index);
     }
 
     ip.items.appendAssumeCapacity(.{
         .tag = .func_decl,
         .data = func_decl_extra_index,
     });
-    return @enumFromInt(ip.items.len - 1);
+    return @enumfromint(ip.items.len - 1);
 }
 
 pub const GetFuncDeclIesKey = struct {
@@ -6562,15 +6562,15 @@ pub fn getFuncDeclIes(ip: *InternPool, gpa: Allocator, key: GetFuncDeclIesKey) A
     // ask if it already exists, and if so, revert the lengths of the mutated
     // arrays. This is similar to what `getOrPutTrailingString` does.
     const prev_extra_len = ip.extra.items.len;
-    const params_len: u32 = @intCast(key.param_types.len);
+    const params_len: u32 = @intcast(key.param_types.len);
 
     try ip.map.ensureUnusedCapacity(gpa, 4);
-    try ip.extra.ensureUnusedCapacity(gpa, @typeInfo(Tag.FuncDecl).Struct.fields.len +
+    try ip.extra.ensureUnusedCapacity(gpa, @typeinfo(Tag.FuncDecl).Struct.fields.len +
         1 + // inferred_error_set
-        @typeInfo(Tag.ErrorUnionType).Struct.fields.len +
-        @typeInfo(Tag.TypeFunction).Struct.fields.len +
-        @intFromBool(key.comptime_bits != 0) +
-        @intFromBool(key.noalias_bits != 0) +
+        @typeinfo(Tag.ErrorUnionType).Struct.fields.len +
+        @typeinfo(Tag.TypeFunction).Struct.fields.len +
+        @intfrombool(key.comptime_bits != 0) +
+        @intfrombool(key.noalias_bits != 0) +
         params_len);
     try ip.items.ensureUnusedCapacity(gpa, 4);
 
@@ -6584,7 +6584,7 @@ pub fn getFuncDeclIes(ip: *InternPool, gpa: Allocator, key: GetFuncDeclIesKey) A
             .inferred_error_set = true,
         },
         .owner_decl = key.owner_decl,
-        .ty = @enumFromInt(ip.items.len + 3),
+        .ty = @enumfromint(ip.items.len + 3),
         .zir_body_inst = key.zir_body_inst,
         .lbrace_line = key.lbrace_line,
         .rbrace_line = key.rbrace_line,
@@ -6596,24 +6596,24 @@ pub fn getFuncDeclIes(ip: *InternPool, gpa: Allocator, key: GetFuncDeclIesKey) A
         .tag = .func_decl,
         .data = func_decl_extra_index,
     });
-    ip.extra.appendAssumeCapacity(@intFromEnum(Index.none));
+    ip.extra.appendAssumeCapacity(@intfromenum(Index.none));
 
     ip.items.appendAssumeCapacity(.{
         .tag = .type_error_union,
         .data = ip.addExtraAssumeCapacity(Tag.ErrorUnionType{
-            .error_set_type = @enumFromInt(ip.items.len + 1),
+            .error_set_type = @enumfromint(ip.items.len + 1),
             .payload_type = key.bare_return_type,
         }),
     });
 
     ip.items.appendAssumeCapacity(.{
         .tag = .type_inferred_error_set,
-        .data = @intCast(ip.items.len - 2),
+        .data = @intcast(ip.items.len - 2),
     });
 
     const func_type_extra_index = ip.addExtraAssumeCapacity(Tag.TypeFunction{
         .params_len = params_len,
-        .return_type = @enumFromInt(ip.items.len - 2),
+        .return_type = @enumfromint(ip.items.len - 2),
         .flags = .{
             .cc = key.cc orelse .Unspecified,
             .is_var_args = key.is_var_args,
@@ -6628,7 +6628,7 @@ pub fn getFuncDeclIes(ip: *InternPool, gpa: Allocator, key: GetFuncDeclIesKey) A
     });
     if (key.comptime_bits != 0) ip.extra.appendAssumeCapacity(key.comptime_bits);
     if (key.noalias_bits != 0) ip.extra.appendAssumeCapacity(key.noalias_bits);
-    ip.extra.appendSliceAssumeCapacity(@ptrCast(key.param_types));
+    ip.extra.appendSliceAssumeCapacity(@ptrcast(key.param_types));
 
     ip.items.appendAssumeCapacity(.{
         .tag = .type_function,
@@ -6641,22 +6641,22 @@ pub fn getFuncDeclIes(ip: *InternPool, gpa: Allocator, key: GetFuncDeclIesKey) A
     }, adapter);
     if (!gop.found_existing) {
         assert(!ip.map.getOrPutAssumeCapacityAdapted(Key{ .error_union_type = .{
-            .error_set_type = @enumFromInt(ip.items.len - 2),
+            .error_set_type = @enumfromint(ip.items.len - 2),
             .payload_type = key.bare_return_type,
         } }, adapter).found_existing);
         assert(!ip.map.getOrPutAssumeCapacityAdapted(Key{
-            .inferred_error_set_type = @enumFromInt(ip.items.len - 4),
+            .inferred_error_set_type = @enumfromint(ip.items.len - 4),
         }, adapter).found_existing);
         assert(!ip.map.getOrPutAssumeCapacityAdapted(Key{
             .func_type = extraFuncType(ip, func_type_extra_index),
         }, adapter).found_existing);
-        return @enumFromInt(ip.items.len - 4);
+        return @enumfromint(ip.items.len - 4);
     }
 
     // An existing function type was found; undo the additions to our two arrays.
     ip.items.len -= 4;
     ip.extra.items.len = prev_extra_len;
-    return @enumFromInt(gop.index);
+    return @enumfromint(gop.index);
 }
 
 pub fn getErrorSetType(
@@ -6669,18 +6669,18 @@ pub fn getErrorSetType(
     // The strategy here is to add the type unconditionally, then to ask if it
     // already exists, and if so, revert the lengths of the mutated arrays.
     // This is similar to what `getOrPutTrailingString` does.
-    try ip.extra.ensureUnusedCapacity(gpa, @typeInfo(Tag.ErrorSet).Struct.fields.len + names.len);
+    try ip.extra.ensureUnusedCapacity(gpa, @typeinfo(Tag.ErrorSet).Struct.fields.len + names.len);
 
     const prev_extra_len = ip.extra.items.len;
     errdefer ip.extra.items.len = prev_extra_len;
 
-    const predicted_names_map: MapIndex = @enumFromInt(ip.maps.items.len);
+    const predicted_names_map: MapIndex = @enumfromint(ip.maps.items.len);
 
     const error_set_extra_index = ip.addExtraAssumeCapacity(Tag.ErrorSet{
-        .names_len = @intCast(names.len),
+        .names_len = @intcast(names.len),
         .names_map = predicted_names_map,
     });
-    ip.extra.appendSliceAssumeCapacity(@ptrCast(names));
+    ip.extra.appendSliceAssumeCapacity(@ptrcast(names));
 
     const adapter: KeyAdapter = .{ .intern_pool = ip };
     const gop = try ip.map.getOrPutAdapted(gpa, Key{
@@ -6690,7 +6690,7 @@ pub fn getErrorSetType(
 
     if (gop.found_existing) {
         ip.extra.items.len = prev_extra_len;
-        return @enumFromInt(gop.index);
+        return @enumfromint(gop.index);
     }
 
     try ip.items.append(gpa, .{
@@ -6705,7 +6705,7 @@ pub fn getErrorSetType(
 
     addStringsToMap(ip, names_map, names);
 
-    return @enumFromInt(ip.items.len - 1);
+    return @enumfromint(ip.items.len - 1);
 }
 
 pub const GetFuncInstanceKey = struct {
@@ -6741,7 +6741,7 @@ pub fn getFuncInstance(ip: *InternPool, gpa: Allocator, arg: GetFuncInstanceKey)
 
     assert(arg.comptime_args.len == ip.funcTypeParamsLen(ip.typeOf(generic_owner)));
 
-    try ip.extra.ensureUnusedCapacity(gpa, @typeInfo(Tag.FuncInstance).Struct.fields.len +
+    try ip.extra.ensureUnusedCapacity(gpa, @typeinfo(Tag.FuncInstance).Struct.fields.len +
         arg.comptime_args.len);
     const prev_extra_len = ip.extra.items.len;
     errdefer ip.extra.items.len = prev_extra_len;
@@ -6762,7 +6762,7 @@ pub fn getFuncInstance(ip: *InternPool, gpa: Allocator, arg: GetFuncInstanceKey)
         .branch_quota = 0,
         .generic_owner = generic_owner,
     });
-    ip.extra.appendSliceAssumeCapacity(@ptrCast(arg.comptime_args));
+    ip.extra.appendSliceAssumeCapacity(@ptrcast(arg.comptime_args));
 
     const gop = try ip.map.getOrPutAdapted(gpa, Key{
         .func = extraFuncInstance(ip, func_extra_index),
@@ -6771,10 +6771,10 @@ pub fn getFuncInstance(ip: *InternPool, gpa: Allocator, arg: GetFuncInstanceKey)
 
     if (gop.found_existing) {
         ip.extra.items.len = prev_extra_len;
-        return @enumFromInt(gop.index);
+        return @enumfromint(gop.index);
     }
 
-    const func_index: Index = @enumFromInt(ip.items.len);
+    const func_index: Index = @enumfromint(ip.items.len);
 
     try ip.items.append(gpa, .{
         .tag = .func_instance,
@@ -6812,22 +6812,22 @@ pub fn getFuncInstanceIes(
     // ask if it already exists, and if so, revert the lengths of the mutated
     // arrays. This is similar to what `getOrPutTrailingString` does.
     const prev_extra_len = ip.extra.items.len;
-    const params_len: u32 = @intCast(arg.param_types.len);
+    const params_len: u32 = @intcast(arg.param_types.len);
 
     try ip.map.ensureUnusedCapacity(gpa, 4);
-    try ip.extra.ensureUnusedCapacity(gpa, @typeInfo(Tag.FuncInstance).Struct.fields.len +
+    try ip.extra.ensureUnusedCapacity(gpa, @typeinfo(Tag.FuncInstance).Struct.fields.len +
         1 + // inferred_error_set
         arg.comptime_args.len +
-        @typeInfo(Tag.ErrorUnionType).Struct.fields.len +
-        @typeInfo(Tag.TypeFunction).Struct.fields.len +
-        @intFromBool(arg.noalias_bits != 0) +
+        @typeinfo(Tag.ErrorUnionType).Struct.fields.len +
+        @typeinfo(Tag.TypeFunction).Struct.fields.len +
+        @intfrombool(arg.noalias_bits != 0) +
         params_len);
     try ip.items.ensureUnusedCapacity(gpa, 4);
 
-    const func_index: Index = @enumFromInt(ip.items.len);
-    const error_union_type: Index = @enumFromInt(ip.items.len + 1);
-    const error_set_type: Index = @enumFromInt(ip.items.len + 2);
-    const func_ty: Index = @enumFromInt(ip.items.len + 3);
+    const func_index: Index = @enumfromint(ip.items.len);
+    const error_union_type: Index = @enumfromint(ip.items.len + 1);
+    const error_set_type: Index = @enumfromint(ip.items.len + 2);
+    const func_ty: Index = @enumfromint(ip.items.len + 3);
 
     const func_extra_index = ip.addExtraAssumeCapacity(Tag.FuncInstance{
         .analysis = .{
@@ -6845,8 +6845,8 @@ pub fn getFuncInstanceIes(
         .branch_quota = 0,
         .generic_owner = generic_owner,
     });
-    ip.extra.appendAssumeCapacity(@intFromEnum(Index.none)); // resolved error set
-    ip.extra.appendSliceAssumeCapacity(@ptrCast(arg.comptime_args));
+    ip.extra.appendAssumeCapacity(@intfromenum(Index.none)); // resolved error set
+    ip.extra.appendSliceAssumeCapacity(@ptrcast(arg.comptime_args));
 
     const func_type_extra_index = ip.addExtraAssumeCapacity(Tag.TypeFunction{
         .params_len = params_len,
@@ -6865,7 +6865,7 @@ pub fn getFuncInstanceIes(
     });
     // no comptime_bits because has_comptime_bits is false
     if (arg.noalias_bits != 0) ip.extra.appendAssumeCapacity(arg.noalias_bits);
-    ip.extra.appendSliceAssumeCapacity(@ptrCast(arg.param_types));
+    ip.extra.appendSliceAssumeCapacity(@ptrcast(arg.param_types));
 
     // TODO: add appendSliceAssumeCapacity to MultiArrayList.
     ip.items.appendAssumeCapacity(.{
@@ -6881,7 +6881,7 @@ pub fn getFuncInstanceIes(
     });
     ip.items.appendAssumeCapacity(.{
         .tag = .type_inferred_error_set,
-        .data = @intFromEnum(func_index),
+        .data = @intfromenum(func_index),
     });
     ip.items.appendAssumeCapacity(.{
         .tag = .type_function,
@@ -6896,7 +6896,7 @@ pub fn getFuncInstanceIes(
         // Hot path: undo the additions to our two arrays.
         ip.items.len -= 4;
         ip.extra.items.len = prev_extra_len;
-        return @enumFromInt(gop.index);
+        return @enumfromint(gop.index);
     }
 
     // Synchronize the map with items.
@@ -6954,12 +6954,12 @@ fn finishFuncInstance(
     // Populate the owner_decl field which was left undefined until now.
     ip.extra.items[
         func_extra_index + std.meta.fieldIndex(Tag.FuncInstance, "owner_decl").?
-    ] = @intFromEnum(decl_index);
+    ] = @intfromenum(decl_index);
 
     // TODO: improve this name
     const decl = ip.declPtr(decl_index);
     decl.name = try ip.getOrPutStringFmt(gpa, "{}__anon_{d}", .{
-        fn_owner_decl.name.fmt(ip), @intFromEnum(decl_index),
+        fn_owner_decl.name.fmt(ip), @intfromenum(decl_index),
     }, .no_embedded_nulls);
 
     return func_index;
@@ -6998,9 +6998,9 @@ pub const WipEnumType = struct {
         decl: DeclIndex,
         namespace: OptionalNamespaceIndex,
     ) void {
-        ip.extra.items[wip.decl_index] = @intFromEnum(decl);
+        ip.extra.items[wip.decl_index] = @intfromenum(decl);
         if (wip.namespace_index) |i| {
-            ip.extra.items[i] = @intFromEnum(namespace.unwrap().?);
+            ip.extra.items[i] = @intfromenum(namespace.unwrap().?);
         } else {
             assert(namespace == .none);
         }
@@ -7008,7 +7008,7 @@ pub const WipEnumType = struct {
 
     pub fn setTagTy(wip: WipEnumType, ip: *InternPool, tag_ty: Index) void {
         assert(ip.isIntegerType(tag_ty));
-        ip.extra.items[wip.tag_ty_index] = @intFromEnum(tag_ty);
+        ip.extra.items[wip.tag_ty_index] = @intfromenum(tag_ty);
     }
 
     pub const FieldConflict = struct {
@@ -7027,16 +7027,16 @@ pub const WipEnumType = struct {
             assert(wip.values_map == .none);
             return null;
         }
-        assert(ip.typeOf(value) == @as(Index, @enumFromInt(ip.extra.items[wip.tag_ty_index])));
-        const map = &ip.maps.items[@intFromEnum(wip.values_map.unwrap().?)];
+        assert(ip.typeOf(value) == @as(Index, @enumfromint(ip.extra.items[wip.tag_ty_index])));
+        const map = &ip.maps.items[@intfromenum(wip.values_map.unwrap().?)];
         const field_index = map.count();
         const indexes = ip.extra.items[wip.values_start..][0..field_index];
-        const adapter: Index.Adapter = .{ .indexes = @ptrCast(indexes) };
+        const adapter: Index.Adapter = .{ .indexes = @ptrcast(indexes) };
         const gop = map.getOrPutAssumeCapacityAdapted(value, adapter);
         if (gop.found_existing) {
-            return .{ .kind = .value, .prev_field_idx = @intCast(gop.index) };
+            return .{ .kind = .value, .prev_field_idx = @intcast(gop.index) };
         }
-        ip.extra.items[wip.values_start + field_index] = @intFromEnum(value);
+        ip.extra.items[wip.values_start + field_index] = @intfromenum(value);
         return null;
     }
 
@@ -7066,7 +7066,7 @@ pub fn getEnumType(
             .type_hash = r.type_hash,
         } },
     } }, adapter);
-    if (gop.found_existing) return .{ .existing = @enumFromInt(gop.index) };
+    if (gop.found_existing) return .{ .existing = @enumfromint(gop.index) };
     assert(gop.index == ip.items.len);
     errdefer _ = ip.map.pop();
 
@@ -7078,7 +7078,7 @@ pub fn getEnumType(
     switch (ini.tag_mode) {
         .auto => {
             assert(!ini.has_values);
-            try ip.extra.ensureUnusedCapacity(gpa, @typeInfo(EnumAuto).Struct.fields.len +
+            try ip.extra.ensureUnusedCapacity(gpa, @typeinfo(EnumAuto).Struct.fields.len +
                 // TODO: fmt bug
                 // zig fmt: off
                 switch (ini.key) {
@@ -7091,7 +7091,7 @@ pub fn getEnumType(
             const extra_index = ip.addExtraAssumeCapacity(EnumAuto{
                 .decl = undefined, // set by `prepare`
                 .captures_len = switch (ini.key) {
-                    .declared => |d| @intCast(d.captures.len),
+                    .declared => |d| @intcast(d.captures.len),
                     .reified => std.math.maxInt(u32),
                 },
                 .namespace = .none,
@@ -7107,18 +7107,18 @@ pub fn getEnumType(
                 .data = extra_index,
             });
             switch (ini.key) {
-                .declared => |d| ip.extra.appendSliceAssumeCapacity(@ptrCast(d.captures)),
+                .declared => |d| ip.extra.appendSliceAssumeCapacity(@ptrcast(d.captures)),
                 .reified => |r| _ = ip.addExtraAssumeCapacity(PackedU64.init(r.type_hash)),
             }
             const names_start = ip.extra.items.len;
             ip.extra.appendNTimesAssumeCapacity(undefined, ini.fields_len);
             return .{ .wip = .{
-                .index = @enumFromInt(gop.index),
+                .index = @enumfromint(gop.index),
                 .tag_ty_index = extra_index + std.meta.fieldIndex(EnumAuto, "int_tag_type").?,
                 .decl_index = extra_index + std.meta.fieldIndex(EnumAuto, "decl").?,
                 .namespace_index = if (ini.has_namespace) extra_index + std.meta.fieldIndex(EnumAuto, "namespace").? else null,
                 .names_map = names_map,
-                .names_start = @intCast(names_start),
+                .names_start = @intcast(names_start),
                 .values_map = .none,
                 .values_start = undefined,
             } };
@@ -7132,7 +7132,7 @@ pub fn getEnumType(
                 _ = ip.map.pop();
             };
 
-            try ip.extra.ensureUnusedCapacity(gpa, @typeInfo(EnumExplicit).Struct.fields.len +
+            try ip.extra.ensureUnusedCapacity(gpa, @typeinfo(EnumExplicit).Struct.fields.len +
                 // TODO: fmt bug
                 // zig fmt: off
                 switch (ini.key) {
@@ -7141,12 +7141,12 @@ pub fn getEnumType(
                 } +
                 // zig fmt: on
                 ini.fields_len + // field types
-                ini.fields_len * @intFromBool(ini.has_values)); // field values
+                ini.fields_len * @intfrombool(ini.has_values)); // field values
 
             const extra_index = ip.addExtraAssumeCapacity(EnumExplicit{
                 .decl = undefined, // set by `prepare`
                 .captures_len = switch (ini.key) {
-                    .declared => |d| @intCast(d.captures.len),
+                    .declared => |d| @intcast(d.captures.len),
                     .reified => std.math.maxInt(u32),
                 },
                 .namespace = .none,
@@ -7167,7 +7167,7 @@ pub fn getEnumType(
                 .data = extra_index,
             });
             switch (ini.key) {
-                .declared => |d| ip.extra.appendSliceAssumeCapacity(@ptrCast(d.captures)),
+                .declared => |d| ip.extra.appendSliceAssumeCapacity(@ptrcast(d.captures)),
                 .reified => |r| _ = ip.addExtraAssumeCapacity(PackedU64.init(r.type_hash)),
             }
             const names_start = ip.extra.items.len;
@@ -7177,14 +7177,14 @@ pub fn getEnumType(
                 ip.extra.appendNTimesAssumeCapacity(undefined, ini.fields_len);
             }
             return .{ .wip = .{
-                .index = @enumFromInt(gop.index),
+                .index = @enumfromint(gop.index),
                 .tag_ty_index = extra_index + std.meta.fieldIndex(EnumAuto, "int_tag_type").?,
                 .decl_index = extra_index + std.meta.fieldIndex(EnumAuto, "decl").?,
                 .namespace_index = if (ini.has_namespace) extra_index + std.meta.fieldIndex(EnumAuto, "namespace").? else null,
                 .names_map = names_map,
-                .names_start = @intCast(names_start),
+                .names_start = @intcast(names_start),
                 .values_map = values_map,
-                .values_start = @intCast(values_start),
+                .values_start = @intcast(values_start),
             } };
         },
     }
@@ -7214,11 +7214,11 @@ pub fn getGeneratedTagEnumType(ip: *InternPool, gpa: Allocator, ini: GeneratedTa
     errdefer _ = ip.maps.pop();
     ip.addStringsToMap(names_map, ini.names);
 
-    const fields_len: u32 = @intCast(ini.names.len);
+    const fields_len: u32 = @intcast(ini.names.len);
 
     switch (ini.tag_mode) {
         .auto => {
-            try ip.extra.ensureUnusedCapacity(gpa, @typeInfo(EnumAuto).Struct.fields.len +
+            try ip.extra.ensureUnusedCapacity(gpa, @typeinfo(EnumAuto).Struct.fields.len +
                 1 + // owner_union
                 fields_len); // field names
             ip.items.appendAssumeCapacity(.{
@@ -7233,11 +7233,11 @@ pub fn getGeneratedTagEnumType(ip: *InternPool, gpa: Allocator, ini: GeneratedTa
                     .zir_index = .none,
                 }),
             });
-            ip.extra.appendAssumeCapacity(@intFromEnum(ini.owner_union_ty));
-            ip.extra.appendSliceAssumeCapacity(@ptrCast(ini.names));
+            ip.extra.appendAssumeCapacity(@intfromenum(ini.owner_union_ty));
+            ip.extra.appendSliceAssumeCapacity(@ptrcast(ini.names));
         },
         .explicit, .nonexhaustive => {
-            try ip.extra.ensureUnusedCapacity(gpa, @typeInfo(EnumExplicit).Struct.fields.len +
+            try ip.extra.ensureUnusedCapacity(gpa, @typeinfo(EnumExplicit).Struct.fields.len +
                 1 + // owner_union
                 fields_len + // field names
                 ini.values.len); // field values
@@ -7248,7 +7248,7 @@ pub fn getGeneratedTagEnumType(ip: *InternPool, gpa: Allocator, ini: GeneratedTa
                 break :m map.toOptional();
             } else .none;
             // We don't clean up the values map on error!
-            errdefer @compileError("error path leaks values_map");
+            errdefer @compileerror("error path leaks values_map");
 
             ip.items.appendAssumeCapacity(.{
                 .tag = switch (ini.tag_mode) {
@@ -7267,13 +7267,13 @@ pub fn getGeneratedTagEnumType(ip: *InternPool, gpa: Allocator, ini: GeneratedTa
                     .zir_index = .none,
                 }),
             });
-            ip.extra.appendAssumeCapacity(@intFromEnum(ini.owner_union_ty));
-            ip.extra.appendSliceAssumeCapacity(@ptrCast(ini.names));
-            ip.extra.appendSliceAssumeCapacity(@ptrCast(ini.values));
+            ip.extra.appendAssumeCapacity(@intfromenum(ini.owner_union_ty));
+            ip.extra.appendSliceAssumeCapacity(@ptrcast(ini.names));
+            ip.extra.appendSliceAssumeCapacity(@ptrcast(ini.values));
         },
     }
     // Same as above
-    errdefer @compileError("error path leaks values_map and extra data");
+    errdefer @compileerror("error path leaks values_map and extra data");
 
     // Capacity for this was ensured earlier
     const adapter: KeyAdapter = .{ .intern_pool = ip };
@@ -7282,7 +7282,7 @@ pub fn getGeneratedTagEnumType(ip: *InternPool, gpa: Allocator, ini: GeneratedTa
     } }, adapter);
     assert(!gop.found_existing);
     assert(gop.index == ip.items.len - 1);
-    return @enumFromInt(gop.index);
+    return @enumfromint(gop.index);
 }
 
 pub const OpaqueTypeInit = struct {
@@ -7311,10 +7311,10 @@ pub fn getOpaqueType(ip: *InternPool, gpa: Allocator, ini: OpaqueTypeInit) Alloc
             .type_hash = 0,
         } },
     } }, adapter);
-    if (gop.found_existing) return .{ .existing = @enumFromInt(gop.index) };
+    if (gop.found_existing) return .{ .existing = @enumfromint(gop.index) };
     errdefer _ = ip.map.pop();
     try ip.items.ensureUnusedCapacity(gpa, 1);
-    try ip.extra.ensureUnusedCapacity(gpa, @typeInfo(Tag.TypeOpaque).Struct.fields.len + switch (ini.key) {
+    try ip.extra.ensureUnusedCapacity(gpa, @typeinfo(Tag.TypeOpaque).Struct.fields.len + switch (ini.key) {
         .declared => |d| d.captures.len,
         .reified => 0,
     });
@@ -7325,7 +7325,7 @@ pub fn getOpaqueType(ip: *InternPool, gpa: Allocator, ini: OpaqueTypeInit) Alloc
             inline else => |x| x.zir_index,
         },
         .captures_len = switch (ini.key) {
-            .declared => |d| @intCast(d.captures.len),
+            .declared => |d| @intcast(d.captures.len),
             .reified => std.math.maxInt(u32),
         },
     });
@@ -7334,11 +7334,11 @@ pub fn getOpaqueType(ip: *InternPool, gpa: Allocator, ini: OpaqueTypeInit) Alloc
         .data = extra_index,
     });
     switch (ini.key) {
-        .declared => |d| ip.extra.appendSliceAssumeCapacity(@ptrCast(d.captures)),
+        .declared => |d| ip.extra.appendSliceAssumeCapacity(@ptrcast(d.captures)),
         .reified => {},
     }
     return .{ .wip = .{
-        .index = @enumFromInt(gop.index),
+        .index = @enumfromint(gop.index),
         .decl_extra_index = extra_index + std.meta.fieldIndex(Tag.TypeOpaque, "decl").?,
         .namespace_extra_index = if (ini.has_namespace)
             extra_index + std.meta.fieldIndex(Tag.TypeOpaque, "namespace").?
@@ -7350,7 +7350,7 @@ pub fn getOpaqueType(ip: *InternPool, gpa: Allocator, ini: OpaqueTypeInit) Alloc
 pub fn getIfExists(ip: *const InternPool, key: Key) ?Index {
     const adapter: KeyAdapter = .{ .intern_pool = ip };
     const index = ip.map.getIndexAdapted(key, adapter) orelse return null;
-    return @enumFromInt(index);
+    return @enumfromint(index);
 }
 
 pub fn getAssumeExists(ip: *const InternPool, key: Key) Index {
@@ -7362,7 +7362,7 @@ fn addStringsToMap(
     map_index: MapIndex,
     strings: []const NullTerminatedString,
 ) void {
-    const map = &ip.maps.items[@intFromEnum(map_index)];
+    const map = &ip.maps.items[@intfromenum(map_index)];
     const adapter: NullTerminatedString.Adapter = .{ .strings = strings };
     for (strings) |string| {
         const gop = map.getOrPutAssumeCapacityAdapted(string, adapter);
@@ -7375,7 +7375,7 @@ fn addIndexesToMap(
     map_index: MapIndex,
     indexes: []const Index,
 ) void {
-    const map = &ip.maps.items[@intFromEnum(map_index)];
+    const map = &ip.maps.items[@intfromenum(map_index)];
     const adapter: Index.Adapter = .{ .indexes = indexes };
     for (indexes) |index| {
         const gop = map.getOrPutAssumeCapacityAdapted(index, adapter);
@@ -7388,21 +7388,21 @@ fn addMap(ip: *InternPool, gpa: Allocator, cap: usize) Allocator.Error!MapIndex 
     errdefer _ = ip.maps.pop();
     ptr.* = .{};
     try ptr.ensureTotalCapacity(gpa, cap);
-    return @enumFromInt(ip.maps.items.len - 1);
+    return @enumfromint(ip.maps.items.len - 1);
 }
 
 /// This operation only happens under compile error conditions.
 /// Leak the index until the next garbage collection.
 /// Invalidates all references to this index.
 pub fn remove(ip: *InternPool, index: Index) void {
-    if (@intFromEnum(index) < static_keys.len) {
+    if (@intfromenum(index) < static_keys.len) {
         // The item being removed replaced a special index via `InternPool.resolveBuiltinType`.
         // Restore the original item at this index.
-        switch (static_keys[@intFromEnum(index)]) {
+        switch (static_keys[@intfromenum(index)]) {
             .simple_type => |s| {
-                ip.items.set(@intFromEnum(index), .{
+                ip.items.set(@intfromenum(index), .{
                     .tag = .simple_type,
-                    .data = @intFromEnum(s),
+                    .data = @intfromenum(s),
                 });
             },
             else => unreachable,
@@ -7410,7 +7410,7 @@ pub fn remove(ip: *InternPool, index: Index) void {
         return;
     }
 
-    if (@intFromEnum(index) == ip.items.len - 1) {
+    if (@intfromenum(index) == ip.items.len - 1) {
         // Happy case - we can just drop the item without affecting any other indices.
         ip.items.len -= 1;
         _ = ip.map.pop();
@@ -7418,13 +7418,13 @@ pub fn remove(ip: *InternPool, index: Index) void {
         // We must preserve the item so that indices following it remain valid.
         // Thus, we will rewrite the tag to `removed`, leaking the item until
         // next GC but causing `KeyAdapter` to ignore it.
-        ip.items.set(@intFromEnum(index), .{ .tag = .removed, .data = undefined });
+        ip.items.set(@intfromenum(index), .{ .tag = .removed, .data = undefined });
     }
 }
 
 fn addInt(ip: *InternPool, gpa: Allocator, ty: Index, tag: Tag, limbs: []const Limb) !void {
-    const limbs_len: u32 = @intCast(limbs.len);
-    try ip.reserveLimbs(gpa, @typeInfo(Int).Struct.fields.len + limbs_len);
+    const limbs_len: u32 = @intcast(limbs.len);
+    try ip.reserveLimbs(gpa, @typeinfo(Int).Struct.fields.len + limbs_len);
     ip.items.appendAssumeCapacity(.{
         .tag = tag,
         .data = ip.addLimbsExtraAssumeCapacity(Int{
@@ -7436,14 +7436,14 @@ fn addInt(ip: *InternPool, gpa: Allocator, ty: Index, tag: Tag, limbs: []const L
 }
 
 fn addExtra(ip: *InternPool, gpa: Allocator, extra: anytype) Allocator.Error!u32 {
-    const fields = @typeInfo(@TypeOf(extra)).Struct.fields;
+    const fields = @typeinfo(@TypeOf(extra)).Struct.fields;
     try ip.extra.ensureUnusedCapacity(gpa, fields.len);
     return ip.addExtraAssumeCapacity(extra);
 }
 
 fn addExtraAssumeCapacity(ip: *InternPool, extra: anytype) u32 {
-    const result: u32 = @intCast(ip.extra.items.len);
-    inline for (@typeInfo(@TypeOf(extra)).Struct.fields) |field| {
+    const result: u32 = @intcast(ip.extra.items.len);
+    inline for (@typeinfo(@TypeOf(extra)).Struct.fields) |field| {
         ip.extra.appendAssumeCapacity(switch (field.type) {
             Index,
             DeclIndex,
@@ -7459,7 +7459,7 @@ fn addExtraAssumeCapacity(ip: *InternPool, extra: anytype) u32 {
             TrackedInst.Index,
             TrackedInst.Index.Optional,
             ComptimeAllocIndex,
-            => @intFromEnum(@field(extra, field.name)),
+            => @intfromenum(@field(extra, field.name)),
 
             u32,
             i32,
@@ -7471,34 +7471,34 @@ fn addExtraAssumeCapacity(ip: *InternPool, extra: anytype) u32 {
             Tag.TypeStruct.Flags,
             Tag.TypeStructPacked.Flags,
             Tag.Variable.Flags,
-            => @bitCast(@field(extra, field.name)),
+            => @bitcast(@field(extra, field.name)),
 
-            else => @compileError("bad field type: " ++ @typeName(field.type)),
+            else => @compileerror("bad field type: " ++ @typename(field.type)),
         });
     }
     return result;
 }
 
 fn reserveLimbs(ip: *InternPool, gpa: Allocator, n: usize) !void {
-    switch (@sizeOf(Limb)) {
-        @sizeOf(u32) => try ip.extra.ensureUnusedCapacity(gpa, n),
-        @sizeOf(u64) => try ip.limbs.ensureUnusedCapacity(gpa, n),
-        else => @compileError("unsupported host"),
+    switch (@sizeof(Limb)) {
+        @sizeof(u32) => try ip.extra.ensureUnusedCapacity(gpa, n),
+        @sizeof(u64) => try ip.limbs.ensureUnusedCapacity(gpa, n),
+        else => @compileerror("unsupported host"),
     }
 }
 
 fn addLimbsExtraAssumeCapacity(ip: *InternPool, extra: anytype) u32 {
-    switch (@sizeOf(Limb)) {
-        @sizeOf(u32) => return addExtraAssumeCapacity(ip, extra),
-        @sizeOf(u64) => {},
-        else => @compileError("unsupported host"),
+    switch (@sizeof(Limb)) {
+        @sizeof(u32) => return addExtraAssumeCapacity(ip, extra),
+        @sizeof(u64) => {},
+        else => @compileerror("unsupported host"),
     }
-    const result: u32 = @intCast(ip.limbs.items.len);
-    inline for (@typeInfo(@TypeOf(extra)).Struct.fields, 0..) |field, i| {
+    const result: u32 = @intcast(ip.limbs.items.len);
+    inline for (@typeinfo(@TypeOf(extra)).Struct.fields, 0..) |field, i| {
         const new: u32 = switch (field.type) {
             u32 => @field(extra, field.name),
-            Index => @intFromEnum(@field(extra, field.name)),
-            else => @compileError("bad field type: " ++ @typeName(field.type)),
+            Index => @intfromenum(@field(extra, field.name)),
+            else => @compileerror("bad field type: " ++ @typename(field.type)),
         };
         if (i % 2 == 0) {
             ip.limbs.appendAssumeCapacity(new);
@@ -7510,16 +7510,16 @@ fn addLimbsExtraAssumeCapacity(ip: *InternPool, extra: anytype) u32 {
 }
 
 fn addLimbsAssumeCapacity(ip: *InternPool, limbs: []const Limb) void {
-    switch (@sizeOf(Limb)) {
-        @sizeOf(u32) => ip.extra.appendSliceAssumeCapacity(limbs),
-        @sizeOf(u64) => ip.limbs.appendSliceAssumeCapacity(limbs),
-        else => @compileError("unsupported host"),
+    switch (@sizeof(Limb)) {
+        @sizeof(u32) => ip.extra.appendSliceAssumeCapacity(limbs),
+        @sizeof(u64) => ip.limbs.appendSliceAssumeCapacity(limbs),
+        else => @compileerror("unsupported host"),
     }
 }
 
 fn extraDataTrail(ip: *const InternPool, comptime T: type, index: usize) struct { data: T, end: u32 } {
     var result: T = undefined;
-    const fields = @typeInfo(T).Struct.fields;
+    const fields = @typeinfo(T).Struct.fields;
     inline for (fields, 0..) |field, i| {
         const int32 = ip.extra.items[i + index];
         @field(result, field.name) = switch (field.type) {
@@ -7537,7 +7537,7 @@ fn extraDataTrail(ip: *const InternPool, comptime T: type, index: usize) struct 
             TrackedInst.Index,
             TrackedInst.Index.Optional,
             ComptimeAllocIndex,
-            => @enumFromInt(int32),
+            => @enumfromint(int32),
 
             u32,
             i32,
@@ -7549,14 +7549,14 @@ fn extraDataTrail(ip: *const InternPool, comptime T: type, index: usize) struct 
             Tag.TypeStructPacked.Flags,
             Tag.Variable.Flags,
             FuncAnalysis,
-            => @bitCast(int32),
+            => @bitcast(int32),
 
-            else => @compileError("bad field type: " ++ @typeName(field.type)),
+            else => @compileerror("bad field type: " ++ @typename(field.type)),
         };
     }
     return .{
         .data = result,
-        .end = @intCast(index + fields.len),
+        .end = @intcast(index + fields.len),
     };
 }
 
@@ -7566,13 +7566,13 @@ fn extraData(ip: *const InternPool, comptime T: type, index: usize) T {
 
 /// Asserts the struct has 32-bit fields and the number of fields is evenly divisible by 2.
 fn limbData(ip: *const InternPool, comptime T: type, index: usize) T {
-    switch (@sizeOf(Limb)) {
-        @sizeOf(u32) => return extraData(ip, T, index),
-        @sizeOf(u64) => {},
-        else => @compileError("unsupported host"),
+    switch (@sizeof(Limb)) {
+        @sizeof(u32) => return extraData(ip, T, index),
+        @sizeof(u64) => {},
+        else => @compileerror("unsupported host"),
     }
     var result: T = undefined;
-    inline for (@typeInfo(T).Struct.fields, 0..) |field, i| {
+    inline for (@typeinfo(T).Struct.fields, 0..) |field, i| {
         const host_int = ip.limbs.items[index + i / 2];
         const int32 = if (i % 2 == 0)
             @as(u32, @truncate(host_int))
@@ -7581,8 +7581,8 @@ fn limbData(ip: *const InternPool, comptime T: type, index: usize) T {
 
         @field(result, field.name) = switch (field.type) {
             u32 => int32,
-            Index => @enumFromInt(int32),
-            else => @compileError("bad field type: " ++ @typeName(field.type)),
+            Index => @enumfromint(int32),
+            else => @compileerror("bad field type: " ++ @typename(field.type)),
         };
     }
     return result;
@@ -7590,17 +7590,17 @@ fn limbData(ip: *const InternPool, comptime T: type, index: usize) T {
 
 /// This function returns the Limb slice that is trailing data after a payload.
 fn limbSlice(ip: *const InternPool, comptime S: type, limb_index: u32, len: u32) []const Limb {
-    const field_count = @typeInfo(S).Struct.fields.len;
-    switch (@sizeOf(Limb)) {
-        @sizeOf(u32) => {
+    const field_count = @typeinfo(S).Struct.fields.len;
+    switch (@sizeof(Limb)) {
+        @sizeof(u32) => {
             const start = limb_index + field_count;
             return ip.extra.items[start..][0..len];
         },
-        @sizeOf(u64) => {
-            const start = limb_index + @divExact(field_count, 2);
+        @sizeof(u64) => {
+            const start = limb_index + @divexact(field_count, 2);
             return ip.limbs.items[start..][0..len];
         },
-        else => @compileError("unsupported host"),
+        else => @compileerror("unsupported host"),
     }
 }
 
@@ -7610,24 +7610,24 @@ const LimbsAsIndexes = struct {
 };
 
 fn limbsSliceToIndex(ip: *const InternPool, limbs: []const Limb) LimbsAsIndexes {
-    const host_slice = switch (@sizeOf(Limb)) {
-        @sizeOf(u32) => ip.extra.items,
-        @sizeOf(u64) => ip.limbs.items,
-        else => @compileError("unsupported host"),
+    const host_slice = switch (@sizeof(Limb)) {
+        @sizeof(u32) => ip.extra.items,
+        @sizeof(u64) => ip.limbs.items,
+        else => @compileerror("unsupported host"),
     };
     // TODO: https://github.com/ziglang/zig/issues/1738
     return .{
-        .start = @intCast(@divExact(@intFromPtr(limbs.ptr) - @intFromPtr(host_slice.ptr), @sizeOf(Limb))),
-        .len = @intCast(limbs.len),
+        .start = @intcast(@divexact(@intfromptr(limbs.ptr) - @intfromptr(host_slice.ptr), @sizeof(Limb))),
+        .len = @intcast(limbs.len),
     };
 }
 
 /// This function converts Limb array indexes to a primitive slice type.
 fn limbsIndexToSlice(ip: *const InternPool, limbs: LimbsAsIndexes) []const Limb {
-    return switch (@sizeOf(Limb)) {
-        @sizeOf(u32) => ip.extra.items[limbs.start..][0..limbs.len],
-        @sizeOf(u64) => ip.limbs.items[limbs.start..][0..limbs.len],
-        else => @compileError("unsupported host"),
+    return switch (@sizeof(Limb)) {
+        @sizeof(u32) => ip.extra.items[limbs.start..][0..limbs.len],
+        @sizeof(u64) => ip.limbs.items[limbs.start..][0..limbs.len],
+        else => @compileerror("unsupported host"),
     };
 }
 
@@ -7678,16 +7678,16 @@ pub fn slicePtrType(ip: *const InternPool, i: Index) Index {
         .slice_const_u8_sentinel_0_type => return .manyptr_const_u8_sentinel_0_type,
         else => {},
     }
-    const item = ip.items.get(@intFromEnum(i));
+    const item = ip.items.get(@intfromenum(i));
     switch (item.tag) {
-        .type_slice => return @enumFromInt(item.data),
+        .type_slice => return @enumfromint(item.data),
         else => unreachable, // not a slice type
     }
 }
 
 /// Given a slice value, returns the value of the ptr field.
 pub fn slicePtr(ip: *const InternPool, i: Index) Index {
-    const item = ip.items.get(@intFromEnum(i));
+    const item = ip.items.get(@intfromenum(i));
     switch (item.tag) {
         .ptr_slice => return ip.extraData(PtrSlice, item.data).ptr,
         else => unreachable, // not a slice value
@@ -7696,7 +7696,7 @@ pub fn slicePtr(ip: *const InternPool, i: Index) Index {
 
 /// Given a slice value, returns the value of the len field.
 pub fn sliceLen(ip: *const InternPool, i: Index) Index {
-    const item = ip.items.get(@intFromEnum(i));
+    const item = ip.items.get(@intfromenum(i));
     switch (item.tag) {
         .ptr_slice => return ip.extraData(PtrSlice, item.data).len,
         else => unreachable, // not a slice value
@@ -7754,15 +7754,15 @@ pub fn getCoerced(ip: *InternPool, gpa: Allocator, val: Index, new_ty: Index) Al
                 } }),
             };
         },
-        else => switch (tags[@intFromEnum(val)]) {
+        else => switch (tags[@intfromenum(val)]) {
             .func_decl => return getCoercedFuncDecl(ip, gpa, val, new_ty),
             .func_instance => return getCoercedFuncInstance(ip, gpa, val, new_ty),
             .func_coerced => {
-                const extra_index = ip.items.items(.data)[@intFromEnum(val)];
-                const func: Index = @enumFromInt(
+                const extra_index = ip.items.items(.data)[@intfromenum(val)];
+                const func: Index = @enumfromint(
                     ip.extra.items[extra_index + std.meta.fieldIndex(Tag.FuncCoerced, "func").?],
                 );
-                switch (tags[@intFromEnum(func)]) {
+                switch (tags[@intfromenum(func)]) {
                     .func_decl => return getCoercedFuncDecl(ip, gpa, val, new_ty),
                     .func_instance => return getCoercedFuncInstance(ip, gpa, val, new_ty),
                     else => unreachable,
@@ -7792,7 +7792,7 @@ pub fn getCoerced(ip: *InternPool, gpa: Allocator, val: Index, new_ty: Index) Al
                 inline .u64, .i64 => |int_val| return ip.get(gpa, .{ .ptr = .{
                     .ty = new_ty,
                     .base_addr = .int,
-                    .byte_offset = @intCast(int_val),
+                    .byte_offset = @intcast(int_val),
                 } }),
                 .big_int => unreachable, // must be a usize
                 .lazy_align, .lazy_size => {},
@@ -7854,7 +7854,7 @@ pub fn getCoerced(ip: *InternPool, gpa: Allocator, val: Index, new_ty: Index) Al
             switch (ptr.base_addr) {
                 .int => return ip.get(gpa, .{ .int = .{
                     .ty = .usize_type,
-                    .storage = .{ .u64 = @intCast(ptr.byte_offset) },
+                    .storage = .{ .u64 = @intcast(ptr.byte_offset) },
                 } }),
                 else => {},
             },
@@ -7903,7 +7903,7 @@ pub fn getCoerced(ip: *InternPool, gpa: Allocator, val: Index, new_ty: Index) Al
                 .val = error_union.val,
             } }),
         .aggregate => |aggregate| {
-            const new_len: usize = @intCast(ip.aggregateTypeLen(new_ty));
+            const new_len: usize = @intcast(ip.aggregateTypeLen(new_ty));
             direct: {
                 const old_ty_child = switch (ip.indexToKey(old_ty)) {
                     inline .array_type, .vector_type => |seq_type| seq_type.child,
@@ -7991,9 +7991,9 @@ pub fn getCoerced(ip: *InternPool, gpa: Allocator, val: Index, new_ty: Index) Al
     }
     if (std.debug.runtime_safety) {
         std.debug.panic("InternPool.getCoerced of {s} not implemented from {s} to {s}", .{
-            @tagName(ip.indexToKey(val)),
-            @tagName(ip.indexToKey(old_ty)),
-            @tagName(ip.indexToKey(new_ty)),
+            @tagname(ip.indexToKey(val)),
+            @tagname(ip.indexToKey(old_ty)),
+            @tagname(ip.indexToKey(new_ty)),
         });
     }
     unreachable;
@@ -8001,8 +8001,8 @@ pub fn getCoerced(ip: *InternPool, gpa: Allocator, val: Index, new_ty: Index) Al
 
 fn getCoercedFuncDecl(ip: *InternPool, gpa: Allocator, val: Index, new_ty: Index) Allocator.Error!Index {
     const datas = ip.items.items(.data);
-    const extra_index = datas[@intFromEnum(val)];
-    const prev_ty: Index = @enumFromInt(
+    const extra_index = datas[@intfromenum(val)];
+    const prev_ty: Index = @enumfromint(
         ip.extra.items[extra_index + std.meta.fieldIndex(Tag.FuncDecl, "ty").?],
     );
     if (new_ty == prev_ty) return val;
@@ -8011,8 +8011,8 @@ fn getCoercedFuncDecl(ip: *InternPool, gpa: Allocator, val: Index, new_ty: Index
 
 fn getCoercedFuncInstance(ip: *InternPool, gpa: Allocator, val: Index, new_ty: Index) Allocator.Error!Index {
     const datas = ip.items.items(.data);
-    const extra_index = datas[@intFromEnum(val)];
-    const prev_ty: Index = @enumFromInt(
+    const extra_index = datas[@intfromenum(val)];
+    const prev_ty: Index = @enumfromint(
         ip.extra.items[extra_index + std.meta.fieldIndex(Tag.FuncInstance, "ty").?],
     );
     if (new_ty == prev_ty) return val;
@@ -8021,7 +8021,7 @@ fn getCoercedFuncInstance(ip: *InternPool, gpa: Allocator, val: Index, new_ty: I
 
 fn getCoercedFunc(ip: *InternPool, gpa: Allocator, func: Index, ty: Index) Allocator.Error!Index {
     const prev_extra_len = ip.extra.items.len;
-    try ip.extra.ensureUnusedCapacity(gpa, @typeInfo(Tag.FuncCoerced).Struct.fields.len);
+    try ip.extra.ensureUnusedCapacity(gpa, @typeinfo(Tag.FuncCoerced).Struct.fields.len);
     try ip.items.ensureUnusedCapacity(gpa, 1);
     try ip.map.ensureUnusedCapacity(gpa, 1);
 
@@ -8037,14 +8037,14 @@ fn getCoercedFunc(ip: *InternPool, gpa: Allocator, func: Index, ty: Index) Alloc
 
     if (gop.found_existing) {
         ip.extra.items.len = prev_extra_len;
-        return @enumFromInt(gop.index);
+        return @enumfromint(gop.index);
     }
 
     ip.items.appendAssumeCapacity(.{
         .tag = .func_coerced,
         .data = extra_index,
     });
-    return @enumFromInt(ip.items.len - 1);
+    return @enumfromint(ip.items.len - 1);
 }
 
 /// Asserts `val` has an integer type.
@@ -8061,7 +8061,7 @@ pub fn getCoercedInts(ip: *InternPool, gpa: Allocator, int: Key.Int, new_ty: Ind
             const limbs = ip.limbsSliceToIndex(big_int.limbs);
             // This line invalidates the limbs slice, but the indexes computed in the
             // previous line are still correct.
-            try reserveLimbs(ip, gpa, @typeInfo(Int).Struct.fields.len + big_int.limbs.len);
+            try reserveLimbs(ip, gpa, @typeinfo(Int).Struct.fields.len + big_int.limbs.len);
             break :storage .{ .big_int = .{
                 .limbs = ip.limbsIndexToSlice(limbs),
                 .positive = positive,
@@ -8078,8 +8078,8 @@ pub fn indexToFuncType(ip: *const InternPool, val: Index) ?Key.FuncType {
     assert(val != .none);
     const tags = ip.items.items(.tag);
     const datas = ip.items.items(.data);
-    switch (tags[@intFromEnum(val)]) {
-        .type_function => return extraFuncType(ip, datas[@intFromEnum(val)]),
+    switch (tags[@intfromenum(val)]) {
+        .type_function => return extraFuncType(ip, datas[@intfromenum(val)]),
         else => return null,
     }
 }
@@ -8100,7 +8100,7 @@ pub fn isIntegerType(ip: *const InternPool, ty: Index) bool {
         .c_ulonglong_type,
         .comptime_int_type,
         => true,
-        else => switch (ip.items.items(.tag)[@intFromEnum(ty)]) {
+        else => switch (ip.items.items(.tag)[@intfromenum(ty)]) {
             .type_int_signed,
             .type_int_unsigned,
             => true,
@@ -8176,9 +8176,9 @@ pub fn errorUnionPayload(ip: *const InternPool, ty: Index) Index {
 
 /// The is only legal because the initializer is not part of the hash.
 pub fn mutateVarInit(ip: *InternPool, index: Index, init_index: Index) void {
-    const item = ip.items.get(@intFromEnum(index));
+    const item = ip.items.get(@intfromenum(index));
     assert(item.tag == .variable);
-    ip.extra.items[item.data + std.meta.fieldIndex(Tag.Variable, "init").?] = @intFromEnum(init_index);
+    ip.extra.items[item.data + std.meta.fieldIndex(Tag.Variable, "init").?] = @intfromenum(init_index);
 }
 
 pub fn dump(ip: *const InternPool) void {
@@ -8190,10 +8190,10 @@ fn dumpStatsFallible(ip: *const InternPool, arena: Allocator) anyerror!void {
     const items_size = (1 + 4) * ip.items.len;
     const extra_size = 4 * ip.extra.items.len;
     const limbs_size = 8 * ip.limbs.items.len;
-    const decls_size = ip.allocated_decls.len * @sizeOf(Module.Decl);
+    const decls_size = ip.allocated_decls.len * @sizeof(Module.Decl);
 
     // TODO: map overhead size is not taken into account
-    const total_size = @sizeOf(InternPool) + items_size + extra_size + limbs_size + decls_size;
+    const total_size = @sizeof(InternPool) + items_size + extra_size + limbs_size + decls_size;
 
     std.debug.print(
         \\InternPool size: {d} bytes
@@ -8232,41 +8232,41 @@ fn dumpStatsFallible(ip: *const InternPool, arena: Allocator) anyerror!void {
 
             .type_int_signed => 0,
             .type_int_unsigned => 0,
-            .type_array_small => @sizeOf(Vector),
-            .type_array_big => @sizeOf(Array),
-            .type_vector => @sizeOf(Vector),
-            .type_pointer => @sizeOf(Tag.TypePointer),
+            .type_array_small => @sizeof(Vector),
+            .type_array_big => @sizeof(Array),
+            .type_vector => @sizeof(Vector),
+            .type_pointer => @sizeof(Tag.TypePointer),
             .type_slice => 0,
             .type_optional => 0,
             .type_anyframe => 0,
-            .type_error_union => @sizeOf(Key.ErrorUnionType),
+            .type_error_union => @sizeof(Key.ErrorUnionType),
             .type_anyerror_union => 0,
             .type_error_set => b: {
                 const info = ip.extraData(Tag.ErrorSet, data);
-                break :b @sizeOf(Tag.ErrorSet) + (@sizeOf(u32) * info.names_len);
+                break :b @sizeof(Tag.ErrorSet) + (@sizeof(u32) * info.names_len);
             },
             .type_inferred_error_set => 0,
             .type_enum_explicit, .type_enum_nonexhaustive => b: {
                 const info = ip.extraData(EnumExplicit, data);
-                var ints = @typeInfo(EnumExplicit).Struct.fields.len + info.captures_len + info.fields_len;
+                var ints = @typeinfo(EnumExplicit).Struct.fields.len + info.captures_len + info.fields_len;
                 if (info.values_map != .none) ints += info.fields_len;
-                break :b @sizeOf(u32) * ints;
+                break :b @sizeof(u32) * ints;
             },
             .type_enum_auto => b: {
                 const info = ip.extraData(EnumAuto, data);
-                const ints = @typeInfo(EnumAuto).Struct.fields.len + info.captures_len + info.fields_len;
-                break :b @sizeOf(u32) * ints;
+                const ints = @typeinfo(EnumAuto).Struct.fields.len + info.captures_len + info.fields_len;
+                break :b @sizeof(u32) * ints;
             },
             .type_opaque => b: {
                 const info = ip.extraData(Tag.TypeOpaque, data);
-                const ints = @typeInfo(Tag.TypeOpaque).Struct.fields.len + info.captures_len;
-                break :b @sizeOf(u32) * ints;
+                const ints = @typeinfo(Tag.TypeOpaque).Struct.fields.len + info.captures_len;
+                break :b @sizeof(u32) * ints;
             },
             .type_struct => b: {
                 if (data == 0) break :b 0;
                 const extra = ip.extraDataTrail(Tag.TypeStruct, data);
                 const info = extra.data;
-                var ints: usize = @typeInfo(Tag.TypeStruct).Struct.fields.len;
+                var ints: usize = @typeinfo(Tag.TypeStruct).Struct.fields.len;
                 if (info.flags.any_captures) {
                     const captures_len = ip.extra.items[extra.end];
                     ints += 1 + captures_len;
@@ -8278,7 +8278,7 @@ fn dumpStatsFallible(ip: *const InternPool, arena: Allocator) anyerror!void {
                 }
                 if (info.flags.any_default_inits)
                     ints += info.fields_len; // inits
-                ints += @intFromBool(info.flags.has_namespace); // namespace
+                ints += @intfrombool(info.flags.has_namespace); // namespace
                 if (info.flags.any_aligned_fields)
                     ints += (info.fields_len + 3) / 4; // aligns
                 if (info.flags.any_comptime_fields)
@@ -8286,11 +8286,11 @@ fn dumpStatsFallible(ip: *const InternPool, arena: Allocator) anyerror!void {
                 if (!info.flags.is_extern)
                     ints += info.fields_len; // runtime order
                 ints += info.fields_len; // offsets
-                break :b @sizeOf(u32) * ints;
+                break :b @sizeof(u32) * ints;
             },
             .type_struct_anon => b: {
                 const info = ip.extraData(TypeStructAnon, data);
-                break :b @sizeOf(TypeStructAnon) + (@sizeOf(u32) * 3 * info.fields_len);
+                break :b @sizeof(TypeStructAnon) + (@sizeof(u32) * 3 * info.fields_len);
             },
             .type_struct_packed => b: {
                 const extra = ip.extraDataTrail(Tag.TypeStructPacked, data);
@@ -8298,8 +8298,8 @@ fn dumpStatsFallible(ip: *const InternPool, arena: Allocator) anyerror!void {
                     ip.extra.items[extra.end]
                 else
                     0;
-                break :b @sizeOf(u32) * (@typeInfo(Tag.TypeStructPacked).Struct.fields.len +
-                    @intFromBool(extra.data.flags.any_captures) + captures_len +
+                break :b @sizeof(u32) * (@typeinfo(Tag.TypeStructPacked).Struct.fields.len +
+                    @intfrombool(extra.data.flags.any_captures) + captures_len +
                     extra.data.fields_len * 2);
             },
             .type_struct_packed_inits => b: {
@@ -8308,13 +8308,13 @@ fn dumpStatsFallible(ip: *const InternPool, arena: Allocator) anyerror!void {
                     ip.extra.items[extra.end]
                 else
                     0;
-                break :b @sizeOf(u32) * (@typeInfo(Tag.TypeStructPacked).Struct.fields.len +
-                    @intFromBool(extra.data.flags.any_captures) + captures_len +
+                break :b @sizeof(u32) * (@typeinfo(Tag.TypeStructPacked).Struct.fields.len +
+                    @intfrombool(extra.data.flags.any_captures) + captures_len +
                     extra.data.fields_len * 3);
             },
             .type_tuple_anon => b: {
                 const info = ip.extraData(TypeStructAnon, data);
-                break :b @sizeOf(TypeStructAnon) + (@sizeOf(u32) * 2 * info.fields_len);
+                break :b @sizeof(TypeStructAnon) + (@sizeof(u32) * 2 * info.fields_len);
             },
 
             .type_union => b: {
@@ -8323,41 +8323,41 @@ fn dumpStatsFallible(ip: *const InternPool, arena: Allocator) anyerror!void {
                     ip.extra.items[extra.end]
                 else
                     0;
-                const per_field = @sizeOf(u32); // field type
+                const per_field = @sizeof(u32); // field type
                 // 1 byte per field for alignment, rounded up to the nearest 4 bytes
                 const alignments = if (extra.data.flags.any_aligned_fields)
                     ((extra.data.fields_len + 3) / 4) * 4
                 else
                     0;
-                break :b @sizeOf(Tag.TypeUnion) +
-                    4 * (@intFromBool(extra.data.flags.any_captures) + captures_len) +
+                break :b @sizeof(Tag.TypeUnion) +
+                    4 * (@intfrombool(extra.data.flags.any_captures) + captures_len) +
                     (extra.data.fields_len * per_field) + alignments;
             },
 
             .type_function => b: {
                 const info = ip.extraData(Tag.TypeFunction, data);
-                break :b @sizeOf(Tag.TypeFunction) +
-                    (@sizeOf(Index) * info.params_len) +
-                    (@as(u32, 4) * @intFromBool(info.flags.has_comptime_bits)) +
-                    (@as(u32, 4) * @intFromBool(info.flags.has_noalias_bits));
+                break :b @sizeof(Tag.TypeFunction) +
+                    (@sizeof(Index) * info.params_len) +
+                    (@as(u32, 4) * @intfrombool(info.flags.has_comptime_bits)) +
+                    (@as(u32, 4) * @intfrombool(info.flags.has_noalias_bits));
             },
 
             .undef => 0,
             .simple_type => 0,
             .simple_value => 0,
-            .ptr_decl => @sizeOf(PtrDecl),
-            .ptr_comptime_alloc => @sizeOf(PtrComptimeAlloc),
-            .ptr_anon_decl => @sizeOf(PtrAnonDecl),
-            .ptr_anon_decl_aligned => @sizeOf(PtrAnonDeclAligned),
-            .ptr_comptime_field => @sizeOf(PtrComptimeField),
-            .ptr_int => @sizeOf(PtrInt),
-            .ptr_eu_payload => @sizeOf(PtrBase),
-            .ptr_opt_payload => @sizeOf(PtrBase),
-            .ptr_elem => @sizeOf(PtrBaseIndex),
-            .ptr_field => @sizeOf(PtrBaseIndex),
-            .ptr_slice => @sizeOf(PtrSlice),
+            .ptr_decl => @sizeof(PtrDecl),
+            .ptr_comptime_alloc => @sizeof(PtrComptimeAlloc),
+            .ptr_anon_decl => @sizeof(PtrAnonDecl),
+            .ptr_anon_decl_aligned => @sizeof(PtrAnonDeclAligned),
+            .ptr_comptime_field => @sizeof(PtrComptimeField),
+            .ptr_int => @sizeof(PtrInt),
+            .ptr_eu_payload => @sizeof(PtrBase),
+            .ptr_opt_payload => @sizeof(PtrBase),
+            .ptr_elem => @sizeof(PtrBaseIndex),
+            .ptr_field => @sizeof(PtrBaseIndex),
+            .ptr_slice => @sizeof(PtrSlice),
             .opt_null => 0,
-            .opt_payload => @sizeOf(Tag.TypeValue),
+            .opt_payload => @sizeof(Tag.TypeValue),
             .int_u8 => 0,
             .int_u16 => 0,
             .int_u32 => 0,
@@ -8365,58 +8365,58 @@ fn dumpStatsFallible(ip: *const InternPool, arena: Allocator) anyerror!void {
             .int_usize => 0,
             .int_comptime_int_u32 => 0,
             .int_comptime_int_i32 => 0,
-            .int_small => @sizeOf(IntSmall),
+            .int_small => @sizeof(IntSmall),
 
             .int_positive,
             .int_negative,
             => b: {
                 const int = ip.limbData(Int, data);
-                break :b @sizeOf(Int) + int.limbs_len * 8;
+                break :b @sizeof(Int) + int.limbs_len * 8;
             },
 
-            .int_lazy_align, .int_lazy_size => @sizeOf(IntLazy),
+            .int_lazy_align, .int_lazy_size => @sizeof(IntLazy),
 
-            .error_set_error, .error_union_error => @sizeOf(Key.Error),
-            .error_union_payload => @sizeOf(Tag.TypeValue),
+            .error_set_error, .error_union_error => @sizeof(Key.Error),
+            .error_union_payload => @sizeof(Tag.TypeValue),
             .enum_literal => 0,
-            .enum_tag => @sizeOf(Tag.EnumTag),
+            .enum_tag => @sizeof(Tag.EnumTag),
 
             .bytes => b: {
                 const info = ip.extraData(Bytes, data);
-                const len: usize = @intCast(ip.aggregateTypeLenIncludingSentinel(info.ty));
-                break :b @sizeOf(Bytes) + len + @intFromBool(info.bytes.at(len - 1, ip) != 0);
+                const len: usize = @intcast(ip.aggregateTypeLenIncludingSentinel(info.ty));
+                break :b @sizeof(Bytes) + len + @intfrombool(info.bytes.at(len - 1, ip) != 0);
             },
             .aggregate => b: {
                 const info = ip.extraData(Tag.Aggregate, data);
-                const fields_len: u32 = @intCast(ip.aggregateTypeLenIncludingSentinel(info.ty));
-                break :b @sizeOf(Tag.Aggregate) + (@sizeOf(Index) * fields_len);
+                const fields_len: u32 = @intcast(ip.aggregateTypeLenIncludingSentinel(info.ty));
+                break :b @sizeof(Tag.Aggregate) + (@sizeof(Index) * fields_len);
             },
-            .repeated => @sizeOf(Repeated),
+            .repeated => @sizeof(Repeated),
 
             .float_f16 => 0,
             .float_f32 => 0,
-            .float_f64 => @sizeOf(Float64),
-            .float_f80 => @sizeOf(Float80),
-            .float_f128 => @sizeOf(Float128),
-            .float_c_longdouble_f80 => @sizeOf(Float80),
-            .float_c_longdouble_f128 => @sizeOf(Float128),
-            .float_comptime_float => @sizeOf(Float128),
-            .variable => @sizeOf(Tag.Variable),
-            .extern_func => @sizeOf(Tag.ExternFunc),
-            .func_decl => @sizeOf(Tag.FuncDecl),
+            .float_f64 => @sizeof(Float64),
+            .float_f80 => @sizeof(Float80),
+            .float_f128 => @sizeof(Float128),
+            .float_c_longdouble_f80 => @sizeof(Float80),
+            .float_c_longdouble_f128 => @sizeof(Float128),
+            .float_comptime_float => @sizeof(Float128),
+            .variable => @sizeof(Tag.Variable),
+            .extern_func => @sizeof(Tag.ExternFunc),
+            .func_decl => @sizeof(Tag.FuncDecl),
             .func_instance => b: {
                 const info = ip.extraData(Tag.FuncInstance, data);
                 const ty = ip.typeOf(info.generic_owner);
                 const params_len = ip.indexToKey(ty).func_type.param_types.len;
-                break :b @sizeOf(Tag.FuncInstance) + @sizeOf(Index) * params_len;
+                break :b @sizeof(Tag.FuncInstance) + @sizeof(Index) * params_len;
             },
-            .func_coerced => @sizeOf(Tag.FuncCoerced),
+            .func_coerced => @sizeof(Tag.FuncCoerced),
             .only_possible_value => 0,
-            .union_value => @sizeOf(Key.Union),
+            .union_value => @sizeof(Key.Union),
 
             .memoized_call => b: {
                 const info = ip.extraData(MemoizedCall, data);
-                break :b @sizeOf(MemoizedCall) + (@sizeOf(Index) * info.args_len);
+                break :b @sizeof(MemoizedCall) + (@sizeof(Index) * info.args_len);
             },
         });
     }
@@ -8433,7 +8433,7 @@ fn dumpStatsFallible(ip: *const InternPool, arena: Allocator) anyerror!void {
     std.debug.print("  top 50 tags:\n", .{});
     for (counts.keys()[0..len], counts.values()[0..len]) |tag, stats| {
         std.debug.print("    {s}: {d} occurrences, {d} total bytes\n", .{
-            @tagName(tag), stats.count, stats.bytes,
+            @tagname(tag), stats.count, stats.bytes,
         });
     }
 }
@@ -8444,12 +8444,12 @@ fn dumpAllFallible(ip: *const InternPool) anyerror!void {
     var bw = std.io.bufferedWriter(std.io.getStdErr().writer());
     const w = bw.writer();
     for (tags, datas, 0..) |tag, data, i| {
-        try w.print("${d} = {s}(", .{ i, @tagName(tag) });
+        try w.print("${d} = {s}(", .{ i, @tagname(tag) });
         switch (tag) {
             .removed => {},
 
-            .simple_type => try w.print("{s}", .{@tagName(@as(SimpleType, @enumFromInt(data)))}),
-            .simple_value => try w.print("{s}", .{@tagName(@as(SimpleValue, @enumFromInt(data)))}),
+            .simple_type => try w.print("{s}", .{@tagname(@as(SimpleType, @enumfromint(data)))}),
+            .simple_value => try w.print("{s}", .{@tagname(@as(SimpleValue, @enumfromint(data)))}),
 
             .type_int_signed,
             .type_int_unsigned,
@@ -8555,7 +8555,7 @@ pub fn dumpGenericInstancesFallible(ip: *const InternPool, allocator: Allocator)
         const gop = try instances.getOrPut(arena, info.generic_owner);
         if (!gop.found_existing) gop.value_ptr.* = .{};
 
-        try gop.value_ptr.append(arena, @enumFromInt(i));
+        try gop.value_ptr.append(arena, @enumfromint(i));
     }
 
     const SortContext = struct {
@@ -8571,7 +8571,7 @@ pub fn dumpGenericInstancesFallible(ip: *const InternPool, allocator: Allocator)
         const generic_fn_owner_decl = ip.declPtrConst(ip.funcDeclOwner(entry.key_ptr.*));
         try w.print("{} ({}): \n", .{ generic_fn_owner_decl.name.fmt(ip), entry.value_ptr.items.len });
         for (entry.value_ptr.items) |index| {
-            const func = ip.extraFuncInstance(datas[@intFromEnum(index)]);
+            const func = ip.extraFuncInstance(datas[@intfromenum(index)]);
             const owner_decl = ip.declPtrConst(func.owner_decl);
             try w.print("  {}: (", .{owner_decl.name.fmt(ip)});
             for (func.comptime_args.get(ip)) |arg| {
@@ -8588,15 +8588,15 @@ pub fn dumpGenericInstancesFallible(ip: *const InternPool, allocator: Allocator)
 }
 
 pub fn declPtr(ip: *InternPool, index: DeclIndex) *Module.Decl {
-    return ip.allocated_decls.at(@intFromEnum(index));
+    return ip.allocated_decls.at(@intfromenum(index));
 }
 
 pub fn declPtrConst(ip: *const InternPool, index: DeclIndex) *const Module.Decl {
-    return ip.allocated_decls.at(@intFromEnum(index));
+    return ip.allocated_decls.at(@intfromenum(index));
 }
 
 pub fn namespacePtr(ip: *InternPool, index: NamespaceIndex) *Module.Namespace {
-    return ip.allocated_namespaces.at(@intFromEnum(index));
+    return ip.allocated_namespaces.at(@intfromenum(index));
 }
 
 pub fn createDecl(
@@ -8605,12 +8605,12 @@ pub fn createDecl(
     initialization: Module.Decl,
 ) Allocator.Error!DeclIndex {
     if (ip.decls_free_list.popOrNull()) |index| {
-        ip.allocated_decls.at(@intFromEnum(index)).* = initialization;
+        ip.allocated_decls.at(@intfromenum(index)).* = initialization;
         return index;
     }
     const ptr = try ip.allocated_decls.addOne(gpa);
     ptr.* = initialization;
-    return @enumFromInt(ip.allocated_decls.len - 1);
+    return @enumfromint(ip.allocated_decls.len - 1);
 }
 
 pub fn destroyDecl(ip: *InternPool, gpa: Allocator, index: DeclIndex) void {
@@ -8627,12 +8627,12 @@ pub fn createNamespace(
     initialization: Module.Namespace,
 ) Allocator.Error!NamespaceIndex {
     if (ip.namespaces_free_list.popOrNull()) |index| {
-        ip.allocated_namespaces.at(@intFromEnum(index)).* = initialization;
+        ip.allocated_namespaces.at(@intfromenum(index)).* = initialization;
         return index;
     }
     const ptr = try ip.allocated_namespaces.addOne(gpa);
     ptr.* = initialization;
-    return @enumFromInt(ip.allocated_namespaces.len - 1);
+    return @enumfromint(ip.allocated_namespaces.len - 1);
 }
 
 pub fn destroyNamespace(ip: *InternPool, gpa: Allocator, index: NamespaceIndex) void {
@@ -8686,7 +8686,7 @@ pub fn getOrPutStringFmt(
     comptime embedded_nulls: EmbeddedNulls,
 ) Allocator.Error!embedded_nulls.StringType() {
     // ensure that references to string_bytes in args do not get invalidated
-    const len: usize = @intCast(std.fmt.count(format, args) + 1);
+    const len: usize = @intcast(std.fmt.count(format, args) + 1);
     try ip.string_bytes.ensureUnusedCapacity(gpa, len);
     ip.string_bytes.writer(undefined).print(format, args) catch unreachable;
     ip.string_bytes.appendAssumeCapacity(0);
@@ -8711,7 +8711,7 @@ pub fn getOrPutTrailingString(
     comptime embedded_nulls: EmbeddedNulls,
 ) Allocator.Error!embedded_nulls.StringType() {
     const string_bytes = &ip.string_bytes;
-    const str_index: u32 = @intCast(string_bytes.items.len - len);
+    const str_index: u32 = @intcast(string_bytes.items.len - len);
     if (len > 0 and string_bytes.getLast() == 0) {
         _ = string_bytes.pop();
     } else {
@@ -8723,7 +8723,7 @@ pub fn getOrPutTrailingString(
         .no_embedded_nulls => assert(!has_embedded_null),
         .maybe_embedded_nulls => if (has_embedded_null) {
             string_bytes.appendAssumeCapacity(0);
-            return @enumFromInt(str_index);
+            return @enumfromint(str_index);
         },
     }
     const gop = try ip.string_table.getOrPutContextAdapted(gpa, key, std.hash_map.StringIndexAdapter{
@@ -8733,18 +8733,18 @@ pub fn getOrPutTrailingString(
     });
     if (gop.found_existing) {
         string_bytes.shrinkRetainingCapacity(str_index);
-        return @enumFromInt(gop.key_ptr.*);
+        return @enumfromint(gop.key_ptr.*);
     } else {
         gop.key_ptr.* = str_index;
         string_bytes.appendAssumeCapacity(0);
-        return @enumFromInt(str_index);
+        return @enumfromint(str_index);
     }
 }
 
 pub fn getString(ip: *InternPool, s: []const u8) OptionalNullTerminatedString {
     return if (ip.string_table.getKeyAdapted(s, std.hash_map.StringIndexAdapter{
         .bytes = &ip.string_bytes,
-    })) |index| @enumFromInt(index) else .none;
+    })) |index| @enumfromint(index) else .none;
 }
 
 pub fn typeOf(ip: *const InternPool, index: Index) Index {
@@ -8835,7 +8835,7 @@ pub fn typeOf(ip: *const InternPool, index: Index) Index {
 
         // This optimization on tags is needed so that indexToKey can call
         // typeOf without being recursive.
-        _ => switch (ip.items.items(.tag)[@intFromEnum(index)]) {
+        _ => switch (ip.items.items(.tag)[@intfromenum(index)]) {
             .removed => unreachable,
 
             .type_int_signed,
@@ -8868,7 +8868,7 @@ pub fn typeOf(ip: *const InternPool, index: Index) Index {
             .undef,
             .opt_null,
             .only_possible_value,
-            => @enumFromInt(ip.items.items(.data)[@intFromEnum(index)]),
+            => @enumfromint(ip.items.items(.data)[@intfromenum(index)]),
 
             .simple_value => unreachable, // handled via Index above
 
@@ -8901,9 +8901,9 @@ pub fn typeOf(ip: *const InternPool, index: Index) Index {
             .aggregate,
             .repeated,
             => |t| {
-                const extra_index = ip.items.items(.data)[@intFromEnum(index)];
+                const extra_index = ip.items.items(.data)[@intfromenum(index)];
                 const field_index = std.meta.fieldIndex(t.Payload(), "ty").?;
-                return @enumFromInt(ip.extra.items[extra_index + field_index]);
+                return @enumfromint(ip.extra.items[extra_index + field_index]);
             },
 
             .int_u8 => .u8_type,
@@ -8919,7 +8919,7 @@ pub fn typeOf(ip: *const InternPool, index: Index) Index {
             // Note these are stored in limbs data, not extra data.
             .int_positive,
             .int_negative,
-            => ip.limbData(Int, ip.items.items(.data)[@intFromEnum(index)]).ty,
+            => ip.limbData(Int, ip.items.items(.data)[@intfromenum(index)]).ty,
 
             .enum_literal => .enum_literal_type,
             .float_f16 => .f16_type,
@@ -8944,7 +8944,7 @@ pub fn typeOf(ip: *const InternPool, index: Index) Index {
 /// Assumes that the enum's field indexes equal its value tags.
 pub fn toEnum(ip: *const InternPool, comptime E: type, i: Index) E {
     const int = ip.indexToKey(i).enum_tag.int;
-    return @enumFromInt(ip.indexToKey(int).int.storage.u64);
+    return @enumfromint(ip.indexToKey(int).int.storage.u64);
 }
 
 pub fn aggregateTypeLen(ip: *const InternPool, ty: Index) u64 {
@@ -8968,7 +8968,7 @@ pub fn aggregateTypeLenIncludingSentinel(ip: *const InternPool, ty: Index) u64 {
 }
 
 pub fn funcTypeReturnType(ip: *const InternPool, ty: Index) Index {
-    const item = ip.items.get(@intFromEnum(ty));
+    const item = ip.items.get(@intfromenum(ty));
     const child_item = switch (item.tag) {
         .type_pointer => ip.items.get(ip.extra.items[
             item.data + std.meta.fieldIndex(Tag.TypePointer, "child").?
@@ -8977,7 +8977,7 @@ pub fn funcTypeReturnType(ip: *const InternPool, ty: Index) Index {
         else => unreachable,
     };
     assert(child_item.tag == .type_function);
-    return @enumFromInt(ip.extra.items[
+    return @enumfromint(ip.extra.items[
         child_item.data + std.meta.fieldIndex(Tag.TypeFunction, "return_type").?
     ]);
 }
@@ -8985,26 +8985,26 @@ pub fn funcTypeReturnType(ip: *const InternPool, ty: Index) Index {
 pub fn isNoReturn(ip: *const InternPool, ty: Index) bool {
     return switch (ty) {
         .noreturn_type => true,
-        else => switch (ip.items.items(.tag)[@intFromEnum(ty)]) {
-            .type_error_set => ip.extra.items[ip.items.items(.data)[@intFromEnum(ty)] + std.meta.fieldIndex(Tag.ErrorSet, "names_len").?] == 0,
+        else => switch (ip.items.items(.tag)[@intfromenum(ty)]) {
+            .type_error_set => ip.extra.items[ip.items.items(.data)[@intfromenum(ty)] + std.meta.fieldIndex(Tag.ErrorSet, "names_len").?] == 0,
             else => false,
         },
     };
 }
 
 pub fn isUndef(ip: *const InternPool, val: Index) bool {
-    return val == .undef or ip.items.items(.tag)[@intFromEnum(val)] == .undef;
+    return val == .undef or ip.items.items(.tag)[@intfromenum(val)] == .undef;
 }
 
 pub fn isVariable(ip: *const InternPool, val: Index) bool {
-    return ip.items.items(.tag)[@intFromEnum(val)] == .variable;
+    return ip.items.items(.tag)[@intfromenum(val)] == .variable;
 }
 
 pub fn getBackingDecl(ip: *const InternPool, val: Index) OptionalDeclIndex {
-    var base = @intFromEnum(val);
+    var base = @intfromenum(val);
     while (true) {
         switch (ip.items.items(.tag)[base]) {
-            .ptr_decl => return @enumFromInt(ip.extra.items[
+            .ptr_decl => return @enumfromint(ip.extra.items[
                 ip.items.items(.data)[base] + std.meta.fieldIndex(PtrDecl, "decl").?
             ]),
             inline .ptr_eu_payload,
@@ -9023,7 +9023,7 @@ pub fn getBackingDecl(ip: *const InternPool, val: Index) OptionalDeclIndex {
 }
 
 pub fn getBackingAddrTag(ip: *const InternPool, val: Index) ?Key.Ptr.BaseAddr.Tag {
-    var base = @intFromEnum(val);
+    var base = @intfromenum(val);
     while (true) {
         switch (ip.items.items(.tag)[base]) {
             .ptr_decl => return .decl,
@@ -9151,7 +9151,7 @@ pub fn zigTypeTagOrPoison(ip: *const InternPool, index: Index) error{GenericPois
         .empty_struct => unreachable,
         .generic_poison => unreachable,
 
-        _ => switch (ip.items.items(.tag)[@intFromEnum(index)]) {
+        _ => switch (ip.items.items(.tag)[@intfromenum(index)]) {
             .removed => unreachable,
 
             .type_int_signed,
@@ -9260,7 +9260,7 @@ pub fn zigTypeTagOrPoison(ip: *const InternPool, index: Index) error{GenericPois
 
 pub fn isFuncBody(ip: *const InternPool, i: Index) bool {
     assert(i != .none);
-    return switch (ip.items.items(.tag)[@intFromEnum(i)]) {
+    return switch (ip.items.items(.tag)[@intfromenum(i)]) {
         .func_decl, .func_instance, .func_coerced => true,
         else => false,
     };
@@ -9268,14 +9268,14 @@ pub fn isFuncBody(ip: *const InternPool, i: Index) bool {
 
 pub fn funcAnalysis(ip: *const InternPool, i: Index) *FuncAnalysis {
     assert(i != .none);
-    const item = ip.items.get(@intFromEnum(i));
+    const item = ip.items.get(@intfromenum(i));
     const extra_index = switch (item.tag) {
         .func_decl => item.data + std.meta.fieldIndex(Tag.FuncDecl, "analysis").?,
         .func_instance => item.data + std.meta.fieldIndex(Tag.FuncInstance, "analysis").?,
         .func_coerced => i: {
             const extra_index = item.data + std.meta.fieldIndex(Tag.FuncCoerced, "func").?;
-            const func_index: Index = @enumFromInt(ip.extra.items[extra_index]);
-            const sub_item = ip.items.get(@intFromEnum(func_index));
+            const func_index: Index = @enumfromint(ip.extra.items[extra_index]);
+            const sub_item = ip.items.get(@intfromenum(func_index));
             break :i switch (sub_item.tag) {
                 .func_decl => sub_item.data + std.meta.fieldIndex(Tag.FuncDecl, "analysis").?,
                 .func_instance => sub_item.data + std.meta.fieldIndex(Tag.FuncInstance, "analysis").?,
@@ -9284,7 +9284,7 @@ pub fn funcAnalysis(ip: *const InternPool, i: Index) *FuncAnalysis {
         },
         else => unreachable,
     };
-    return @ptrCast(&ip.extra.items[extra_index]);
+    return @ptrcast(&ip.extra.items[extra_index]);
 }
 
 pub fn funcHasInferredErrorSet(ip: *const InternPool, i: Index) bool {
@@ -9293,7 +9293,7 @@ pub fn funcHasInferredErrorSet(ip: *const InternPool, i: Index) bool {
 
 pub fn funcZirBodyInst(ip: *const InternPool, i: Index) TrackedInst.Index {
     assert(i != .none);
-    const item = ip.items.get(@intFromEnum(i));
+    const item = ip.items.get(@intfromenum(i));
     const zir_body_inst_field_index = std.meta.fieldIndex(Tag.FuncDecl, "zir_body_inst").?;
     const extra_index = switch (item.tag) {
         .func_decl => item.data + zir_body_inst_field_index,
@@ -9305,26 +9305,26 @@ pub fn funcZirBodyInst(ip: *const InternPool, i: Index) TrackedInst.Index {
         },
         .func_coerced => {
             const datas = ip.items.items(.data);
-            const uncoerced_func_index: Index = @enumFromInt(ip.extra.items[
-                datas[@intFromEnum(i)] + std.meta.fieldIndex(Tag.FuncCoerced, "func").?
+            const uncoerced_func_index: Index = @enumfromint(ip.extra.items[
+                datas[@intfromenum(i)] + std.meta.fieldIndex(Tag.FuncCoerced, "func").?
             ]);
             return ip.funcZirBodyInst(uncoerced_func_index);
         },
         else => unreachable,
     };
-    return @enumFromInt(ip.extra.items[extra_index]);
+    return @enumfromint(ip.extra.items[extra_index]);
 }
 
 pub fn iesFuncIndex(ip: *const InternPool, ies_index: Index) Index {
     assert(ies_index != .none);
     const tags = ip.items.items(.tag);
-    assert(tags[@intFromEnum(ies_index)] == .type_inferred_error_set);
-    const func_index = ip.items.items(.data)[@intFromEnum(ies_index)];
+    assert(tags[@intfromenum(ies_index)] == .type_inferred_error_set);
+    const func_index = ip.items.items(.data)[@intfromenum(ies_index)];
     switch (tags[func_index]) {
         .func_decl, .func_instance => {},
         else => unreachable, // assertion failed
     }
-    return @enumFromInt(func_index);
+    return @enumfromint(func_index);
 }
 
 /// Returns a mutable pointer to the resolved error set type of an inferred
@@ -9334,8 +9334,8 @@ pub fn iesResolved(ip: *const InternPool, ies_index: Index) *Index {
     assert(ies_index != .none);
     const tags = ip.items.items(.tag);
     const datas = ip.items.items(.data);
-    assert(tags[@intFromEnum(ies_index)] == .type_inferred_error_set);
-    const func_index = datas[@intFromEnum(ies_index)];
+    assert(tags[@intfromenum(ies_index)] == .type_inferred_error_set);
+    const func_index = datas[@intfromenum(ies_index)];
     return funcIesResolved(ip, func_index);
 }
 
@@ -9346,31 +9346,31 @@ pub fn funcIesResolved(ip: *const InternPool, func_index: Index) *Index {
     const tags = ip.items.items(.tag);
     const datas = ip.items.items(.data);
     assert(funcHasInferredErrorSet(ip, func_index));
-    const func_start = datas[@intFromEnum(func_index)];
-    const extra_index = switch (tags[@intFromEnum(func_index)]) {
-        .func_decl => func_start + @typeInfo(Tag.FuncDecl).Struct.fields.len,
-        .func_instance => func_start + @typeInfo(Tag.FuncInstance).Struct.fields.len,
+    const func_start = datas[@intfromenum(func_index)];
+    const extra_index = switch (tags[@intfromenum(func_index)]) {
+        .func_decl => func_start + @typeinfo(Tag.FuncDecl).Struct.fields.len,
+        .func_instance => func_start + @typeinfo(Tag.FuncInstance).Struct.fields.len,
         .func_coerced => i: {
-            const uncoerced_func_index: Index = @enumFromInt(ip.extra.items[
+            const uncoerced_func_index: Index = @enumfromint(ip.extra.items[
                 func_start + std.meta.fieldIndex(Tag.FuncCoerced, "func").?
             ]);
-            const uncoerced_func_start = datas[@intFromEnum(uncoerced_func_index)];
-            break :i switch (tags[@intFromEnum(uncoerced_func_index)]) {
-                .func_decl => uncoerced_func_start + @typeInfo(Tag.FuncDecl).Struct.fields.len,
-                .func_instance => uncoerced_func_start + @typeInfo(Tag.FuncInstance).Struct.fields.len,
+            const uncoerced_func_start = datas[@intfromenum(uncoerced_func_index)];
+            break :i switch (tags[@intfromenum(uncoerced_func_index)]) {
+                .func_decl => uncoerced_func_start + @typeinfo(Tag.FuncDecl).Struct.fields.len,
+                .func_instance => uncoerced_func_start + @typeinfo(Tag.FuncInstance).Struct.fields.len,
                 else => unreachable,
             };
         },
         else => unreachable,
     };
-    return @ptrCast(&ip.extra.items[extra_index]);
+    return @ptrcast(&ip.extra.items[extra_index]);
 }
 
 pub fn funcDeclInfo(ip: *const InternPool, i: Index) Key.Func {
     const tags = ip.items.items(.tag);
     const datas = ip.items.items(.data);
-    assert(tags[@intFromEnum(i)] == .func_decl);
-    return extraFuncDecl(ip, datas[@intFromEnum(i)]);
+    assert(tags[@intfromenum(i)] == .func_decl);
+    return extraFuncDecl(ip, datas[@intfromenum(i)]);
 }
 
 pub fn funcDeclOwner(ip: *const InternPool, i: Index) DeclIndex {
@@ -9380,18 +9380,18 @@ pub fn funcDeclOwner(ip: *const InternPool, i: Index) DeclIndex {
 pub fn funcTypeParamsLen(ip: *const InternPool, i: Index) u32 {
     const tags = ip.items.items(.tag);
     const datas = ip.items.items(.data);
-    assert(tags[@intFromEnum(i)] == .type_function);
-    const start = datas[@intFromEnum(i)];
+    assert(tags[@intfromenum(i)] == .type_function);
+    const start = datas[@intfromenum(i)];
     return ip.extra.items[start + std.meta.fieldIndex(Tag.TypeFunction, "params_len").?];
 }
 
 pub fn unwrapCoercedFunc(ip: *const InternPool, i: Index) Index {
     const tags = ip.items.items(.tag);
-    return switch (tags[@intFromEnum(i)]) {
+    return switch (tags[@intfromenum(i)]) {
         .func_coerced => {
             const datas = ip.items.items(.data);
-            return @enumFromInt(ip.extra.items[
-                datas[@intFromEnum(i)] + std.meta.fieldIndex(Tag.FuncCoerced, "func").?
+            return @enumfromint(ip.extra.items[
+                datas[@intfromenum(i)] + std.meta.fieldIndex(Tag.FuncCoerced, "func").?
             ]);
         },
         .func_instance, .func_decl => i,
@@ -9403,8 +9403,8 @@ pub fn unwrapCoercedFunc(ip: *const InternPool, i: Index) Index {
 /// make `want_index` refer to this type instead. This invalidates `resolved_index`, so must be
 /// called only when it is guaranteed that no reference to `resolved_index` exists.
 pub fn resolveBuiltinType(ip: *InternPool, want_index: Index, resolved_index: Index) void {
-    assert(@intFromEnum(want_index) >= @intFromEnum(Index.first_type));
-    assert(@intFromEnum(want_index) <= @intFromEnum(Index.last_type));
+    assert(@intfromenum(want_index) >= @intfromenum(Index.first_type));
+    assert(@intfromenum(want_index) <= @intfromenum(Index.last_type));
 
     // Make sure the type isn't already resolved!
     assert(ip.indexToKey(want_index) == .simple_type);
@@ -9414,15 +9414,15 @@ pub fn resolveBuiltinType(ip: *InternPool, want_index: Index, resolved_index: In
         (ip.zigTypeTagOrPoison(resolved_index) catch unreachable));
 
     // Copy the data
-    const item = ip.items.get(@intFromEnum(resolved_index));
-    ip.items.set(@intFromEnum(want_index), item);
+    const item = ip.items.get(@intfromenum(resolved_index));
+    ip.items.set(@intfromenum(want_index), item);
 
     if (std.debug.runtime_safety) {
         // Make the value unreachable - this is a weird value which will make (incorrect) existing
         // references easier to spot
-        ip.items.set(@intFromEnum(resolved_index), .{
+        ip.items.set(@intfromenum(resolved_index), .{
             .tag = .simple_value,
-            .data = @intFromEnum(SimpleValue.@"unreachable"),
+            .data = @intfromenum(SimpleValue.@"unreachable"),
         });
     } else {
         // Here we could add the index to a free-list for reuse, but since
@@ -9435,7 +9435,7 @@ pub fn anonStructFieldTypes(ip: *const InternPool, i: Index) []const Index {
 }
 
 pub fn anonStructFieldsLen(ip: *const InternPool, i: Index) u32 {
-    return @intCast(ip.indexToKey(i).anon_struct_type.types.len);
+    return @intcast(ip.indexToKey(i).anon_struct_type.types.len);
 }
 
 /// Asserts the type is a struct.
@@ -9453,13 +9453,13 @@ pub fn addFieldName(
     names_start: u32,
     name: NullTerminatedString,
 ) ?u32 {
-    const map = &ip.maps.items[@intFromEnum(names_map)];
+    const map = &ip.maps.items[@intfromenum(names_map)];
     const field_index = map.count();
     const strings = ip.extra.items[names_start..][0..field_index];
-    const adapter: NullTerminatedString.Adapter = .{ .strings = @ptrCast(strings) };
+    const adapter: NullTerminatedString.Adapter = .{ .strings = @ptrcast(strings) };
     const gop = map.getOrPutAssumeCapacityAdapted(name, adapter);
-    if (gop.found_existing) return @intCast(gop.index);
-    ip.extra.items[names_start + field_index] = @intFromEnum(name);
+    if (gop.found_existing) return @intcast(gop.index);
+    ip.extra.items[names_start + field_index] = @intfromenum(name);
     return null;
 }
 

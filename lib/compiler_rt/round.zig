@@ -28,14 +28,14 @@ comptime {
 
 pub fn __roundh(x: f16) callconv(.C) f16 {
     // TODO: more efficient implementation
-    return @floatCast(roundf(x));
+    return @floatcast(roundf(x));
 }
 
 pub fn roundf(x_: f32) callconv(.C) f32 {
     const f32_toint = 1.0 / math.floatEps(f32);
 
     var x = x_;
-    const u: u32 = @bitCast(x);
+    const u: u32 = @bitcast(x);
     const e = (u >> 23) & 0xFF;
     var y: f32 = undefined;
 
@@ -47,7 +47,7 @@ pub fn roundf(x_: f32) callconv(.C) f32 {
     }
     if (e < 0x7F - 1) {
         mem.doNotOptimizeAway(x + f32_toint);
-        return 0 * @as(f32, @bitCast(u));
+        return 0 * @as(f32, @bitcast(u));
     }
 
     y = x + f32_toint - f32_toint - x;
@@ -70,7 +70,7 @@ pub fn round(x_: f64) callconv(.C) f64 {
     const f64_toint = 1.0 / math.floatEps(f64);
 
     var x = x_;
-    const u: u64 = @bitCast(x);
+    const u: u64 = @bitcast(x);
     const e = (u >> 52) & 0x7FF;
     var y: f64 = undefined;
 
@@ -82,7 +82,7 @@ pub fn round(x_: f64) callconv(.C) f64 {
     }
     if (e < 0x3ff - 1) {
         mem.doNotOptimizeAway(x + f64_toint);
-        return 0 * @as(f64, @bitCast(u));
+        return 0 * @as(f64, @bitcast(u));
     }
 
     y = x + f64_toint - f64_toint - x;
@@ -103,14 +103,14 @@ pub fn round(x_: f64) callconv(.C) f64 {
 
 pub fn __roundx(x: f80) callconv(.C) f80 {
     // TODO: more efficient implementation
-    return @floatCast(roundq(x));
+    return @floatcast(roundq(x));
 }
 
 pub fn roundq(x_: f128) callconv(.C) f128 {
     const f128_toint = 1.0 / math.floatEps(f128);
 
     var x = x_;
-    const u: u128 = @bitCast(x);
+    const u: u128 = @bitcast(x);
     const e = (u >> 112) & 0x7FFF;
     var y: f128 = undefined;
 
@@ -122,7 +122,7 @@ pub fn roundq(x_: f128) callconv(.C) f128 {
     }
     if (e < 0x3FFF - 1) {
         mem.doNotOptimizeAway(x + f128_toint);
-        return 0 * @as(f128, @bitCast(u));
+        return 0 * @as(f128, @bitcast(u));
     }
 
     y = x + f128_toint - f128_toint - x;
@@ -142,13 +142,13 @@ pub fn roundq(x_: f128) callconv(.C) f128 {
 }
 
 pub fn roundl(x: c_longdouble) callconv(.C) c_longdouble {
-    switch (@typeInfo(c_longdouble).Float.bits) {
+    switch (@typeinfo(c_longdouble).Float.bits) {
         16 => return __roundh(x),
         32 => return roundf(x),
         64 => return round(x),
         80 => return __roundx(x),
         128 => return roundq(x),
-        else => @compileError("unreachable"),
+        else => @compileerror("unreachable"),
     }
 }
 

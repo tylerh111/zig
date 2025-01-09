@@ -3,12 +3,12 @@ const testing = std.testing;
 const builtin = @import("builtin");
 
 fn add(count: c_int, ...) callconv(.C) c_int {
-    var ap = @cVaStart();
-    defer @cVaEnd(&ap);
+    var ap = @cvastart();
+    defer @cvaend(&ap);
     var i: usize = 0;
     var sum: c_int = 0;
     while (i < count) : (i += 1) {
-        sum += @cVaArg(&ap, c_int);
+        sum += @cvaarg(&ap, c_int);
     }
     return sum;
 }

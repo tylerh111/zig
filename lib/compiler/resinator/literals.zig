@@ -199,7 +199,7 @@ pub const IterativeStringParser = struct {
                             self.seen_tab = true;
                         }
                         const cols = columnsUntilTabStop(self.column, 8);
-                        self.num_pending_spaces = @intCast(cols - 1);
+                        self.num_pending_spaces = @intcast(cols - 1);
                         self.index += codepoint.byte_len;
                         return .{ .codepoint = ' ' };
                     },
@@ -233,7 +233,7 @@ pub const IterativeStringParser = struct {
                     '\r' => state = .escaped_cr,
                     '\n' => state = .escaped_newlines,
                     '0'...'7' => {
-                        string_escape_n = std.fmt.charToDigit(@intCast(c), 8) catch unreachable;
+                        string_escape_n = std.fmt.charToDigit(@intcast(c), 8) catch unreachable;
                         string_escape_i = 1;
                         state = .escaped_octal;
                     },
@@ -304,7 +304,7 @@ pub const IterativeStringParser = struct {
                 .escaped_octal => switch (c) {
                     '0'...'7' => {
                         string_escape_n *%= 8;
-                        string_escape_n +%= std.fmt.charToDigit(@intCast(c), 8) catch unreachable;
+                        string_escape_n +%= std.fmt.charToDigit(@intcast(c), 8) catch unreachable;
                         string_escape_i += 1;
                         if (string_escape_i == max_octal_escape_digits) {
                             self.index += codepoint.byte_len;
@@ -324,7 +324,7 @@ pub const IterativeStringParser = struct {
                 .escaped_hex => switch (c) {
                     '0'...'9', 'a'...'f', 'A'...'F' => {
                         string_escape_n *= 16;
-                        string_escape_n += std.fmt.charToDigit(@intCast(c), 16) catch unreachable;
+                        string_escape_n += std.fmt.charToDigit(@intcast(c), 16) catch unreachable;
                         string_escape_i += 1;
                         if (string_escape_i == max_hex_escape_digits) {
                             self.index += codepoint.byte_len;
@@ -419,12 +419,12 @@ pub fn parseQuotedString(
                     if (c == code_pages.Codepoint.invalid) {
                         try buf.append(std.mem.nativeToLittle(u16, '�'));
                     } else if (c < 0x10000) {
-                        const short: u16 = @intCast(c);
+                        const short: u16 = @intcast(c);
                         try buf.append(std.mem.nativeToLittle(u16, short));
                     } else {
-                        const high = @as(u16, @intCast((c - 0x10000) >> 10)) + 0xD800;
+                        const high = @as(u16, @intcast((c - 0x10000) >> 10)) + 0xD800;
                         try buf.append(std.mem.nativeToLittle(u16, high));
-                        const low = @as(u16, @intCast(c & 0x3FF)) + 0xDC00;
+                        const low = @as(u16, @intcast(c & 0x3FF)) + 0xDC00;
                         try buf.append(std.mem.nativeToLittle(u16, low));
                     }
                 },
@@ -855,7 +855,7 @@ pub fn parseNumberLiteral(bytes: SourceBytes) Number {
         }
         const digit = switch (c) {
             // On invalid digit for the radix, just stop parsing but don't fail
-            0x00...0x7F => std.fmt.charToDigit(@intCast(c), radix) catch break,
+            0x00...0x7F => std.fmt.charToDigit(@intcast(c), radix) catch break,
             else => break,
         };
 

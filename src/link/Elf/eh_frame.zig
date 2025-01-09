@@ -61,7 +61,7 @@ pub const Fde = struct {
         _ = unused_fmt_string;
         _ = options;
         _ = writer;
-        @compileError("do not format FDEs directly");
+        @compileerror("do not format FDEs directly");
     }
 
     pub fn fmt(fde: Fde, elf_file: *Elf) std.fmt.Formatter(format2) {
@@ -163,7 +163,7 @@ pub const Cie = struct {
         _ = unused_fmt_string;
         _ = options;
         _ = writer;
-        @compileError("do not format CIEs directly");
+        @compileerror("do not format CIEs directly");
     }
 
     pub fn fmt(cie: Cie, elf_file: *Elf) std.fmt.Formatter(format2) {
@@ -361,7 +361,7 @@ pub fn writeEhFrame(elf_file: *Elf, writer: anytype) !void {
             std.mem.writeInt(
                 i32,
                 contents[4..8],
-                @truncate(@as(i64, @intCast(fde.out_offset + 4)) - @as(i64, @intCast(fde.cie(elf_file).out_offset))),
+                @truncate(@as(i64, @intcast(fde.out_offset + 4)) - @as(i64, @intcast(fde.cie(elf_file).out_offset))),
                 .little,
             );
 
@@ -403,7 +403,7 @@ pub fn writeEhFrameObject(elf_file: *Elf, writer: anytype) !void {
             std.mem.writeInt(
                 i32,
                 contents[4..8],
-                @truncate(@as(i64, @intCast(fde.out_offset + 4)) - @as(i64, @intCast(fde.cie(elf_file).out_offset))),
+                @truncate(@as(i64, @intcast(fde.out_offset + 4)) - @as(i64, @intcast(fde.cie(elf_file).out_offset))),
                 .little,
             );
 
@@ -420,7 +420,7 @@ fn emitReloc(elf_file: *Elf, rec: anytype, sym: *const Symbol, rel: elf.Elf64_Re
     var r_sym: u32 = 0;
     switch (sym.type(elf_file)) {
         elf.STT_SECTION => {
-            r_addend += @intCast(sym.address(.{}, elf_file));
+            r_addend += @intcast(sym.address(.{}, elf_file));
             r_sym = elf_file.sectionSymbolOutputSymtabIndex(sym.outputShndx().?);
         },
         else => {
@@ -439,7 +439,7 @@ fn emitReloc(elf_file: *Elf, rec: anytype, sym: *const Symbol, rel: elf.Elf64_Re
     return .{
         .r_offset = r_offset,
         .r_addend = r_addend,
-        .r_info = (@as(u64, @intCast(r_sym)) << 32) | r_type,
+        .r_info = (@as(u64, @intcast(r_sym)) << 32) | r_type,
     };
 }
 
@@ -480,12 +480,12 @@ pub fn writeEhFrameHdr(elf_file: *Elf, writer: anytype) !void {
 
     const eh_frame_shdr = elf_file.shdrs.items[elf_file.eh_frame_section_index.?];
     const eh_frame_hdr_shdr = elf_file.shdrs.items[elf_file.eh_frame_hdr_section_index.?];
-    const num_fdes = @as(u32, @intCast(@divExact(eh_frame_hdr_shdr.sh_size - eh_frame_hdr_header_size, 8)));
+    const num_fdes = @as(u32, @intcast(@divexact(eh_frame_hdr_shdr.sh_size - eh_frame_hdr_header_size, 8)));
     try writer.writeInt(
         u32,
-        @as(u32, @bitCast(@as(
+        @as(u32, @bitcast(@as(
             i32,
-            @truncate(@as(i64, @intCast(eh_frame_shdr.sh_addr)) - @as(i64, @intCast(eh_frame_hdr_shdr.sh_addr)) - 4),
+            @truncate(@as(i64, @intcast(eh_frame_shdr.sh_addr)) - @as(i64, @intcast(eh_frame_hdr_shdr.sh_addr)) - 4),
         ))),
         .little,
     );
@@ -514,14 +514,14 @@ pub fn writeEhFrameHdr(elf_file: *Elf, writer: anytype) !void {
             assert(relocs.len > 0); // Should this be an error? Things are completely broken anyhow if this trips...
             const rel = relocs[0];
             const sym = elf_file.symbol(object.symbols.items[rel.r_sym()]);
-            const P = @as(i64, @intCast(fde.address(elf_file)));
-            const S = @as(i64, @intCast(sym.address(.{}, elf_file)));
+            const P = @as(i64, @intcast(fde.address(elf_file)));
+            const S = @as(i64, @intcast(sym.address(.{}, elf_file)));
             const A = rel.r_addend;
             entries.appendAssumeCapacity(.{
-                .init_addr = @bitCast(@as(i32, @truncate(S + A - @as(i64, @intCast(eh_frame_hdr_shdr.sh_addr))))),
+                .init_addr = @bitcast(@as(i32, @truncate(S + A - @as(i64, @intcast(eh_frame_hdr_shdr.sh_addr))))),
                 .fde_addr = @as(
                     u32,
-                    @bitCast(@as(i32, @truncate(P - @as(i64, @intCast(eh_frame_hdr_shdr.sh_addr))))),
+                    @bitcast(@as(i32, @truncate(P - @as(i64, @intcast(eh_frame_hdr_shdr.sh_addr))))),
                 ),
             });
         }
@@ -554,12 +554,12 @@ const EH_PE = struct {
 
 const x86_64 = struct {
     fn resolveReloc(rec: anytype, elf_file: *Elf, rel: elf.Elf64_Rela, source: i64, target: i64, data: []u8) !void {
-        const r_type: elf.R_X86_64 = @enumFromInt(rel.r_type());
+        const r_type: elf.R_X86_64 = @enumfromint(rel.r_type());
         switch (r_type) {
             .NONE => {},
             .@"32" => std.mem.writeInt(i32, data[0..4], @as(i32, @truncate(target)), .little),
             .@"64" => std.mem.writeInt(i64, data[0..8], target, .little),
-            .PC32 => std.mem.writeInt(i32, data[0..4], @as(i32, @intCast(target - source)), .little),
+            .PC32 => std.mem.writeInt(i32, data[0..4], @as(i32, @intcast(target - source)), .little),
             .PC64 => std.mem.writeInt(i64, data[0..8], target - source, .little),
             else => try reportInvalidReloc(rec, elf_file, rel),
         }
@@ -568,11 +568,11 @@ const x86_64 = struct {
 
 const aarch64 = struct {
     fn resolveReloc(rec: anytype, elf_file: *Elf, rel: elf.Elf64_Rela, source: i64, target: i64, data: []u8) !void {
-        const r_type: elf.R_AARCH64 = @enumFromInt(rel.r_type());
+        const r_type: elf.R_AARCH64 = @enumfromint(rel.r_type());
         switch (r_type) {
             .NONE => {},
             .ABS64 => std.mem.writeInt(i64, data[0..8], target, .little),
-            .PREL32 => std.mem.writeInt(i32, data[0..4], @as(i32, @intCast(target - source)), .little),
+            .PREL32 => std.mem.writeInt(i32, data[0..4], @as(i32, @intcast(target - source)), .little),
             .PREL64 => std.mem.writeInt(i64, data[0..8], target - source, .little),
             else => try reportInvalidReloc(rec, elf_file, rel),
         }
@@ -581,10 +581,10 @@ const aarch64 = struct {
 
 const riscv = struct {
     fn resolveReloc(rec: anytype, elf_file: *Elf, rel: elf.Elf64_Rela, source: i64, target: i64, data: []u8) !void {
-        const r_type: elf.R_RISCV = @enumFromInt(rel.r_type());
+        const r_type: elf.R_RISCV = @enumfromint(rel.r_type());
         switch (r_type) {
             .NONE => {},
-            .@"32_PCREL" => std.mem.writeInt(i32, data[0..4], @as(i32, @intCast(target - source)), .little),
+            .@"32_PCREL" => std.mem.writeInt(i32, data[0..4], @as(i32, @intcast(target - source)), .little),
             else => try reportInvalidReloc(rec, elf_file, rel),
         }
     }

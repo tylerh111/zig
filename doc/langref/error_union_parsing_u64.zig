@@ -12,11 +12,11 @@ pub fn parseU64(buf: []const u8, radix: u8) !u64 {
         }
 
         // x *= radix
-        var ov = @mulWithOverflow(x, radix);
+        var ov = @mulwithoverflow(x, radix);
         if (ov[1] != 0) return error.OverFlow;
 
         // x += digit
-        ov = @addWithOverflow(ov[0], digit);
+        ov = @addwithoverflow(ov[0], digit);
         if (ov[1] != 0) return error.OverFlow;
         x = ov[0];
     }

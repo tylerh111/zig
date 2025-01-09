@@ -7,7 +7,7 @@ const expectEqual = std.testing.expectEqual;
 test "compile time recursion" {
     try expect(some_data.len == 21);
 }
-var some_data: [@as(usize, @intCast(fibonacci(7)))]u8 = undefined;
+var some_data: [@as(usize, @intcast(fibonacci(7)))]u8 = undefined;
 fn fibonacci(x: i32) i32 {
     if (x <= 1) return 1;
     return fibonacci(x - 1) + fibonacci(x - 2);
@@ -77,7 +77,7 @@ test "constant expressions" {
 
     var array: [array_size]u8 = undefined;
     _ = &array;
-    try expect(@sizeOf(@TypeOf(array)) == 20);
+    try expect(@sizeof(@TypeOf(array)) == 20);
 }
 const array_size: u8 = 20;
 
@@ -110,20 +110,20 @@ test "inlined block and runtime block phi" {
     }
 }
 
-test "eval @setRuntimeSafety at compile-time" {
+test "eval @setruntimesafety at compile-time" {
     const result = comptime fnWithSetRuntimeSafety();
     try expect(result == 1234);
 }
 
 fn fnWithSetRuntimeSafety() i32 {
-    @setRuntimeSafety(true);
+    @setruntimesafety(true);
     return 1234;
 }
 
 test "compile-time downcast when the bits fit" {
     comptime {
         const spartan_count: u16 = 255;
-        const byte = @as(u8, @intCast(spartan_count));
+        const byte = @as(u8, @intcast(spartan_count));
         try expect(byte == 255);
     }
 }
@@ -149,7 +149,7 @@ test "a type constructed in a global expression" {
     l.array[0] = 10;
     l.array[1] = 11;
     l.array[2] = 12;
-    const ptr = @as([*]u8, @ptrCast(&l.array));
+    const ptr = @as([*]u8, @ptrcast(&l.array));
     try expect(ptr[0] == 10);
     try expect(ptr[1] == 11);
     try expect(ptr[2] == 12);
@@ -188,10 +188,10 @@ fn testTryToTrickEvalWithRuntimeIf(b: bool) usize {
     return comptime i;
 }
 
-test "@setEvalBranchQuota" {
+test "@setevalbranchquota" {
     comptime {
         // 1001 for the loop and then 1 more for the expect fn call
-        @setEvalBranchQuota(1002);
+        @setevalbranchquota(1002);
         var i = 0;
         var sum = 0;
         while (i < 1001) : (i += 1) {
@@ -328,20 +328,20 @@ fn generateTable(comptime T: type) [1010]T {
     var res: [1010]T = undefined;
     var i: usize = 0;
     while (i < 1010) : (i += 1) {
-        res[i] = @as(T, @intCast(i));
+        res[i] = @as(T, @intcast(i));
     }
     return res;
 }
 
 fn doesAlotT(comptime T: type, value: usize) T {
-    @setEvalBranchQuota(5000);
+    @setevalbranchquota(5000);
     const table = comptime blk: {
         break :blk generateTable(T);
     };
     return table[value];
 }
 
-test "@setEvalBranchQuota at same scope as generic function call" {
+test "@setevalbranchquota at same scope as generic function call" {
     if (builtin.zig_backend == .stage2_aarch64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
 
@@ -388,7 +388,7 @@ test "return 0 from function that has u0 return type" {
     };
     comptime {
         if (S.foo_zero() != 0) {
-            @compileError("test failed");
+            @compileerror("test failed");
         }
     }
 }
@@ -453,7 +453,7 @@ test "binary math operator in partially inlined function" {
     var b: [16]u8 = undefined;
 
     for (&b, 0..) |*r, i|
-        r.* = @as(u8, @intCast(i + 1));
+        r.* = @as(u8, @intcast(i + 1));
 
     copyWithPartialInline(s[0..], b[0..]);
     try expect(s[0] == 0x1020304);
@@ -491,14 +491,14 @@ test "comptime bitwise operators" {
     }
 }
 
-test "comptime shlWithOverflow" {
+test "comptime shlwithoverflow" {
     if (builtin.zig_backend == .stage2_arm) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    const ct_shifted = @shlWithOverflow(~@as(u64, 0), 16)[0];
+    const ct_shifted = @shlwithoverflow(~@as(u64, 0), 16)[0];
     var a = ~@as(u64, 0);
     _ = &a;
-    const rt_shifted = @shlWithOverflow(a, 16)[0];
+    const rt_shifted = @shlwithoverflow(a, 16)[0];
 
     try expect(ct_shifted == rt_shifted);
 }
@@ -537,11 +537,11 @@ test "runtime 128 bit integer division" {
     try expect(c == 15231399999);
 }
 
-test "@tagName of @typeInfo" {
+test "@tagname of @typeinfo" {
     if (builtin.zig_backend == .stage2_aarch64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
 
-    const str = @tagName(@typeInfo(u8));
+    const str = @tagname(@typeinfo(u8));
     try expect(std.mem.eql(u8, str, "Int"));
 }
 
@@ -601,16 +601,16 @@ test "comparisons 0 <= uint and 0 > uint should be comptime" {
 }
 fn testCompTimeUIntComparisons(x: u32) void {
     if (!(0 <= x)) {
-        @compileError("this condition should be comptime-known");
+        @compileerror("this condition should be comptime-known");
     }
     if (0 > x) {
-        @compileError("this condition should be comptime-known");
+        @compileerror("this condition should be comptime-known");
     }
     if (!(x >= 0)) {
-        @compileError("this condition should be comptime-known");
+        @compileerror("this condition should be comptime-known");
     }
     if (x < 0) {
-        @compileError("this condition should be comptime-known");
+        @compileerror("this condition should be comptime-known");
     }
 }
 
@@ -711,7 +711,7 @@ test "call method with comptime pass-by-non-copying-value self parameter" {
 }
 
 test "setting backward branch quota just before a generic fn call" {
-    @setEvalBranchQuota(1001);
+    @setevalbranchquota(1001);
     loopNTimes(1001);
 }
 
@@ -940,7 +940,7 @@ test "comptime pointer load through elem_ptr" {
                 .x = i,
             };
         }
-        var ptr: [*]S = @ptrCast(&array);
+        var ptr: [*]S = @ptrcast(&array);
         const x = ptr[0].x;
         assert(x == 0);
         ptr += 1;
@@ -962,7 +962,7 @@ test "const local with comptime init through array init" {
 
     const S = struct {
         fn declarations(comptime T: type) []const std.builtin.Type.Declaration {
-            return @typeInfo(T).Enum.decls;
+            return @typeinfo(T).Enum.decls;
         }
     };
 
@@ -1120,7 +1120,7 @@ test "no dependency loop for alignment of self struct" {
             try expect(a.d.g[3] == 43);
         }
 
-        var buf: [10]u8 align(@alignOf([*]u8)) = undefined;
+        var buf: [10]u8 align(@alignof([*]u8)) = undefined;
 
         const namespace = struct {
             const B = struct { a: A };
@@ -1137,7 +1137,7 @@ test "no dependency loop for alignment of self struct" {
 
         pub fn D(comptime F: type) type {
             return struct {
-                g: [*]align(@alignOf(F)) u8 = undefined,
+                g: [*]align(@alignof(F)) u8 = undefined,
             };
         }
     };
@@ -1158,7 +1158,7 @@ test "no dependency loop for alignment of self bare union" {
             try expect(a.d.g[3] == 43);
         }
 
-        var buf: [10]u8 align(@alignOf([*]u8)) = undefined;
+        var buf: [10]u8 align(@alignof([*]u8)) = undefined;
 
         const namespace = struct {
             const B = union { a: A, b: void };
@@ -1175,7 +1175,7 @@ test "no dependency loop for alignment of self bare union" {
 
         pub fn D(comptime F: type) type {
             return struct {
-                g: [*]align(@alignOf(F)) u8 = undefined,
+                g: [*]align(@alignof(F)) u8 = undefined,
             };
         }
     };
@@ -1196,7 +1196,7 @@ test "no dependency loop for alignment of self tagged union" {
             try expect(a.d.g[3] == 43);
         }
 
-        var buf: [10]u8 align(@alignOf([*]u8)) = undefined;
+        var buf: [10]u8 align(@alignof([*]u8)) = undefined;
 
         const namespace = struct {
             const B = union(enum) { a: A, b: void };
@@ -1213,7 +1213,7 @@ test "no dependency loop for alignment of self tagged union" {
 
         pub fn D(comptime F: type) type {
             return struct {
-                g: [*]align(@alignOf(F)) u8 = undefined,
+                g: [*]align(@alignof(F)) u8 = undefined,
             };
         }
     };
@@ -1292,9 +1292,9 @@ test "comptime write through extern struct reinterpreted as array" {
             c: u8,
         };
         var s: S = undefined;
-        @as(*[3]u8, @ptrCast(&s))[0] = 1;
-        @as(*[3]u8, @ptrCast(&s))[1] = 2;
-        @as(*[3]u8, @ptrCast(&s))[2] = 3;
+        @as(*[3]u8, @ptrcast(&s))[0] = 1;
+        @as(*[3]u8, @ptrcast(&s))[1] = 2;
+        @as(*[3]u8, @ptrcast(&s))[2] = 3;
         assert(s.a == 1);
         assert(s.b == 2);
         assert(s.c == 3);
@@ -1368,8 +1368,8 @@ test "lazy sizeof is resolved in division" {
         a: u32,
     };
     const a = 2;
-    try expect(@sizeOf(A) / a == 2);
-    try expect(@sizeOf(A) - a == 2);
+    try expect(@sizeof(A) / a == 2);
+    try expect(@sizeof(A) - a == 2);
 }
 
 test "lazy value is resolved as slice operand" {
@@ -1381,9 +1381,9 @@ test "lazy value is resolved as slice operand" {
     const A = struct { a: u32 };
     var a: [512]u64 = undefined;
 
-    const ptr1 = a[0..@sizeOf(A)];
-    const ptr2 = @as([*]u8, @ptrCast(&a))[0..@sizeOf(A)];
-    try expect(@intFromPtr(ptr1) == @intFromPtr(ptr2));
+    const ptr1 = a[0..@sizeof(A)];
+    const ptr2 = @as([*]u8, @ptrcast(&a))[0..@sizeof(A)];
+    try expect(@intfromptr(ptr1) == @intfromptr(ptr2));
     try expect(ptr1.len == ptr2.len);
 }
 
@@ -1511,7 +1511,7 @@ test "x and false is comptime-known false" {
     };
 
     if (T.foo() and T.foo() and false and T.foo()) {
-        @compileError("Condition should be comptime-known false");
+        @compileerror("Condition should be comptime-known false");
     }
     try expect(T.x == 2);
 
@@ -1520,7 +1520,7 @@ test "x and false is comptime-known false" {
         _ = T.foo();
         break :b false;
     } and T.foo()) {
-        @compileError("Condition should be comptime-known false");
+        @compileerror("Condition should be comptime-known false");
     }
     try expect(T.x == 3);
 }
@@ -1538,7 +1538,7 @@ test "x or true is comptime-known true" {
     };
 
     if (!(T.foo() or T.foo() or true or T.foo())) {
-        @compileError("Condition should be comptime-known false");
+        @compileerror("Condition should be comptime-known false");
     }
     try expect(T.x == 2);
 
@@ -1547,7 +1547,7 @@ test "x or true is comptime-known true" {
         _ = T.foo();
         break :b true;
     } or T.foo())) {
-        @compileError("Condition should be comptime-known false");
+        @compileerror("Condition should be comptime-known false");
     }
     try expect(T.x == 3);
 }
@@ -1605,7 +1605,7 @@ test "break from block results in type" {
     const S = struct {
         fn NewType(comptime T: type) type {
             const Padded = blk: {
-                if (@sizeOf(T) <= @sizeOf(usize)) break :blk void;
+                if (@sizeof(T) <= @sizeof(usize)) break :blk void;
                 break :blk T;
             };
 
@@ -1704,16 +1704,16 @@ test "early exit in container level const" {
     try expect(S.value == 1);
 }
 
-test "@inComptime" {
+test "@incomptime" {
     const S = struct {
-        fn inComptime() bool {
-            return @inComptime();
+        fn incomptime() bool {
+            return @incomptime();
         }
     };
-    try expectEqual(false, @inComptime());
-    try expectEqual(true, comptime @inComptime());
-    try expectEqual(false, S.inComptime());
-    try expectEqual(true, comptime S.inComptime());
+    try expectEqual(false, @incomptime());
+    try expectEqual(true, comptime @incomptime());
+    try expectEqual(false, S.incomptime());
+    try expectEqual(true, comptime S.incomptime());
 }
 
 // comptime partial array assign

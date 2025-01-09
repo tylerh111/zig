@@ -40,7 +40,7 @@ pub fn slide(self: *Self) u16 {
     self.rp -= hist_len;
     self.wp -= hist_len;
     self.fp -= hist_len;
-    return @intCast(n);
+    return @intcast(n);
 }
 
 /// Data from the current position (read position). Those part of the buffer is
@@ -100,18 +100,18 @@ pub fn match(self: *Self, prev_pos: u16, curr_pos: u16, min_len: u16) u16 {
     }
     while (i < max_len) : (i += 1)
         if (prev_lh[i] != curr_lh[i]) break;
-    return if (i >= consts.match.min_length) @intCast(i) else 0;
+    return if (i >= consts.match.min_length) @intcast(i) else 0;
 }
 
 /// Current position of non-compressed data. Data before rp are already converted
 /// to tokens.
 pub fn pos(self: *Self) u16 {
-    return @intCast(self.rp);
+    return @intcast(self.rp);
 }
 
 /// Notification that token list is cleared.
 pub fn flush(self: *Self) void {
-    self.fp = @intCast(self.rp);
+    self.fp = @intcast(self.rp);
 }
 
 /// Part of the buffer since last flush or null if there was slide in between (so
@@ -119,7 +119,7 @@ pub fn flush(self: *Self) void {
 pub fn tokensBuffer(self: *Self) ?[]const u8 {
     assert(self.fp <= self.rp);
     if (self.fp < 0) return null;
-    return self.buffer[@intCast(self.fp)..self.rp];
+    return self.buffer[@intcast(self.fp)..self.rp];
 }
 
 test match {

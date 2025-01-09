@@ -131,7 +131,7 @@ pub fn main() !void {
         defer gpa.free(formatted);
 
         if (check_flag) {
-            const code: u8 = @intFromBool(mem.eql(u8, formatted, source_code));
+            const code: u8 = @intfrombool(mem.eql(u8, formatted, source_code));
             process.exit(code);
         }
 
@@ -212,7 +212,7 @@ fn fmtPath(fmt: *Fmt, file_path: []const u8, check_mode: bool, dir: fs.Dir, sub_
     fmtPathFile(fmt, file_path, check_mode, dir, sub_path) catch |err| switch (err) {
         error.IsDir, error.AccessDenied => return fmtPathDir(fmt, file_path, check_mode, dir, sub_path),
         else => {
-            warn("unable to format '{s}': {s}", .{ file_path, @errorName(err) });
+            warn("unable to format '{s}': {s}", .{ file_path, @errorname(err) });
             fmt.any_error = true;
             return;
         },
@@ -246,7 +246,7 @@ fn fmtPathDir(
                 try fmtPathDir(fmt, full_path, check_mode, dir, entry.name);
             } else {
                 fmtPathFile(fmt, full_path, check_mode, dir, entry.name) catch |err| {
-                    warn("unable to format '{s}': {s}", .{ full_path, @errorName(err) });
+                    warn("unable to format '{s}': {s}", .{ full_path, @errorname(err) });
                     fmt.any_error = true;
                     return;
                 };

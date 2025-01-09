@@ -38,7 +38,7 @@ pub fn deinit(itab: *ImportTable, allocator: Allocator) void {
 
 /// Size of the import table does not include the sentinel.
 pub fn size(itab: ImportTable) u32 {
-    return @as(u32, @intCast(itab.entries.items.len)) * @sizeOf(u64);
+    return @as(u32, @intcast(itab.entries.items.len)) * @sizeof(u64);
 }
 
 pub fn addImport(itab: *ImportTable, allocator: Allocator, target: SymbolWithLoc) !ImportIndex {
@@ -49,7 +49,7 @@ pub fn addImport(itab: *ImportTable, allocator: Allocator, target: SymbolWithLoc
             break :blk index;
         } else {
             log.debug("  (allocating import entry at index {d})", .{itab.entries.items.len});
-            const index = @as(u32, @intCast(itab.entries.items.len));
+            const index = @as(u32, @intcast(itab.entries.items.len));
             _ = itab.entries.addOneAssumeCapacity();
             break :blk index;
         }
@@ -73,7 +73,7 @@ fn getBaseAddress(ctx: Context) u32 {
     var addr = header.virtual_address;
     for (ctx.coff_file.import_tables.values(), 0..) |other_itab, i| {
         if (ctx.index == i) break;
-        addr += @as(u32, @intCast(other_itab.entries.items.len * @sizeOf(u64))) + 8;
+        addr += @as(u32, @intcast(other_itab.entries.items.len * @sizeof(u64))) + 8;
     }
     return addr;
 }
@@ -81,7 +81,7 @@ fn getBaseAddress(ctx: Context) u32 {
 pub fn getImportAddress(itab: *const ImportTable, target: SymbolWithLoc, ctx: Context) ?u32 {
     const index = itab.lookup.get(target) orelse return null;
     const base_vaddr = getBaseAddress(ctx);
-    return base_vaddr + index * @sizeOf(u64);
+    return base_vaddr + index * @sizeof(u64);
 }
 
 const FormatContext = struct {
@@ -114,7 +114,7 @@ fn format(itab: ImportTable, comptime unused_format_string: []const u8, options:
     _ = unused_format_string;
     _ = options;
     _ = writer;
-    @compileError("do not format ImportTable directly; use itab.fmtDebug()");
+    @compileerror("do not format ImportTable directly; use itab.fmtDebug()");
 }
 
 pub fn fmtDebug(itab: ImportTable, ctx: Context) std.fmt.Formatter(fmt) {

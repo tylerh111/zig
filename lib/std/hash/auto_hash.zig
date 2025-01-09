@@ -20,11 +20,11 @@ pub const HashStrategy = enum {
 
 /// Helper function to hash a pointer and mutate the strategy if needed.
 pub fn hashPointer(hasher: anytype, key: anytype, comptime strat: HashStrategy) void {
-    const info = @typeInfo(@TypeOf(key));
+    const info = @typeinfo(@TypeOf(key));
 
     switch (info.Pointer.size) {
         .One => switch (strat) {
-            .Shallow => hash(hasher, @intFromPtr(key), .Shallow),
+            .Shallow => hash(hasher, @intfromptr(key), .Shallow),
             .Deep => hash(hasher, key.*, .Shallow),
             .DeepRecursive => hash(hasher, key.*, .DeepRecursive),
         },
@@ -43,8 +43,8 @@ pub fn hashPointer(hasher: anytype, key: anytype, comptime strat: HashStrategy) 
         .Many,
         .C,
         => switch (strat) {
-            .Shallow => hash(hasher, @intFromPtr(key), .Shallow),
-            else => @compileError(
+            .Shallow => hash(hasher, @intfromptr(key), .Shallow),
+            else => @compileerror(
                 \\ unknown-length pointers and C pointers cannot be hashed deeply.
                 \\ Consider providing your own hash function.
             ),
@@ -63,7 +63,7 @@ pub fn hashArray(hasher: anytype, key: anytype, comptime strat: HashStrategy) vo
 /// Strategy is provided to determine if pointers should be followed or not.
 pub fn hash(hasher: anytype, key: anytype, comptime strat: HashStrategy) void {
     const Key = @TypeOf(key);
-    const Hasher = switch (@typeInfo(@TypeOf(hasher))) {
+    const Hasher = switch (@typeinfo(@TypeOf(hasher))) {
         .Pointer => |ptr| ptr.child,
         else => @TypeOf(hasher),
     };
@@ -73,7 +73,7 @@ pub fn hash(hasher: anytype, key: anytype, comptime strat: HashStrategy) void {
         return;
     }
 
-    switch (@typeInfo(Key)) {
+    switch (@typeinfo(Key)) {
         .NoReturn,
         .Opaque,
         .Undefined,
@@ -84,7 +84,7 @@ pub fn hash(hasher: anytype, key: anytype, comptime strat: HashStrategy) void {
         .EnumLiteral,
         .Frame,
         .Float,
-        => @compileError("unable to hash type " ++ @typeName(Key)),
+        => @compileerror("unable to hash type " ++ @typename(Key)),
 
         .Void => return,
 
@@ -94,23 +94,23 @@ pub fn hash(hasher: anytype, key: anytype, comptime strat: HashStrategy) void {
             .signed => hash(hasher, @as(@Type(.{ .Int = .{
                 .bits = int.bits,
                 .signedness = .unsigned,
-            } }), @bitCast(key)), strat),
+            } }), @bitcast(key)), strat),
             .unsigned => {
                 if (std.meta.hasUniqueRepresentation(Key)) {
                     @call(.always_inline, Hasher.update, .{ hasher, std.mem.asBytes(&key) });
                 } else {
                     // Take only the part containing the key value, the remaining
                     // bytes are undefined and must not be hashed!
-                    const byte_size = comptime std.math.divCeil(comptime_int, @bitSizeOf(Key), 8) catch unreachable;
+                    const byte_size = comptime std.math.divCeil(comptime_int, @bitsizeof(Key), 8) catch unreachable;
                     @call(.always_inline, Hasher.update, .{ hasher, std.mem.asBytes(&key)[0..byte_size] });
                 }
             },
         },
 
-        .Bool => hash(hasher, @intFromBool(key), strat),
-        .Enum => hash(hasher, @intFromEnum(key), strat),
-        .ErrorSet => hash(hasher, @intFromError(key), strat),
-        .AnyFrame, .Fn => hash(hasher, @intFromPtr(key), strat),
+        .Bool => hash(hasher, @intfrombool(key), strat),
+        .Enum => hash(hasher, @intfromenum(key), strat),
+        .ErrorSet => hash(hasher, @intfromerror(key), strat),
+        .AnyFrame, .Fn => hash(hasher, @intfromptr(key), strat),
 
         .Pointer => @call(.always_inline, hashPointer, .{ hasher, key, strat }),
 
@@ -152,7 +152,7 @@ pub fn hash(hasher: anytype, key: anytype, comptime strat: HashStrategy) void {
                     }
                 }
                 unreachable;
-            } else @compileError("cannot hash untagged union type: " ++ @typeName(Key) ++ ", provide your own hash function");
+            } else @compileerror("cannot hash untagged union type: " ++ @typename(Key) ++ ", provide your own hash function");
         },
 
         .ErrorUnion => blk: {
@@ -166,7 +166,7 @@ pub fn hash(hasher: anytype, key: anytype, comptime strat: HashStrategy) void {
 }
 
 inline fn typeContainsSlice(comptime K: type) bool {
-    return switch (@typeInfo(K)) {
+    return switch (@typeinfo(K)) {
         .Pointer => |info| info.size == .Slice,
 
         inline .Struct, .Union => |info| {
@@ -189,7 +189,7 @@ inline fn typeContainsSlice(comptime K: type) bool {
 pub fn autoHash(hasher: anytype, key: anytype) void {
     const Key = @TypeOf(key);
     if (comptime typeContainsSlice(Key)) {
-        @compileError("std.hash.autoHash does not allow slices as well as unions and structs containing slices here (" ++ @typeName(Key) ++
+        @compileerror("std.hash.autoHash does not allow slices as well as unions and structs containing slices here (" ++ @typename(Key) ++
             ") because the intent is unclear. Consider using std.hash.autoHashStrat or providing your own hash function instead.");
     }
 

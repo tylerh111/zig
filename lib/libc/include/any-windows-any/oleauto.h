@@ -408,7 +408,7 @@ WINOLEAUTAPI VarDecFromUI8(ULONG64 ui64In,DECIMAL *pdecOut);
 #define VarUintFromCy VarUI4FromCy
 #define VarUintFromStr VarUI4FromStr
 #define VarUintFromDisp VarUI4FromDisp
-#define VarUintFromBool VarUI4FromBool
+#define VarUintfrombool VarUI4FromBool
 #define VarUintFromI1 VarUI4FromI1
 #define VarUintFromUI2 VarUI4FromUI2
 #define VarUintFromUI4 VarUI4FromUI4

@@ -43,14 +43,14 @@ pub const Attr = struct {
     pub fn get(self: Attr) Error!u16 {
         var flags: c_short = undefined;
         switch (errno(std.c.posix_spawnattr_getflags(&self.attr, &flags))) {
-            .SUCCESS => return @as(u16, @bitCast(flags)),
+            .SUCCESS => return @as(u16, @bitcast(flags)),
             .INVAL => unreachable,
             else => |err| return unexpectedErrno(err),
         }
     }
 
     pub fn set(self: *Attr, flags: u16) Error!void {
-        switch (errno(std.c.posix_spawnattr_setflags(&self.attr, @as(c_short, @bitCast(flags))))) {
+        switch (errno(std.c.posix_spawnattr_setflags(&self.attr, @as(c_short, @bitcast(flags))))) {
             .SUCCESS => return,
             .INVAL => unreachable,
             else => |err| return unexpectedErrno(err),
@@ -86,7 +86,7 @@ pub const Actions = struct {
     }
 
     pub fn openZ(self: *Actions, fd: std.c.fd_t, path: [*:0]const u8, flags: u32, mode: std.c.mode_t) Error!void {
-        switch (errno(std.c.posix_spawn_file_actions_addopen(&self.actions, fd, path, @as(c_int, @bitCast(flags)), mode))) {
+        switch (errno(std.c.posix_spawn_file_actions_addopen(&self.actions, fd, path, @as(c_int, @bitcast(flags)), mode))) {
             .SUCCESS => return,
             .BADF => return error.InvalidFileDescriptor,
             .NOMEM => return error.SystemResources,
@@ -207,11 +207,11 @@ pub fn spawnZ(
 pub fn waitpid(pid: std.c.pid_t, flags: u32) Error!std.posix.WaitPidResult {
     var status: c_int = undefined;
     while (true) {
-        const rc = waitpid(pid, &status, @as(c_int, @intCast(flags)));
+        const rc = waitpid(pid, &status, @as(c_int, @intcast(flags)));
         switch (errno(rc)) {
             .SUCCESS => return std.posix.WaitPidResult{
-                .pid = @as(std.c.pid_t, @intCast(rc)),
-                .status = @as(u32, @bitCast(status)),
+                .pid = @as(std.c.pid_t, @intcast(rc)),
+                .status = @as(u32, @bitcast(status)),
             },
             .INTR => continue,
             .CHILD => return error.ChildExecFailed,

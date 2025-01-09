@@ -1,5 +1,5 @@
 export fn entry() void {
-    const b: *i32 = @ptrFromInt(0);
+    const b: *i32 = @ptrfromint(0);
     _ = b;
 }
 

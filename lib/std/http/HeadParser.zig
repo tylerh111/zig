@@ -117,8 +117,8 @@ pub fn feed(p: *HeadParser, bytes: []const u8) usize {
                         const SizeVector = @Vector(vector_len, u8);
 
                         const v: Vector = chunk.*;
-                        const matches_r: BitVector = @bitCast(v == @as(Vector, @splat('\r')));
-                        const matches_n: BitVector = @bitCast(v == @as(Vector, @splat('\n')));
+                        const matches_r: BitVector = @bitcast(v == @as(Vector, @splat('\r')));
+                        const matches_n: BitVector = @bitcast(v == @as(Vector, @splat('\n')));
                         const matches_or: SizeVector = matches_r | matches_n;
 
                         break :matches @reduce(.Add, matches_or);
@@ -337,20 +337,20 @@ pub fn feed(p: *HeadParser, bytes: []const u8) usize {
 }
 
 inline fn int16(array: *const [2]u8) u16 {
-    return @bitCast(array.*);
+    return @bitcast(array.*);
 }
 
 inline fn int24(array: *const [3]u8) u24 {
-    return @bitCast(array.*);
+    return @bitcast(array.*);
 }
 
 inline fn int32(array: *const [4]u8) u32 {
-    return @bitCast(array.*);
+    return @bitcast(array.*);
 }
 
 inline fn intShift(comptime T: type, x: anytype) T {
     switch (@import("builtin").cpu.arch.endian()) {
-        .little => return @truncate(x >> (@bitSizeOf(@TypeOf(x)) - @bitSizeOf(T))),
+        .little => return @truncate(x >> (@bitsizeof(@TypeOf(x)) - @bitsizeof(T))),
         .big => return @truncate(x),
     }
 }

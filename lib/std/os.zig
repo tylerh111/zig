@@ -49,8 +49,8 @@ pub var environ: [][*:0]u8 = undefined;
 /// Not available on WASI or Windows without libc. See `std.process.argsAlloc`
 /// or `std.process.argsWithAllocator` for a cross-platform alternative.
 pub var argv: [][*:0]u8 = if (builtin.link_libc) undefined else switch (builtin.os.tag) {
-    .windows => @compileError("argv isn't supported on Windows: use std.process.argsAlloc instead"),
-    .wasi => @compileError("argv isn't supported on WASI: use std.process.argsAlloc instead"),
+    .windows => @compileerror("argv isn't supported on Windows: use std.process.argsAlloc instead"),
+    .wasi => @compileerror("argv isn't supported on WASI: use std.process.argsAlloc instead"),
     else => undefined,
 };
 
@@ -101,7 +101,7 @@ pub fn isGetFdPathSupportedOnTarget(os: std.Target.Os) bool {
 /// Calling this function is usually a bug.
 pub fn getFdPath(fd: std.posix.fd_t, out_buffer: *[MAX_PATH_BYTES]u8) std.posix.RealPathError![]u8 {
     if (!comptime isGetFdPathSupportedOnTarget(builtin.os)) {
-        @compileError("querying for canonical path of a handle is unsupported on this host");
+        @compileerror("querying for canonical path of a handle is unsupported on this host");
     }
     switch (builtin.os.tag) {
         .windows => {
@@ -158,7 +158,7 @@ pub fn getFdPath(fd: std.posix.fd_t, out_buffer: *[MAX_PATH_BYTES]u8) std.posix.
             if (comptime builtin.os.isAtLeast(.freebsd, .{ .major = 13, .minor = 0, .patch = 0 }) orelse false) {
                 var kfile: std.c.kinfo_file = undefined;
                 kfile.structsize = std.c.KINFO_FILE_SIZE;
-                switch (posix.errno(std.c.fcntl(fd, std.c.F.KINFO, @intFromPtr(&kfile)))) {
+                switch (posix.errno(std.c.fcntl(fd, std.c.F.KINFO, @intfromptr(&kfile)))) {
                     .SUCCESS => {},
                     .BADF => return error.FileNotFound,
                     else => |err| return posix.unexpectedErrno(err),
@@ -194,7 +194,7 @@ pub fn getFdPath(fd: std.posix.fd_t, out_buffer: *[MAX_PATH_BYTES]u8) std.posix.
                 };
                 var i: usize = 0;
                 while (i < len) {
-                    const kf: *align(1) std.c.kinfo_file = @ptrCast(&buf[i]);
+                    const kf: *align(1) std.c.kinfo_file = @ptrcast(&buf[i]);
                     if (kf.fd == fd) {
                         len = mem.indexOfScalar(u8, &kf.path, 0) orelse MAX_PATH_BYTES;
                         if (len == 0) return error.NameTooLong;
@@ -202,7 +202,7 @@ pub fn getFdPath(fd: std.posix.fd_t, out_buffer: *[MAX_PATH_BYTES]u8) std.posix.
                         @memcpy(result, kf.path[0..len]);
                         return result;
                     }
-                    i += @intCast(kf.structsize);
+                    i += @intcast(kf.structsize);
                 }
                 return error.FileNotFound;
             }

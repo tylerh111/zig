@@ -53,7 +53,7 @@ fn buildExtraOpts(self: *Linux, tc: *const Toolchain) !void {
     if (!target.cpu.arch.isMIPS() and target.cpu.arch != .hexagon) {
         const hash_style = if (is_android) .both else self.distro.getHashStyle();
         try self.extra_opts.append(gpa, switch (hash_style) {
-            inline else => |tag| "--hash-style=" ++ @tagName(tag),
+            inline else => |tag| "--hash-style=" ++ @tagname(tag),
         });
     }
 

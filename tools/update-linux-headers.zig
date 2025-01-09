@@ -37,7 +37,7 @@ const MultiArch = union(enum) {
     specific: Arch,
 
     fn eql(a: MultiArch, b: MultiArch) bool {
-        if (@intFromEnum(a) != @intFromEnum(b))
+        if (@intfromenum(a) != @intfromenum(b))
             return false;
         if (a != .specific)
             return true;
@@ -295,8 +295,8 @@ pub fn main() !void {
 
             const dest_target = hash_kv.key_ptr.*;
             const arch_name = switch (dest_target.arch) {
-                .specific => |a| @tagName(a),
-                else => @tagName(dest_target.arch),
+                .specific => |a| @tagname(a),
+                else => @tagname(dest_target.arch),
             };
             const out_subpath = try std.fmt.allocPrint(arena, "{s}-linux-any", .{arch_name});
             const full_path = try std.fs.path.join(arena, &[_][]const u8{ out_dir, out_subpath, path_kv.key_ptr.* });

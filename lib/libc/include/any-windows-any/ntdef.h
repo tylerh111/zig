@@ -749,7 +749,7 @@ typedef const WNF_STATE_NAME *PCWNF_STATE_NAME;
 
 /* Helper Macros */
 #define RTL_FIELD_TYPE(type, field)    (((type*)0)->field)
-#define RTL_BITS_OF(sizeOfArg)         (sizeof(sizeOfArg) * 8)
+#define RTL_BITS_OF(sizeofArg)         (sizeof(sizeofArg) * 8)
 #define RTL_BITS_OF_FIELD(type, field) (RTL_BITS_OF(RTL_FIELD_TYPE(type, field)))
 
 #define RTL_CONSTANT_STRING(s) { sizeof(s)-sizeof((s)[0]), sizeof(s), s }

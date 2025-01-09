@@ -9,7 +9,7 @@ comptime {
 }
 
 pub fn memcpy(noalias dest: ?[*]u8, noalias src: ?[*]const u8, len: usize) callconv(.C) ?[*]u8 {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
 
     if (len != 0) {
         var d = dest.?;

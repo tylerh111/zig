@@ -474,7 +474,7 @@ extern "C"{
 #ifndef __ICallFrameAPIs_INTERFACE_DEFINED__
 #define __ICallFrameAPIs_INTERFACE_DEFINED__
   HRESULT WINAPI CoGetInterceptor(REFIID iidIntercepted,IUnknown *punkOuter,REFIID iid,void **ppv);
-  HRESULT WINAPI CoGetInterceptorFromTypeInfo(REFIID iidIntercepted,IUnknown *punkOuter,ITypeInfo *typeInfo,REFIID iid,void **ppv);
+  HRESULT WINAPI CoGetInterceptorFromTypeInfo(REFIID iidIntercepted,IUnknown *punkOuter,ITypeInfo *typeinfo,REFIID iid,void **ppv);
 
   extern RPC_IF_HANDLE ICallFrameAPIs_v0_0_c_ifspec;
   extern RPC_IF_HANDLE ICallFrameAPIs_v0_0_s_ifspec;

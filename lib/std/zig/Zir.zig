@@ -67,7 +67,7 @@ fn ExtraData(comptime T: type) type {
 /// Returns the requested data, as well as the new index which is at the start of the
 /// trailers for the object.
 pub fn extraData(code: Zir, comptime T: type, index: usize) ExtraData(T) {
-    const fields = @typeInfo(T).Struct.fields;
+    const fields = @typeinfo(T).Struct.fields;
     var i: usize = index;
     var result: T = undefined;
     inline for (fields) |field| {
@@ -78,7 +78,7 @@ pub fn extraData(code: Zir, comptime T: type, index: usize) ExtraData(T) {
             Inst.Index,
             Inst.Declaration.Name,
             NullTerminatedString,
-            => @enumFromInt(code.extra[i]),
+            => @enumfromint(code.extra[i]),
 
             i32,
             Inst.Call.Flags,
@@ -87,9 +87,9 @@ pub fn extraData(code: Zir, comptime T: type, index: usize) ExtraData(T) {
             Inst.SwitchBlockErrUnion.Bits,
             Inst.FuncFancy.Bits,
             Inst.Declaration.Flags,
-            => @bitCast(code.extra[i]),
+            => @bitcast(code.extra[i]),
 
-            else => @compileError("bad field type"),
+            else => @compileerror("bad field type"),
         };
         i += 1;
     }
@@ -106,20 +106,20 @@ pub const NullTerminatedString = enum(u32) {
 
 /// Given an index into `string_bytes` returns the null-terminated string found there.
 pub fn nullTerminatedString(code: Zir, index: NullTerminatedString) [:0]const u8 {
-    const slice = code.string_bytes[@intFromEnum(index)..];
+    const slice = code.string_bytes[@intfromenum(index)..];
     return slice[0..std.mem.indexOfScalar(u8, slice, 0).? :0];
 }
 
 pub fn refSlice(code: Zir, start: usize, len: usize) []Inst.Ref {
-    return @ptrCast(code.extra[start..][0..len]);
+    return @ptrcast(code.extra[start..][0..len]);
 }
 
 pub fn bodySlice(zir: Zir, start: usize, len: usize) []Inst.Index {
-    return @ptrCast(zir.extra[start..][0..len]);
+    return @ptrcast(zir.extra[start..][0..len]);
 }
 
 pub fn hasCompileErrors(code: Zir) bool {
-    return code.extra[@intFromEnum(ExtraIndex.compile_errors)] != 0;
+    return code.extra[@intfromenum(ExtraIndex.compile_errors)] != 0;
 }
 
 pub fn deinit(code: *Zir, gpa: Allocator) void {
@@ -168,13 +168,13 @@ pub const Inst = struct {
         /// Saturating multiplication.
         /// Uses the `pl_node` union field. Payload is `Bin`.
         mul_sat,
-        /// Implements the `@divExact` builtin.
+        /// Implements the `@divexact` builtin.
         /// Uses the `pl_node` union field with payload `Bin`.
         div_exact,
-        /// Implements the `@divFloor` builtin.
+        /// Implements the `@divfloor` builtin.
         /// Uses the `pl_node` union field with payload `Bin`.
         div_floor,
-        /// Implements the `@divTrunc` builtin.
+        /// Implements the `@divtrunc` builtin.
         /// Uses the `pl_node` union field with payload `Bin`.
         div_trunc,
         /// Implements the `@mod` builtin.
@@ -191,7 +191,7 @@ pub const Inst = struct {
         /// Integer shift-left. Zeroes are shifted in from the right hand side.
         /// Uses the `pl_node` union field. Payload is `Bin`.
         shl,
-        /// Implements the `@shlExact` builtin.
+        /// Implements the `@shlexact` builtin.
         /// Uses the `pl_node` union field with payload `Bin`.
         shl_exact,
         /// Saturating shift-left.
@@ -201,7 +201,7 @@ pub const Inst = struct {
         /// the integer type.
         /// Uses the `pl_node` union field. Payload is `Bin`.
         shr,
-        /// Implements the `@shrExact` builtin.
+        /// Implements the `@shrexact` builtin.
         /// Uses the `pl_node` union field with payload `Bin`.
         shr_exact,
 
@@ -783,17 +783,17 @@ pub const Inst = struct {
         /// syntax. Payload is `ElemPtrImm`.
         array_init_elem_ptr,
 
-        /// Implements the `@unionInit` builtin.
+        /// Implements the `@unioninit` builtin.
         /// Uses the `pl_node` field. Payload is `UnionInit`.
         union_init,
-        /// Implements the `@typeInfo` builtin. Uses `un_node`.
+        /// Implements the `@typeinfo` builtin. Uses `un_node`.
         type_info,
-        /// Implements the `@sizeOf` builtin. Uses `un_node`.
+        /// Implements the `@sizeof` builtin. Uses `un_node`.
         size_of,
-        /// Implements the `@bitSizeOf` builtin. Uses `un_node`.
+        /// Implements the `@bitsizeof` builtin. Uses `un_node`.
         bit_size_of,
 
-        /// Implement builtin `@intFromPtr`. Uses `un_node`.
+        /// Implement builtin `@intfromptr`. Uses `un_node`.
         /// Convert a pointer to a `usize` integer.
         int_from_ptr,
         /// Emit an error message and fail compilation.
@@ -806,20 +806,20 @@ pub const Inst = struct {
         /// Converts an enum value into an integer. Resulting type will be the tag type
         /// of the enum. Uses `un_node`.
         int_from_enum,
-        /// Implement builtin `@alignOf`. Uses `un_node`.
+        /// Implement builtin `@alignof`. Uses `un_node`.
         align_of,
-        /// Implement builtin `@intFromBool`. Uses `un_node`.
+        /// Implement builtin `@intfrombool`. Uses `un_node`.
         int_from_bool,
-        /// Implement builtin `@embedFile`. Uses `un_node`.
+        /// Implement builtin `@embedfile`. Uses `un_node`.
         embed_file,
-        /// Implement builtin `@errorName`. Uses `un_node`.
+        /// Implement builtin `@errorname`. Uses `un_node`.
         error_name,
         /// Implement builtin `@panic`. Uses `un_node`.
         panic,
         /// Implements `@trap`.
         /// Uses the `node` field.
         trap,
-        /// Implement builtin `@setRuntimeSafety`. Uses `un_node`.
+        /// Implement builtin `@setruntimesafety`. Uses `un_node`.
         set_runtime_safety,
         /// Implement builtin `@sqrt`. Uses `un_node`.
         sqrt,
@@ -849,22 +849,22 @@ pub const Inst = struct {
         trunc,
         /// Implement builtin `@round`. Uses `un_node`.
         round,
-        /// Implement builtin `@tagName`. Uses `un_node`.
+        /// Implement builtin `@tagname`. Uses `un_node`.
         tag_name,
-        /// Implement builtin `@typeName`. Uses `un_node`.
+        /// Implement builtin `@typename`. Uses `un_node`.
         type_name,
         /// Implement builtin `@Frame`. Uses `un_node`.
         frame_type,
         /// Implement builtin `@frameSize`. Uses `un_node`.
         frame_size,
 
-        /// Implements the `@intFromFloat` builtin.
+        /// Implements the `@intfromfloat` builtin.
         /// Uses `pl_node` with payload `Bin`. `lhs` is dest type, `rhs` is operand.
         int_from_float,
-        /// Implements the `@floatFromInt` builtin.
+        /// Implements the `@floatfromint` builtin.
         /// Uses `pl_node` with payload `Bin`. `lhs` is dest type, `rhs` is operand.
         float_from_int,
-        /// Implements the `@ptrFromInt` builtin.
+        /// Implements the `@ptrfromint` builtin.
         /// Uses `pl_node` with payload `Bin`. `lhs` is dest type, `rhs` is operand.
         ptr_from_int,
         /// Converts an integer into an enum value.
@@ -872,27 +872,27 @@ pub const Inst = struct {
         enum_from_int,
         /// Convert a larger float type to any other float type, possibly causing
         /// a loss of precision.
-        /// Uses the `pl_node` field. AST is the `@floatCast` syntax.
+        /// Uses the `pl_node` field. AST is the `@floatcast` syntax.
         /// Payload is `Bin` with lhs as the dest type, rhs the operand.
         float_cast,
-        /// Implements the `@intCast` builtin.
+        /// Implements the `@intcast` builtin.
         /// Uses `pl_node` with payload `Bin`. `lhs` is dest type, `rhs` is operand.
         /// Convert an integer value to another integer type, asserting that the destination type
         /// can hold the same mathematical value.
         int_cast,
-        /// Implements the `@ptrCast` builtin.
+        /// Implements the `@ptrcast` builtin.
         /// Uses `pl_node` with payload `Bin`. `lhs` is dest type, `rhs` is operand.
-        /// Not every `@ptrCast` will correspond to this instruction - see also
+        /// Not every `@ptrcast` will correspond to this instruction - see also
         /// `ptr_cast_full` in `Extended`.
         ptr_cast,
         /// Implements the `@truncate` builtin.
         /// Uses `pl_node` with payload `Bin`. `lhs` is dest type, `rhs` is operand.
         truncate,
 
-        /// Implements the `@hasDecl` builtin.
+        /// Implements the `@hasdecl` builtin.
         /// Uses the `pl_node` union field. Payload is `Bin`.
         has_decl,
-        /// Implements the `@hasField` builtin.
+        /// Implements the `@hasfield` builtin.
         /// Uses the `pl_node` union field. Payload is `Bin`.
         has_field,
 
@@ -900,17 +900,17 @@ pub const Inst = struct {
         clz,
         /// Implements the `@ctz` builtin. Uses the `un_node` union field.
         ctz,
-        /// Implements the `@popCount` builtin. Uses the `un_node` union field.
+        /// Implements the `@popcount` builtin. Uses the `un_node` union field.
         pop_count,
-        /// Implements the `@byteSwap` builtin. Uses the `un_node` union field.
+        /// Implements the `@byteswap` builtin. Uses the `un_node` union field.
         byte_swap,
-        /// Implements the `@bitReverse` builtin. Uses the `un_node` union field.
+        /// Implements the `@bitreverse` builtin. Uses the `un_node` union field.
         bit_reverse,
 
-        /// Implements the `@bitOffsetOf` builtin.
+        /// Implements the `@bitoffsetof` builtin.
         /// Uses the `pl_node` union field with payload `Bin`.
         bit_offset_of,
-        /// Implements the `@offsetOf` builtin.
+        /// Implements the `@offsetof` builtin.
         /// Uses the `pl_node` union field with payload `Bin`.
         offset_of,
         /// Implements the `@splat` builtin.
@@ -922,16 +922,16 @@ pub const Inst = struct {
         /// Implements the `@shuffle` builtin.
         /// Uses the `pl_node` union field with payload `Shuffle`.
         shuffle,
-        /// Implements the `@atomicLoad` builtin.
+        /// Implements the `@atomicload` builtin.
         /// Uses the `pl_node` union field with payload `AtomicLoad`.
         atomic_load,
-        /// Implements the `@atomicRmw` builtin.
+        /// Implements the `@atomicrmw` builtin.
         /// Uses the `pl_node` union field with payload `AtomicRmw`.
         atomic_rmw,
-        /// Implements the `@atomicStore` builtin.
+        /// Implements the `@atomicstore` builtin.
         /// Uses the `pl_node` union field with payload `AtomicStore`.
         atomic_store,
-        /// Implements the `@mulAdd` builtin.
+        /// Implements the `@muladd` builtin.
         /// Uses the `pl_node` union field with payload `MulAdd`.
         /// The addend communicates the type of the builtin.
         /// The mulends need to be coerced to the same type.
@@ -948,7 +948,7 @@ pub const Inst = struct {
         /// Implements the `@max` builtin for 2 args.
         /// Uses the `pl_node` union field with payload `Bin`
         max,
-        /// Implements the `@cImport` builtin.
+        /// Implements the `@cimport` builtin.
         /// Uses the `pl_node` union field with payload `Block`.
         c_import,
 
@@ -1566,7 +1566,7 @@ pub const Inst = struct {
 
         /// Used by debug safety-checking code.
         pub const data_tags = list: {
-            @setEvalBranchQuota(2000);
+            @setevalbranchquota(2000);
             break :list std.enums.directEnumArray(Tag, Data.FieldEnum, 0, .{
                 .add = .pl_node,
                 .addwrap = .pl_node,
@@ -1838,7 +1838,7 @@ pub const Inst = struct {
 
         // Uncomment to view how many tag slots are available.
         //comptime {
-        //    @compileLog("ZIR tags left: ", 256 - @typeInfo(Tag).Enum.fields.len);
+        //    @compilelog("ZIR tags left: ", 256 - @typeinfo(Tag).Enum.fields.len);
         //}
     };
 
@@ -1871,19 +1871,19 @@ pub const Inst = struct {
         /// Implements the `@This` builtin.
         /// `operand` is `src_node: i32`.
         this,
-        /// Implements the `@returnAddress` builtin.
+        /// Implements the `@returnaddress` builtin.
         /// `operand` is `src_node: i32`.
         ret_addr,
         /// Implements the `@src` builtin.
         /// `operand` is payload index to `LineColumn`.
         builtin_src,
-        /// Implements the `@errorReturnTrace` builtin.
+        /// Implements the `@errorreturntrace` builtin.
         /// `operand` is `src_node: i32`.
         error_return_trace,
         /// Implements the `@frame` builtin.
         /// `operand` is `src_node: i32`.
         frame,
-        /// Implements the `@frameAddress` builtin.
+        /// Implements the `@frameaddress` builtin.
         /// `operand` is `src_node: i32`.
         frame_address,
         /// Same as `alloc` from `Tag` but may contain an alignment instruction.
@@ -1931,19 +1931,19 @@ pub const Inst = struct {
         /// `small` is `operands_len`.
         /// The AST node is the builtin call.
         max_multi,
-        /// Implements the `@addWithOverflow` builtin.
+        /// Implements the `@addwithoverflow` builtin.
         /// `operand` is payload index to `BinNode`.
         /// `small` is unused.
         add_with_overflow,
-        /// Implements the `@subWithOverflow` builtin.
+        /// Implements the `@subwithoverflow` builtin.
         /// `operand` is payload index to `BinNode`.
         /// `small` is unused.
         sub_with_overflow,
-        /// Implements the `@mulWithOverflow` builtin.
+        /// Implements the `@mulwithoverflow` builtin.
         /// `operand` is payload index to `BinNode`.
         /// `small` is unused.
         mul_with_overflow,
-        /// Implements the `@shlWithOverflow` builtin.
+        /// Implements the `@shlwithoverflow` builtin.
         /// `operand` is payload index to `BinNode`.
         /// `small` is unused.
         shl_with_overflow,
@@ -1963,7 +1963,7 @@ pub const Inst = struct {
         /// Implements the `@fence` builtin.
         /// `operand` is payload index to `UnNode`.
         fence,
-        /// Implement builtin `@setFloatMode`.
+        /// Implement builtin `@setfloatmode`.
         /// `operand` is payload index to `UnNode`.
         set_float_mode,
         /// Implement builtin `@setAlignStack`.
@@ -1972,7 +1972,7 @@ pub const Inst = struct {
         /// Implements `@setCold`.
         /// `operand` is payload index to `UnNode`.
         set_cold,
-        /// Implements the `@errorCast` builtin.
+        /// Implements the `@errorcast` builtin.
         /// `operand` is payload index to `BinNode`. `lhs` is dest type, `rhs` is operand.
         error_cast,
         /// `operand` is payload index to `UnNode`.
@@ -1986,7 +1986,7 @@ pub const Inst = struct {
         /// Implement builtin `@errToInt`.
         /// `operand` is payload index to `UnNode`.
         int_from_error,
-        /// Implement builtin `@errorFromInt`.
+        /// Implement builtin `@errorfromint`.
         /// `operand` is payload index to `UnNode`.
         error_from_int,
         /// Implement builtin `@Type`.
@@ -1996,24 +1996,24 @@ pub const Inst = struct {
         /// Implements the `@asyncCall` builtin.
         /// `operand` is payload index to `AsyncCall`.
         builtin_async_call,
-        /// Implements the `@cmpxchgStrong` and `@cmpxchgWeak` builtins.
+        /// Implements the `@cmpxchgstrong` and `@cmpxchgweak` builtins.
         /// `small` 0=>weak 1=>strong
         /// `operand` is payload index to `Cmpxchg`.
         cmpxchg,
-        /// Implement builtin `@cVaArg`.
+        /// Implement builtin `@cvaarg`.
         /// `operand` is payload index to `BinNode`.
         c_va_arg,
-        /// Implement builtin `@cVaCopy`.
+        /// Implement builtin `@cvacopy`.
         /// `operand` is payload index to `UnNode`.
         c_va_copy,
-        /// Implement builtin `@cVaEnd`.
+        /// Implement builtin `@cvaend`.
         /// `operand` is payload index to `UnNode`.
         c_va_end,
-        /// Implement builtin `@cVaStart`.
+        /// Implement builtin `@cvastart`.
         /// `operand` is `src_node: i32`.
         c_va_start,
         /// Implements the following builtins:
-        /// `@ptrCast`, `@alignCast`, `@addrSpaceCast`, `@constCast`, `@volatileCast`.
+        /// `@ptrcast`, `@aligncast`, `@addrspacecast`, `@constcast`, `@volatilecast`.
         /// Represents an arbitrary nesting of the above builtins. Such a nesting is treated as a
         /// single operation which can modify multiple components of a pointer type.
         /// `operand` is payload index to `BinNode`.
@@ -2030,13 +2030,13 @@ pub const Inst = struct {
         /// Implements the `@workItemId` builtin.
         /// `operand` is payload index to `UnNode`.
         work_item_id,
-        /// Implements the `@workGroupSize` builtin.
+        /// Implements the `@workgroupsize` builtin.
         /// `operand` is payload index to `UnNode`.
         work_group_size,
-        /// Implements the `@workGroupId` builtin.
+        /// Implements the `@workgroupid` builtin.
         /// `operand` is payload index to `UnNode`.
         work_group_id,
-        /// Implements the `@inComptime` builtin.
+        /// Implements the `@incomptime` builtin.
         /// `operand` is `src_node: i32`.
         in_comptime,
         /// Restores the error return index to its last saved state in a given
@@ -2054,7 +2054,7 @@ pub const Inst = struct {
         /// with a specific value. For instance, this is used for the capture of an `errdefer`.
         /// This should never appear in a body.
         value_placeholder,
-        /// Implements the `@fieldParentPtr` builtin.
+        /// Implements the `@fieldparentptr` builtin.
         /// `operand` is payload index to `FieldParentPtr`.
         /// `small` contains `FullPtrCastFlags`.
         /// Guaranteed to not have the `ptr_cast` flag.
@@ -2079,11 +2079,11 @@ pub const Inst = struct {
         pub const static_len = 84;
 
         pub fn toRef(i: Index) Inst.Ref {
-            return @enumFromInt(@intFromEnum(Index.ref_start_index) + @intFromEnum(i));
+            return @enumfromint(@intfromenum(Index.ref_start_index) + @intfromenum(i));
         }
 
         pub fn toOptional(i: Index) OptionalIndex {
-            return @enumFromInt(@intFromEnum(i));
+            return @enumfromint(@intfromenum(i));
         }
     };
 
@@ -2096,7 +2096,7 @@ pub const Inst = struct {
         _,
 
         pub fn unwrap(oi: OptionalIndex) ?Index {
-            return if (oi == .none) null else @enumFromInt(@intFromEnum(oi));
+            return if (oi == .none) null else @enumfromint(@intfromenum(oi));
         }
     };
 
@@ -2202,9 +2202,9 @@ pub const Inst = struct {
 
         pub fn toIndex(inst: Ref) ?Index {
             assert(inst != .none);
-            const ref_int = @intFromEnum(inst);
-            if (ref_int >= @intFromEnum(Index.ref_start_index)) {
-                return @enumFromInt(ref_int - @intFromEnum(Index.ref_start_index));
+            const ref_int = @intfromenum(inst);
+            if (ref_int >= @intfromenum(Index.ref_start_index)) {
+                return @enumfromint(ref_int - @intfromenum(Index.ref_start_index));
             } else {
                 return null;
             }
@@ -2277,7 +2277,7 @@ pub const Inst = struct {
             len: u32,
 
             pub fn get(self: @This(), code: Zir) []const u8 {
-                return code.string_bytes[@intFromEnum(self.start)..][0..self.len];
+                return code.string_bytes[@intfromenum(self.start)..][0..self.len];
             }
         },
         str_tok: struct {
@@ -2384,7 +2384,7 @@ pub const Inst = struct {
         // to insert a secret field for safety checks.
         comptime {
             if (builtin.mode != .Debug and builtin.mode != .ReleaseSafe) {
-                assert(@sizeOf(Data) == 8);
+                assert(@sizeof(Data) == 8);
             }
         }
 
@@ -2660,7 +2660,7 @@ pub const Inst = struct {
             pub fn isNamedTest(name: Name, zir: Zir) bool {
                 return switch (name) {
                     .@"comptime", .@"usingnamespace", .unnamed_test, .decltest => false,
-                    _ => zir.string_bytes[@intFromEnum(name)] == 0,
+                    _ => zir.string_bytes[@intfromenum(name)] == 0,
                 };
             }
             pub fn toString(name: Name, zir: Zir) ?NullTerminatedString {
@@ -2668,12 +2668,12 @@ pub const Inst = struct {
                     .@"comptime", .@"usingnamespace", .unnamed_test, .decltest => return null,
                     _ => {},
                 }
-                const idx: u32 = @intFromEnum(name);
+                const idx: u32 = @intfromenum(name);
                 if (zir.string_bytes[idx] == 0) {
                     // Named test
-                    return @enumFromInt(idx + 1);
+                    return @enumfromint(idx + 1);
                 }
-                return @enumFromInt(idx);
+                return @enumfromint(idx);
             }
         };
 
@@ -2686,7 +2686,7 @@ pub const Inst = struct {
 
         pub fn getBodies(declaration: Declaration, extra_end: u32, zir: Zir) Bodies {
             var extra_index: u32 = extra_end;
-            extra_index += @intFromBool(declaration.flags.has_doc_comment);
+            extra_index += @intfrombool(declaration.flags.has_doc_comment);
             const value_body_len = declaration.flags.value_body_len;
             const align_body_len, const linksection_body_len, const addrspace_body_len = lens: {
                 if (!declaration.flags.has_align_linksection_addrspace) {
@@ -2738,10 +2738,10 @@ pub const Inst = struct {
             args_len: PackedArgsLen,
 
             comptime {
-                if (@sizeOf(Flags) != 4 or @bitSizeOf(Flags) != 32)
-                    @compileError("Layout of Call.Flags needs to be updated!");
-                if (@bitSizeOf(std.builtin.CallModifier) != @bitSizeOf(PackedModifier))
-                    @compileError("Call.Flags.PackedModifier needs to be updated!");
+                if (@sizeof(Flags) != 4 or @bitsizeof(Flags) != 32)
+                    @compileerror("Layout of Call.Flags needs to be updated!");
+                if (@bitsizeof(std.builtin.CallModifier) != @bitsizeof(PackedModifier))
+                    @compileerror("Call.Flags.PackedModifier needs to be updated!");
             }
         };
     };
@@ -2779,8 +2779,8 @@ pub const Inst = struct {
             _: u30 = undefined,
 
             comptime {
-                if (@sizeOf(Flags) != 4 or @bitSizeOf(Flags) != 32)
-                    @compileError("Layout of BuiltinCall.Flags needs to be updated!");
+                if (@sizeof(Flags) != 4 or @bitsizeof(Flags) != 32)
+                    @compileerror("Layout of BuiltinCall.Flags needs to be updated!");
             }
         };
     };
@@ -2953,8 +2953,8 @@ pub const Inst = struct {
             pub const ScalarCasesLen = u28;
 
             pub fn specialProng(bits: Bits) SpecialProng {
-                const has_else: u2 = @intFromBool(bits.has_else);
-                const has_under: u2 = @intFromBool(bits.has_under);
+                const has_else: u2 = @intfrombool(bits.has_else);
+                const has_under: u2 = @intfrombool(bits.has_under);
                 return switch ((has_else << 1) | has_under) {
                     0b00 => .none,
                     0b01 => .under,
@@ -3079,29 +3079,29 @@ pub const Inst = struct {
                 },
                 .instruction => |inst| .{
                     .tag = .instruction,
-                    .data = @intCast(@intFromEnum(inst)),
+                    .data = @intcast(@intfromenum(inst)),
                 },
                 .instruction_load => |inst| .{
                     .tag = .instruction_load,
-                    .data = @intCast(@intFromEnum(inst)),
+                    .data = @intcast(@intfromenum(inst)),
                 },
                 .decl_val => |str| .{
                     .tag = .decl_val,
-                    .data = @intCast(@intFromEnum(str)),
+                    .data = @intcast(@intfromenum(str)),
                 },
                 .decl_ref => |str| .{
                     .tag = .decl_ref,
-                    .data = @intCast(@intFromEnum(str)),
+                    .data = @intcast(@intfromenum(str)),
                 },
             };
         }
         pub fn unwrap(cap: Capture) Unwrapped {
             return switch (cap.tag) {
-                .nested => .{ .nested = @intCast(cap.data) },
-                .instruction => .{ .instruction = @enumFromInt(cap.data) },
-                .instruction_load => .{ .instruction_load = @enumFromInt(cap.data) },
-                .decl_val => .{ .decl_val = @enumFromInt(cap.data) },
-                .decl_ref => .{ .decl_ref = @enumFromInt(cap.data) },
+                .nested => .{ .nested = @intcast(cap.data) },
+                .instruction => .{ .instruction = @enumfromint(cap.data) },
+                .instruction_load => .{ .instruction_load = @enumfromint(cap.data) },
+                .decl_val => .{ .decl_val = @enumfromint(cap.data) },
+                .decl_ref => .{ .decl_ref = @enumfromint(cap.data) },
             };
         }
     };
@@ -3128,9 +3128,9 @@ pub const Inst = struct {
         volatile_cast: bool = false,
 
         pub inline fn needResultTypeBuiltinName(flags: FullPtrCastFlags) []const u8 {
-            if (flags.ptr_cast) return "@ptrCast";
-            if (flags.align_cast) return "@alignCast";
-            if (flags.addrspace_cast) return "@addrSpaceCast";
+            if (flags.ptr_cast) return "@ptrcast";
+            if (flags.align_cast) return "@aligncast";
+            if (flags.addrspace_cast) return "@addrspacecast";
             unreachable;
         }
     };
@@ -3273,7 +3273,7 @@ pub const Inst = struct {
                 (@as(u128, self.piece1) << 32) |
                 (@as(u128, self.piece2) << 64) |
                 (@as(u128, self.piece3) << 96);
-            return @as(f128, @bitCast(int_bits));
+            return @as(f128, @bitcast(int_bits));
         }
     };
 
@@ -3529,10 +3529,10 @@ pub const DeclIterator = struct {
 
     pub fn next(it: *DeclIterator) ?Inst.Index {
         if (it.decls_remaining == 0) return null;
-        const decl_inst: Zir.Inst.Index = @enumFromInt(it.zir.extra[it.extra_index]);
+        const decl_inst: Zir.Inst.Index = @enumfromint(it.zir.extra[it.extra_index]);
         it.extra_index += 1;
         it.decls_remaining -= 1;
-        assert(it.zir.instructions.items(.tag)[@intFromEnum(decl_inst)] == .declaration);
+        assert(it.zir.instructions.items(.tag)[@intfromenum(decl_inst)] == .declaration);
         return decl_inst;
     }
 };
@@ -3540,7 +3540,7 @@ pub const DeclIterator = struct {
 pub fn declIterator(zir: Zir, decl_inst: Zir.Inst.Index) DeclIterator {
     const tags = zir.instructions.items(.tag);
     const datas = zir.instructions.items(.data);
-    switch (tags[@intFromEnum(decl_inst)]) {
+    switch (tags[@intfromenum(decl_inst)]) {
         // Functions are allowed and yield no iterations.
         // There is one case matching this in the extended instruction set below.
         .func, .func_inferred, .func_fancy => return .{
@@ -3550,17 +3550,17 @@ pub fn declIterator(zir: Zir, decl_inst: Zir.Inst.Index) DeclIterator {
         },
 
         .extended => {
-            const extended = datas[@intFromEnum(decl_inst)].extended;
+            const extended = datas[@intfromenum(decl_inst)].extended;
             switch (extended.opcode) {
                 .struct_decl => {
-                    const small: Inst.StructDecl.Small = @bitCast(extended.small);
-                    var extra_index: u32 = @intCast(extended.operand + @typeInfo(Inst.StructDecl).Struct.fields.len);
+                    const small: Inst.StructDecl.Small = @bitcast(extended.small);
+                    var extra_index: u32 = @intcast(extended.operand + @typeinfo(Inst.StructDecl).Struct.fields.len);
                     const captures_len = if (small.has_captures_len) captures_len: {
                         const captures_len = zir.extra[extra_index];
                         extra_index += 1;
                         break :captures_len captures_len;
                     } else 0;
-                    extra_index += @intFromBool(small.has_fields_len);
+                    extra_index += @intfrombool(small.has_fields_len);
                     const decls_len = if (small.has_decls_len) decls_len: {
                         const decls_len = zir.extra[extra_index];
                         extra_index += 1;
@@ -3586,16 +3586,16 @@ pub fn declIterator(zir: Zir, decl_inst: Zir.Inst.Index) DeclIterator {
                     };
                 },
                 .enum_decl => {
-                    const small: Inst.EnumDecl.Small = @bitCast(extended.small);
-                    var extra_index: u32 = @intCast(extended.operand + @typeInfo(Inst.EnumDecl).Struct.fields.len);
-                    extra_index += @intFromBool(small.has_tag_type);
+                    const small: Inst.EnumDecl.Small = @bitcast(extended.small);
+                    var extra_index: u32 = @intcast(extended.operand + @typeinfo(Inst.EnumDecl).Struct.fields.len);
+                    extra_index += @intfrombool(small.has_tag_type);
                     const captures_len = if (small.has_captures_len) captures_len: {
                         const captures_len = zir.extra[extra_index];
                         extra_index += 1;
                         break :captures_len captures_len;
                     } else 0;
-                    extra_index += @intFromBool(small.has_body_len);
-                    extra_index += @intFromBool(small.has_fields_len);
+                    extra_index += @intfrombool(small.has_body_len);
+                    extra_index += @intfrombool(small.has_fields_len);
                     const decls_len = if (small.has_decls_len) decls_len: {
                         const decls_len = zir.extra[extra_index];
                         extra_index += 1;
@@ -3611,16 +3611,16 @@ pub fn declIterator(zir: Zir, decl_inst: Zir.Inst.Index) DeclIterator {
                     };
                 },
                 .union_decl => {
-                    const small: Inst.UnionDecl.Small = @bitCast(extended.small);
-                    var extra_index: u32 = @intCast(extended.operand + @typeInfo(Inst.UnionDecl).Struct.fields.len);
-                    extra_index += @intFromBool(small.has_tag_type);
+                    const small: Inst.UnionDecl.Small = @bitcast(extended.small);
+                    var extra_index: u32 = @intcast(extended.operand + @typeinfo(Inst.UnionDecl).Struct.fields.len);
+                    extra_index += @intfrombool(small.has_tag_type);
                     const captures_len = if (small.has_captures_len) captures_len: {
                         const captures_len = zir.extra[extra_index];
                         extra_index += 1;
                         break :captures_len captures_len;
                     } else 0;
-                    extra_index += @intFromBool(small.has_body_len);
-                    extra_index += @intFromBool(small.has_fields_len);
+                    extra_index += @intfrombool(small.has_body_len);
+                    extra_index += @intfrombool(small.has_fields_len);
                     const decls_len = if (small.has_decls_len) decls_len: {
                         const decls_len = zir.extra[extra_index];
                         extra_index += 1;
@@ -3636,8 +3636,8 @@ pub fn declIterator(zir: Zir, decl_inst: Zir.Inst.Index) DeclIterator {
                     };
                 },
                 .opaque_decl => {
-                    const small: Inst.OpaqueDecl.Small = @bitCast(extended.small);
-                    var extra_index: u32 = @intCast(extended.operand + @typeInfo(Inst.OpaqueDecl).Struct.fields.len);
+                    const small: Inst.OpaqueDecl.Small = @bitcast(extended.small);
+                    var extra_index: u32 = @intcast(extended.operand + @typeinfo(Inst.OpaqueDecl).Struct.fields.len);
                     const decls_len = if (small.has_decls_len) decls_len: {
                         const decls_len = zir.extra[extra_index];
                         extra_index += 1;
@@ -3685,14 +3685,14 @@ fn findDeclsInner(
     const tags = zir.instructions.items(.tag);
     const datas = zir.instructions.items(.data);
 
-    switch (tags[@intFromEnum(inst)]) {
+    switch (tags[@intfromenum(inst)]) {
         // Functions instructions are interesting and have a body.
         .func,
         .func_inferred,
         => {
             try list.append(inst);
 
-            const inst_data = datas[@intFromEnum(inst)].pl_node;
+            const inst_data = datas[@intfromenum(inst)].pl_node;
             const extra = zir.extraData(Inst.Func, inst_data.payload_index);
             var extra_index: usize = extra.end;
             switch (extra.data.ret_body_len) {
@@ -3710,10 +3710,10 @@ fn findDeclsInner(
         .func_fancy => {
             try list.append(inst);
 
-            const inst_data = datas[@intFromEnum(inst)].pl_node;
+            const inst_data = datas[@intfromenum(inst)].pl_node;
             const extra = zir.extraData(Inst.FuncFancy, inst_data.payload_index);
             var extra_index: usize = extra.end;
-            extra_index += @intFromBool(extra.data.bits.has_lib_name);
+            extra_index += @intfrombool(extra.data.bits.has_lib_name);
 
             if (extra.data.bits.has_align_body) {
                 const body_len = zir.extra[extra_index];
@@ -3765,13 +3765,13 @@ fn findDeclsInner(
                 extra_index += 1;
             }
 
-            extra_index += @intFromBool(extra.data.bits.has_any_noalias);
+            extra_index += @intfrombool(extra.data.bits.has_any_noalias);
 
             const body = zir.bodySlice(extra_index, extra.data.body_len);
             return zir.findDeclsBody(list, body);
         },
         .extended => {
-            const extended = datas[@intFromEnum(inst)].extended;
+            const extended = datas[@intfromenum(inst)].extended;
             switch (extended.opcode) {
 
                 // Decl instructions are interesting but have no body.
@@ -3789,13 +3789,13 @@ fn findDeclsInner(
         // Block instructions, recurse over the bodies.
 
         .block, .block_comptime, .block_inline => {
-            const inst_data = datas[@intFromEnum(inst)].pl_node;
+            const inst_data = datas[@intfromenum(inst)].pl_node;
             const extra = zir.extraData(Inst.Block, inst_data.payload_index);
             const body = zir.bodySlice(extra.end, extra.data.body_len);
             return zir.findDeclsBody(list, body);
         },
         .condbr, .condbr_inline => {
-            const inst_data = datas[@intFromEnum(inst)].pl_node;
+            const inst_data = datas[@intfromenum(inst)].pl_node;
             const extra = zir.extraData(Inst.CondBr, inst_data.payload_index);
             const then_body = zir.bodySlice(extra.end, extra.data.then_body_len);
             const else_body = zir.bodySlice(extra.end + then_body.len, extra.data.else_body_len);
@@ -3803,7 +3803,7 @@ fn findDeclsInner(
             try zir.findDeclsBody(list, else_body);
         },
         .@"try", .try_ptr => {
-            const inst_data = datas[@intFromEnum(inst)].pl_node;
+            const inst_data = datas[@intfromenum(inst)].pl_node;
             const extra = zir.extraData(Inst.Try, inst_data.payload_index);
             const body = zir.bodySlice(extra.end, extra.data.body_len);
             try zir.findDeclsBody(list, body);
@@ -3821,7 +3821,7 @@ fn findDeclsSwitch(
     list: *std.ArrayList(Inst.Index),
     inst: Inst.Index,
 ) Allocator.Error!void {
-    const inst_data = zir.instructions.items(.data)[@intFromEnum(inst)].pl_node;
+    const inst_data = zir.instructions.items(.data)[@intfromenum(inst)].pl_node;
     const extra = zir.extraData(Inst.SwitchBlock, inst_data.payload_index);
 
     var extra_index: usize = extra.end;
@@ -3902,9 +3902,9 @@ pub const FnInfo = struct {
 pub fn getParamBody(zir: Zir, fn_inst: Inst.Index) []const Zir.Inst.Index {
     const tags = zir.instructions.items(.tag);
     const datas = zir.instructions.items(.data);
-    const inst_data = datas[@intFromEnum(fn_inst)].pl_node;
+    const inst_data = datas[@intfromenum(fn_inst)].pl_node;
 
-    const param_block_index = switch (tags[@intFromEnum(fn_inst)]) {
+    const param_block_index = switch (tags[@intfromenum(fn_inst)]) {
         .func, .func_inferred => blk: {
             const extra = zir.extraData(Inst.Func, inst_data.payload_index);
             break :blk extra.data.param_block;
@@ -3916,9 +3916,9 @@ pub fn getParamBody(zir: Zir, fn_inst: Inst.Index) []const Zir.Inst.Index {
         else => unreachable,
     };
 
-    switch (tags[@intFromEnum(param_block_index)]) {
+    switch (tags[@intfromenum(param_block_index)]) {
         .block, .block_comptime, .block_inline => {
-            const param_block = zir.extraData(Inst.Block, datas[@intFromEnum(param_block_index)].pl_node.payload_index);
+            const param_block = zir.extraData(Inst.Block, datas[@intfromenum(param_block_index)].pl_node.payload_index);
             return zir.bodySlice(param_block.end, param_block.data.body_len);
         },
         .declaration => {
@@ -3937,9 +3937,9 @@ pub fn getFnInfo(zir: Zir, fn_inst: Inst.Index) FnInfo {
         body: []const Inst.Index,
         ret_ty_ref: Inst.Ref,
         ret_ty_body: []const Inst.Index,
-    } = switch (tags[@intFromEnum(fn_inst)]) {
+    } = switch (tags[@intfromenum(fn_inst)]) {
         .func, .func_inferred => blk: {
-            const inst_data = datas[@intFromEnum(fn_inst)].pl_node;
+            const inst_data = datas[@intfromenum(fn_inst)].pl_node;
             const extra = zir.extraData(Inst.Func, inst_data.payload_index);
 
             var extra_index: usize = extra.end;
@@ -3951,7 +3951,7 @@ pub fn getFnInfo(zir: Zir, fn_inst: Inst.Index) FnInfo {
                     ret_ty_ref = .void_type;
                 },
                 1 => {
-                    ret_ty_ref = @enumFromInt(zir.extra[extra_index]);
+                    ret_ty_ref = @enumfromint(zir.extra[extra_index]);
                     extra_index += 1;
                 },
                 else => {
@@ -3971,14 +3971,14 @@ pub fn getFnInfo(zir: Zir, fn_inst: Inst.Index) FnInfo {
             };
         },
         .func_fancy => blk: {
-            const inst_data = datas[@intFromEnum(fn_inst)].pl_node;
+            const inst_data = datas[@intfromenum(fn_inst)].pl_node;
             const extra = zir.extraData(Inst.FuncFancy, inst_data.payload_index);
 
             var extra_index: usize = extra.end;
             var ret_ty_ref: Inst.Ref = .void_type;
             var ret_ty_body: []const Inst.Index = &.{};
 
-            extra_index += @intFromBool(extra.data.bits.has_lib_name);
+            extra_index += @intfrombool(extra.data.bits.has_lib_name);
             if (extra.data.bits.has_align_body) {
                 extra_index += zir.extra[extra_index] + 1;
             } else if (extra.data.bits.has_align_ref) {
@@ -4005,11 +4005,11 @@ pub fn getFnInfo(zir: Zir, fn_inst: Inst.Index) FnInfo {
                 ret_ty_body = zir.bodySlice(extra_index, body_len);
                 extra_index += ret_ty_body.len;
             } else if (extra.data.bits.has_ret_ty_ref) {
-                ret_ty_ref = @enumFromInt(zir.extra[extra_index]);
+                ret_ty_ref = @enumfromint(zir.extra[extra_index]);
                 extra_index += 1;
             }
 
-            extra_index += @intFromBool(extra.data.bits.has_any_noalias);
+            extra_index += @intfrombool(extra.data.bits.has_any_noalias);
 
             const body = zir.bodySlice(extra_index, extra.data.body_len);
             extra_index += body.len;
@@ -4022,9 +4022,9 @@ pub fn getFnInfo(zir: Zir, fn_inst: Inst.Index) FnInfo {
         },
         else => unreachable,
     };
-    const param_body = switch (tags[@intFromEnum(info.param_block)]) {
+    const param_body = switch (tags[@intfromenum(info.param_block)]) {
         .block, .block_comptime, .block_inline => param_body: {
-            const param_block = zir.extraData(Inst.Block, datas[@intFromEnum(info.param_block)].pl_node.payload_index);
+            const param_block = zir.extraData(Inst.Block, datas[@intfromenum(info.param_block)].pl_node.payload_index);
             break :param_body zir.bodySlice(param_block.end, param_block.data.body_len);
         },
         .declaration => param_body: {
@@ -4035,7 +4035,7 @@ pub fn getFnInfo(zir: Zir, fn_inst: Inst.Index) FnInfo {
     };
     var total_params_len: u32 = 0;
     for (param_body) |inst| {
-        switch (tags[@intFromEnum(inst)]) {
+        switch (tags[@intfromenum(inst)]) {
             .param, .param_comptime, .param_anytype, .param_anytype_comptime => {
                 total_params_len += 1;
             },
@@ -4053,23 +4053,23 @@ pub fn getFnInfo(zir: Zir, fn_inst: Inst.Index) FnInfo {
 }
 
 pub fn getDeclaration(zir: Zir, inst: Zir.Inst.Index) struct { Inst.Declaration, u32 } {
-    assert(zir.instructions.items(.tag)[@intFromEnum(inst)] == .declaration);
-    const pl_node = zir.instructions.items(.data)[@intFromEnum(inst)].pl_node;
+    assert(zir.instructions.items(.tag)[@intfromenum(inst)] == .declaration);
+    const pl_node = zir.instructions.items(.data)[@intfromenum(inst)].pl_node;
     const extra = zir.extraData(Inst.Declaration, pl_node.payload_index);
     return .{
         extra.data,
-        @intCast(extra.end),
+        @intcast(extra.end),
     };
 }
 
 pub fn getAssociatedSrcHash(zir: Zir, inst: Zir.Inst.Index) ?std.zig.SrcHash {
     const tag = zir.instructions.items(.tag);
     const data = zir.instructions.items(.data);
-    switch (tag[@intFromEnum(inst)]) {
+    switch (tag[@intfromenum(inst)]) {
         .declaration => {
-            const pl_node = data[@intFromEnum(inst)].pl_node;
+            const pl_node = data[@intfromenum(inst)].pl_node;
             const extra = zir.extraData(Inst.Declaration, pl_node.payload_index);
-            return @bitCast([4]u32{
+            return @bitcast([4]u32{
                 extra.data.src_hash_0,
                 extra.data.src_hash_1,
                 extra.data.src_hash_2,
@@ -4077,7 +4077,7 @@ pub fn getAssociatedSrcHash(zir: Zir, inst: Zir.Inst.Index) ?std.zig.SrcHash {
             });
         },
         .func, .func_inferred => {
-            const pl_node = data[@intFromEnum(inst)].pl_node;
+            const pl_node = data[@intfromenum(inst)].pl_node;
             const extra = zir.extraData(Inst.Func, pl_node.payload_index);
             if (extra.data.body_len == 0) {
                 // Function type or extern fn - no associated hash
@@ -4086,8 +4086,8 @@ pub fn getAssociatedSrcHash(zir: Zir, inst: Zir.Inst.Index) ?std.zig.SrcHash {
             const extra_index = extra.end +
                 1 +
                 extra.data.body_len +
-                @typeInfo(Inst.Func.SrcLocs).Struct.fields.len;
-            return @bitCast([4]u32{
+                @typeinfo(Inst.Func.SrcLocs).Struct.fields.len;
+            return @bitcast([4]u32{
                 zir.extra[extra_index + 0],
                 zir.extra[extra_index + 1],
                 zir.extra[extra_index + 2],
@@ -4095,7 +4095,7 @@ pub fn getAssociatedSrcHash(zir: Zir, inst: Zir.Inst.Index) ?std.zig.SrcHash {
             });
         },
         .func_fancy => {
-            const pl_node = data[@intFromEnum(inst)].pl_node;
+            const pl_node = data[@intfromenum(inst)].pl_node;
             const extra = zir.extraData(Inst.FuncFancy, pl_node.payload_index);
             if (extra.data.body_len == 0) {
                 // Function type or extern fn - no associated hash
@@ -4103,31 +4103,31 @@ pub fn getAssociatedSrcHash(zir: Zir, inst: Zir.Inst.Index) ?std.zig.SrcHash {
             }
             const bits = extra.data.bits;
             var extra_index = extra.end;
-            extra_index += @intFromBool(bits.has_lib_name);
+            extra_index += @intfrombool(bits.has_lib_name);
             if (bits.has_align_body) {
                 const body_len = zir.extra[extra_index];
                 extra_index += 1 + body_len;
-            } else extra_index += @intFromBool(bits.has_align_ref);
+            } else extra_index += @intfrombool(bits.has_align_ref);
             if (bits.has_addrspace_body) {
                 const body_len = zir.extra[extra_index];
                 extra_index += 1 + body_len;
-            } else extra_index += @intFromBool(bits.has_addrspace_ref);
+            } else extra_index += @intfrombool(bits.has_addrspace_ref);
             if (bits.has_section_body) {
                 const body_len = zir.extra[extra_index];
                 extra_index += 1 + body_len;
-            } else extra_index += @intFromBool(bits.has_section_ref);
+            } else extra_index += @intfrombool(bits.has_section_ref);
             if (bits.has_cc_body) {
                 const body_len = zir.extra[extra_index];
                 extra_index += 1 + body_len;
-            } else extra_index += @intFromBool(bits.has_cc_ref);
+            } else extra_index += @intfrombool(bits.has_cc_ref);
             if (bits.has_ret_ty_body) {
                 const body_len = zir.extra[extra_index];
                 extra_index += 1 + body_len;
-            } else extra_index += @intFromBool(bits.has_ret_ty_ref);
-            extra_index += @intFromBool(bits.has_any_noalias);
+            } else extra_index += @intfrombool(bits.has_ret_ty_ref);
+            extra_index += @intfrombool(bits.has_any_noalias);
             extra_index += extra.data.body_len;
-            extra_index += @typeInfo(Zir.Inst.Func.SrcLocs).Struct.fields.len;
-            return @bitCast([4]u32{
+            extra_index += @typeinfo(Zir.Inst.Func.SrcLocs).Struct.fields.len;
+            return @bitcast([4]u32{
                 zir.extra[extra_index + 0],
                 zir.extra[extra_index + 1],
                 zir.extra[extra_index + 2],
@@ -4137,11 +4137,11 @@ pub fn getAssociatedSrcHash(zir: Zir, inst: Zir.Inst.Index) ?std.zig.SrcHash {
         .extended => {},
         else => return null,
     }
-    const extended = data[@intFromEnum(inst)].extended;
+    const extended = data[@intfromenum(inst)].extended;
     switch (extended.opcode) {
         .struct_decl => {
             const extra = zir.extraData(Inst.StructDecl, extended.operand).data;
-            return @bitCast([4]u32{
+            return @bitcast([4]u32{
                 extra.fields_hash_0,
                 extra.fields_hash_1,
                 extra.fields_hash_2,
@@ -4150,7 +4150,7 @@ pub fn getAssociatedSrcHash(zir: Zir, inst: Zir.Inst.Index) ?std.zig.SrcHash {
         },
         .union_decl => {
             const extra = zir.extraData(Inst.UnionDecl, extended.operand).data;
-            return @bitCast([4]u32{
+            return @bitcast([4]u32{
                 extra.fields_hash_0,
                 extra.fields_hash_1,
                 extra.fields_hash_2,
@@ -4159,7 +4159,7 @@ pub fn getAssociatedSrcHash(zir: Zir, inst: Zir.Inst.Index) ?std.zig.SrcHash {
         },
         .enum_decl => {
             const extra = zir.extraData(Inst.EnumDecl, extended.operand).data;
-            return @bitCast([4]u32{
+            return @bitcast([4]u32{
                 extra.fields_hash_0,
                 extra.fields_hash_1,
                 extra.fields_hash_2,

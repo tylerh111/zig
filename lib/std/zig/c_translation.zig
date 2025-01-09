@@ -8,51 +8,51 @@ const mem = std.mem;
 pub fn cast(comptime DestType: type, target: anytype) DestType {
     // this function should behave like transCCast in translate-c, except it's for macros
     const SourceType = @TypeOf(target);
-    switch (@typeInfo(DestType)) {
+    switch (@typeinfo(DestType)) {
         .Fn => return castToPtr(*const DestType, SourceType, target),
         .Pointer => return castToPtr(DestType, SourceType, target),
         .Optional => |dest_opt| {
-            if (@typeInfo(dest_opt.child) == .Pointer) {
+            if (@typeinfo(dest_opt.child) == .Pointer) {
                 return castToPtr(DestType, SourceType, target);
-            } else if (@typeInfo(dest_opt.child) == .Fn) {
+            } else if (@typeinfo(dest_opt.child) == .Fn) {
                 return castToPtr(?*const dest_opt.child, SourceType, target);
             }
         },
         .Int => {
-            switch (@typeInfo(SourceType)) {
+            switch (@typeinfo(SourceType)) {
                 .Pointer => {
-                    return castInt(DestType, @intFromPtr(target));
+                    return castInt(DestType, @intfromptr(target));
                 },
                 .Optional => |opt| {
-                    if (@typeInfo(opt.child) == .Pointer) {
-                        return castInt(DestType, @intFromPtr(target));
+                    if (@typeinfo(opt.child) == .Pointer) {
+                        return castInt(DestType, @intfromptr(target));
                     }
                 },
                 .Int => {
                     return castInt(DestType, target);
                 },
                 .Fn => {
-                    return castInt(DestType, @intFromPtr(&target));
+                    return castInt(DestType, @intfromptr(&target));
                 },
                 .Bool => {
-                    return @intFromBool(target);
+                    return @intfrombool(target);
                 },
                 else => {},
             }
         },
         .Float => {
-            switch (@typeInfo(SourceType)) {
-                .Int => return @as(DestType, @floatFromInt(target)),
-                .Float => return @as(DestType, @floatCast(target)),
-                .Bool => return @as(DestType, @floatFromInt(@intFromBool(target))),
+            switch (@typeinfo(SourceType)) {
+                .Int => return @as(DestType, @floatfromint(target)),
+                .Float => return @as(DestType, @floatcast(target)),
+                .Bool => return @as(DestType, @floatfromint(@intfrombool(target))),
                 else => {},
             }
         },
         .Union => |info| {
             inline for (info.fields) |field| {
-                if (field.type == SourceType) return @unionInit(DestType, field.name, target);
+                if (field.type == SourceType) return @unioninit(DestType, field.name, target);
             }
-            @compileError("cast to union type '" ++ @typeName(DestType) ++ "' from type '" ++ @typeName(SourceType) ++ "' which is not present in union");
+            @compileerror("cast to union type '" ++ @typename(DestType) ++ "' from type '" ++ @typename(SourceType) ++ "' which is not present in union");
         },
         .Bool => return cast(usize, target) != 0,
         else => {},
@@ -61,35 +61,35 @@ pub fn cast(comptime DestType: type, target: anytype) DestType {
 }
 
 fn castInt(comptime DestType: type, target: anytype) DestType {
-    const dest = @typeInfo(DestType).Int;
-    const source = @typeInfo(@TypeOf(target)).Int;
+    const dest = @typeinfo(DestType).Int;
+    const source = @typeinfo(@TypeOf(target)).Int;
 
     if (dest.bits < source.bits)
-        return @as(DestType, @bitCast(@as(std.meta.Int(source.signedness, dest.bits), @truncate(target))))
+        return @as(DestType, @bitcast(@as(std.meta.Int(source.signedness, dest.bits), @truncate(target))))
     else
-        return @as(DestType, @bitCast(@as(std.meta.Int(source.signedness, dest.bits), target)));
+        return @as(DestType, @bitcast(@as(std.meta.Int(source.signedness, dest.bits), target)));
 }
 
 fn castPtr(comptime DestType: type, target: anytype) DestType {
-    return @constCast(@volatileCast(@alignCast(@ptrCast(target))));
+    return @constcast(@volatilecast(@aligncast(@ptrcast(target))));
 }
 
 fn castToPtr(comptime DestType: type, comptime SourceType: type, target: anytype) DestType {
-    switch (@typeInfo(SourceType)) {
+    switch (@typeinfo(SourceType)) {
         .Int => {
-            return @as(DestType, @ptrFromInt(castInt(usize, target)));
+            return @as(DestType, @ptrfromint(castInt(usize, target)));
         },
         .ComptimeInt => {
             if (target < 0)
-                return @as(DestType, @ptrFromInt(@as(usize, @bitCast(@as(isize, @intCast(target))))))
+                return @as(DestType, @ptrfromint(@as(usize, @bitcast(@as(isize, @intcast(target))))))
             else
-                return @as(DestType, @ptrFromInt(@as(usize, @intCast(target))));
+                return @as(DestType, @ptrfromint(@as(usize, @intcast(target))));
         },
         .Pointer => {
             return castPtr(DestType, target);
         },
         .Optional => |target_opt| {
-            if (@typeInfo(target_opt.child) == .Pointer) {
+            if (@typeinfo(target_opt.child) == .Pointer) {
                 return castPtr(DestType, target);
             }
         },
@@ -99,8 +99,8 @@ fn castToPtr(comptime DestType: type, comptime SourceType: type, target: anytype
 }
 
 fn ptrInfo(comptime PtrType: type) std.builtin.Type.Pointer {
-    return switch (@typeInfo(PtrType)) {
-        .Optional => |opt_info| @typeInfo(opt_info.child).Pointer,
+    return switch (@typeinfo(PtrType)) {
+        .Optional => |opt_info| @typeinfo(opt_info.child).Pointer,
         .Pointer => |ptr_info| ptr_info,
         else => unreachable,
     };
@@ -109,47 +109,47 @@ fn ptrInfo(comptime PtrType: type) std.builtin.Type.Pointer {
 test "cast" {
     var i = @as(i64, 10);
 
-    try testing.expect(cast(*u8, 16) == @as(*u8, @ptrFromInt(16)));
+    try testing.expect(cast(*u8, 16) == @as(*u8, @ptrfromint(16)));
     try testing.expect(cast(*u64, &i).* == @as(u64, 10));
     try testing.expect(cast(*i64, @as(?*align(1) i64, &i)) == &i);
 
-    try testing.expect(cast(?*u8, 2) == @as(*u8, @ptrFromInt(2)));
+    try testing.expect(cast(?*u8, 2) == @as(*u8, @ptrfromint(2)));
     try testing.expect(cast(?*i64, @as(*align(1) i64, &i)) == &i);
     try testing.expect(cast(?*i64, @as(?*align(1) i64, &i)) == &i);
 
-    try testing.expectEqual(@as(u32, 4), cast(u32, @as(*u32, @ptrFromInt(4))));
-    try testing.expectEqual(@as(u32, 4), cast(u32, @as(?*u32, @ptrFromInt(4))));
+    try testing.expectEqual(@as(u32, 4), cast(u32, @as(*u32, @ptrfromint(4))));
+    try testing.expectEqual(@as(u32, 4), cast(u32, @as(?*u32, @ptrfromint(4))));
     try testing.expectEqual(@as(u32, 10), cast(u32, @as(u64, 10)));
 
-    try testing.expectEqual(@as(i32, @bitCast(@as(u32, 0x8000_0000))), cast(i32, @as(u32, 0x8000_0000)));
+    try testing.expectEqual(@as(i32, @bitcast(@as(u32, 0x8000_0000))), cast(i32, @as(u32, 0x8000_0000)));
 
-    try testing.expectEqual(@as(*u8, @ptrFromInt(2)), cast(*u8, @as(*const u8, @ptrFromInt(2))));
-    try testing.expectEqual(@as(*u8, @ptrFromInt(2)), cast(*u8, @as(*volatile u8, @ptrFromInt(2))));
+    try testing.expectEqual(@as(*u8, @ptrfromint(2)), cast(*u8, @as(*const u8, @ptrfromint(2))));
+    try testing.expectEqual(@as(*u8, @ptrfromint(2)), cast(*u8, @as(*volatile u8, @ptrfromint(2))));
 
-    try testing.expectEqual(@as(?*anyopaque, @ptrFromInt(2)), cast(?*anyopaque, @as(*u8, @ptrFromInt(2))));
+    try testing.expectEqual(@as(?*anyopaque, @ptrfromint(2)), cast(?*anyopaque, @as(*u8, @ptrfromint(2))));
 
     var foo: c_int = -1;
     _ = &foo;
-    try testing.expect(cast(*anyopaque, -1) == @as(*anyopaque, @ptrFromInt(@as(usize, @bitCast(@as(isize, -1))))));
-    try testing.expect(cast(*anyopaque, foo) == @as(*anyopaque, @ptrFromInt(@as(usize, @bitCast(@as(isize, -1))))));
-    try testing.expect(cast(?*anyopaque, -1) == @as(?*anyopaque, @ptrFromInt(@as(usize, @bitCast(@as(isize, -1))))));
-    try testing.expect(cast(?*anyopaque, foo) == @as(?*anyopaque, @ptrFromInt(@as(usize, @bitCast(@as(isize, -1))))));
+    try testing.expect(cast(*anyopaque, -1) == @as(*anyopaque, @ptrfromint(@as(usize, @bitcast(@as(isize, -1))))));
+    try testing.expect(cast(*anyopaque, foo) == @as(*anyopaque, @ptrfromint(@as(usize, @bitcast(@as(isize, -1))))));
+    try testing.expect(cast(?*anyopaque, -1) == @as(?*anyopaque, @ptrfromint(@as(usize, @bitcast(@as(isize, -1))))));
+    try testing.expect(cast(?*anyopaque, foo) == @as(?*anyopaque, @ptrfromint(@as(usize, @bitcast(@as(isize, -1))))));
 
     const FnPtr = ?*align(1) const fn (*anyopaque) void;
-    try testing.expect(cast(FnPtr, 0) == @as(FnPtr, @ptrFromInt(@as(usize, 0))));
-    try testing.expect(cast(FnPtr, foo) == @as(FnPtr, @ptrFromInt(@as(usize, @bitCast(@as(isize, -1))))));
+    try testing.expect(cast(FnPtr, 0) == @as(FnPtr, @ptrfromint(@as(usize, 0))));
+    try testing.expect(cast(FnPtr, foo) == @as(FnPtr, @ptrfromint(@as(usize, @bitcast(@as(isize, -1))))));
 }
 
 /// Given a value returns its size as C's sizeof operator would.
 pub fn sizeof(target: anytype) usize {
     const T: type = if (@TypeOf(target) == type) target else @TypeOf(target);
-    switch (@typeInfo(T)) {
-        .Float, .Int, .Struct, .Union, .Array, .Bool, .Vector => return @sizeOf(T),
+    switch (@typeinfo(T)) {
+        .Float, .Int, .Struct, .Union, .Array, .Bool, .Vector => return @sizeof(T),
         .Fn => {
             // sizeof(main) in C returns 1
             return 1;
         },
-        .Null => return @sizeOf(*anyopaque),
+        .Null => return @sizeof(*anyopaque),
         .Void => {
             // Note: sizeof(void) is 1 on clang/gcc and 0 on MSVC.
             return 1;
@@ -159,65 +159,65 @@ pub fn sizeof(target: anytype) usize {
                 // Note: sizeof(void) is 1 on clang/gcc and 0 on MSVC.
                 return 1;
             } else {
-                @compileError("Cannot use C sizeof on opaque type " ++ @typeName(T));
+                @compileerror("Cannot use C sizeof on opaque type " ++ @typename(T));
             }
         },
         .Optional => |opt| {
-            if (@typeInfo(opt.child) == .Pointer) {
+            if (@typeinfo(opt.child) == .Pointer) {
                 return sizeof(opt.child);
             } else {
-                @compileError("Cannot use C sizeof on non-pointer optional " ++ @typeName(T));
+                @compileerror("Cannot use C sizeof on non-pointer optional " ++ @typename(T));
             }
         },
         .Pointer => |ptr| {
             if (ptr.size == .Slice) {
-                @compileError("Cannot use C sizeof on slice type " ++ @typeName(T));
+                @compileerror("Cannot use C sizeof on slice type " ++ @typename(T));
             }
             // for strings, sizeof("a") returns 2.
             // normal pointer decay scenarios from C are handled
             // in the .Array case above, but strings remain literals
             // and are therefore always pointers, so they need to be
             // specially handled here.
-            if (ptr.size == .One and ptr.is_const and @typeInfo(ptr.child) == .Array) {
-                const array_info = @typeInfo(ptr.child).Array;
+            if (ptr.size == .One and ptr.is_const and @typeinfo(ptr.child) == .Array) {
+                const array_info = @typeinfo(ptr.child).Array;
                 if ((array_info.child == u8 or array_info.child == u16) and
                     array_info.sentinel != null and
-                    @as(*align(1) const array_info.child, @ptrCast(array_info.sentinel.?)).* == 0)
+                    @as(*align(1) const array_info.child, @ptrcast(array_info.sentinel.?)).* == 0)
                 {
                     // length of the string plus one for the null terminator.
-                    return (array_info.len + 1) * @sizeOf(array_info.child);
+                    return (array_info.len + 1) * @sizeof(array_info.child);
                 }
             }
             // When zero sized pointers are removed, this case will no
             // longer be reachable and can be deleted.
-            if (@sizeOf(T) == 0) {
-                return @sizeOf(*anyopaque);
+            if (@sizeof(T) == 0) {
+                return @sizeof(*anyopaque);
             }
-            return @sizeOf(T);
+            return @sizeof(T);
         },
-        .ComptimeFloat => return @sizeOf(f64), // TODO c_double #3999
+        .ComptimeFloat => return @sizeof(f64), // TODO c_double #3999
         .ComptimeInt => {
             // TODO to get the correct result we have to translate
             // `1073741824 * 4` as `int(1073741824) *% int(4)` since
             // sizeof(1073741824 * 4) != sizeof(4294967296).
 
             // TODO test if target fits in int, long or long long
-            return @sizeOf(c_int);
+            return @sizeof(c_int);
         },
-        else => @compileError("std.meta.sizeof does not support type " ++ @typeName(T)),
+        else => @compileerror("std.meta.sizeof does not support type " ++ @typename(T)),
     }
 }
 
 test "sizeof" {
     const S = extern struct { a: u32 };
 
-    const ptr_size = @sizeOf(*anyopaque);
+    const ptr_size = @sizeof(*anyopaque);
 
     try testing.expect(sizeof(u32) == 4);
     try testing.expect(sizeof(@as(u32, 2)) == 4);
-    try testing.expect(sizeof(2) == @sizeOf(c_int));
+    try testing.expect(sizeof(2) == @sizeof(c_int));
 
-    try testing.expect(sizeof(2.0) == @sizeOf(f64));
+    try testing.expect(sizeof(2.0) == @sizeof(f64));
 
     try testing.expect(sizeof(S) == 4);
 
@@ -244,7 +244,7 @@ test "sizeof" {
     try testing.expect(sizeof(*const [4]u8) == ptr_size);
 
     if (false) { // TODO
-        try testing.expect(sizeof(&sizeof) == @sizeOf(@TypeOf(&sizeof)));
+        try testing.expect(sizeof(&sizeof) == @sizeof(@TypeOf(&sizeof)));
         try testing.expect(sizeof(sizeof) == 1);
     }
 
@@ -262,7 +262,7 @@ fn PromoteIntLiteralReturnType(comptime SuffixType: type, comptime number: compt
     const signed_oct_hex = [_]type{ c_int, c_uint, c_long, c_ulong, c_longlong, c_ulonglong };
     const unsigned = [_]type{ c_uint, c_ulong, c_ulonglong };
 
-    const list: []const type = if (@typeInfo(SuffixType).Int.signedness == .unsigned)
+    const list: []const type = if (@typeinfo(SuffixType).Int.signedness == .unsigned)
         &unsigned
     else if (base == .decimal)
         &signed_decimal
@@ -276,7 +276,7 @@ fn PromoteIntLiteralReturnType(comptime SuffixType: type, comptime number: compt
             return list[pos];
         }
     }
-    @compileError("Integer literal is too large");
+    @compileerror("Integer literal is too large");
 }
 
 /// Promote the type of an integer literal until it fits as C would.
@@ -314,9 +314,9 @@ test "promoteIntLiteral" {
 /// See https://clang.llvm.org/docs/LanguageExtensions.html#langext-builtin-shufflevector
 pub fn shuffleVectorIndex(comptime this_index: c_int, comptime source_vector_len: usize) i32 {
     const positive_index = std.math.cast(usize, this_index) orelse return undefined;
-    if (positive_index < source_vector_len) return @as(i32, @intCast(this_index));
+    if (positive_index < source_vector_len) return @as(i32, @intcast(this_index));
     const b_index = positive_index - source_vector_len;
-    return ~@as(i32, @intCast(b_index));
+    return ~@as(i32, @intcast(b_index));
 }
 
 test "shuffleVectorIndex" {
@@ -338,20 +338,20 @@ test "shuffleVectorIndex" {
 /// Constructs a [*c] pointer with the const and volatile annotations
 /// from SelfType for pointing to a C flexible array of ElementType.
 pub fn FlexibleArrayType(comptime SelfType: type, comptime ElementType: type) type {
-    switch (@typeInfo(SelfType)) {
+    switch (@typeinfo(SelfType)) {
         .Pointer => |ptr| {
             return @Type(.{ .Pointer = .{
                 .size = .C,
                 .is_const = ptr.is_const,
                 .is_volatile = ptr.is_volatile,
-                .alignment = @alignOf(ElementType),
+                .alignment = @alignof(ElementType),
                 .address_space = .generic,
                 .child = ElementType,
                 .is_allowzero = true,
                 .sentinel = null,
             } });
         },
-        else => |info| @compileError("Invalid self type \"" ++ @tagName(info) ++ "\" for flexible array getter: " ++ @typeName(SelfType)),
+        else => |info| @compileerror("Invalid self type \"" ++ @tagname(info) ++ "\" for flexible array getter: " ++ @typename(SelfType)),
     }
 }
 
@@ -372,9 +372,9 @@ test "Flexible Array Type" {
 /// the type and denominator is -1. C has undefined behavior for those two cases; this function has safety
 /// checked undefined behavior
 pub fn signedRemainder(numerator: anytype, denominator: anytype) @TypeOf(numerator, denominator) {
-    std.debug.assert(@typeInfo(@TypeOf(numerator, denominator)).Int.signedness == .signed);
+    std.debug.assert(@typeinfo(@TypeOf(numerator, denominator)).Int.signedness == .signed);
     if (denominator > 0) return @rem(numerator, denominator);
-    return numerator - @divTrunc(numerator, denominator) * denominator;
+    return numerator - @divtrunc(numerator, denominator) * denominator;
 }
 
 pub const Macros = struct {
@@ -383,17 +383,17 @@ pub const Macros = struct {
     }
 
     fn L_SUFFIX_ReturnType(comptime number: anytype) type {
-        switch (@typeInfo(@TypeOf(number))) {
+        switch (@typeinfo(@TypeOf(number))) {
             .Int, .ComptimeInt => return @TypeOf(promoteIntLiteral(c_long, number, .decimal)),
             .Float, .ComptimeFloat => return c_longdouble,
-            else => @compileError("Invalid value for L suffix"),
+            else => @compileerror("Invalid value for L suffix"),
         }
     }
     pub fn L_SUFFIX(comptime number: anytype) L_SUFFIX_ReturnType(number) {
-        switch (@typeInfo(@TypeOf(number))) {
+        switch (@typeinfo(@TypeOf(number))) {
             .Int, .ComptimeInt => return promoteIntLiteral(c_long, number, .decimal),
-            .Float, .ComptimeFloat => @compileError("TODO: c_longdouble initialization from comptime_float not supported"),
-            else => @compileError("Invalid value for L suffix"),
+            .Float, .ComptimeFloat => @compileerror("TODO: c_longdouble initialization from comptime_float not supported"),
+            else => @compileerror("Invalid value for L suffix"),
         }
     }
 
@@ -414,17 +414,17 @@ pub const Macros = struct {
     }
 
     pub fn WL_CONTAINER_OF(ptr: anytype, sample: anytype, comptime member: []const u8) @TypeOf(sample) {
-        return @fieldParentPtr(member, ptr);
+        return @fieldparentptr(member, ptr);
     }
 
     /// A 2-argument function-like macro defined as #define FOO(A, B) (A)(B)
     /// could be either: cast B to A, or call A with the value B.
-    pub fn CAST_OR_CALL(a: anytype, b: anytype) switch (@typeInfo(@TypeOf(a))) {
+    pub fn CAST_OR_CALL(a: anytype, b: anytype) switch (@typeinfo(@TypeOf(a))) {
         .Type => a,
         .Fn => |fn_info| fn_info.return_type orelse void,
-        else => |info| @compileError("Unexpected argument type: " ++ @tagName(info)),
+        else => |info| @compileerror("Unexpected argument type: " ++ @tagname(info)),
     } {
-        switch (@typeInfo(@TypeOf(a))) {
+        switch (@typeinfo(@TypeOf(a))) {
             .Type => return cast(a, b),
             .Fn => return a(b),
             else => unreachable, // return type will be a compile error otherwise
@@ -440,14 +440,14 @@ pub const Macros = struct {
 fn PromotedIntType(comptime T: type) type {
     return switch (T) {
         bool, u8, i8, c_short => c_int,
-        c_ushort => if (@sizeOf(c_ushort) == @sizeOf(c_int)) c_uint else c_int,
+        c_ushort => if (@sizeof(c_ushort) == @sizeof(c_int)) c_uint else c_int,
         c_int, c_uint, c_long, c_ulong, c_longlong, c_ulonglong => T,
         else => if (T == comptime_int) {
-            @compileError("Cannot promote `" ++ @typeName(T) ++ "`; a fixed-size number type is required");
-        } else if (@typeInfo(T) == .Int) {
-            @compileError("Cannot promote `" ++ @typeName(T) ++ "`; a C ABI type is required");
+            @compileerror("Cannot promote `" ++ @typename(T) ++ "`; a fixed-size number type is required");
+        } else if (@typeinfo(T) == .Int) {
+            @compileerror("Cannot promote `" ++ @typename(T) ++ "`; a C ABI type is required");
         } else {
-            @compileError("Attempted to promote invalid type `" ++ @typeName(T) ++ "`");
+            @compileerror("Attempted to promote invalid type `" ++ @typename(T) ++ "`");
         },
     };
 }
@@ -461,7 +461,7 @@ fn integerRank(comptime T: type) u8 {
         c_int, c_uint => 3,
         c_long, c_ulong => 4,
         c_longlong, c_ulonglong => 5,
-        else => @compileError("integer rank not supported for `" ++ @typeName(T) ++ "`"),
+        else => @compileerror("integer rank not supported for `" ++ @typename(T) ++ "`"),
     };
 }
 
@@ -470,7 +470,7 @@ fn ToUnsigned(comptime T: type) type {
         c_int => c_uint,
         c_long => c_ulong,
         c_longlong => c_ulonglong,
-        else => @compileError("Cannot convert `" ++ @typeName(T) ++ "` to unsigned"),
+        else => @compileerror("Cannot convert `" ++ @typename(T) ++ "` to unsigned"),
     };
 }
 
@@ -490,8 +490,8 @@ fn ArithmeticConversion(comptime A: type, comptime B: type) type {
 
     if (A_Promoted == B_Promoted) return A_Promoted;
 
-    const a_signed = @typeInfo(A_Promoted).Int.signedness == .signed;
-    const b_signed = @typeInfo(B_Promoted).Int.signedness == .signed;
+    const a_signed = @typeinfo(A_Promoted).Int.signedness == .signed;
+    const b_signed = @typeinfo(B_Promoted).Int.signedness == .signed;
 
     if (a_signed == b_signed) {
         return if (integerRank(A_Promoted) > integerRank(B_Promoted)) A_Promoted else B_Promoted;
@@ -543,9 +543,9 @@ pub const MacroArithmetic = struct {
         const ResType = ArithmeticConversion(@TypeOf(a), @TypeOf(b));
         const a_casted = cast(ResType, a);
         const b_casted = cast(ResType, b);
-        switch (@typeInfo(ResType)) {
+        switch (@typeinfo(ResType)) {
             .Float => return a_casted / b_casted,
-            .Int => return @divTrunc(a_casted, b_casted),
+            .Int => return @divtrunc(a_casted, b_casted),
             else => unreachable,
         }
     }
@@ -554,9 +554,9 @@ pub const MacroArithmetic = struct {
         const ResType = ArithmeticConversion(@TypeOf(a), @TypeOf(b));
         const a_casted = cast(ResType, a);
         const b_casted = cast(ResType, b);
-        switch (@typeInfo(ResType)) {
+        switch (@typeinfo(ResType)) {
             .Int => {
-                if (@typeInfo(ResType).Int.signedness == .signed) {
+                if (@typeinfo(ResType).Int.signedness == .signed) {
                     return signedRemainder(a_casted, b_casted);
                 } else {
                     return a_casted % b_casted;

@@ -1345,10 +1345,10 @@ fn processOneTarget(job: Job) anyerror!void {
         \\
     );
     if (llvm_target.branch_quota) |branch_quota| {
-        try w.print("    @setEvalBranchQuota({d});\n", .{branch_quota});
+        try w.print("    @setevalbranchquota({d});\n", .{branch_quota});
     }
     try w.writeAll(
-        \\    const len = @typeInfo(Feature).Enum.fields.len;
+        \\    const len = @typeinfo(Feature).Enum.fields.len;
         \\    std.debug.assert(len <= CpuFeature.Set.needed_bit_count);
         \\    var result: [len]CpuFeature = undefined;
         \\
@@ -1357,7 +1357,7 @@ fn processOneTarget(job: Job) anyerror!void {
     for (all_features.items) |feature| {
         if (feature.llvm_name) |llvm_name| {
             try w.print(
-                \\    result[@intFromEnum(Feature.{p_})] = .{{
+                \\    result[@intfromenum(Feature.{p_})] = .{{
                 \\        .llvm_name = "{}",
                 \\        .description = "{}",
                 \\        .dependencies = featureSet(&[_]Feature{{
@@ -1370,7 +1370,7 @@ fn processOneTarget(job: Job) anyerror!void {
             );
         } else {
             try w.print(
-                \\    result[@intFromEnum(Feature.{p_})] = .{{
+                \\    result[@intfromenum(Feature.{p_})] = .{{
                 \\        .llvm_name = null,
                 \\        .description = "{}",
                 \\        .dependencies = featureSet(&[_]Feature{{
@@ -1414,7 +1414,7 @@ fn processOneTarget(job: Job) anyerror!void {
         }
     }
     try w.writeAll(
-        \\    const ti = @typeInfo(Feature);
+        \\    const ti = @typeinfo(Feature);
         \\    for (&result, 0..) |*elem, i| {
         \\        elem.index = i;
         \\        elem.name = ti.Enum.fields[i].name;

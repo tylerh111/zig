@@ -70,7 +70,7 @@ fn mainServer() !void {
                 defer std.testing.allocator.free(expected_panic_msgs);
 
                 for (test_fns, names, expected_panic_msgs) |test_fn, *name, *expected_panic_msg| {
-                    name.* = @as(u32, @intCast(string_bytes.items.len));
+                    name.* = @as(u32, @intcast(string_bytes.items.len));
                     try string_bytes.ensureUnusedCapacity(std.testing.allocator, test_fn.name.len + 1);
                     string_bytes.appendSliceAssumeCapacity(test_fn.name);
                     string_bytes.appendAssumeCapacity(0);
@@ -96,7 +96,7 @@ fn mainServer() !void {
                     error.SkipZigTest => skip = true,
                     else => {
                         fail = true;
-                        if (@errorReturnTrace()) |trace| {
+                        if (@errorreturntrace()) |trace| {
                             std.debug.dumpStackTrace(trace.*);
                         }
                     },
@@ -117,7 +117,7 @@ fn mainServer() !void {
             },
 
             else => {
-                std.debug.print("unsupported message: {x}", .{@intFromEnum(hdr.tag)});
+                std.debug.print("unsupported message: {x}", .{@intfromenum(hdr.tag)});
                 std.process.exit(1);
             },
         }
@@ -172,12 +172,12 @@ fn mainTerminal() void {
                 fail_count += 1;
                 if (have_tty) {
                     std.debug.print("{d}/{d} {s}...FAIL ({s})\n", .{
-                        i + 1, test_fn_list.len, test_fn.name, @errorName(err),
+                        i + 1, test_fn_list.len, test_fn.name, @errorname(err),
                     });
                 } else {
-                    std.debug.print("FAIL ({s})\n", .{@errorName(err)});
+                    std.debug.print("FAIL ({s})\n", .{@errorname(err)});
                 }
-                if (@errorReturnTrace()) |trace| {
+                if (@errorreturntrace()) |trace| {
                     std.debug.dumpStackTrace(trace.*);
                 }
                 test_node.end();
@@ -207,12 +207,12 @@ pub fn log(
     comptime format: []const u8,
     args: anytype,
 ) void {
-    if (@intFromEnum(message_level) <= @intFromEnum(std.log.Level.err)) {
+    if (@intfromenum(message_level) <= @intfromenum(std.log.Level.err)) {
         log_err_count +|= 1;
     }
-    if (@intFromEnum(message_level) <= @intFromEnum(std.testing.log_level)) {
+    if (@intfromenum(message_level) <= @intfromenum(std.testing.log_level)) {
         std.debug.print(
-            "[" ++ @tagName(scope) ++ "] (" ++ @tagName(message_level) ++ "): " ++ format ++ "\n",
+            "[" ++ @tagname(scope) ++ "] (" ++ @tagname(message_level) ++ "): " ++ format ++ "\n",
             args,
         );
     }

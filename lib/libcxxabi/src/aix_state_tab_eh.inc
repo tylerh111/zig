@@ -689,10 +689,10 @@ _LIBCXXABI_FUNC_VIS uintptr_t __xlc_exception_handle() {
   // Move one frame up to the frame of the caller of __xlc_exception_handle().
   lastStack = reinterpret_cast<uintptr_t*>(lastStack[0]);
   // Get the return address of this function, i.e., __xlc_exception_handle().
-  uint32_t* returnAddress = reinterpret_cast<uint32_t*>(__builtin_return_address(0));
+  uint32_t* returnaddress = reinterpret_cast<uint32_t*>(__builtin_return_address(0));
 
   // Skip non-C++ EH aware frames and get the first C++ EH aware frame.
-  uintptr_t* callerStack = skip_non_cxx_eh_aware_frames(returnAddress, lastStack);
+  uintptr_t* callerStack = skip_non_cxx_eh_aware_frames(returnaddress, lastStack);
 
   // Get the SP of the caller of the C++ EH aware caller.
   callerStack = reinterpret_cast<uintptr_t*>(callerStack[0]);

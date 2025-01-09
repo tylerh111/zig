@@ -3,7 +3,7 @@ const U = union {
 };
 
 export fn entry() usize {
-    return @alignOf(U);
+    return @alignof(U);
 }
 
 // error

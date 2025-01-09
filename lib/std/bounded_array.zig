@@ -16,7 +16,7 @@ const testing = std.testing;
 /// var a_clone = a; // creates a copy - the structure doesn't use any internal pointers
 /// ```
 pub fn BoundedArray(comptime T: type, comptime buffer_capacity: usize) type {
-    return BoundedArrayAligned(T, @alignOf(T), buffer_capacity);
+    return BoundedArrayAligned(T, @alignof(T), buffer_capacity);
 }
 
 /// A structure with an array, length and alignment, that can be used as a
@@ -29,7 +29,7 @@ pub fn BoundedArray(comptime T: type, comptime buffer_capacity: usize) type {
 //  var a = try BoundedArrayAligned(u8, 16, 2).init(0);
 //  try a.append(255);
 //  try a.append(255);
-//  const b = @ptrCast(*const [1]u16, a.constSlice().ptr);
+//  const b = @ptrcast(*const [1]u16, a.constSlice().ptr);
 //  try testing.expectEqual(@as(u16, 65535), b[0]);
 /// ```
 pub fn BoundedArrayAligned(
@@ -48,7 +48,7 @@ pub fn BoundedArrayAligned(
         /// Returns error.Overflow if it exceeds the length of the backing array.
         pub fn init(len: usize) error{Overflow}!Self {
             if (len > buffer_capacity) return error.Overflow;
-            return Self{ .len = @intCast(len) };
+            return Self{ .len = @intcast(len) };
         }
 
         /// View the internal array as a slice whose size was previously set.
@@ -69,7 +69,7 @@ pub fn BoundedArrayAligned(
         /// Does not initialize added items if any.
         pub fn resize(self: *Self, len: usize) error{Overflow}!void {
             if (len > buffer_capacity) return error.Overflow;
-            self.len = @intCast(len);
+            self.len = @intcast(len);
         }
 
         /// Copy the content of an existing slice.
@@ -173,7 +173,7 @@ pub fn BoundedArrayAligned(
         /// This operation is O(N).
         pub fn insertSlice(self: *Self, i: usize, items: []const T) error{Overflow}!void {
             try self.ensureUnusedCapacity(items.len);
-            self.len = @intCast(self.len + items.len);
+            self.len = @intcast(self.len + items.len);
             mem.copyBackwards(T, self.slice()[i + items.len .. self.len], self.constSlice()[i .. self.len - items.len]);
             @memcpy(self.slice()[i..][0..items.len], items);
         }
@@ -203,7 +203,7 @@ pub fn BoundedArrayAligned(
                 for (self.constSlice()[after_range..], 0..) |item, i| {
                     self.slice()[after_subrange..][i] = item;
                 }
-                self.len = @intCast(self.len - len + new_items.len);
+                self.len = @intcast(self.len - len + new_items.len);
             }
         }
 
@@ -254,7 +254,7 @@ pub fn BoundedArrayAligned(
         /// enough to store the new items.
         pub fn appendSliceAssumeCapacity(self: *Self, items: []const T) void {
             const old_len = self.len;
-            self.len = @intCast(self.len + items.len);
+            self.len = @intcast(self.len + items.len);
             @memcpy(self.slice()[old_len..][0..items.len], items);
         }
 
@@ -271,13 +271,13 @@ pub fn BoundedArrayAligned(
         pub fn appendNTimesAssumeCapacity(self: *Self, value: T, n: usize) void {
             const old_len = self.len;
             assert(self.len + n <= buffer_capacity);
-            self.len = @intCast(self.len + n);
+            self.len = @intcast(self.len + n);
             @memset(self.slice()[old_len..self.len], value);
         }
 
         pub const Writer = if (T != u8)
-            @compileError("The Writer interface is only defined for BoundedArray(u8, ...) " ++
-                "but the given type is BoundedArray(" ++ @typeName(T) ++ ", ...)")
+            @compileerror("The Writer interface is only defined for BoundedArray(u8, ...) " ++
+                "but the given type is BoundedArray(" ++ @typename(T) ++ ", ...)")
         else
             std.io.Writer(*Self, error{Overflow}, appendWrite);
 
@@ -401,12 +401,12 @@ test BoundedArray {
     try testing.expectEqualStrings(s, a.constSlice());
 }
 
-test "BoundedArray sizeOf" {
+test "BoundedArray sizeof" {
     // Just sanity check size on one CPU
     if (@import("builtin").cpu.arch != .x86_64)
         return;
 
-    try testing.expectEqual(@sizeOf(BoundedArray(u8, 3)), 4);
+    try testing.expectEqual(@sizeof(BoundedArray(u8, 3)), 4);
 
     // `len` is the minimum required size to hold the maximum capacity
     try testing.expectEqual(@TypeOf(@as(BoundedArray(u8, 15), undefined).len), u4);
@@ -420,7 +420,7 @@ test "BoundedArrayAligned" {
     try a.append(255);
     try a.append(255);
 
-    const b = @as(*const [2]u16, @ptrCast(a.constSlice().ptr));
+    const b = @as(*const [2]u16, @ptrcast(a.constSlice().ptr));
     try testing.expectEqual(@as(u16, 0), b[0]);
     try testing.expectEqual(@as(u16, 65535), b[1]);
 }

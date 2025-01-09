@@ -144,7 +144,7 @@ fn rescanWindows(cb: *Bundle, gpa: Allocator) RescanWindowsError!void {
 
     var ctx = w.crypt32.CertEnumCertificatesInStore(store, null);
     while (ctx) |context| : (ctx = w.crypt32.CertEnumCertificatesInStore(store, ctx)) {
-        const decoded_start = @as(u32, @intCast(cb.bytes.items.len));
+        const decoded_start = @as(u32, @intcast(cb.bytes.items.len));
         const encoded_cert = context.pbCertEncoded[0..context.cbCertEncoded];
         try cb.bytes.appendSlice(gpa, encoded_cert);
         try cb.parseCert(gpa, decoded_start, now_sec);
@@ -231,7 +231,7 @@ pub fn addCertsFromFile(cb: *Bundle, gpa: Allocator, file: fs.File) AddCertsFrom
     const needed_capacity = std.math.cast(u32, decoded_size_upper_bound + size) orelse
         return error.CertificateAuthorityBundleTooBig;
     try cb.bytes.ensureUnusedCapacity(gpa, needed_capacity);
-    const end_reserved: u32 = @intCast(cb.bytes.items.len + decoded_size_upper_bound);
+    const end_reserved: u32 = @intcast(cb.bytes.items.len + decoded_size_upper_bound);
     const buffer = cb.bytes.allocatedSlice()[end_reserved..];
     const end_index = try file.readAll(buffer);
     const encoded_bytes = buffer[0..end_index];
@@ -248,7 +248,7 @@ pub fn addCertsFromFile(cb: *Bundle, gpa: Allocator, file: fs.File) AddCertsFrom
             return error.MissingEndCertificateMarker;
         start_index = cert_end + end_marker.len;
         const encoded_cert = mem.trim(u8, encoded_bytes[cert_start..cert_end], " \t\r\n");
-        const decoded_start: u32 = @intCast(cb.bytes.items.len);
+        const decoded_start: u32 = @intcast(cb.bytes.items.len);
         const dest_buf = cb.bytes.allocatedSlice()[decoded_start..];
         cb.bytes.items.len += try base64.decode(dest_buf, encoded_cert);
         try cb.parseCert(gpa, decoded_start, now_sec);

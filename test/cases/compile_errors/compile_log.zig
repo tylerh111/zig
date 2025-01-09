@@ -3,13 +3,13 @@ export fn foo() void {
     _ = &bar;
 }
 fn bar(a: i32, b: []const u8) void {
-    @compileLog("begin");
-    @compileLog("a", a, "b", b);
-    @compileLog("end");
+    @compilelog("begin");
+    @compilelog("a", a, "b", b);
+    @compilelog("end");
 }
 export fn baz() void {
     const S = struct { a: u32 };
-    @compileLog(@sizeOf(S));
+    @compilelog(@sizeof(S));
 }
 
 // error

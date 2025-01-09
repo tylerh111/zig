@@ -17,7 +17,7 @@ pub const GE = enum(i32) {
 };
 
 pub inline fn cmpf2(comptime T: type, comptime RT: type, a: T, b: T) RT {
-    const bits = @typeInfo(T).Float.bits;
+    const bits = @typeinfo(T).Float.bits;
     const srep_t = std.meta.Int(.signed, bits);
     const rep_t = std.meta.Int(.unsigned, bits);
 
@@ -26,12 +26,12 @@ pub inline fn cmpf2(comptime T: type, comptime RT: type, a: T, b: T) RT {
     const signBit = (@as(rep_t, 1) << (significandBits + exponentBits));
     const absMask = signBit - 1;
     const infT = comptime std.math.inf(T);
-    const infRep = @as(rep_t, @bitCast(infT));
+    const infRep = @as(rep_t, @bitcast(infT));
 
-    const aInt = @as(srep_t, @bitCast(a));
-    const bInt = @as(srep_t, @bitCast(b));
-    const aAbs = @as(rep_t, @bitCast(aInt)) & absMask;
-    const bAbs = @as(rep_t, @bitCast(bInt)) & absMask;
+    const aInt = @as(srep_t, @bitcast(a));
+    const bInt = @as(srep_t, @bitcast(b));
+    const aAbs = @as(rep_t, @bitcast(aInt)) & absMask;
+    const bAbs = @as(rep_t, @bitcast(bInt)) & absMask;
 
     // If either a or b is NaN, they are unordered.
     if (aAbs > infRep or bAbs > infRep) return RT.Unordered;
@@ -77,11 +77,11 @@ pub inline fn cmp_f80(comptime RT: type, a: f80, b: f80) RT {
     if ((a_rep.fraction | b_rep.fraction) | ((a_rep.exp | b_rep.exp) & special_exp) == 0)
         return .Equal;
 
-    if (@intFromBool(a_rep.exp == b_rep.exp) & @intFromBool(a_rep.fraction == b_rep.fraction) != 0) {
+    if (@intfrombool(a_rep.exp == b_rep.exp) & @intfrombool(a_rep.fraction == b_rep.fraction) != 0) {
         return .Equal;
     } else if (a_rep.exp & sign_bit != b_rep.exp & sign_bit) {
         // signs are different
-        if (@as(i16, @bitCast(a_rep.exp)) < @as(i16, @bitCast(b_rep.exp))) {
+        if (@as(i16, @bitcast(a_rep.exp)) < @as(i16, @bitcast(b_rep.exp))) {
             return .Less;
         } else {
             return .Greater;
@@ -109,18 +109,18 @@ test "cmp_f80" {
 }
 
 pub inline fn unordcmp(comptime T: type, a: T, b: T) i32 {
-    const rep_t = std.meta.Int(.unsigned, @typeInfo(T).Float.bits);
+    const rep_t = std.meta.Int(.unsigned, @typeinfo(T).Float.bits);
 
     const significandBits = std.math.floatMantissaBits(T);
     const exponentBits = std.math.floatExponentBits(T);
     const signBit = (@as(rep_t, 1) << (significandBits + exponentBits));
     const absMask = signBit - 1;
-    const infRep = @as(rep_t, @bitCast(std.math.inf(T)));
+    const infRep = @as(rep_t, @bitcast(std.math.inf(T)));
 
-    const aAbs: rep_t = @as(rep_t, @bitCast(a)) & absMask;
-    const bAbs: rep_t = @as(rep_t, @bitCast(b)) & absMask;
+    const aAbs: rep_t = @as(rep_t, @bitcast(a)) & absMask;
+    const bAbs: rep_t = @as(rep_t, @bitcast(b)) & absMask;
 
-    return @intFromBool(aAbs > infRep or bAbs > infRep);
+    return @intfrombool(aAbs > infRep or bAbs > infRep);
 }
 
 test {

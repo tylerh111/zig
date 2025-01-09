@@ -53,8 +53,8 @@ test "test_divmodti4" {
         [_]i128{ -7, 5, -1, -2 },
         [_]i128{ 19, 5, 3, 4 },
         [_]i128{ 19, -5, -3, 4 },
-        [_]i128{ @bitCast(@as(u128, 0x80000000000000000000000000000000)), 8, @bitCast(@as(u128, 0xf0000000000000000000000000000000)), 0 },
-        [_]i128{ @bitCast(@as(u128, 0x80000000000000000000000000000007)), 8, @bitCast(@as(u128, 0xf0000000000000000000000000000001)), -1 },
+        [_]i128{ @bitcast(@as(u128, 0x80000000000000000000000000000000)), 8, @bitcast(@as(u128, 0xf0000000000000000000000000000000)), 0 },
+        [_]i128{ @bitcast(@as(u128, 0x80000000000000000000000000000007)), 8, @bitcast(@as(u128, 0xf0000000000000000000000000000001)), -1 },
     };
 
     for (cases) |case| {
@@ -92,8 +92,8 @@ const cases__divmoddi4 =
     [_]i64{ -7, 5, -1, -2 },
     [_]i64{ 19, 5, 3, 4 },
     [_]i64{ 19, -5, -3, 4 },
-    [_]i64{ @as(i64, @bitCast(@as(u64, 0x8000000000000000))), 8, @as(i64, @bitCast(@as(u64, 0xf000000000000000))), 0 },
-    [_]i64{ @as(i64, @bitCast(@as(u64, 0x8000000000000007))), 8, @as(i64, @bitCast(@as(u64, 0xf000000000000001))), -1 },
+    [_]i64{ @as(i64, @bitcast(@as(u64, 0x8000000000000000))), 8, @as(i64, @bitcast(@as(u64, 0xf000000000000000))), 0 },
+    [_]i64{ @as(i64, @bitcast(@as(u64, 0x8000000000000007))), 8, @as(i64, @bitcast(@as(u64, 0xf000000000000001))), -1 },
 };
 
 test "test_divmoddi4" {
@@ -107,7 +107,7 @@ fn test_one_aeabi_ldivmod(a: i64, b: i64, expected_q: i64, expected_r: i64) !voi
         q: i64, // r1:r0
         r: i64, // r3:r2
     };
-    const actualIdivmod = @as(*const fn (a: i64, b: i64) callconv(.AAPCS) LdivmodRes, @ptrCast(&arm.__aeabi_ldivmod));
+    const actualIdivmod = @as(*const fn (a: i64, b: i64) callconv(.AAPCS) LdivmodRes, @ptrcast(&arm.__aeabi_ldivmod));
     const arm_res = actualIdivmod(a, b);
     try testing.expectEqual(expected_q, arm_res.q);
     try testing.expectEqual(expected_r, arm_res.r);
@@ -131,14 +131,14 @@ test "test_udivmoddi4" {
 
 pub fn __divdi3(a: i64, b: i64) callconv(.C) i64 {
     // Set aside the sign of the quotient.
-    const sign: u64 = @bitCast((a ^ b) >> 63);
+    const sign: u64 = @bitcast((a ^ b) >> 63);
     // Take absolute value of a and b via abs(x) = (x^(x >> 63)) - (x >> 63).
     const abs_a = (a ^ (a >> 63)) -% (a >> 63);
     const abs_b = (b ^ (b >> 63)) -% (b >> 63);
     // Unsigned division
-    const res = __udivmoddi4(@bitCast(abs_a), @bitCast(abs_b), null);
+    const res = __udivmoddi4(@bitcast(abs_a), @bitcast(abs_b), null);
     // Apply sign of quotient to result and return.
-    return @bitCast((res ^ sign) -% sign);
+    return @bitcast((res ^ sign) -% sign);
 }
 
 test "test_divdi3" {
@@ -150,10 +150,10 @@ test "test_divdi3" {
         [_]i64{ -2, 1, -2 },
         [_]i64{ -2, -1, 2 },
 
-        [_]i64{ @as(i64, @bitCast(@as(u64, 0x8000000000000000))), 1, @as(i64, @bitCast(@as(u64, 0x8000000000000000))) },
-        [_]i64{ @as(i64, @bitCast(@as(u64, 0x8000000000000000))), -1, @as(i64, @bitCast(@as(u64, 0x8000000000000000))) },
-        [_]i64{ @as(i64, @bitCast(@as(u64, 0x8000000000000000))), -2, 0x4000000000000000 },
-        [_]i64{ @as(i64, @bitCast(@as(u64, 0x8000000000000000))), 2, @as(i64, @bitCast(@as(u64, 0xC000000000000000))) },
+        [_]i64{ @as(i64, @bitcast(@as(u64, 0x8000000000000000))), 1, @as(i64, @bitcast(@as(u64, 0x8000000000000000))) },
+        [_]i64{ @as(i64, @bitcast(@as(u64, 0x8000000000000000))), -1, @as(i64, @bitcast(@as(u64, 0x8000000000000000))) },
+        [_]i64{ @as(i64, @bitcast(@as(u64, 0x8000000000000000))), -2, 0x4000000000000000 },
+        [_]i64{ @as(i64, @bitcast(@as(u64, 0x8000000000000000))), 2, @as(i64, @bitcast(@as(u64, 0xC000000000000000))) },
     };
 
     for (cases) |case| {
@@ -172,9 +172,9 @@ pub fn __moddi3(a: i64, b: i64) callconv(.C) i64 {
     const abs_b = (b ^ (b >> 63)) -% (b >> 63);
     // Unsigned division
     var r: u64 = undefined;
-    _ = __udivmoddi4(@bitCast(abs_a), @bitCast(abs_b), &r);
+    _ = __udivmoddi4(@bitcast(abs_a), @bitcast(abs_b), &r);
     // Apply the sign of the dividend and return.
-    return (@as(i64, @bitCast(r)) ^ (a >> 63)) -% (a >> 63);
+    return (@as(i64, @bitcast(r)) ^ (a >> 63)) -% (a >> 63);
 }
 
 test "test_moddi3" {
@@ -186,12 +186,12 @@ test "test_moddi3" {
         [_]i64{ -5, 3, -2 },
         [_]i64{ -5, -3, -2 },
 
-        [_]i64{ @bitCast(@as(u64, 0x8000000000000000)), 1, 0 },
-        [_]i64{ @bitCast(@as(u64, 0x8000000000000000)), -1, 0 },
-        [_]i64{ @bitCast(@as(u64, 0x8000000000000000)), 2, 0 },
-        [_]i64{ @bitCast(@as(u64, 0x8000000000000000)), -2, 0 },
-        [_]i64{ @bitCast(@as(u64, 0x8000000000000000)), 3, -2 },
-        [_]i64{ @bitCast(@as(u64, 0x8000000000000000)), -3, -2 },
+        [_]i64{ @bitcast(@as(u64, 0x8000000000000000)), 1, 0 },
+        [_]i64{ @bitcast(@as(u64, 0x8000000000000000)), -1, 0 },
+        [_]i64{ @bitcast(@as(u64, 0x8000000000000000)), 2, 0 },
+        [_]i64{ @bitcast(@as(u64, 0x8000000000000000)), -2, 0 },
+        [_]i64{ @bitcast(@as(u64, 0x8000000000000000)), 3, -2 },
+        [_]i64{ @bitcast(@as(u64, 0x8000000000000000)), -3, -2 },
     };
 
     for (cases) |case| {
@@ -245,8 +245,8 @@ const cases__divmodsi4 =
     [_]i32{ -7, 5, -1, -2 },
     [_]i32{ 19, 5, 3, 4 },
     [_]i32{ 19, -5, -3, 4 },
-    [_]i32{ @bitCast(@as(u32, 0x80000000)), 8, @bitCast(@as(u32, 0xf0000000)), 0 },
-    [_]i32{ @bitCast(@as(u32, 0x80000007)), 8, @bitCast(@as(u32, 0xf0000001)), -1 },
+    [_]i32{ @bitcast(@as(u32, 0x80000000)), 8, @bitcast(@as(u32, 0xf0000000)), 0 },
+    [_]i32{ @bitcast(@as(u32, 0x80000007)), 8, @bitcast(@as(u32, 0xf0000001)), -1 },
 };
 
 fn test_one_divmodsi4(a: i32, b: i32, expected_q: i32, expected_r: i32) !void {
@@ -266,7 +266,7 @@ fn test_one_aeabi_idivmod(a: i32, b: i32, expected_q: i32, expected_r: i32) !voi
         q: i32, // r0
         r: i32, // r1
     };
-    const actualIdivmod = @as(*const fn (a: i32, b: i32) callconv(.AAPCS) IdivmodRes, @ptrCast(&arm.__aeabi_idivmod));
+    const actualIdivmod = @as(*const fn (a: i32, b: i32) callconv(.AAPCS) IdivmodRes, @ptrcast(&arm.__aeabi_idivmod));
     const arm_res = actualIdivmod(a, b);
     try testing.expectEqual(expected_q, arm_res.q);
     try testing.expectEqual(expected_r, arm_res.r);
@@ -282,7 +282,7 @@ test "arm.__aeabi_idivmod" {
 
 pub fn __udivmodsi4(a: u32, b: u32, rem: *u32) callconv(.C) u32 {
     const d = __udivsi3(a, b);
-    rem.* = @bitCast(@as(i32, @bitCast(a)) -% (@as(i32, @bitCast(d)) * @as(i32, @bitCast(b))));
+    rem.* = @bitcast(@as(i32, @bitcast(a)) -% (@as(i32, @bitcast(d)) * @as(i32, @bitcast(b))));
     return d;
 }
 
@@ -296,14 +296,14 @@ fn __aeabi_idiv(n: i32, d: i32) callconv(.AAPCS) i32 {
 
 inline fn div_i32(n: i32, d: i32) i32 {
     // Set aside the sign of the quotient.
-    const sign: u32 = @bitCast((n ^ d) >> 31);
+    const sign: u32 = @bitcast((n ^ d) >> 31);
     // Take absolute value of a and b via abs(x) = (x^(x >> 31)) - (x >> 31).
     const abs_n = (n ^ (n >> 31)) -% (n >> 31);
     const abs_d = (d ^ (d >> 31)) -% (d >> 31);
     // abs(a) / abs(b)
-    const res = @as(u32, @bitCast(abs_n)) / @as(u32, @bitCast(abs_d));
+    const res = @as(u32, @bitcast(abs_n)) / @as(u32, @bitcast(abs_d));
     // Apply sign of quotient to result and return.
-    return @bitCast((res ^ sign) -% sign);
+    return @bitcast((res ^ sign) -% sign);
 }
 
 test "test_divsi3" {
@@ -315,10 +315,10 @@ test "test_divsi3" {
         [_]i32{ -2, 1, -2 },
         [_]i32{ -2, -1, 2 },
 
-        [_]i32{ @bitCast(@as(u32, 0x80000000)), 1, @bitCast(@as(u32, 0x80000000)) },
-        [_]i32{ @bitCast(@as(u32, 0x80000000)), -1, @bitCast(@as(u32, 0x80000000)) },
-        [_]i32{ @bitCast(@as(u32, 0x80000000)), -2, 0x40000000 },
-        [_]i32{ @bitCast(@as(u32, 0x80000000)), 2, @bitCast(@as(u32, 0xC0000000)) },
+        [_]i32{ @bitcast(@as(u32, 0x80000000)), 1, @bitcast(@as(u32, 0x80000000)) },
+        [_]i32{ @bitcast(@as(u32, 0x80000000)), -1, @bitcast(@as(u32, 0x80000000)) },
+        [_]i32{ @bitcast(@as(u32, 0x80000000)), -2, 0x40000000 },
+        [_]i32{ @bitcast(@as(u32, 0x80000000)), 2, @bitcast(@as(u32, 0xC0000000)) },
     };
 
     for (cases) |case| {
@@ -344,7 +344,7 @@ inline fn div_u32(n: u32, d: u32) u32 {
     // special cases
     if (d == 0) return 0; // ?!
     if (n == 0) return 0;
-    var sr = @as(c_uint, @bitCast(@as(c_int, @clz(d)) - @as(c_int, @clz(n))));
+    var sr = @as(c_uint, @bitcast(@as(c_int, @clz(d)) - @as(c_int, @clz(n))));
     // 0 <= sr <= n_uword_bits - 1 or sr large
     if (sr > n_uword_bits - 1) {
         // d > r
@@ -357,12 +357,12 @@ inline fn div_u32(n: u32, d: u32) u32 {
     sr += 1;
     // 1 <= sr <= n_uword_bits - 1
     // Not a special case
-    var q: u32 = n << @intCast(n_uword_bits - sr);
-    var r: u32 = n >> @intCast(sr);
+    var q: u32 = n << @intcast(n_uword_bits - sr);
+    var r: u32 = n >> @intcast(sr);
     var carry: u32 = 0;
     while (sr > 0) : (sr -= 1) {
         // r:q = ((r:q)  << 1) | carry
-        r = (r << 1) | (q >> @intCast(n_uword_bits - 1));
+        r = (r << 1) | (q >> @intcast(n_uword_bits - 1));
         q = (q << 1) | carry;
         // carry = 0;
         // if (r.all >= d.all)
@@ -370,9 +370,9 @@ inline fn div_u32(n: u32, d: u32) u32 {
         //      r.all -= d.all;
         //      carry = 1;
         // }
-        const s = @as(i32, @bitCast(d -% r -% 1)) >> @intCast(n_uword_bits - 1);
-        carry = @intCast(s & 1);
-        r -= d & @as(u32, @bitCast(s));
+        const s = @as(i32, @bitcast(d -% r -% 1)) >> @intcast(n_uword_bits - 1);
+        carry = @intcast(s & 1);
+        r -= d & @as(u32, @bitcast(s));
     }
     q = (q << 1) | carry;
     return q;
@@ -536,11 +536,11 @@ test "test_modsi3" {
         [_]i32{ 5, -3, 2 },
         [_]i32{ -5, 3, -2 },
         [_]i32{ -5, -3, -2 },
-        [_]i32{ @bitCast(@as(u32, @intCast(0x80000000))), 1, 0x0 },
-        [_]i32{ @bitCast(@as(u32, @intCast(0x80000000))), 2, 0x0 },
-        [_]i32{ @bitCast(@as(u32, @intCast(0x80000000))), -2, 0x0 },
-        [_]i32{ @bitCast(@as(u32, @intCast(0x80000000))), 3, -2 },
-        [_]i32{ @bitCast(@as(u32, @intCast(0x80000000))), -3, -2 },
+        [_]i32{ @bitcast(@as(u32, @intcast(0x80000000))), 1, 0x0 },
+        [_]i32{ @bitcast(@as(u32, @intcast(0x80000000))), 2, 0x0 },
+        [_]i32{ @bitcast(@as(u32, @intcast(0x80000000))), -2, 0x0 },
+        [_]i32{ @bitcast(@as(u32, @intcast(0x80000000))), 3, -2 },
+        [_]i32{ @bitcast(@as(u32, @intcast(0x80000000))), -3, -2 },
     };
 
     for (cases) |case| {

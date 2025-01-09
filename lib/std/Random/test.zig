@@ -157,7 +157,7 @@ fn testRandomEnumValue() !void {
 }
 
 test "Random intLessThan" {
-    @setEvalBranchQuota(10000);
+    @setevalbranchquota(10000);
     try testRandomIntLessThan();
     try comptime testRandomIntLessThan();
 }
@@ -199,7 +199,7 @@ fn testRandomIntLessThan() !void {
 }
 
 test "Random intAtMost" {
-    @setEvalBranchQuota(10000);
+    @setevalbranchquota(10000);
     try testRandomIntAtMost();
     try comptime testRandomIntAtMost();
 }
@@ -332,13 +332,13 @@ test "Random float chi-square goodness of fit" {
     while (i < num_numbers) : (i += 1) {
         const rand_f32 = random.float(f32);
         const rand_f64 = random.float(f64);
-        const f32_put = try f32_hist.getOrPut(@as(u32, @intFromFloat(rand_f32 * @as(f32, @floatFromInt(num_buckets)))));
+        const f32_put = try f32_hist.getOrPut(@as(u32, @intfromfloat(rand_f32 * @as(f32, @floatfromint(num_buckets)))));
         if (f32_put.found_existing) {
             f32_put.value_ptr.* += 1;
         } else {
             f32_put.value_ptr.* = 1;
         }
-        const f64_put = try f64_hist.getOrPut(@as(u32, @intFromFloat(rand_f64 * @as(f64, @floatFromInt(num_buckets)))));
+        const f64_put = try f64_hist.getOrPut(@as(u32, @intfromfloat(rand_f64 * @as(f64, @floatfromint(num_buckets)))));
         if (f64_put.found_existing) {
             f64_put.value_ptr.* += 1;
         } else {
@@ -352,8 +352,8 @@ test "Random float chi-square goodness of fit" {
     {
         var j: u32 = 0;
         while (j < num_buckets) : (j += 1) {
-            const count = @as(f64, @floatFromInt((if (f32_hist.get(j)) |v| v else 0)));
-            const expected = @as(f64, @floatFromInt(num_numbers)) / @as(f64, @floatFromInt(num_buckets));
+            const count = @as(f64, @floatfromint((if (f32_hist.get(j)) |v| v else 0)));
+            const expected = @as(f64, @floatfromint(num_numbers)) / @as(f64, @floatfromint(num_buckets));
             const delta = count - expected;
             const variance = (delta * delta) / expected;
             f32_total_variance += variance;
@@ -363,8 +363,8 @@ test "Random float chi-square goodness of fit" {
     {
         var j: u64 = 0;
         while (j < num_buckets) : (j += 1) {
-            const count = @as(f64, @floatFromInt((if (f64_hist.get(j)) |v| v else 0)));
-            const expected = @as(f64, @floatFromInt(num_numbers)) / @as(f64, @floatFromInt(num_buckets));
+            const count = @as(f64, @floatfromint((if (f64_hist.get(j)) |v| v else 0)));
+            const expected = @as(f64, @floatfromint(num_numbers)) / @as(f64, @floatfromint(num_buckets));
             const delta = count - expected;
             const variance = (delta * delta) / expected;
             f64_total_variance += variance;
@@ -421,13 +421,13 @@ fn testRange(r: Random, start: i8, end: i8) !void {
     try testRangeBias(r, start, end, false);
 }
 fn testRangeBias(r: Random, start: i8, end: i8, biased: bool) !void {
-    const count = @as(usize, @intCast(@as(i32, end) - @as(i32, start)));
+    const count = @as(usize, @intcast(@as(i32, end) - @as(i32, start)));
     var values_buffer = [_]bool{false} ** 0x100;
     const values = values_buffer[0..count];
     var i: usize = 0;
     while (i < count) {
         const value: i32 = if (biased) r.intRangeLessThanBiased(i8, start, end) else r.intRangeLessThan(i8, start, end);
-        const index = @as(usize, @intCast(value - start));
+        const index = @as(usize, @intcast(value - start));
         if (!values[index]) {
             i += 1;
             values[index] = true;

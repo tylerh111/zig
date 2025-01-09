@@ -40,7 +40,7 @@ pub const Bind = struct {
     }
 
     pub fn size(self: Self) u64 {
-        return @intCast(self.buffer.items.len);
+        return @intcast(self.buffer.items.len);
     }
 
     pub fn finalize(self: *Self, gpa: Allocator, ctx: *MachO) !void {
@@ -102,7 +102,7 @@ pub const Bind = struct {
                     if (sym.flags.interposable) break :ord macho.BIND_SPECIAL_DYLIB_FLAT_LOOKUP;
                     if (sym.flags.import) {
                         // TODO: if (ctx.options.namespace == .flat) break :ord macho.BIND_SPECIAL_DYLIB_FLAT_LOOKUP;
-                        if (sym.getDylibOrdinal(ctx)) |ord| break :ord @bitCast(ord);
+                        if (sym.getDylibOrdinal(ctx)) |ord| break :ord @bitcast(ord);
                     }
                     if (ctx.undefined_treatment == .dynamic_lookup)
                         break :ord macho.BIND_SPECIAL_DYLIB_FLAT_LOOKUP;
@@ -119,12 +119,12 @@ pub const Bind = struct {
                 }
             }
 
-            log.debug("{x}, {d}, {x}, {?x}, {s}", .{ offset, count, skip, addend, @tagName(state) });
+            log.debug("{x}, {d}, {x}, {?x}, {s}", .{ offset, count, skip, addend, @tagname(state) });
             log.debug("  => {x}", .{current.offset});
             switch (state) {
                 .start => {
                     if (current.offset < offset) {
-                        try addAddr(@bitCast(@as(i64, @intCast(current.offset)) - @as(i64, @intCast(offset))), writer);
+                        try addAddr(@bitcast(@as(i64, @intcast(current.offset)) - @as(i64, @intcast(offset))), writer);
                         offset = offset - (offset - current.offset);
                     } else if (current.offset > offset) {
                         const delta = current.offset - offset;
@@ -132,7 +132,7 @@ pub const Bind = struct {
                         offset += delta;
                     }
                     state = .bind_single;
-                    offset += @sizeOf(u64);
+                    offset += @sizeof(u64);
                     count = 1;
                 },
                 .bind_single => {
@@ -142,7 +142,7 @@ pub const Bind = struct {
                     } else if (current.offset > offset) {
                         const delta = current.offset - offset;
                         state = .bind_times_skip;
-                        skip = @as(u64, @intCast(delta));
+                        skip = @as(u64, @intcast(delta));
                         offset += skip;
                     } else unreachable;
                     i -= 1;
@@ -156,11 +156,11 @@ pub const Bind = struct {
                             try doBindTimesSkip(count, skip, writer);
                         }
                         state = .start;
-                        offset = offset - (@sizeOf(u64) + skip);
+                        offset = offset - (@sizeof(u64) + skip);
                         i -= 2;
                     } else if (current.offset == offset) {
                         count += 1;
-                        offset += @sizeOf(u64) + skip;
+                        offset += @sizeof(u64) + skip;
                     } else {
                         try doBindTimesSkip(count, skip, writer);
                         state = .start;
@@ -195,7 +195,7 @@ pub const WeakBind = struct {
     }
 
     pub fn size(self: Self) u64 {
-        return @intCast(self.buffer.items.len);
+        return @intcast(self.buffer.items.len);
     }
 
     pub fn finalize(self: *Self, gpa: Allocator, ctx: *MachO) !void {
@@ -263,12 +263,12 @@ pub const WeakBind = struct {
                 }
             }
 
-            log.debug("{x}, {d}, {x}, {?x}, {s}", .{ offset, count, skip, addend, @tagName(state) });
+            log.debug("{x}, {d}, {x}, {?x}, {s}", .{ offset, count, skip, addend, @tagname(state) });
             log.debug("  => {x}", .{current.offset});
             switch (state) {
                 .start => {
                     if (current.offset < offset) {
-                        try addAddr(@as(u64, @bitCast(@as(i64, @intCast(current.offset)) - @as(i64, @intCast(offset)))), writer);
+                        try addAddr(@as(u64, @bitcast(@as(i64, @intcast(current.offset)) - @as(i64, @intcast(offset)))), writer);
                         offset = offset - (offset - current.offset);
                     } else if (current.offset > offset) {
                         const delta = current.offset - offset;
@@ -276,7 +276,7 @@ pub const WeakBind = struct {
                         offset += delta;
                     }
                     state = .bind_single;
-                    offset += @sizeOf(u64);
+                    offset += @sizeof(u64);
                     count = 1;
                 },
                 .bind_single => {
@@ -286,7 +286,7 @@ pub const WeakBind = struct {
                     } else if (current.offset > offset) {
                         const delta = current.offset - offset;
                         state = .bind_times_skip;
-                        skip = @intCast(delta);
+                        skip = @intcast(delta);
                         offset += skip;
                     } else unreachable;
                     i -= 1;
@@ -300,11 +300,11 @@ pub const WeakBind = struct {
                             try doBindTimesSkip(count, skip, writer);
                         }
                         state = .start;
-                        offset = offset - (@sizeOf(u64) + skip);
+                        offset = offset - (@sizeof(u64) + skip);
                         i -= 2;
                     } else if (current.offset == offset) {
                         count += 1;
-                        offset += @sizeOf(u64) + skip;
+                        offset += @sizeof(u64) + skip;
                     } else {
                         try doBindTimesSkip(count, skip, writer);
                         state = .start;
@@ -341,7 +341,7 @@ pub const LazyBind = struct {
     }
 
     pub fn size(self: Self) u64 {
-        return @intCast(self.buffer.items.len);
+        return @intcast(self.buffer.items.len);
     }
 
     pub fn finalize(self: *Self, gpa: Allocator, ctx: *MachO) !void {
@@ -354,7 +354,7 @@ pub const LazyBind = struct {
         var addend: i64 = 0;
 
         for (self.entries.items) |entry| {
-            self.offsets.appendAssumeCapacity(@intCast(self.buffer.items.len));
+            self.offsets.appendAssumeCapacity(@intcast(self.buffer.items.len));
 
             const sym = ctx.getSymbol(entry.target);
             const name = sym.getName(ctx);
@@ -363,7 +363,7 @@ pub const LazyBind = struct {
                 if (sym.flags.interposable) break :ord macho.BIND_SPECIAL_DYLIB_FLAT_LOOKUP;
                 if (sym.flags.import) {
                     // TODO: if (ctx.options.namespace == .flat) break :ord macho.BIND_SPECIAL_DYLIB_FLAT_LOOKUP;
-                    if (sym.getDylibOrdinal(ctx)) |ord| break :ord @bitCast(ord);
+                    if (sym.getDylibOrdinal(ctx)) |ord| break :ord @bitcast(ord);
                 }
                 if (ctx.undefined_treatment == .dynamic_lookup)
                     break :ord macho.BIND_SPECIAL_DYLIB_FLAT_LOOKUP;
@@ -417,10 +417,10 @@ fn setDylibOrdinal(ordinal: i16, writer: anytype) !void {
             else => unreachable, // Invalid dylib special binding
         }
         log.debug(">>> set dylib special: {d}", .{ordinal});
-        const cast = @as(u16, @bitCast(ordinal));
+        const cast = @as(u16, @bitcast(ordinal));
         try writer.writeByte(macho.BIND_OPCODE_SET_DYLIB_SPECIAL_IMM | @as(u4, @truncate(cast)));
     } else {
-        const cast = @as(u16, @bitCast(ordinal));
+        const cast = @as(u16, @bitcast(ordinal));
         log.debug(">>> set dylib ordinal: {d}", .{ordinal});
         if (cast <= 0xf) {
             try writer.writeByte(macho.BIND_OPCODE_SET_DYLIB_ORDINAL_IMM | @as(u4, @truncate(cast)));
@@ -444,8 +444,8 @@ fn doBind(writer: anytype) !void {
 
 fn doBindAddAddr(addr: u64, writer: anytype) !void {
     log.debug(">>> bind with add: {x}", .{addr});
-    if (std.mem.isAlignedGeneric(u64, addr, @sizeOf(u64))) {
-        const imm = @divExact(addr, @sizeOf(u64));
+    if (std.mem.isAlignedGeneric(u64, addr, @sizeof(u64))) {
+        const imm = @divexact(addr, @sizeof(u64));
         if (imm <= 0xf) {
             try writer.writeByte(
                 macho.BIND_OPCODE_DO_BIND_ADD_ADDR_IMM_SCALED | @as(u4, @truncate(imm)),

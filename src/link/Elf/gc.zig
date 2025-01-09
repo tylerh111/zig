@@ -1,7 +1,7 @@
 pub fn gcAtoms(elf_file: *Elf) !void {
     const comp = elf_file.base.comp;
     const gpa = comp.gpa;
-    const num_files = elf_file.objects.items.len + @intFromBool(elf_file.zig_object_index != null);
+    const num_files = elf_file.objects.items.len + @intfrombool(elf_file.zig_object_index != null);
     var files = try std.ArrayList(File.Index).initCapacity(gpa, num_files);
     defer files.deinit();
     if (elf_file.zig_object_index) |index| files.appendAssumeCapacity(index);

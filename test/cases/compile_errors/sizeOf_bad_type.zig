@@ -1,5 +1,5 @@
 export fn entry() usize {
-    return @sizeOf(@TypeOf(null));
+    return @sizeof(@TypeOf(null));
 }
 
 // error

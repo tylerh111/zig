@@ -16,7 +16,7 @@ const timespec = linux.timespec;
 pub fn syscall0(number: SYS) usize {
     return asm volatile ("int $0x80"
         : [ret] "={eax}" (-> usize),
-        : [number] "{eax}" (@intFromEnum(number)),
+        : [number] "{eax}" (@intfromenum(number)),
         : "memory"
     );
 }
@@ -24,7 +24,7 @@ pub fn syscall0(number: SYS) usize {
 pub fn syscall1(number: SYS, arg1: usize) usize {
     return asm volatile ("int $0x80"
         : [ret] "={eax}" (-> usize),
-        : [number] "{eax}" (@intFromEnum(number)),
+        : [number] "{eax}" (@intfromenum(number)),
           [arg1] "{ebx}" (arg1),
         : "memory"
     );
@@ -33,7 +33,7 @@ pub fn syscall1(number: SYS, arg1: usize) usize {
 pub fn syscall2(number: SYS, arg1: usize, arg2: usize) usize {
     return asm volatile ("int $0x80"
         : [ret] "={eax}" (-> usize),
-        : [number] "{eax}" (@intFromEnum(number)),
+        : [number] "{eax}" (@intfromenum(number)),
           [arg1] "{ebx}" (arg1),
           [arg2] "{ecx}" (arg2),
         : "memory"
@@ -43,7 +43,7 @@ pub fn syscall2(number: SYS, arg1: usize, arg2: usize) usize {
 pub fn syscall3(number: SYS, arg1: usize, arg2: usize, arg3: usize) usize {
     return asm volatile ("int $0x80"
         : [ret] "={eax}" (-> usize),
-        : [number] "{eax}" (@intFromEnum(number)),
+        : [number] "{eax}" (@intfromenum(number)),
           [arg1] "{ebx}" (arg1),
           [arg2] "{ecx}" (arg2),
           [arg3] "{edx}" (arg3),
@@ -54,7 +54,7 @@ pub fn syscall3(number: SYS, arg1: usize, arg2: usize, arg3: usize) usize {
 pub fn syscall4(number: SYS, arg1: usize, arg2: usize, arg3: usize, arg4: usize) usize {
     return asm volatile ("int $0x80"
         : [ret] "={eax}" (-> usize),
-        : [number] "{eax}" (@intFromEnum(number)),
+        : [number] "{eax}" (@intfromenum(number)),
           [arg1] "{ebx}" (arg1),
           [arg2] "{ecx}" (arg2),
           [arg3] "{edx}" (arg3),
@@ -66,7 +66,7 @@ pub fn syscall4(number: SYS, arg1: usize, arg2: usize, arg3: usize, arg4: usize)
 pub fn syscall5(number: SYS, arg1: usize, arg2: usize, arg3: usize, arg4: usize, arg5: usize) usize {
     return asm volatile ("int $0x80"
         : [ret] "={eax}" (-> usize),
-        : [number] "{eax}" (@intFromEnum(number)),
+        : [number] "{eax}" (@intfromenum(number)),
           [arg1] "{ebx}" (arg1),
           [arg2] "{ecx}" (arg2),
           [arg3] "{edx}" (arg3),
@@ -97,7 +97,7 @@ pub fn syscall6(
         \\ pop  %%ebp
         \\ add  $4, %%esp
         : [ret] "={eax}" (-> usize),
-        : [number] "{eax}" (@intFromEnum(number)),
+        : [number] "{eax}" (@intfromenum(number)),
           [arg1] "{ebx}" (arg1),
           [arg2] "{ecx}" (arg2),
           [arg3] "{edx}" (arg3),
@@ -111,9 +111,9 @@ pub fn syscall6(
 pub fn socketcall(call: usize, args: [*]const usize) usize {
     return asm volatile ("int $0x80"
         : [ret] "={eax}" (-> usize),
-        : [number] "{eax}" (@intFromEnum(SYS.socketcall)),
+        : [number] "{eax}" (@intfromenum(SYS.socketcall)),
           [arg1] "{ebx}" (call),
-          [arg2] "{ecx}" (@intFromPtr(args)),
+          [arg2] "{ecx}" (@intfromptr(args)),
         : "memory"
     );
 }
@@ -129,13 +129,13 @@ pub fn restore() callconv(.Naked) noreturn {
             \\ movl %[number], %%eax
             \\ int $0x80
             :
-            : [number] "i" (@intFromEnum(SYS.sigreturn)),
+            : [number] "i" (@intfromenum(SYS.sigreturn)),
             : "memory"
         ),
         else => asm volatile (
             \\ int $0x80
             :
-            : [number] "{eax}" (@intFromEnum(SYS.sigreturn)),
+            : [number] "{eax}" (@intfromenum(SYS.sigreturn)),
             : "memory"
         ),
     }
@@ -147,13 +147,13 @@ pub fn restore_rt() callconv(.Naked) noreturn {
             \\ movl %[number], %%eax
             \\ int $0x80
             :
-            : [number] "i" (@intFromEnum(SYS.rt_sigreturn)),
+            : [number] "i" (@intfromenum(SYS.rt_sigreturn)),
             : "memory"
         ),
         else => asm volatile (
             \\ int $0x80
             :
-            : [number] "{eax}" (@intFromEnum(SYS.rt_sigreturn)),
+            : [number] "{eax}" (@intfromenum(SYS.rt_sigreturn)),
             : "memory"
         ),
     }
@@ -356,11 +356,11 @@ pub const SC = struct {
 };
 
 fn gpRegisterOffset(comptime reg_index: comptime_int) usize {
-    return @offsetOf(ucontext_t, "mcontext") + @offsetOf(mcontext_t, "gregs") + @sizeOf(usize) * reg_index;
+    return @offsetof(ucontext_t, "mcontext") + @offsetof(mcontext_t, "gregs") + @sizeof(usize) * reg_index;
 }
 
 noinline fn getContextReturnAddress() usize {
-    return @returnAddress();
+    return @returnaddress();
 }
 
 pub fn getContextInternal() callconv(.Naked) usize {
@@ -403,8 +403,8 @@ pub fn getContextInternal() callconv(.Naked) usize {
         \\ popl %%ebx
         \\ retl
         :
-        : [flags_offset] "i" (@offsetOf(ucontext_t, "flags")),
-          [link_offset] "i" (@offsetOf(ucontext_t, "link")),
+        : [flags_offset] "i" (@offsetof(ucontext_t, "flags")),
+          [link_offset] "i" (@offsetof(ucontext_t, "link")),
           [edi_offset] "i" (comptime gpRegisterOffset(REG.EDI)),
           [esi_offset] "i" (comptime gpRegisterOffset(REG.ESI)),
           [ebp_offset] "i" (comptime gpRegisterOffset(REG.EBP)),
@@ -415,12 +415,12 @@ pub fn getContextInternal() callconv(.Naked) usize {
           [eax_offset] "i" (comptime gpRegisterOffset(REG.EAX)),
           [eip_offset] "i" (comptime gpRegisterOffset(REG.EIP)),
           [fs_offset] "i" (comptime gpRegisterOffset(REG.FS)),
-          [fpregs_offset] "i" (@offsetOf(ucontext_t, "mcontext") + @offsetOf(mcontext_t, "fpregs")),
-          [regspace_offset] "i" (@offsetOf(ucontext_t, "regspace")),
-          [sigaltstack] "i" (@intFromEnum(linux.SYS.sigaltstack)),
-          [stack_offset] "i" (@offsetOf(ucontext_t, "stack")),
-          [sigprocmask] "i" (@intFromEnum(linux.SYS.rt_sigprocmask)),
-          [sigmask_offset] "i" (@offsetOf(ucontext_t, "sigmask")),
+          [fpregs_offset] "i" (@offsetof(ucontext_t, "mcontext") + @offsetof(mcontext_t, "fpregs")),
+          [regspace_offset] "i" (@offsetof(ucontext_t, "regspace")),
+          [sigaltstack] "i" (@intfromenum(linux.SYS.sigaltstack)),
+          [stack_offset] "i" (@offsetof(ucontext_t, "stack")),
+          [sigprocmask] "i" (@intfromenum(linux.SYS.rt_sigprocmask)),
+          [sigmask_offset] "i" (@offsetof(ucontext_t, "sigmask")),
           [sigset_size] "i" (linux.NSIG / 8),
         : "cc", "memory", "eax", "ecx", "edx"
     );

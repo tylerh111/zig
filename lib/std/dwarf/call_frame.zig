@@ -39,12 +39,12 @@ const Opcode = enum(u8) {
     val_expression = 0x16,
 
     // These opcodes encode an operand in the lower 6 bits of the opcode itself
-    pub const lo_inline = @intFromEnum(Opcode.advance_loc);
-    pub const hi_inline = @intFromEnum(Opcode.restore) | 0b111111;
+    pub const lo_inline = @intfromenum(Opcode.advance_loc);
+    pub const hi_inline = @intfromenum(Opcode.restore) | 0b111111;
 
     // These opcodes are trailed by zero or more operands
-    pub const lo_reserved = @intFromEnum(Opcode.nop);
-    pub const hi_reserved = @intFromEnum(Opcode.val_expression);
+    pub const lo_reserved = @intfromenum(Opcode.nop);
+    pub const hi_reserved = @intfromenum(Opcode.val_expression);
 
     // Vendor-specific opcodes
     pub const lo_user = 0x1c;
@@ -154,8 +154,8 @@ pub const Instruction = union(Opcode) {
         const reader = stream.reader();
         switch (try reader.readByte()) {
             Opcode.lo_inline...Opcode.hi_inline => |opcode| {
-                const e: Opcode = @enumFromInt(opcode & 0b11000000);
-                const value: u6 = @intCast(opcode & 0b111111);
+                const e: Opcode = @enumfromint(opcode & 0b11000000);
+                const value: u6 = @intcast(opcode & 0b111111);
                 return switch (e) {
                     .advance_loc => .{
                         .advance_loc = .{ .delta = value },
@@ -173,7 +173,7 @@ pub const Instruction = union(Opcode) {
                 };
             },
             Opcode.lo_reserved...Opcode.hi_reserved => |opcode| {
-                const e: Opcode = @enumFromInt(opcode);
+                const e: Opcode = @enumfromint(opcode);
                 return switch (e) {
                     .advance_loc,
                     .offset,
@@ -303,9 +303,9 @@ pub const Instruction = union(Opcode) {
 /// an error and fall back to FP-based unwinding.
 pub fn applyOffset(base: usize, offset: i64) !usize {
     return if (offset >= 0)
-        try std.math.add(usize, base, @as(usize, @intCast(offset)))
+        try std.math.add(usize, base, @as(usize, @intcast(offset)))
     else
-        try std.math.sub(usize, base, @as(usize, @intCast(-offset)));
+        try std.math.sub(usize, base, @as(usize, @intcast(-offset)));
 }
 
 /// This is a virtual machine that runs DWARF call frame instructions.
@@ -386,13 +386,13 @@ pub const VirtualMachine = struct {
                     if (context.cfa) |cfa| {
                         const addr = try applyOffset(cfa, offset);
                         if (expression_context.isValidMemory) |isValidMemory| if (!isValidMemory(addr)) return error.InvalidAddress;
-                        const ptr: *const usize = @ptrFromInt(addr);
-                        mem.writeInt(usize, out[0..@sizeOf(usize)], ptr.*, native_endian);
+                        const ptr: *const usize = @ptrfromint(addr);
+                        mem.writeInt(usize, out[0..@sizeof(usize)], ptr.*, native_endian);
                     } else return error.InvalidCFA;
                 },
                 .val_offset => |offset| {
                     if (context.cfa) |cfa| {
-                        mem.writeInt(usize, out[0..@sizeOf(usize)], try applyOffset(cfa, offset), native_endian);
+                        mem.writeInt(usize, out[0..@sizeof(usize)], try applyOffset(cfa, offset), native_endian);
                     } else return error.InvalidCFA;
                 },
                 .register => |register| {
@@ -409,15 +409,15 @@ pub const VirtualMachine = struct {
                     } else return error.NoExpressionValue;
 
                     if (!context.isValidMemory(addr)) return error.InvalidExpressionAddress;
-                    const ptr: *usize = @ptrFromInt(addr);
-                    mem.writeInt(usize, out[0..@sizeOf(usize)], ptr.*, native_endian);
+                    const ptr: *usize = @ptrfromint(addr);
+                    mem.writeInt(usize, out[0..@sizeof(usize)], ptr.*, native_endian);
                 },
                 .val_expression => |expression| {
                     context.stack_machine.reset();
                     const value = try context.stack_machine.run(expression, context.allocator, expression_context, context.cfa.?);
                     if (value) |v| {
                         if (v != .generic) return error.InvalidExpressionValue;
-                        mem.writeInt(usize, out[0..@sizeOf(usize)], v.generic, native_endian);
+                        mem.writeInt(usize, out[0..@sizeof(usize)], v.generic, native_endian);
                     } else return error.NoExpressionValue;
                 },
                 .architectural => return error.UnimplementedRegisterRule,
@@ -517,7 +517,7 @@ pub const VirtualMachine = struct {
         cie: dwarf.CommonInformationEntry,
         fde: dwarf.FrameDescriptionEntry,
     ) !Row {
-        return self.runTo(allocator, pc, cie, fde, @sizeOf(usize), builtin.target.cpu.arch.endian());
+        return self.runTo(allocator, pc, cie, fde, @sizeof(usize), builtin.target.cpu.arch.endian());
     }
 
     fn resolveCopyOnWrite(self: *VirtualMachine, allocator: std.mem.Allocator) !void {
@@ -569,7 +569,7 @@ pub const VirtualMachine = struct {
             => |i| {
                 try self.resolveCopyOnWrite(allocator);
                 const column = try self.getOrAddColumn(allocator, i.register);
-                column.rule = .{ .offset = @as(i64, @intCast(i.offset)) * cie.data_alignment_factor };
+                column.rule = .{ .offset = @as(i64, @intcast(i.offset)) * cie.data_alignment_factor };
             },
             inline .restore,
             .restore_extended,
@@ -615,7 +615,7 @@ pub const VirtualMachine = struct {
                 try self.resolveCopyOnWrite(allocator);
                 self.current_row.cfa = .{
                     .register = i.register,
-                    .rule = .{ .val_offset = @intCast(i.offset) },
+                    .rule = .{ .val_offset = @intcast(i.offset) },
                 };
             },
             .def_cfa_sf => |i| {
@@ -634,7 +634,7 @@ pub const VirtualMachine = struct {
                 try self.resolveCopyOnWrite(allocator);
                 if (self.current_row.cfa.register == null or self.current_row.cfa.rule != .val_offset) return error.InvalidOperation;
                 self.current_row.cfa.rule = .{
-                    .val_offset = @intCast(i.offset),
+                    .val_offset = @intcast(i.offset),
                 };
             },
             .def_cfa_offset_sf => |i| {
@@ -662,7 +662,7 @@ pub const VirtualMachine = struct {
                 try self.resolveCopyOnWrite(allocator);
                 const column = try self.getOrAddColumn(allocator, i.register);
                 column.rule = .{
-                    .val_offset = @as(i64, @intCast(i.offset)) * cie.data_alignment_factor,
+                    .val_offset = @as(i64, @intcast(i.offset)) * cie.data_alignment_factor,
                 };
             },
             .val_offset_sf => |i| {

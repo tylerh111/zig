@@ -157,7 +157,7 @@ fn add_cc_args(
 }
 
 pub fn buildImportLib(comp: *Compilation, lib_name: []const u8) !void {
-    if (build_options.only_c) @compileError("building import libs not included in core functionality");
+    if (build_options.only_c) @compileerror("building import libs not included in core functionality");
     var arena_allocator = std.heap.ArenaAllocator.init(comp.gpa);
     defer arena_allocator.deinit();
     const arena = arena_allocator.allocator();
@@ -287,7 +287,7 @@ pub fn buildImportLib(comp: *Compilation, lib_name: []const u8) !void {
     }
 
     man.writeManifest() catch |err| {
-        log.warn("failed to write cache manifest for DLL import {s}.lib: {s}", .{ lib_name, @errorName(err) });
+        log.warn("failed to write cache manifest for DLL import {s}.lib: {s}", .{ lib_name, @errorname(err) });
     };
 
     try comp.crt_files.putNoClobber(comp.gpa, final_lib_basename, .{

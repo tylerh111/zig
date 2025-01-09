@@ -1,6 +1,6 @@
 comptime {
-    const ptr: *align(1) i32 = @ptrFromInt(0x1);
-    const aligned: *align(4) i32 = @alignCast(ptr);
+    const ptr: *align(1) i32 = @ptrfromint(0x1);
+    const aligned: *align(4) i32 = @aligncast(ptr);
     _ = aligned;
 }
 

@@ -49,20 +49,20 @@ pub const featureSetHasAny = CpuFeature.feature_set_fns(Feature).featureSetHasAn
 pub const featureSetHasAll = CpuFeature.feature_set_fns(Feature).featureSetHasAll;
 
 pub const all_features = blk: {
-    const len = @typeInfo(Feature).Enum.fields.len;
+    const len = @typeinfo(Feature).Enum.fields.len;
     std.debug.assert(len <= CpuFeature.Set.needed_bit_count);
     var result: [len]CpuFeature = undefined;
-    result[@intFromEnum(Feature.addsubiw)] = .{
+    result[@intfromenum(Feature.addsubiw)] = .{
         .llvm_name = "addsubiw",
         .description = "Enable 16-bit register-immediate addition and subtraction instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.avr0)] = .{
+    result[@intfromenum(Feature.avr0)] = .{
         .llvm_name = "avr0",
         .description = "The device is a part of the avr0 family",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.avr1)] = .{
+    result[@intfromenum(Feature.avr1)] = .{
         .llvm_name = "avr1",
         .description = "The device is a part of the avr1 family",
         .dependencies = featureSet(&[_]Feature{
@@ -71,7 +71,7 @@ pub const all_features = blk: {
             .memmappedregs,
         }),
     };
-    result[@intFromEnum(Feature.avr2)] = .{
+    result[@intfromenum(Feature.avr2)] = .{
         .llvm_name = "avr2",
         .description = "The device is a part of the avr2 family",
         .dependencies = featureSet(&[_]Feature{
@@ -81,7 +81,7 @@ pub const all_features = blk: {
             .sram,
         }),
     };
-    result[@intFromEnum(Feature.avr25)] = .{
+    result[@intfromenum(Feature.avr25)] = .{
         .llvm_name = "avr25",
         .description = "The device is a part of the avr25 family",
         .dependencies = featureSet(&[_]Feature{
@@ -92,7 +92,7 @@ pub const all_features = blk: {
             .spm,
         }),
     };
-    result[@intFromEnum(Feature.avr3)] = .{
+    result[@intfromenum(Feature.avr3)] = .{
         .llvm_name = "avr3",
         .description = "The device is a part of the avr3 family",
         .dependencies = featureSet(&[_]Feature{
@@ -100,7 +100,7 @@ pub const all_features = blk: {
             .jmpcall,
         }),
     };
-    result[@intFromEnum(Feature.avr31)] = .{
+    result[@intfromenum(Feature.avr31)] = .{
         .llvm_name = "avr31",
         .description = "The device is a part of the avr31 family",
         .dependencies = featureSet(&[_]Feature{
@@ -108,7 +108,7 @@ pub const all_features = blk: {
             .elpm,
         }),
     };
-    result[@intFromEnum(Feature.avr35)] = .{
+    result[@intfromenum(Feature.avr35)] = .{
         .llvm_name = "avr35",
         .description = "The device is a part of the avr35 family",
         .dependencies = featureSet(&[_]Feature{
@@ -119,7 +119,7 @@ pub const all_features = blk: {
             .spm,
         }),
     };
-    result[@intFromEnum(Feature.avr4)] = .{
+    result[@intfromenum(Feature.avr4)] = .{
         .llvm_name = "avr4",
         .description = "The device is a part of the avr4 family",
         .dependencies = featureSet(&[_]Feature{
@@ -131,7 +131,7 @@ pub const all_features = blk: {
             .spm,
         }),
     };
-    result[@intFromEnum(Feature.avr5)] = .{
+    result[@intfromenum(Feature.avr5)] = .{
         .llvm_name = "avr5",
         .description = "The device is a part of the avr5 family",
         .dependencies = featureSet(&[_]Feature{
@@ -143,7 +143,7 @@ pub const all_features = blk: {
             .spm,
         }),
     };
-    result[@intFromEnum(Feature.avr51)] = .{
+    result[@intfromenum(Feature.avr51)] = .{
         .llvm_name = "avr51",
         .description = "The device is a part of the avr51 family",
         .dependencies = featureSet(&[_]Feature{
@@ -152,7 +152,7 @@ pub const all_features = blk: {
             .elpmx,
         }),
     };
-    result[@intFromEnum(Feature.avr6)] = .{
+    result[@intfromenum(Feature.avr6)] = .{
         .llvm_name = "avr6",
         .description = "The device is a part of the avr6 family",
         .dependencies = featureSet(&[_]Feature{
@@ -160,7 +160,7 @@ pub const all_features = blk: {
             .eijmpcall,
         }),
     };
-    result[@intFromEnum(Feature.avrtiny)] = .{
+    result[@intfromenum(Feature.avrtiny)] = .{
         .llvm_name = "avrtiny",
         .description = "The device is a part of the avrtiny family",
         .dependencies = featureSet(&[_]Feature{
@@ -171,82 +171,82 @@ pub const all_features = blk: {
             .tinyencoding,
         }),
     };
-    result[@intFromEnum(Feature.@"break")] = .{
+    result[@intfromenum(Feature.@"break")] = .{
         .llvm_name = "break",
         .description = "The device supports the `BREAK` debugging instruction",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.des)] = .{
+    result[@intfromenum(Feature.des)] = .{
         .llvm_name = "des",
         .description = "The device supports the `DES k` encryption instruction",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.eijmpcall)] = .{
+    result[@intfromenum(Feature.eijmpcall)] = .{
         .llvm_name = "eijmpcall",
         .description = "The device supports the `EIJMP`/`EICALL` instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.elpm)] = .{
+    result[@intfromenum(Feature.elpm)] = .{
         .llvm_name = "elpm",
         .description = "The device supports the ELPM instruction",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.elpmx)] = .{
+    result[@intfromenum(Feature.elpmx)] = .{
         .llvm_name = "elpmx",
         .description = "The device supports the `ELPM Rd, Z[+]` instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.ijmpcall)] = .{
+    result[@intfromenum(Feature.ijmpcall)] = .{
         .llvm_name = "ijmpcall",
         .description = "The device supports `IJMP`/`ICALL`instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.jmpcall)] = .{
+    result[@intfromenum(Feature.jmpcall)] = .{
         .llvm_name = "jmpcall",
         .description = "The device supports the `JMP` and `CALL` instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.lowbytefirst)] = .{
+    result[@intfromenum(Feature.lowbytefirst)] = .{
         .llvm_name = "lowbytefirst",
         .description = "Do the low byte first when writing a 16-bit port or storing a 16-bit word",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.lpm)] = .{
+    result[@intfromenum(Feature.lpm)] = .{
         .llvm_name = "lpm",
         .description = "The device supports the `LPM` instruction",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.lpmx)] = .{
+    result[@intfromenum(Feature.lpmx)] = .{
         .llvm_name = "lpmx",
         .description = "The device supports the `LPM Rd, Z[+]` instruction",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.memmappedregs)] = .{
+    result[@intfromenum(Feature.memmappedregs)] = .{
         .llvm_name = "memmappedregs",
         .description = "The device has CPU registers mapped in data address space",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.movw)] = .{
+    result[@intfromenum(Feature.movw)] = .{
         .llvm_name = "movw",
         .description = "The device supports the 16-bit MOVW instruction",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.mul)] = .{
+    result[@intfromenum(Feature.mul)] = .{
         .llvm_name = "mul",
         .description = "The device supports the multiplication instructions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.rmw)] = .{
+    result[@intfromenum(Feature.rmw)] = .{
         .llvm_name = "rmw",
         .description = "The device supports the read-write-modify instructions: XCH, LAS, LAC, LAT",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.smallstack)] = .{
+    result[@intfromenum(Feature.smallstack)] = .{
         .llvm_name = "smallstack",
         .description = "The device has an 8-bit stack pointer",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.special)] = .{
+    result[@intfromenum(Feature.special)] = .{
         .llvm_name = "special",
         .description = "Enable use of the entire instruction set - used for debugging",
         .dependencies = featureSet(&[_]Feature{
@@ -269,27 +269,27 @@ pub const all_features = blk: {
             .sram,
         }),
     };
-    result[@intFromEnum(Feature.spm)] = .{
+    result[@intfromenum(Feature.spm)] = .{
         .llvm_name = "spm",
         .description = "The device supports the `SPM` instruction",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.spmx)] = .{
+    result[@intfromenum(Feature.spmx)] = .{
         .llvm_name = "spmx",
         .description = "The device supports the `SPM Z+` instruction",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.sram)] = .{
+    result[@intfromenum(Feature.sram)] = .{
         .llvm_name = "sram",
         .description = "The device has random access memory",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.tinyencoding)] = .{
+    result[@intfromenum(Feature.tinyencoding)] = .{
         .llvm_name = "tinyencoding",
         .description = "The device has Tiny core specific instruction encodings",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.xmega)] = .{
+    result[@intfromenum(Feature.xmega)] = .{
         .llvm_name = "xmega",
         .description = "The device is a part of the xmega family",
         .dependencies = featureSet(&[_]Feature{
@@ -312,7 +312,7 @@ pub const all_features = blk: {
             .sram,
         }),
     };
-    result[@intFromEnum(Feature.xmega3)] = .{
+    result[@intfromenum(Feature.xmega3)] = .{
         .llvm_name = "xmega3",
         .description = "The device is a part of the xmega3 family",
         .dependencies = featureSet(&[_]Feature{
@@ -329,7 +329,7 @@ pub const all_features = blk: {
             .sram,
         }),
     };
-    result[@intFromEnum(Feature.xmegau)] = .{
+    result[@intfromenum(Feature.xmegau)] = .{
         .llvm_name = "xmegau",
         .description = "The device is a part of the xmegau family",
         .dependencies = featureSet(&[_]Feature{
@@ -337,7 +337,7 @@ pub const all_features = blk: {
             .xmega,
         }),
     };
-    const ti = @typeInfo(Feature);
+    const ti = @typeinfo(Feature);
     for (&result, 0..) |*elem, i| {
         elem.index = i;
         elem.name = ti.Enum.fields[i].name;

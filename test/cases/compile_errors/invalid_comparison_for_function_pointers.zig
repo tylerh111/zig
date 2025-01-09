@@ -2,7 +2,7 @@ fn foo() void {}
 const invalid = foo > foo;
 
 export fn entry() usize {
-    return @sizeOf(@TypeOf(invalid));
+    return @sizeof(@TypeOf(invalid));
 }
 
 // error

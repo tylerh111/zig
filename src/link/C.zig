@@ -89,8 +89,8 @@ pub fn addString(this: *C, s: []const u8) Allocator.Error!String {
     const gpa = comp.gpa;
     try this.string_bytes.appendSlice(gpa, s);
     return .{
-        .start = @intCast(this.string_bytes.items.len - s.len),
-        .len = @intCast(s.len),
+        .start = @intcast(this.string_bytes.items.len - s.len),
+        .len = @intcast(s.len),
     };
 }
 
@@ -451,7 +451,7 @@ pub fn flushModule(self: *C, arena: Allocator, prog_node: std.Progress.Node) !vo
     {
         var export_names: std.AutoHashMapUnmanaged(InternPool.NullTerminatedString, void) = .{};
         defer export_names.deinit(gpa);
-        try export_names.ensureTotalCapacity(gpa, @intCast(zcu.decl_exports.entries.len));
+        try export_names.ensureTotalCapacity(gpa, @intcast(zcu.decl_exports.entries.len));
         for (zcu.decl_exports.values()) |exports| for (exports.items) |@"export"|
             try export_names.put(gpa, @"export".opts.name, {});
 
@@ -703,7 +703,7 @@ fn flushLazyFns(
     lazy_fns: codegen.LazyFnMap,
 ) FlushDeclError!void {
     const gpa = self.base.comp.gpa;
-    try f.lazy_fns.ensureUnusedCapacity(gpa, @intCast(lazy_fns.count()));
+    try f.lazy_fns.ensureUnusedCapacity(gpa, @intcast(lazy_fns.count()));
 
     var it = lazy_fns.iterator();
     while (it.next()) |entry| {

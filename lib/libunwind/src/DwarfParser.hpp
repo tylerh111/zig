@@ -48,7 +48,7 @@ public:
     int       dataAlignFactor;
     bool      isSignalFrame;
     bool      fdesHaveAugmentationData;
-    uint8_t   returnAddressRegister;
+    uint8_t   returnaddressRegister;
 #if defined(_LIBUNWIND_TARGET_AARCH64)
     bool      addressesSignedWithBKey;
     bool      mteTaggedFrame;
@@ -363,7 +363,7 @@ const char *CFI_Parser<A>::parseCIE(A &addressSpace, pint_t cie,
   uint64_t raReg = (version == 1) ? addressSpace.get8(p++)
                                   : addressSpace.getULEB128(p, cieContentEnd);
   assert(raReg < 255 && "return address register too large");
-  cieInfo->returnAddressRegister = (uint8_t)raReg;
+  cieInfo->returnaddressRegister = (uint8_t)raReg;
   // parse augmentation data based on augmentation string
   const char *result = NULL;
   if (addressSpace.get8(strStart) == 'z') {

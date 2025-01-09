@@ -7,7 +7,7 @@ const Set2 = error{
     C,
 };
 comptime {
-    _ = @as(Set2, @errorCast(Set1.B));
+    _ = @as(Set2, @errorcast(Set1.B));
 }
 
 // test_error='error.B' not a member of error set 'error{A,C}'

@@ -3,7 +3,7 @@ const fs = std.fs;
 const mem = std.mem;
 const ascii = std.ascii;
 
-const catalog_txt = @embedFile("crc/catalog.txt");
+const catalog_txt = @embedfile("crc/catalog.txt");
 
 pub fn main() anyerror!void {
     var arena_state = std.heap.ArenaAllocator.init(std.heap.page_allocator);

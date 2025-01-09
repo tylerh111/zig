@@ -134,7 +134,7 @@ const CompressVectorized = struct {
         rows[2] ^= @Vector(4, u32){ chaining_value[0], chaining_value[1], chaining_value[2], chaining_value[3] };
         rows[3] ^= @Vector(4, u32){ chaining_value[4], chaining_value[5], chaining_value[6], chaining_value[7] };
 
-        return @as([16]u32, @bitCast(rows));
+        return @as([16]u32, @bitcast(rows));
     }
 };
 
@@ -206,7 +206,7 @@ else
     CompressGeneric.compress;
 
 fn first8Words(words: [16]u32) [8]u32 {
-    return @as(*const [8]u32, @ptrCast(&words)).*;
+    return @as(*const [8]u32, @ptrcast(&words)).*;
 }
 
 fn wordsFromLittleEndianBytes(comptime count: usize, bytes: [count * 4]u8) [count]u32 {

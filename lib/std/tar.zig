@@ -189,7 +189,7 @@ const Header = struct {
     }
 
     pub fn mode(header: Header) !u32 {
-        return @intCast(try header.octal(100, 8));
+        return @intcast(try header.octal(100, 8));
     }
 
     pub fn size(header: Header) !u64 {
@@ -224,7 +224,7 @@ const Header = struct {
     }
 
     pub fn kind(header: Header) Kind {
-        const result: Kind = @enumFromInt(header.bytes[156]);
+        const result: Kind = @enumfromint(header.bytes[156]);
         if (result == .normal_alias) return .normal;
         return result;
     }
@@ -255,7 +255,7 @@ const Header = struct {
         for (header.bytes, 0..) |v, i| {
             const b = if (148 <= i and i < 156) 32 else v; // Treating chksum bytes as spaces.
             cs.unsigned += b;
-            cs.signed += @as(i8, @bitCast(b));
+            cs.signed += @as(i8, @bitcast(b));
         }
         return cs;
     }
@@ -394,7 +394,7 @@ pub fn Iterator(comptime ReaderType: type) type {
         // Number of padding bytes in the last file block.
         fn blockPadding(size: u64) usize {
             const block_rounded = std.mem.alignForward(u64, size, Header.SIZE); // size rounded to te block boundary
-            return @intCast(block_rounded - size);
+            return @intcast(block_rounded - size);
         }
 
         /// Iterates through the tar archive as if it is a series of files.
@@ -444,16 +444,16 @@ pub fn Iterator(comptime ReaderType: type) type {
                     },
                     // Prefix header types
                     .gnu_long_name => {
-                        file.name = try self.readString(@intCast(size), self.file_name_buffer);
+                        file.name = try self.readString(@intcast(size), self.file_name_buffer);
                     },
                     .gnu_long_link => {
-                        file.link_name = try self.readString(@intCast(size), self.link_name_buffer);
+                        file.link_name = try self.readString(@intcast(size), self.link_name_buffer);
                     },
                     .extended_header => {
                         // Use just attributes from last extended header.
                         file = self.newFile();
 
-                        var rdr = paxIterator(self.reader, @intCast(size));
+                        var rdr = paxIterator(self.reader, @intcast(size));
                         while (try rdr.next()) |attr| {
                             switch (attr.kind) {
                                 .path => {
@@ -942,7 +942,7 @@ test iterator {
     //    example/a/file
     //    example/empty/
 
-    const data = @embedFile("tar/testdata/example.tar");
+    const data = @embedfile("tar/testdata/example.tar");
     var fbs = std.io.fixedBufferStream(data);
 
     // User provided buffers to the iterator
@@ -1001,7 +1001,7 @@ test pipeToFileSystem {
     //    example/a/file
     //    example/empty/
 
-    const data = @embedFile("tar/testdata/example.tar");
+    const data = @embedfile("tar/testdata/example.tar");
     var fbs = std.io.fixedBufferStream(data);
     const reader = fbs.reader();
 
@@ -1033,7 +1033,7 @@ test pipeToFileSystem {
 }
 
 test "pipeToFileSystem root_dir" {
-    const data = @embedFile("tar/testdata/example.tar");
+    const data = @embedfile("tar/testdata/example.tar");
     var fbs = std.io.fixedBufferStream(data);
     const reader = fbs.reader();
 
@@ -1082,7 +1082,7 @@ test "pipeToFileSystem root_dir" {
 }
 
 test "findRoot without explicit root dir" {
-    const data = @embedFile("tar/testdata/19820.tar");
+    const data = @embedfile("tar/testdata/19820.tar");
     var fbs = std.io.fixedBufferStream(data);
     const reader = fbs.reader();
 
@@ -1133,7 +1133,7 @@ test "executable bit" {
     if (!std.fs.has_executable_bit) return error.SkipZigTest;
 
     const S = std.posix.S;
-    const data = @embedFile("tar/testdata/example.tar");
+    const data = @embedfile("tar/testdata/example.tar");
 
     for ([_]PipeOptions.ModeMode{ .ignore, .executable_bit_only }) |opt| {
         var fbs = std.io.fixedBufferStream(data);

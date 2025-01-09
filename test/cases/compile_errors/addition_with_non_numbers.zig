@@ -4,7 +4,7 @@ const Foo = struct {
 const x = Foo{ .field = 1 } + Foo{ .field = 2 };
 
 export fn entry() usize {
-    return @sizeOf(@TypeOf(x));
+    return @sizeof(@TypeOf(x));
 }
 
 // error

@@ -18,14 +18,14 @@ test "packed struct explicit backing integer" {
     const S3 = packed struct { x: S1, y: S2 };
     const S3Padded = packed struct(u64) { s3: S3, pad: u16 };
 
-    try expectEqual(48, @bitSizeOf(S3));
-    try expectEqual(@sizeOf(u48), @sizeOf(S3));
+    try expectEqual(48, @bitsizeof(S3));
+    try expectEqual(@sizeof(u48), @sizeof(S3));
 
-    try expectEqual(3, @offsetOf(S3, "y"));
-    try expectEqual(24, @bitOffsetOf(S3, "y"));
+    try expectEqual(3, @offsetof(S3, "y"));
+    try expectEqual(24, @bitoffsetof(S3, "y"));
 
     if (native_endian == .little) {
-        const s3 = @as(S3Padded, @bitCast(@as(u64, 0xe952d5c71ff4))).s3;
+        const s3 = @as(S3Padded, @bitcast(@as(u64, 0xe952d5c71ff4))).s3;
         try expectEqual(@as(u8, 0xf4), s3.x.a);
         try expectEqual(@as(u8, 0x1f), s3.x.b);
         try expectEqual(@as(u8, 0xc7), s3.x.c);
@@ -39,14 +39,14 @@ test "packed struct explicit backing integer" {
     const S6 = packed struct(i80) { a: i32, b: S4, c: i8 };
 
     const expectedBitSize = 80;
-    const expectedByteSize = @sizeOf(u80);
-    try expectEqual(expectedBitSize, @bitSizeOf(S5));
-    try expectEqual(expectedByteSize, @sizeOf(S5));
-    try expectEqual(expectedBitSize, @bitSizeOf(S6));
-    try expectEqual(expectedByteSize, @sizeOf(S6));
+    const expectedByteSize = @sizeof(u80);
+    try expectEqual(expectedBitSize, @bitsizeof(S5));
+    try expectEqual(expectedByteSize, @sizeof(S5));
+    try expectEqual(expectedBitSize, @bitsizeof(S6));
+    try expectEqual(expectedByteSize, @sizeof(S6));
 
-    try expectEqual(5, @offsetOf(S5, "c"));
-    try expectEqual(40, @bitOffsetOf(S5, "c"));
-    try expectEqual(9, @offsetOf(S6, "c"));
-    try expectEqual(72, @bitOffsetOf(S6, "c"));
+    try expectEqual(5, @offsetof(S5, "c"));
+    try expectEqual(40, @bitoffsetof(S5, "c"));
+    try expectEqual(9, @offsetof(S6, "c"));
+    try expectEqual(72, @bitoffsetof(S6, "c"));
 }

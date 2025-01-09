@@ -602,7 +602,7 @@ type_tag_handlers = {
     'error_set': lambda payload: type_tag_handlers['error_set_merged'](payload.GetChildMemberWithName('names')),
     'error_set_single': lambda payload: 'error{%s}' % zig_String_AsIdentifier(payload, zig_IsFieldName),
     'error_set_merged': lambda payload: 'error{%s}' % ','.join(zig_String_AsIdentifier(child.GetChildMemberWithName('key'), zig_IsFieldName) for child in payload.GetChildMemberWithName('entries').children),
-    'error_set_inferred': lambda payload: '@typeInfo(@typeInfo(@TypeOf(%s)).Fn.return_type.?).ErrorUnion.error_set' % OwnerDecl_RenderFullyQualifiedName(payload.GetChildMemberWithName('func')),
+    'error_set_inferred': lambda payload: '@typeinfo(@typeinfo(@TypeOf(%s)).Fn.return_type.?).ErrorUnion.error_set' % OwnerDecl_RenderFullyQualifiedName(payload.GetChildMemberWithName('func')),
 
     'enum_full': OwnerDecl_RenderFullyQualifiedName,
     'enum_nonexhaustive': OwnerDecl_RenderFullyQualifiedName,
@@ -674,8 +674,8 @@ value_tag_handlers = {
     'aggregate': lambda payload: '.{%s}' % ', '.join(map(value_Value_SummaryProvider, payload.children)),
     'union': lambda payload: '.{.%s = %s}' % tuple(value_Value_SummaryProvider(payload.GetChildMemberWithName(name)) for name in ('tag', 'val')),
 
-    'lazy_align': lambda payload: '@alignOf(%s)' % type_Type_SummaryProvider(payload),
-    'lazy_size': lambda payload: '@sizeOf(%s)' % type_Type_SummaryProvider(payload),
+    'lazy_align': lambda payload: '@alignof(%s)' % type_Type_SummaryProvider(payload),
+    'lazy_size': lambda payload: '@sizeof(%s)' % type_Type_SummaryProvider(payload),
 }
 
 # Initialize

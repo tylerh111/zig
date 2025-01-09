@@ -3,7 +3,7 @@ const S = struct {
 };
 
 export fn u() void {
-    _ = @unionInit(S, "a", 5);
+    _ = @unioninit(S, "a", 5);
 }
 
 // error

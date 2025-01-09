@@ -91,10 +91,10 @@ pub const Base64Encoder = struct {
     /// Compute the encoded length
     pub fn calcSize(encoder: *const Base64Encoder, source_len: usize) usize {
         if (encoder.pad_char != null) {
-            return @divTrunc(source_len + 2, 3) * 4;
+            return @divtrunc(source_len + 2, 3) * 4;
         } else {
             const leftover = source_len % 3;
-            return @divTrunc(source_len, 3) * 4 + @divTrunc(leftover * 4 + 2, 3);
+            return @divtrunc(source_len, 3) * 4 + @divtrunc(leftover * 4 + 2, 3);
         }
     }
 
@@ -167,13 +167,13 @@ pub const Base64Decoder = struct {
             assert(!char_in_alphabet[c]);
             assert(pad_char == null or c != pad_char.?);
 
-            const ci = @as(u32, @intCast(i));
+            const ci = @as(u32, @intcast(i));
             result.fast_char_to_index[0][c] = ci << 2;
             result.fast_char_to_index[1][c] = (ci >> 4) | ((ci & 0x0f) << 12);
             result.fast_char_to_index[2][c] = ((ci & 0x3) << 22) | ((ci & 0x3c) << 6);
             result.fast_char_to_index[3][c] = ci << 16;
 
-            result.char_to_index[c] = @as(u8, @intCast(i));
+            result.char_to_index[c] = @as(u8, @intcast(i));
             char_in_alphabet[c] = true;
         }
         return result;
@@ -357,7 +357,7 @@ pub const Base64DecoderWithIgnore = struct {
 };
 
 test "base64" {
-    @setEvalBranchQuota(8000);
+    @setevalbranchquota(8000);
     try testBase64();
     try comptime testAllApis(standard, "comptime", "Y29tcHRpbWU=");
 }
@@ -377,7 +377,7 @@ test "base64 padding dest overflow" {
 }
 
 test "base64 url_safe_no_pad" {
-    @setEvalBranchQuota(8000);
+    @setevalbranchquota(8000);
     try testBase64UrlSafeNoPad();
     try comptime testAllApis(url_safe_no_pad, "comptime", "Y29tcHRpbWU");
 }

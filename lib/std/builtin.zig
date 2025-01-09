@@ -7,17 +7,17 @@ const builtin = @import("builtin");
 /// used rather than `explicit_subsystem`.
 /// On non-Windows targets, this is `null`.
 pub const subsystem: ?std.Target.SubSystem = blk: {
-    if (@hasDecl(builtin, "explicit_subsystem")) break :blk builtin.explicit_subsystem;
+    if (@hasdecl(builtin, "explicit_subsystem")) break :blk builtin.explicit_subsystem;
     switch (builtin.os.tag) {
         .windows => {
             if (builtin.is_test) {
                 break :blk std.Target.SubSystem.Console;
             }
-            if (@hasDecl(root, "main") or
-                @hasDecl(root, "WinMain") or
-                @hasDecl(root, "wWinMain") or
-                @hasDecl(root, "WinMainCRTStartup") or
-                @hasDecl(root, "wWinMainCRTStartup"))
+            if (@hasdecl(root, "main") or
+                @hasdecl(root, "WinMain") or
+                @hasdecl(root, "wWinMain") or
+                @hasdecl(root, "WinMainCRTStartup") or
+                @hasdecl(root, "wWinMainCRTStartup"))
             {
                 break :blk std.Target.SubSystem.Windows;
             } else {
@@ -51,12 +51,12 @@ pub const StackTrace = struct {
         var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
         defer arena.deinit();
         const debug_info = std.debug.getSelfDebugInfo() catch |err| {
-            return writer.print("\nUnable to print stack trace: Unable to open debug info: {s}\n", .{@errorName(err)});
+            return writer.print("\nUnable to print stack trace: Unable to open debug info: {s}\n", .{@errorname(err)});
         };
         const tty_config = std.io.tty.detectConfig(std.io.getStdErr());
         try writer.writeAll("\n");
         std.debug.writeStackTrace(self, writer, arena.allocator(), debug_info, tty_config) catch |err| {
-            try writer.print("Unable to print stack trace: {s}\n", .{@errorName(err)});
+            try writer.print("Unable to print stack trace: {s}\n", .{@errorname(err)});
         };
     }
 };
@@ -598,7 +598,7 @@ pub const VaList = switch (builtin.cpu.arch) {
     .aarch64, .aarch64_be => switch (builtin.os.tag) {
         .windows => *u8,
         .ios, .macos, .tvos, .watchos, .visionos => *u8,
-        else => @compileError("disabled due to miscompilations"), // VaListAarch64,
+        else => @compileerror("disabled due to miscompilations"), // VaListAarch64,
     },
     .arm => switch (builtin.os.tag) {
         .ios, .macos, .tvos, .watchos, .visionos => *u8,
@@ -621,10 +621,10 @@ pub const VaList = switch (builtin.cpu.arch) {
     .wasm32, .wasm64 => *anyopaque,
     .x86 => *u8,
     .x86_64 => switch (builtin.os.tag) {
-        .windows => @compileError("disabled due to miscompilations"), // *u8,
+        .windows => @compileerror("disabled due to miscompilations"), // *u8,
         else => VaListX86_64,
     },
-    else => @compileError("VaList not supported for this target yet"),
+    else => @compileerror("VaList not supported for this target yet"),
 };
 
 /// This data structure is used by the Zig language code generation and
@@ -747,9 +747,9 @@ pub const PanicFn = fn ([]const u8, ?*StackTrace, ?usize) noreturn;
 
 /// This function is used by the Zig language code generation and
 /// therefore must be kept in sync with the compiler implementation.
-pub const panic: PanicFn = if (@hasDecl(root, "panic"))
+pub const panic: PanicFn = if (@hasdecl(root, "panic"))
     root.panic
-else if (@hasDecl(root, "os") and @hasDecl(root.os, "panic"))
+else if (@hasdecl(root, "os") and @hasdecl(root.os, "panic"))
     root.os.panic
 else
     default_panic;
@@ -779,7 +779,7 @@ pub fn default_panic(msg: []const u8, error_return_trace: ?*StackTrace, ret_addr
             :
             : [number] "{a7}" (64),
               [arg1] "{a0}" (1),
-              [arg2] "{a1}" (@intFromPtr(msg.ptr)),
+              [arg2] "{a1}" (@intfromptr(msg.ptr)),
               [arg3] "{a2}" (msg.len),
             : "memory"
         );
@@ -822,7 +822,7 @@ pub fn default_panic(msg: []const u8, error_return_trace: ?*StackTrace, ret_addr
 
                     exit_size.* = 256;
 
-                    return @as([*:0]u16, @ptrCast(utf16.ptr));
+                    return @as([*:0]u16, @ptrcast(utf16.ptr));
                 }
             };
 
@@ -853,7 +853,7 @@ pub fn default_panic(msg: []const u8, error_return_trace: ?*StackTrace, ret_addr
             std.os.plan9.exits(status[0..len :0]);
         },
         else => {
-            const first_trace_addr = ret_addr orelse @returnAddress();
+            const first_trace_addr = ret_addr orelse @returnaddress();
             std.debug.panicImpl(error_return_trace, first_trace_addr, msg);
         },
     }
@@ -867,27 +867,27 @@ pub fn checkNonScalarSentinel(expected: anytype, actual: @TypeOf(expected)) void
 
 pub fn panicSentinelMismatch(expected: anytype, actual: @TypeOf(expected)) noreturn {
     @setCold(true);
-    std.debug.panicExtra(null, @returnAddress(), "sentinel mismatch: expected {any}, found {any}", .{ expected, actual });
+    std.debug.panicExtra(null, @returnaddress(), "sentinel mismatch: expected {any}, found {any}", .{ expected, actual });
 }
 
 pub fn panicUnwrapError(st: ?*StackTrace, err: anyerror) noreturn {
     @setCold(true);
-    std.debug.panicExtra(st, @returnAddress(), "attempt to unwrap error: {s}", .{@errorName(err)});
+    std.debug.panicExtra(st, @returnaddress(), "attempt to unwrap error: {s}", .{@errorname(err)});
 }
 
 pub fn panicOutOfBounds(index: usize, len: usize) noreturn {
     @setCold(true);
-    std.debug.panicExtra(null, @returnAddress(), "index out of bounds: index {d}, len {d}", .{ index, len });
+    std.debug.panicExtra(null, @returnaddress(), "index out of bounds: index {d}, len {d}", .{ index, len });
 }
 
 pub fn panicStartGreaterThanEnd(start: usize, end: usize) noreturn {
     @setCold(true);
-    std.debug.panicExtra(null, @returnAddress(), "start index {d} is larger than end index {d}", .{ start, end });
+    std.debug.panicExtra(null, @returnaddress(), "start index {d} is larger than end index {d}", .{ start, end });
 }
 
 pub fn panicInactiveUnionField(active: anytype, wanted: @TypeOf(active)) noreturn {
     @setCold(true);
-    std.debug.panicExtra(null, @returnAddress(), "access of union field '{s}' while field '{s}' is active", .{ @tagName(wanted), @tagName(active) });
+    std.debug.panicExtra(null, @returnaddress(), "access of union field '{s}' while field '{s}' is active", .{ @tagname(wanted), @tagname(active) });
 }
 
 pub const panic_messages = struct {
@@ -920,8 +920,8 @@ pub const panic_messages = struct {
 
 pub noinline fn returnError(st: *StackTrace) void {
     @setCold(true);
-    @setRuntimeSafety(false);
-    addErrRetTraceAddr(st, @returnAddress());
+    @setruntimesafety(false);
+    addErrRetTraceAddr(st, @returnaddress());
 }
 
 pub inline fn addErrRetTraceAddr(st: *StackTrace, addr: usize) void {

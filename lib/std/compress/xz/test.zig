@@ -19,7 +19,7 @@ fn testReader(data: []const u8, comptime expected: []const u8) !void {
 }
 
 test "compressed data" {
-    try testReader(@embedFile("testdata/good-0-empty.xz"), "");
+    try testReader(@embedfile("testdata/good-0-empty.xz"), "");
 
     inline for ([_][]const u8{
         "good-1-check-none.xz",
@@ -31,7 +31,7 @@ test "compressed data" {
         "good-1-block_header-2.xz",
         "good-1-block_header-3.xz",
     }) |filename| {
-        try testReader(@embedFile("testdata/" ++ filename),
+        try testReader(@embedfile("testdata/" ++ filename),
             \\Hello
             \\World!
             \\
@@ -44,7 +44,7 @@ test "compressed data" {
         "good-1-lzma2-3.xz",
         "good-1-lzma2-4.xz",
     }) |filename| {
-        try testReader(@embedFile("testdata/" ++ filename),
+        try testReader(@embedfile("testdata/" ++ filename),
             \\Lorem ipsum dolor sit amet, consectetur adipisicing 
             \\elit, sed do eiusmod tempor incididunt ut 
             \\labore et dolore magna aliqua. Ut enim 
@@ -59,7 +59,7 @@ test "compressed data" {
         );
     }
 
-    try testReader(@embedFile("testdata/good-1-lzma2-5.xz"), "");
+    try testReader(@embedfile("testdata/good-1-lzma2-5.xz"), "");
 }
 
 test "unsupported" {
@@ -74,7 +74,7 @@ test "unsupported" {
     }) |filename| {
         try testing.expectError(
             error.Unsupported,
-            decompress(@embedFile("testdata/" ++ filename)),
+            decompress(@embedfile("testdata/" ++ filename)),
         );
     }
 }

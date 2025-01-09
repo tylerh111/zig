@@ -47,7 +47,7 @@ pub fn name(self: Atom, elf_file: *Elf) []const u8 {
 pub fn address(self: Atom, elf_file: *Elf) i64 {
     const shndx = self.outputShndx() orelse return self.value;
     const shdr = elf_file.shdrs.items[shndx];
-    return @as(i64, @intCast(shdr.sh_addr)) + self.value;
+    return @as(i64, @intcast(shdr.sh_addr)) + self.value;
 }
 
 pub fn debugTombstoneValue(self: Atom, target: Symbol, elf_file: *Elf) ?u64 {
@@ -92,7 +92,7 @@ pub fn outputShndx(self: Atom) ?u32 {
 
 pub fn priority(self: Atom, elf_file: *Elf) u64 {
     const index = self.file(elf_file).?.index();
-    return (@as(u64, @intCast(index)) << 32) | @as(u64, @intCast(self.input_section_index));
+    return (@as(u64, @intcast(index)) << 32) | @as(u64, @intcast(self.input_section_index));
 }
 
 /// Returns how much room there is to grow in virtual address space.
@@ -103,13 +103,13 @@ pub fn capacity(self: Atom, elf_file: *Elf) u64 {
         next.address(elf_file)
     else
         std.math.maxInt(u32);
-    return @intCast(next_addr - self.address(elf_file));
+    return @intcast(next_addr - self.address(elf_file));
 }
 
 pub fn freeListEligible(self: Atom, elf_file: *Elf) bool {
     // No need to keep a free list node for the last block.
     const next = elf_file.atom(self.next_index) orelse return false;
-    const cap: u64 = @intCast(next.address(elf_file) - self.address(elf_file));
+    const cap: u64 = @intcast(next.address(elf_file) - self.address(elf_file));
     const ideal_cap = Elf.padToIdeal(self.size);
     if (cap <= ideal_cap) return false;
     const surplus = cap - ideal_cap;
@@ -142,8 +142,8 @@ pub fn allocate(self: *Atom, elf_file: *Elf) !void {
             // Is it enough that we could fit this new atom?
             const cap = big_atom.capacity(elf_file);
             const ideal_capacity = Elf.padToIdeal(cap);
-            const ideal_capacity_end_vaddr = std.math.add(u64, @intCast(big_atom.value), ideal_capacity) catch ideal_capacity;
-            const capacity_end_vaddr = @as(u64, @intCast(big_atom.value)) + cap;
+            const ideal_capacity_end_vaddr = std.math.add(u64, @intcast(big_atom.value), ideal_capacity) catch ideal_capacity;
+            const capacity_end_vaddr = @as(u64, @intcast(big_atom.value)) + cap;
             const new_start_vaddr_unaligned = capacity_end_vaddr - new_atom_ideal_capacity;
             const new_start_vaddr = self.alignment.backward(new_start_vaddr_unaligned);
             if (new_start_vaddr < ideal_capacity_end_vaddr) {
@@ -168,14 +168,14 @@ pub fn allocate(self: *Atom, elf_file: *Elf) !void {
             if (!keep_free_list_node) {
                 free_list_removal = i;
             }
-            break :blk @intCast(new_start_vaddr);
+            break :blk @intcast(new_start_vaddr);
         } else if (elf_file.atom(last_atom_index.*)) |last| {
             const ideal_capacity = Elf.padToIdeal(last.size);
-            const ideal_capacity_end_vaddr = @as(u64, @intCast(last.value)) + ideal_capacity;
+            const ideal_capacity_end_vaddr = @as(u64, @intcast(last.value)) + ideal_capacity;
             const new_start_vaddr = self.alignment.forward(ideal_capacity_end_vaddr);
             // Set up the metadata to be updated, after errors are no longer possible.
             atom_placement = last.atom_index;
-            break :blk @intCast(new_start_vaddr);
+            break :blk @intcast(new_start_vaddr);
         } else {
             break :blk 0;
         }
@@ -185,7 +185,7 @@ pub fn allocate(self: *Atom, elf_file: *Elf) !void {
         self.atom_index,
         self.name(elf_file),
         self.address(elf_file),
-        self.address(elf_file) + @as(i64, @intCast(self.size)),
+        self.address(elf_file) + @as(i64, @intcast(self.size)),
     });
 
     const expand_section = if (atom_placement) |placement_index|
@@ -193,7 +193,7 @@ pub fn allocate(self: *Atom, elf_file: *Elf) !void {
     else
         true;
     if (expand_section) {
-        const needed_size: u64 = @intCast(self.value + @as(i64, @intCast(self.size)));
+        const needed_size: u64 = @intcast(self.value + @as(i64, @intcast(self.size)));
         try elf_file.growAllocSection(self.outputShndx().?, needed_size);
         last_atom_index.* = self.atom_index;
 
@@ -243,7 +243,7 @@ pub fn shrink(self: *Atom, elf_file: *Elf) void {
 }
 
 pub fn grow(self: *Atom, elf_file: *Elf) !void {
-    if (!self.alignment.check(@intCast(self.value)) or self.size > self.capacity(elf_file))
+    if (!self.alignment.check(@intcast(self.value)) or self.size > self.capacity(elf_file))
         try self.allocate(elf_file);
 }
 
@@ -333,15 +333,15 @@ pub fn writeRelocs(self: Atom, elf_file: *Elf, out_relocs: *std.ArrayList(elf.El
         };
         const target = elf_file.symbol(target_index);
         const r_type = rel.r_type();
-        const r_offset: u64 = @intCast(self.value + @as(i64, @intCast(rel.r_offset)));
+        const r_offset: u64 = @intcast(self.value + @as(i64, @intcast(rel.r_offset)));
         var r_addend = rel.r_addend;
         var r_sym: u32 = 0;
         switch (target.type(elf_file)) {
             elf.STT_SECTION => if (target.mergeSubsection(elf_file)) |msub| {
-                r_addend += @intCast(target.address(.{}, elf_file));
+                r_addend += @intcast(target.address(.{}, elf_file));
                 r_sym = elf_file.sectionSymbolOutputSymtabIndex(msub.mergeSection(elf_file).output_section_index);
             } else {
-                r_addend += @intCast(target.address(.{}, elf_file));
+                r_addend += @intcast(target.address(.{}, elf_file));
                 r_sym = elf_file.sectionSymbolOutputSymtabIndex(target.outputShndx().?);
             },
             else => {
@@ -360,7 +360,7 @@ pub fn writeRelocs(self: Atom, elf_file: *Elf, out_relocs: *std.ArrayList(elf.El
         out_relocs.appendAssumeCapacity(.{
             .r_offset = r_offset,
             .r_addend = r_addend,
-            .r_info = (@as(u64, @intCast(r_sym)) << 32) | r_type,
+            .r_info = (@as(u64, @intcast(r_sym)) << 32) | r_type,
         });
     }
 }
@@ -400,7 +400,7 @@ pub fn scanRelocsRequiresCode(self: Atom, elf_file: *Elf) bool {
     for (self.relocs(elf_file)) |rel| {
         switch (cpu_arch) {
             .x86_64 => {
-                const r_type: elf.R_X86_64 = @enumFromInt(rel.r_type());
+                const r_type: elf.R_X86_64 = @enumfromint(rel.r_type());
                 if (r_type == .GOTTPOFF) return true;
             },
             else => {},
@@ -758,7 +758,7 @@ pub fn resolveRelocsAlloc(self: Atom, elf_file: *Elf, code: []u8) RelocError!voi
         // https://intezer.com/blog/malware-analysis/executable-and-linkable-format-101-part-3-relocations/
         //
         // Address of the source atom.
-        const P = self.address(elf_file) + @as(i64, @intCast(rel.r_offset));
+        const P = self.address(elf_file) + @as(i64, @intcast(rel.r_offset));
         // Addend from the relocation.
         const A = rel.r_addend;
         // Address of the target symbol - can be address of the symbol within an atom or address of PLT stub.
@@ -829,7 +829,7 @@ fn resolveDynAbsReloc(
     const comp = elf_file.base.comp;
     const gpa = comp.gpa;
     const cpu_arch = elf_file.getTarget().cpu.arch;
-    const P: u64 = @intCast(self.address(elf_file) + @as(i64, @intCast(rel.r_offset)));
+    const P: u64 = @intcast(self.address(elf_file) + @as(i64, @intcast(rel.r_offset)));
     const A = rel.r_addend;
     const S = target.address(.{}, elf_file);
     const is_writeable = self.inputShdr(elf_file).sh_flags & elf.SHF_WRITE != 0;
@@ -963,7 +963,7 @@ pub fn resolveRelocsNonAlloc(self: Atom, elf_file: *Elf, code: []u8, undefs: any
         // We will use equation format to resolve relocations:
         // https://intezer.com/blog/malware-analysis/executable-and-linkable-format-101-part-3-relocations/
         //
-        const P = self.address(elf_file) + @as(i64, @intCast(rel.r_offset));
+        const P = self.address(elf_file) + @as(i64, @intcast(rel.r_offset));
         // Addend from the relocation.
         const A = rel.r_addend;
         // Address of the target symbol - can be address of the symbol within an atom or address of PLT stub.
@@ -1018,7 +1018,7 @@ pub fn addExtra(atom: *Atom, opts: AddExtraOpts, elf_file: *Elf) !void {
         atom.extra_index = try elf_file.addAtomExtra(.{});
     }
     var extras = atom.extra(elf_file).?;
-    inline for (@typeInfo(@TypeOf(opts)).Struct.fields) |field| {
+    inline for (@typeinfo(@TypeOf(opts)).Struct.fields) |field| {
         if (@field(opts, field.name)) |x| {
             @field(extras, field.name) = x;
         }
@@ -1044,7 +1044,7 @@ pub fn format(
     _ = unused_fmt_string;
     _ = options;
     _ = writer;
-    @compileError("do not format symbols directly");
+    @compileerror("do not format symbols directly");
 }
 
 pub fn fmt(atom: Atom, elf_file: *Elf) std.fmt.Formatter(format2) {
@@ -1116,7 +1116,7 @@ const x86_64 = struct {
         const is_static = elf_file.base.isStatic();
         const is_dyn_lib = elf_file.isEffectivelyDynLib();
 
-        const r_type: elf.R_X86_64 = @enumFromInt(rel.r_type());
+        const r_type: elf.R_X86_64 = @enumfromint(rel.r_type());
         const r_offset = std.math.cast(usize, rel.r_offset) orelse return error.Overflow;
 
         switch (r_type) {
@@ -1212,7 +1212,7 @@ const x86_64 = struct {
             .TLSDESC_CALL,
             => {},
 
-            else => |x| switch (@intFromEnum(x)) {
+            else => |x| switch (@intfromenum(x)) {
                 // Zig custom relocations
                 Elf.R_ZIG_GOT32,
                 Elf.R_ZIG_GOTPCREL,
@@ -1235,7 +1235,7 @@ const x86_64 = struct {
         code: []u8,
         stream: anytype,
     ) (error{ InvalidInstruction, CannotEncode } || RelocError)!void {
-        const r_type: elf.R_X86_64 = @enumFromInt(rel.r_type());
+        const r_type: elf.R_X86_64 = @enumfromint(rel.r_type());
         const r_offset = std.math.cast(usize, rel.r_offset) orelse return error.Overflow;
 
         const cwriter = stream.writer();
@@ -1257,31 +1257,31 @@ const x86_64 = struct {
 
             .PLT32,
             .PC32,
-            => try cwriter.writeInt(i32, @as(i32, @intCast(S + A - P)), .little),
+            => try cwriter.writeInt(i32, @as(i32, @intcast(S + A - P)), .little),
 
-            .GOTPCREL => try cwriter.writeInt(i32, @as(i32, @intCast(G + GOT + A - P)), .little),
-            .GOTPC32 => try cwriter.writeInt(i32, @as(i32, @intCast(GOT + A - P)), .little),
+            .GOTPCREL => try cwriter.writeInt(i32, @as(i32, @intcast(G + GOT + A - P)), .little),
+            .GOTPC32 => try cwriter.writeInt(i32, @as(i32, @intcast(GOT + A - P)), .little),
             .GOTPC64 => try cwriter.writeInt(i64, GOT + A - P, .little),
 
             .GOTPCRELX => {
                 if (!target.flags.import and !target.isIFunc(elf_file) and !target.isAbs(elf_file)) blk: {
                     x86_64.relaxGotpcrelx(code[r_offset - 2 ..]) catch break :blk;
-                    try cwriter.writeInt(i32, @as(i32, @intCast(S + A - P)), .little);
+                    try cwriter.writeInt(i32, @as(i32, @intcast(S + A - P)), .little);
                     return;
                 }
-                try cwriter.writeInt(i32, @as(i32, @intCast(G + GOT + A - P)), .little);
+                try cwriter.writeInt(i32, @as(i32, @intcast(G + GOT + A - P)), .little);
             },
 
             .REX_GOTPCRELX => {
                 if (!target.flags.import and !target.isIFunc(elf_file) and !target.isAbs(elf_file)) blk: {
                     x86_64.relaxRexGotpcrelx(code[r_offset - 3 ..]) catch break :blk;
-                    try cwriter.writeInt(i32, @as(i32, @intCast(S + A - P)), .little);
+                    try cwriter.writeInt(i32, @as(i32, @intcast(S + A - P)), .little);
                     return;
                 }
-                try cwriter.writeInt(i32, @as(i32, @intCast(G + GOT + A - P)), .little);
+                try cwriter.writeInt(i32, @as(i32, @intcast(G + GOT + A - P)), .little);
             },
 
-            .@"32" => try cwriter.writeInt(u32, @as(u32, @truncate(@as(u64, @intCast(S + A)))), .little),
+            .@"32" => try cwriter.writeInt(u32, @as(u32, @truncate(@as(u64, @intcast(S + A)))), .little),
             .@"32S" => try cwriter.writeInt(i32, @as(i32, @truncate(S + A)), .little),
 
             .TPOFF32 => try cwriter.writeInt(i32, @as(i32, @truncate(S + A - TP)), .little),
@@ -1293,15 +1293,15 @@ const x86_64 = struct {
             .TLSGD => {
                 if (target.flags.has_tlsgd) {
                     const S_ = target.tlsGdAddress(elf_file);
-                    try cwriter.writeInt(i32, @as(i32, @intCast(S_ + A - P)), .little);
+                    try cwriter.writeInt(i32, @as(i32, @intcast(S_ + A - P)), .little);
                 } else if (target.flags.has_gottp) {
                     const S_ = target.gotTpAddress(elf_file);
-                    try x86_64.relaxTlsGdToIe(atom, &.{ rel, it.next().? }, @intCast(S_ - P), elf_file, stream);
+                    try x86_64.relaxTlsGdToIe(atom, &.{ rel, it.next().? }, @intcast(S_ - P), elf_file, stream);
                 } else {
                     try x86_64.relaxTlsGdToLe(
                         atom,
                         &.{ rel, it.next().? },
-                        @as(i32, @intCast(S - TP)),
+                        @as(i32, @intcast(S - TP)),
                         elf_file,
                         stream,
                     );
@@ -1312,12 +1312,12 @@ const x86_64 = struct {
                 if (elf_file.got.tlsld_index) |entry_index| {
                     const tlsld_entry = elf_file.got.entries.items[entry_index];
                     const S_ = tlsld_entry.address(elf_file);
-                    try cwriter.writeInt(i32, @as(i32, @intCast(S_ + A - P)), .little);
+                    try cwriter.writeInt(i32, @as(i32, @intcast(S_ + A - P)), .little);
                 } else {
                     try x86_64.relaxTlsLdToLe(
                         atom,
                         &.{ rel, it.next().? },
-                        @as(i32, @intCast(TP - elf_file.tlsAddress())),
+                        @as(i32, @intcast(TP - elf_file.tlsAddress())),
                         elf_file,
                         stream,
                     );
@@ -1327,11 +1327,11 @@ const x86_64 = struct {
             .GOTPC32_TLSDESC => {
                 if (target.flags.has_tlsdesc) {
                     const S_ = target.tlsDescAddress(elf_file);
-                    try cwriter.writeInt(i32, @as(i32, @intCast(S_ + A - P)), .little);
+                    try cwriter.writeInt(i32, @as(i32, @intcast(S_ + A - P)), .little);
                 } else {
                     x86_64.relaxGotPcTlsDesc(code[r_offset - 3 ..]) catch {
                         var err = try elf_file.addErrorWithNotes(1);
-                        try err.addMsg(elf_file, "could not relax {s}", .{@tagName(r_type)});
+                        try err.addMsg(elf_file, "could not relax {s}", .{@tagname(r_type)});
                         try err.addNote(elf_file, "in {}:{s} at offset 0x{x}", .{
                             atom.file(elf_file).?.fmtPath(),
                             atom.name(elf_file),
@@ -1339,7 +1339,7 @@ const x86_64 = struct {
                         });
                         return error.RelaxFailure;
                     };
-                    try cwriter.writeInt(i32, @as(i32, @intCast(S - TP)), .little);
+                    try cwriter.writeInt(i32, @as(i32, @intcast(S - TP)), .little);
                 }
             },
 
@@ -1351,19 +1351,19 @@ const x86_64 = struct {
             .GOTTPOFF => {
                 if (target.flags.has_gottp) {
                     const S_ = target.gotTpAddress(elf_file);
-                    try cwriter.writeInt(i32, @as(i32, @intCast(S_ + A - P)), .little);
+                    try cwriter.writeInt(i32, @as(i32, @intcast(S_ + A - P)), .little);
                 } else {
                     x86_64.relaxGotTpOff(code[r_offset - 3 ..]);
-                    try cwriter.writeInt(i32, @as(i32, @intCast(S - TP)), .little);
+                    try cwriter.writeInt(i32, @as(i32, @intcast(S - TP)), .little);
                 }
             },
 
-            .GOT32 => try cwriter.writeInt(i32, @as(i32, @intCast(G + GOT + A)), .little),
+            .GOT32 => try cwriter.writeInt(i32, @as(i32, @intcast(G + GOT + A)), .little),
 
-            else => |x| switch (@intFromEnum(x)) {
+            else => |x| switch (@intfromenum(x)) {
                 // Zig custom relocations
-                Elf.R_ZIG_GOT32 => try cwriter.writeInt(u32, @as(u32, @intCast(ZIG_GOT + A)), .little),
-                Elf.R_ZIG_GOTPCREL => try cwriter.writeInt(i32, @as(i32, @intCast(ZIG_GOT + A - P)), .little),
+                Elf.R_ZIG_GOT32 => try cwriter.writeInt(u32, @as(u32, @intcast(ZIG_GOT + A)), .little),
+                Elf.R_ZIG_GOTPCREL => try cwriter.writeInt(i32, @as(i32, @intcast(ZIG_GOT + A - P)), .little),
 
                 else => try atom.reportUnhandledRelocError(rel, elf_file),
             },
@@ -1382,17 +1382,17 @@ const x86_64 = struct {
     ) !void {
         _ = code;
         _ = it;
-        const r_type: elf.R_X86_64 = @enumFromInt(rel.r_type());
+        const r_type: elf.R_X86_64 = @enumfromint(rel.r_type());
         const cwriter = stream.writer();
 
         _, const A, const S, const GOT, _, _, const DTP, _ = args;
 
         switch (r_type) {
             .NONE => unreachable,
-            .@"8" => try cwriter.writeInt(u8, @as(u8, @bitCast(@as(i8, @intCast(S + A)))), .little),
-            .@"16" => try cwriter.writeInt(u16, @as(u16, @bitCast(@as(i16, @intCast(S + A)))), .little),
-            .@"32" => try cwriter.writeInt(u32, @as(u32, @bitCast(@as(i32, @intCast(S + A)))), .little),
-            .@"32S" => try cwriter.writeInt(i32, @as(i32, @intCast(S + A)), .little),
+            .@"8" => try cwriter.writeInt(u8, @as(u8, @bitcast(@as(i8, @intcast(S + A)))), .little),
+            .@"16" => try cwriter.writeInt(u16, @as(u16, @bitcast(@as(i16, @intcast(S + A)))), .little),
+            .@"32" => try cwriter.writeInt(u32, @as(u32, @bitcast(@as(i32, @intcast(S + A)))), .little),
+            .@"32S" => try cwriter.writeInt(i32, @as(i32, @intcast(S + A)), .little),
             .@"64" => if (atom.debugTombstoneValue(target.*, elf_file)) |value|
                 try cwriter.writeInt(u64, value, .little)
             else
@@ -1400,7 +1400,7 @@ const x86_64 = struct {
             .DTPOFF32 => if (atom.debugTombstoneValue(target.*, elf_file)) |value|
                 try cwriter.writeInt(u64, value, .little)
             else
-                try cwriter.writeInt(i32, @as(i32, @intCast(S + A - DTP)), .little),
+                try cwriter.writeInt(i32, @as(i32, @intcast(S + A - DTP)), .little),
             .DTPOFF64 => if (atom.debugTombstoneValue(target.*, elf_file)) |value|
                 try cwriter.writeInt(u64, value, .little)
             else
@@ -1408,12 +1408,12 @@ const x86_64 = struct {
             .GOTOFF64 => try cwriter.writeInt(i64, S + A - GOT, .little),
             .GOTPC64 => try cwriter.writeInt(i64, GOT + A, .little),
             .SIZE32 => {
-                const size = @as(i64, @intCast(target.elfSym(elf_file).st_size));
-                try cwriter.writeInt(u32, @as(u32, @bitCast(@as(i32, @intCast(size + A)))), .little);
+                const size = @as(i64, @intcast(target.elfSym(elf_file).st_size));
+                try cwriter.writeInt(u32, @as(u32, @bitcast(@as(i32, @intcast(size + A)))), .little);
             },
             .SIZE64 => {
-                const size = @as(i64, @intCast(target.elfSym(elf_file).st_size));
-                try cwriter.writeInt(i64, @as(i64, @intCast(size + A)), .little);
+                const size = @as(i64, @intcast(target.elfSym(elf_file).st_size));
+                try cwriter.writeInt(i64, @as(i64, @intcast(size + A)), .little);
             },
             else => try atom.reportUnhandledRelocError(rel, elf_file),
         }
@@ -1458,7 +1458,7 @@ const x86_64 = struct {
     ) !void {
         assert(rels.len == 2);
         const writer = stream.writer();
-        const rel: elf.R_X86_64 = @enumFromInt(rels[1].r_type());
+        const rel: elf.R_X86_64 = @enumfromint(rels[1].r_type());
         switch (rel) {
             .PC32,
             .PLT32,
@@ -1497,7 +1497,7 @@ const x86_64 = struct {
     ) !void {
         assert(rels.len == 2);
         const writer = stream.writer();
-        const rel: elf.R_X86_64 = @enumFromInt(rels[1].r_type());
+        const rel: elf.R_X86_64 = @enumfromint(rels[1].r_type());
         switch (rel) {
             .PC32,
             .PLT32,
@@ -1598,7 +1598,7 @@ const x86_64 = struct {
     ) !void {
         assert(rels.len == 2);
         const writer = stream.writer();
-        const rel: elf.R_X86_64 = @enumFromInt(rels[1].r_type());
+        const rel: elf.R_X86_64 = @enumfromint(rels[1].r_type());
         switch (rel) {
             .PC32,
             .PLT32,
@@ -1667,7 +1667,7 @@ const aarch64 = struct {
         _ = code;
         _ = it;
 
-        const r_type: elf.R_AARCH64 = @enumFromInt(rel.r_type());
+        const r_type: elf.R_AARCH64 = @enumfromint(rel.r_type());
         const is_dyn_lib = elf_file.isEffectivelyDynLib();
 
         switch (r_type) {
@@ -1754,7 +1754,7 @@ const aarch64 = struct {
     ) (error{ UnexpectedRemainder, DivisionByZero } || RelocError)!void {
         _ = it;
 
-        const r_type: elf.R_AARCH64 = @enumFromInt(rel.r_type());
+        const r_type: elf.R_AARCH64 = @enumfromint(rel.r_type());
         const r_offset = std.math.cast(usize, rel.r_offset) orelse return error.Overflow;
         const cwriter = stream.writer();
         const code = code_buffer[r_offset..][0..4];
@@ -1794,22 +1794,22 @@ const aarch64 = struct {
 
             .PREL32 => {
                 const value = math.cast(i32, S + A - P) orelse return error.Overflow;
-                mem.writeInt(u32, code, @bitCast(value), .little);
+                mem.writeInt(u32, code, @bitcast(value), .little);
             },
 
             .PREL64 => {
                 const value = S + A - P;
-                mem.writeInt(u64, code_buffer[r_offset..][0..8], @bitCast(value), .little);
+                mem.writeInt(u64, code_buffer[r_offset..][0..8], @bitcast(value), .little);
             },
 
             .ADR_PREL_PG_HI21 => {
                 // TODO: check for relaxation of ADRP+ADD
-                const pages = @as(u21, @bitCast(try aarch64_util.calcNumberOfPages(P, S + A)));
+                const pages = @as(u21, @bitcast(try aarch64_util.calcNumberOfPages(P, S + A)));
                 aarch64_util.writeAdrpInst(pages, code);
             },
 
             .ADR_GOT_PAGE => if (target.flags.has_got) {
-                const pages = @as(u21, @bitCast(try aarch64_util.calcNumberOfPages(P, G + GOT + A)));
+                const pages = @as(u21, @bitcast(try aarch64_util.calcNumberOfPages(P, G + GOT + A)));
                 aarch64_util.writeAdrpInst(pages, code);
             } else {
                 // TODO: relax
@@ -1824,12 +1824,12 @@ const aarch64 = struct {
 
             .LD64_GOT_LO12_NC => {
                 assert(target.flags.has_got);
-                const taddr = @as(u64, @intCast(G + GOT + A));
-                aarch64_util.writeLoadStoreRegInst(@divExact(@as(u12, @truncate(taddr)), 8), code);
+                const taddr = @as(u64, @intcast(G + GOT + A));
+                aarch64_util.writeLoadStoreRegInst(@divexact(@as(u12, @truncate(taddr)), 8), code);
             },
 
             .ADD_ABS_LO12_NC => {
-                const taddr = @as(u64, @intCast(S + A));
+                const taddr = @as(u64, @intcast(S + A));
                 aarch64_util.writeAddImmInst(@truncate(taddr), code);
             },
 
@@ -1840,13 +1840,13 @@ const aarch64 = struct {
             .LDST128_ABS_LO12_NC,
             => {
                 // TODO: NC means no overflow check
-                const taddr = @as(u64, @intCast(S + A));
+                const taddr = @as(u64, @intcast(S + A));
                 const offset: u12 = switch (r_type) {
                     .LDST8_ABS_LO12_NC => @truncate(taddr),
-                    .LDST16_ABS_LO12_NC => @divExact(@as(u12, @truncate(taddr)), 2),
-                    .LDST32_ABS_LO12_NC => @divExact(@as(u12, @truncate(taddr)), 4),
-                    .LDST64_ABS_LO12_NC => @divExact(@as(u12, @truncate(taddr)), 8),
-                    .LDST128_ABS_LO12_NC => @divExact(@as(u12, @truncate(taddr)), 16),
+                    .LDST16_ABS_LO12_NC => @divexact(@as(u12, @truncate(taddr)), 2),
+                    .LDST32_ABS_LO12_NC => @divexact(@as(u12, @truncate(taddr)), 4),
+                    .LDST64_ABS_LO12_NC => @divexact(@as(u12, @truncate(taddr)), 8),
+                    .LDST128_ABS_LO12_NC => @divexact(@as(u12, @truncate(taddr)), 16),
                     else => unreachable,
                 };
                 aarch64_util.writeLoadStoreRegInst(offset, code);
@@ -1855,39 +1855,39 @@ const aarch64 = struct {
             .TLSLE_ADD_TPREL_HI12 => {
                 const value = math.cast(i12, (S + A - TP) >> 12) orelse
                     return error.Overflow;
-                aarch64_util.writeAddImmInst(@bitCast(value), code);
+                aarch64_util.writeAddImmInst(@bitcast(value), code);
             },
 
             .TLSLE_ADD_TPREL_LO12_NC => {
                 const value: i12 = @truncate(S + A - TP);
-                aarch64_util.writeAddImmInst(@bitCast(value), code);
+                aarch64_util.writeAddImmInst(@bitcast(value), code);
             },
 
             .TLSIE_ADR_GOTTPREL_PAGE21 => {
                 const S_ = target.gotTpAddress(elf_file);
                 relocs_log.debug("      [{x} => {x}]", .{ P, S_ + A });
-                const pages: u21 = @bitCast(try aarch64_util.calcNumberOfPages(P, S_ + A));
+                const pages: u21 = @bitcast(try aarch64_util.calcNumberOfPages(P, S_ + A));
                 aarch64_util.writeAdrpInst(pages, code);
             },
 
             .TLSIE_LD64_GOTTPREL_LO12_NC => {
                 const S_ = target.gotTpAddress(elf_file);
                 relocs_log.debug("      [{x} => {x}]", .{ P, S_ + A });
-                const offset: u12 = try math.divExact(u12, @truncate(@as(u64, @bitCast(S_ + A))), 8);
+                const offset: u12 = try math.divexact(u12, @truncate(@as(u64, @bitcast(S_ + A))), 8);
                 aarch64_util.writeLoadStoreRegInst(offset, code);
             },
 
             .TLSGD_ADR_PAGE21 => {
                 const S_ = target.tlsGdAddress(elf_file);
                 relocs_log.debug("      [{x} => {x}]", .{ P, S_ + A });
-                const pages: u21 = @bitCast(try aarch64_util.calcNumberOfPages(P, S_ + A));
+                const pages: u21 = @bitcast(try aarch64_util.calcNumberOfPages(P, S_ + A));
                 aarch64_util.writeAdrpInst(pages, code);
             },
 
             .TLSGD_ADD_LO12_NC => {
                 const S_ = target.tlsGdAddress(elf_file);
                 relocs_log.debug("      [{x} => {x}]", .{ P, S_ + A });
-                const offset: u12 = @truncate(@as(u64, @bitCast(S_ + A)));
+                const offset: u12 = @truncate(@as(u64, @bitcast(S_ + A)));
                 aarch64_util.writeAddImmInst(offset, code);
             },
 
@@ -1895,7 +1895,7 @@ const aarch64 = struct {
                 if (target.flags.has_tlsdesc) {
                     const S_ = target.tlsDescAddress(elf_file);
                     relocs_log.debug("      [{x} => {x}]", .{ P, S_ + A });
-                    const pages: u21 = @bitCast(try aarch64_util.calcNumberOfPages(P, S_ + A));
+                    const pages: u21 = @bitcast(try aarch64_util.calcNumberOfPages(P, S_ + A));
                     aarch64_util.writeAdrpInst(pages, code);
                 } else {
                     relocs_log.debug("      relaxing adrp => nop", .{});
@@ -1907,7 +1907,7 @@ const aarch64 = struct {
                 if (target.flags.has_tlsdesc) {
                     const S_ = target.tlsDescAddress(elf_file);
                     relocs_log.debug("      [{x} => {x}]", .{ P, S_ + A });
-                    const offset: u12 = try math.divExact(u12, @truncate(@as(u64, @bitCast(S_ + A))), 8);
+                    const offset: u12 = try math.divexact(u12, @truncate(@as(u64, @bitcast(S_ + A))), 8);
                     aarch64_util.writeLoadStoreRegInst(offset, code);
                 } else {
                     relocs_log.debug("      relaxing ldr => nop", .{});
@@ -1919,7 +1919,7 @@ const aarch64 = struct {
                 if (target.flags.has_tlsdesc) {
                     const S_ = target.tlsDescAddress(elf_file);
                     relocs_log.debug("      [{x} => {x}]", .{ P, S_ + A });
-                    const offset: u12 = @truncate(@as(u64, @bitCast(S_ + A)));
+                    const offset: u12 = @truncate(@as(u64, @bitcast(S_ + A)));
                     aarch64_util.writeAddImmInst(offset, code);
                 } else {
                     const old_inst = Instruction{
@@ -1928,9 +1928,9 @@ const aarch64 = struct {
                             Instruction.add_subtract_immediate,
                         ), code),
                     };
-                    const rd: Register = @enumFromInt(old_inst.add_subtract_immediate.rd);
-                    relocs_log.debug("      relaxing add({s}) => movz(x0, {x})", .{ @tagName(rd), S + A - TP });
-                    const value: u16 = @bitCast(math.cast(i16, (S + A - TP) >> 16) orelse return error.Overflow);
+                    const rd: Register = @enumfromint(old_inst.add_subtract_immediate.rd);
+                    relocs_log.debug("      relaxing add({s}) => movz(x0, {x})", .{ @tagname(rd), S + A - TP });
+                    const value: u16 = @bitcast(math.cast(i16, (S + A - TP) >> 16) orelse return error.Overflow);
                     mem.writeInt(u32, code, Instruction.movz(.x0, value, 16).toU32(), .little);
                 }
             },
@@ -1942,9 +1942,9 @@ const aarch64 = struct {
                         Instruction.unconditional_branch_register,
                     ), code),
                 };
-                const rn: Register = @enumFromInt(old_inst.unconditional_branch_register.rn);
-                relocs_log.debug("      relaxing br({s}) => movk(x0, {x})", .{ @tagName(rn), S + A - TP });
-                const value: u16 = @bitCast(@as(i16, @truncate(S + A - TP)));
+                const rn: Register = @enumfromint(old_inst.unconditional_branch_register.rn);
+                relocs_log.debug("      relaxing br({s}) => movk(x0, {x})", .{ @tagname(rn), S + A - TP });
+                const value: u16 = @bitcast(@as(i16, @truncate(S + A - TP)));
                 mem.writeInt(u32, code, Instruction.movk(.x0, value, 0).toU32(), .little);
             },
 
@@ -1965,14 +1965,14 @@ const aarch64 = struct {
         _ = it;
         _ = code;
 
-        const r_type: elf.R_AARCH64 = @enumFromInt(rel.r_type());
+        const r_type: elf.R_AARCH64 = @enumfromint(rel.r_type());
         const cwriter = stream.writer();
 
         _, const A, const S, _, _, _, _, _ = args;
 
         switch (r_type) {
             .NONE => unreachable,
-            .ABS32 => try cwriter.writeInt(i32, @as(i32, @intCast(S + A)), .little),
+            .ABS32 => try cwriter.writeInt(i32, @as(i32, @intcast(S + A)), .little),
             .ABS64 => if (atom.debugTombstoneValue(target.*, elf_file)) |value|
                 try cwriter.writeInt(u64, value, .little)
             else
@@ -1998,7 +1998,7 @@ const riscv = struct {
         _ = code;
         _ = it;
 
-        const r_type: elf.R_RISCV = @enumFromInt(rel.r_type());
+        const r_type: elf.R_RISCV = @enumfromint(rel.r_type());
 
         switch (r_type) {
             .@"64" => {
@@ -2025,7 +2025,7 @@ const riscv = struct {
             .SUB32,
             => {},
 
-            else => |x| switch (@intFromEnum(x)) {
+            else => |x| switch (@intfromenum(x)) {
                 Elf.R_ZIG_GOT_HI20,
                 Elf.R_ZIG_GOT_LO12,
                 => {
@@ -2047,7 +2047,7 @@ const riscv = struct {
         code: []u8,
         stream: anytype,
     ) !void {
-        const r_type: elf.R_RISCV = @enumFromInt(rel.r_type());
+        const r_type: elf.R_RISCV = @enumfromint(rel.r_type());
         const r_offset = std.math.cast(usize, rel.r_offset) orelse return error.Overflow;
         const cwriter = stream.writer();
 
@@ -2072,30 +2072,30 @@ const riscv = struct {
             .SUB32 => riscv_util.writeAddend(i32, .sub, code[r_offset..][0..4], S + A),
 
             .HI20 => {
-                const value: u32 = @bitCast(math.cast(i32, S + A) orelse return error.Overflow);
+                const value: u32 = @bitcast(math.cast(i32, S + A) orelse return error.Overflow);
                 riscv_util.writeInstU(code[r_offset..][0..4], value);
             },
 
             .LO12_I => {
-                const value: u32 = @bitCast(math.cast(i32, S + A) orelse return error.Overflow);
+                const value: u32 = @bitcast(math.cast(i32, S + A) orelse return error.Overflow);
                 riscv_util.writeInstI(code[r_offset..][0..4], value);
             },
 
             .GOT_HI20 => {
                 assert(target.flags.has_got);
-                const disp: u32 = @bitCast(math.cast(i32, G + GOT + A - P) orelse return error.Overflow);
+                const disp: u32 = @bitcast(math.cast(i32, G + GOT + A - P) orelse return error.Overflow);
                 riscv_util.writeInstU(code[r_offset..][0..4], disp);
             },
 
             .CALL_PLT => {
                 // TODO: relax
-                const disp: u32 = @bitCast(math.cast(i32, S + A - P) orelse return error.Overflow);
+                const disp: u32 = @bitcast(math.cast(i32, S + A - P) orelse return error.Overflow);
                 riscv_util.writeInstU(code[r_offset..][0..4], disp); // auipc
                 riscv_util.writeInstI(code[r_offset + 4 ..][0..4], disp); // jalr
             },
 
             .PCREL_HI20 => {
-                const disp: u32 = @bitCast(math.cast(i32, S + A - P) orelse return error.Overflow);
+                const disp: u32 = @bitcast(math.cast(i32, S + A - P) orelse return error.Overflow);
                 riscv_util.writeInstU(code[r_offset..][0..4], disp);
             },
 
@@ -2108,7 +2108,7 @@ const riscv = struct {
                 const atom_addr = atom.address(elf_file);
                 const pos = it.pos;
                 const pair = while (it.prev()) |pair| {
-                    if (S == atom_addr + @as(i64, @intCast(pair.r_offset))) break pair;
+                    if (S == atom_addr + @as(i64, @intcast(pair.r_offset))) break pair;
                 } else {
                     // TODO: implement searching forward
                     var err = try elf_file.addErrorWithNotes(1);
@@ -2128,32 +2128,32 @@ const riscv = struct {
                 };
                 const S_ = target_.address(.{}, elf_file);
                 const A_ = pair.r_addend;
-                const P_ = atom_addr + @as(i64, @intCast(pair.r_offset));
+                const P_ = atom_addr + @as(i64, @intcast(pair.r_offset));
                 const G_ = target_.gotAddress(elf_file) - GOT;
-                const disp = switch (@as(elf.R_RISCV, @enumFromInt(pair.r_type()))) {
+                const disp = switch (@as(elf.R_RISCV, @enumfromint(pair.r_type()))) {
                     .PCREL_HI20 => math.cast(i32, S_ + A_ - P_) orelse return error.Overflow,
                     .GOT_HI20 => math.cast(i32, G_ + GOT + A_ - P_) orelse return error.Overflow,
                     else => unreachable,
                 };
                 relocs_log.debug("      [{x} => {x}]", .{ P_, disp + P_ });
                 switch (r_type) {
-                    .PCREL_LO12_I => riscv_util.writeInstI(code[r_offset..][0..4], @bitCast(disp)),
-                    .PCREL_LO12_S => riscv_util.writeInstS(code[r_offset..][0..4], @bitCast(disp)),
+                    .PCREL_LO12_I => riscv_util.writeInstI(code[r_offset..][0..4], @bitcast(disp)),
+                    .PCREL_LO12_S => riscv_util.writeInstS(code[r_offset..][0..4], @bitcast(disp)),
                     else => unreachable,
                 }
             },
 
-            else => |x| switch (@intFromEnum(x)) {
+            else => |x| switch (@intfromenum(x)) {
                 // Zig custom relocations
                 Elf.R_ZIG_GOT_HI20 => {
                     assert(target.flags.has_zig_got);
-                    const disp: u32 = @bitCast(math.cast(i32, G + ZIG_GOT + A) orelse return error.Overflow);
+                    const disp: u32 = @bitcast(math.cast(i32, G + ZIG_GOT + A) orelse return error.Overflow);
                     riscv_util.writeInstU(code[r_offset..][0..4], disp);
                 },
 
                 Elf.R_ZIG_GOT_LO12 => {
                     assert(target.flags.has_zig_got);
-                    const value: u32 = @bitCast(math.cast(i32, G + ZIG_GOT + A) orelse return error.Overflow);
+                    const value: u32 = @bitcast(math.cast(i32, G + ZIG_GOT + A) orelse return error.Overflow);
                     riscv_util.writeInstI(code[r_offset..][0..4], value);
                 },
 
@@ -2174,7 +2174,7 @@ const riscv = struct {
     ) !void {
         _ = it;
 
-        const r_type: elf.R_RISCV = @enumFromInt(rel.r_type());
+        const r_type: elf.R_RISCV = @enumfromint(rel.r_type());
         const r_offset = std.math.cast(usize, rel.r_offset) orelse return error.Overflow;
         const cwriter = stream.writer();
 
@@ -2185,7 +2185,7 @@ const riscv = struct {
         switch (r_type) {
             .NONE => unreachable,
 
-            .@"32" => try cwriter.writeInt(i32, @as(i32, @intCast(S + A)), .little),
+            .@"32" => try cwriter.writeInt(i32, @as(i32, @intcast(S + A)), .little),
             .@"64" => if (atom.debugTombstoneValue(target.*, elf_file)) |value|
                 try cwriter.writeInt(u64, value, .little)
             else
@@ -2232,19 +2232,19 @@ const RelocsIterator = struct {
     fn next(it: *RelocsIterator) ?elf.Elf64_Rela {
         it.pos += 1;
         if (it.pos >= it.relocs.len) return null;
-        return it.relocs[@intCast(it.pos)];
+        return it.relocs[@intcast(it.pos)];
     }
 
     fn prev(it: *RelocsIterator) ?elf.Elf64_Rela {
         if (it.pos == -1) return null;
-        const rel = it.relocs[@intCast(it.pos)];
+        const rel = it.relocs[@intcast(it.pos)];
         it.pos -= 1;
         return rel;
     }
 
     fn skip(it: *RelocsIterator, num: usize) void {
         assert(num > 0);
-        it.pos += @intCast(num);
+        it.pos += @intcast(num);
     }
 };
 

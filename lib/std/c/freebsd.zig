@@ -399,13 +399,13 @@ pub const sockaddr = extern struct {
         padding: [126]u8 = undefined,
 
         comptime {
-            assert(@sizeOf(storage) == SS_MAXSIZE);
-            assert(@alignOf(storage) == 8);
+            assert(@sizeof(storage) == SS_MAXSIZE);
+            assert(@alignof(storage) == 8);
         }
     };
 
     pub const in = extern struct {
-        len: u8 = @sizeOf(in),
+        len: u8 = @sizeof(in),
         family: sa_family_t = AF.INET,
         port: in_port_t,
         addr: u32,
@@ -413,7 +413,7 @@ pub const sockaddr = extern struct {
     };
 
     pub const in6 = extern struct {
-        len: u8 = @sizeOf(in6),
+        len: u8 = @sizeof(in6),
         family: sa_family_t = AF.INET6,
         port: in_port_t,
         flowinfo: u32,
@@ -422,7 +422,7 @@ pub const sockaddr = extern struct {
     };
 
     pub const un = extern struct {
-        len: u8 = @sizeOf(un),
+        len: u8 = @sizeof(un),
         family: sa_family_t = AF.UNIX,
         path: [104]u8,
     };
@@ -545,8 +545,8 @@ pub const kinfo_file = extern struct {
 pub const KINFO_FILE_SIZE = 1392;
 
 comptime {
-    std.debug.assert(@sizeOf(kinfo_file) == KINFO_FILE_SIZE);
-    std.debug.assert(@alignOf(kinfo_file) == @sizeOf(u64));
+    std.debug.assert(@sizeof(kinfo_file) == KINFO_FILE_SIZE);
+    std.debug.assert(@alignof(kinfo_file) == @sizeof(u64));
 }
 
 pub const CTL = struct {
@@ -622,7 +622,7 @@ pub const W = struct {
     pub const TRAPPED = 32;
 
     pub fn EXITSTATUS(s: u32) u8 {
-        return @as(u8, @intCast((s & 0xff00) >> 8));
+        return @as(u8, @intcast((s & 0xff00) >> 8));
     }
     pub fn TERMSIG(s: u32) u32 {
         return s & 0x7f;
@@ -695,9 +695,9 @@ pub const SIG = struct {
     pub const UNBLOCK = 2;
     pub const SETMASK = 3;
 
-    pub const DFL: ?Sigaction.handler_fn = @ptrFromInt(0);
-    pub const IGN: ?Sigaction.handler_fn = @ptrFromInt(1);
-    pub const ERR: ?Sigaction.handler_fn = @ptrFromInt(maxInt(usize));
+    pub const DFL: ?Sigaction.handler_fn = @ptrfromint(0);
+    pub const IGN: ?Sigaction.handler_fn = @ptrfromint(1);
+    pub const ERR: ?Sigaction.handler_fn = @ptrfromint(maxInt(usize));
 
     pub const WORDS = 4;
     pub const MAXSIG = 128;
@@ -1457,7 +1457,7 @@ pub const E = enum(u16) {
 pub const MINSIGSTKSZ = switch (builtin.cpu.arch) {
     .x86, .x86_64 => 2048,
     .arm, .aarch64 => 4096,
-    else => @compileError("MINSIGSTKSZ not defined for this architecture"),
+    else => @compileerror("MINSIGSTKSZ not defined for this architecture"),
 };
 pub const SIGSTKSZ = MINSIGSTKSZ + 32768;
 

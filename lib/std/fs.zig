@@ -59,10 +59,10 @@ pub const max_path_bytes = switch (native_os) {
     // pair in the WTF-16LE, and we (over)account 3 bytes for it that way.
     // +1 for the null byte at the end, which can be encoded in 1 byte.
     .windows => windows.PATH_MAX_WIDE * 3 + 1,
-    else => if (@hasDecl(root, "os") and @hasDecl(root.os, "PATH_MAX"))
+    else => if (@hasdecl(root, "os") and @hasdecl(root.os, "PATH_MAX"))
         root.os.PATH_MAX
     else
-        @compileError("PATH_MAX not implemented for " ++ @tagName(native_os)),
+        @compileerror("PATH_MAX not implemented for " ++ @tagname(native_os)),
 };
 
 /// This represents the maximum size of a `[]u8` file name component that
@@ -85,10 +85,10 @@ pub const MAX_NAME_BYTES = switch (native_os) {
     // as large as the largest MAX_NAME_BYTES (Windows) in order to work on any host OS.
     // TODO determine if this is a reasonable approach
     .wasi => windows.NAME_MAX * 3,
-    else => if (@hasDecl(root, "os") and @hasDecl(root.os, "NAME_MAX"))
+    else => if (@hasdecl(root, "os") and @hasdecl(root.os, "NAME_MAX"))
         root.os.NAME_MAX
     else
-        @compileError("NAME_MAX not implemented for " ++ @tagName(native_os)),
+        @compileerror("NAME_MAX not implemented for " ++ @tagname(native_os)),
 };
 
 pub const base64_alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_".*;
@@ -682,7 +682,7 @@ pub fn selfExePath(out_buffer: []u8) SelfExePathError![]u8 {
                 else => |e| return e,
             };
         },
-        else => @compileError("std.fs.selfExePath not supported for this target"),
+        else => @compileerror("std.fs.selfExePath not supported for this target"),
     }
 }
 

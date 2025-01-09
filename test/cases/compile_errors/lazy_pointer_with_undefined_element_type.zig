@@ -2,7 +2,7 @@ export fn foo() void {
     comptime var T: type = undefined;
     _ = &T;
     const S = struct { x: *T };
-    const I = @typeInfo(S);
+    const I = @typeinfo(S);
     _ = I;
 }
 

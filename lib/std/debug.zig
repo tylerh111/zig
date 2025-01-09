@@ -30,13 +30,13 @@ pub const sys_can_stack_trace = switch (builtin.cpu.arch) {
     .mipsel,
     => false,
 
-    // `@returnAddress()` in LLVM 10 gives
+    // `@returnaddress()` in LLVM 10 gives
     // "Non-Emscripten WebAssembly hasn't implemented __builtin_return_address".
     .wasm32,
     .wasm64,
     => native_os == .emscripten,
 
-    // `@returnAddress()` is unsupported in LLVM 13.
+    // `@returnaddress()` is unsupported in LLVM 13.
     .bpfel,
     .bpfeb,
     => false,
@@ -98,7 +98,7 @@ pub fn print(comptime fmt: []const u8, args: anytype) void {
 }
 
 pub fn getStderrMutex() *std.Thread.Mutex {
-    @compileError("deprecated. call std.debug.lockStdErr() and std.debug.unlockStdErr() instead which will integrate properly with std.Progress");
+    @compileerror("deprecated. call std.debug.lockStdErr() and std.debug.unlockStdErr() instead which will integrate properly with std.Progress");
 }
 
 /// TODO multithreaded awareness
@@ -129,11 +129,11 @@ pub fn dump_hex_fallible(bytes: []const u8) !void {
     var chunks = mem.window(u8, bytes, 16, 16);
     while (chunks.next()) |window| {
         // 1. Print the address.
-        const address = (@intFromPtr(bytes.ptr) + 0x10 * (chunks.index orelse 0) / 16) - 0x10;
+        const address = (@intfromptr(bytes.ptr) + 0x10 * (chunks.index orelse 0) / 16) - 0x10;
         try ttyconf.setColor(writer, .dim);
         // We print the address in lowercase and the bytes in uppercase hexadecimal to distinguish them more.
         // Also, make sure all lines are aligned by padding the address.
-        try writer.print("{x:0>[1]}  ", .{ address, @sizeOf(usize) * 2 });
+        try writer.print("{x:0>[1]}  ", .{ address, @sizeof(usize) * 2 });
         try ttyconf.setColor(writer, .reset);
 
         // 2. Print the bytes.
@@ -191,17 +191,17 @@ pub fn dumpCurrentStackTrace(start_addr: ?usize) void {
             return;
         }
         const debug_info = getSelfDebugInfo() catch |err| {
-            stderr.print("Unable to dump stack trace: Unable to open debug info: {s}\n", .{@errorName(err)}) catch return;
+            stderr.print("Unable to dump stack trace: Unable to open debug info: {s}\n", .{@errorname(err)}) catch return;
             return;
         };
         writeCurrentStackTrace(stderr, debug_info, io.tty.detectConfig(io.getStdErr()), start_addr) catch |err| {
-            stderr.print("Unable to dump stack trace: {s}\n", .{@errorName(err)}) catch return;
+            stderr.print("Unable to dump stack trace: {s}\n", .{@errorname(err)}) catch return;
             return;
         };
     }
 }
 
-pub const have_ucontext = @hasDecl(posix.system, "ucontext_t") and
+pub const have_ucontext = @hasdecl(posix.system, "ucontext_t") and
     (native_os != .linux or switch (builtin.cpu.arch) {
     .mips, .mipsel, .mips64, .mips64el, .riscv64 => false,
     else => true,
@@ -260,7 +260,7 @@ pub inline fn getContext(context: *ThreadContext) bool {
 
     const result = have_getcontext and posix.system.getcontext(context) == 0;
     if (native_os == .macos) {
-        assert(context.mcsize == @sizeOf(std.c.mcontext_t));
+        assert(context.mcsize == @sizeof(std.c.mcontext_t));
 
         // On aarch64-macos, the system getcontext doesn't write anything into the pc
         // register slot, it only writes lr. This makes the context consistent with
@@ -290,7 +290,7 @@ pub fn dumpStackTraceFromBase(context: *const ThreadContext) void {
             return;
         }
         const debug_info = getSelfDebugInfo() catch |err| {
-            stderr.print("Unable to dump stack trace: Unable to open debug info: {s}\n", .{@errorName(err)}) catch return;
+            stderr.print("Unable to dump stack trace: Unable to open debug info: {s}\n", .{@errorname(err)}) catch return;
             return;
         };
         const tty_config = io.tty.detectConfig(io.getStdErr());
@@ -301,7 +301,7 @@ pub fn dumpStackTraceFromBase(context: *const ThreadContext) void {
             // The caveat is that RtlCaptureStackBackTrace does not include the KiUserExceptionDispatcher frame,
             // which is where the IP in `context` points to, so it can't be used as start_addr.
             // Instead, start_addr is recovered from the stack.
-            const start_addr = if (builtin.cpu.arch == .x86) @as(*const usize, @ptrFromInt(context.getRegs().bp + 4)).* else null;
+            const start_addr = if (builtin.cpu.arch == .x86) @as(*const usize, @ptrfromint(context.getRegs().bp + 4)).* else null;
             writeStackTraceWindows(stderr, debug_info, tty_config, context, start_addr) catch return;
             return;
         }
@@ -388,11 +388,11 @@ pub fn dumpStackTrace(stack_trace: std.builtin.StackTrace) void {
             return;
         }
         const debug_info = getSelfDebugInfo() catch |err| {
-            stderr.print("Unable to dump stack trace: Unable to open debug info: {s}\n", .{@errorName(err)}) catch return;
+            stderr.print("Unable to dump stack trace: Unable to open debug info: {s}\n", .{@errorname(err)}) catch return;
             return;
         };
         writeStackTrace(stack_trace, stderr, getDebugInfoAllocator(), debug_info, io.tty.detectConfig(io.getStdErr())) catch |err| {
-            stderr.print("Unable to dump stack trace: {s}\n", .{@errorName(err)}) catch return;
+            stderr.print("Unable to dump stack trace: {s}\n", .{@errorname(err)}) catch return;
             return;
         };
     }
@@ -415,10 +415,10 @@ pub fn assert(ok: bool) void {
 pub fn panic(comptime format: []const u8, args: anytype) noreturn {
     @setCold(true);
 
-    panicExtra(@errorReturnTrace(), @returnAddress(), format, args);
+    panicExtra(@errorreturntrace(), @returnaddress(), format, args);
 }
 
-/// `panicExtra` is useful when you want to print out an `@errorReturnTrace`
+/// `panicExtra` is useful when you want to print out an `@errorreturntrace`
 /// and also print out some values.
 pub fn panicExtra(
     trace: ?*std.builtin.StackTrace,
@@ -554,7 +554,7 @@ pub fn writeStackTrace(
 }
 
 pub const UnwindError = if (have_ucontext)
-    @typeInfo(@typeInfo(@TypeOf(StackIterator.next_unwind)).Fn.return_type.?).ErrorUnion.error_set
+    @typeinfo(@typeinfo(@TypeOf(StackIterator.next_unwind)).Fn.return_type.?).ErrorUnion.error_set
 else
     void;
 
@@ -585,9 +585,9 @@ pub const StackIterator = struct {
         return StackIterator{
             .first_address = first_address,
             // TODO: this is a workaround for #16876
-            //.fp = fp orelse @frameAddress(),
+            //.fp = fp orelse @frameaddress(),
             .fp = fp orelse blk: {
-                const fa = @frameAddress();
+                const fa = @frameaddress();
                 break :blk fa;
             },
         };
@@ -636,10 +636,10 @@ pub const StackIterator = struct {
         // On RISC-V the frame pointer points to the top of the saved register
         // area, on pretty much every other architecture it points to the stack
         // slot where the previous frame pointer is saved.
-        2 * @sizeOf(usize)
+        2 * @sizeof(usize)
     else if (native_arch.isSPARC())
         // On SPARC the previous frame pointer is stored at 14 slots past %fp+BIAS.
-        14 * @sizeOf(usize)
+        14 * @sizeof(usize)
     else
         0;
 
@@ -651,9 +651,9 @@ pub const StackIterator = struct {
 
     // Positive offset of the saved PC wrt the frame pointer.
     const pc_offset = if (native_arch == .powerpc64le)
-        2 * @sizeOf(usize)
+        2 * @sizeof(usize)
     else
-        @sizeOf(usize);
+        @sizeof(usize);
 
     pub fn next(self: *StackIterator) ?usize {
         var address = self.next_internal() orelse return null;
@@ -672,9 +672,9 @@ pub const StackIterator = struct {
         // We are unable to determine validity of memory for freestanding targets
         if (native_os == .freestanding or native_os == .uefi) return true;
 
-        const aligned_address = address & ~@as(usize, @intCast((mem.page_size - 1)));
+        const aligned_address = address & ~@as(usize, @intcast((mem.page_size - 1)));
         if (aligned_address == 0) return false;
-        const aligned_memory = @as([*]align(mem.page_size) u8, @ptrFromInt(aligned_address))[0..mem.page_size];
+        const aligned_memory = @as([*]align(mem.page_size) u8, @ptrfromint(aligned_address))[0..mem.page_size];
 
         if (native_os == .windows) {
             var memory_info: windows.MEMORY_BASIC_INFORMATION = undefined;
@@ -696,7 +696,7 @@ pub const StackIterator = struct {
             }
 
             return true;
-        } else if (@hasDecl(posix.system, "msync") and native_os != .wasi and native_os != .emscripten) {
+        } else if (@hasdecl(posix.system, "msync") and native_os != .wasi and native_os != .emscripten) {
             posix.msync(aligned_memory, posix.MSF.ASYNC) catch |err| {
                 switch (err) {
                     error.UnmappedMemory => return false,
@@ -761,10 +761,10 @@ pub const StackIterator = struct {
             math.sub(usize, self.fp, fp_offset) catch return null;
 
         // Sanity check.
-        if (fp == 0 or !mem.isAligned(fp, @alignOf(usize)) or !isValidMemory(fp))
+        if (fp == 0 or !mem.isAligned(fp, @alignof(usize)) or !isValidMemory(fp))
             return null;
 
-        const new_fp = math.add(usize, @as(*const usize, @ptrFromInt(fp)).*, fp_bias) catch return null;
+        const new_fp = math.add(usize, @as(*const usize, @ptrfromint(fp)).*, fp_bias) catch return null;
 
         // Sanity check: the stack grows down thus all the parent frames must be
         // be at addresses that are greater (or equal) than the previous one.
@@ -775,7 +775,7 @@ pub const StackIterator = struct {
 
         const new_pc = @as(
             *const usize,
-            @ptrFromInt(math.add(usize, fp, pc_offset) catch return null),
+            @ptrfromint(math.add(usize, fp, pc_offset) catch return null),
         ).*;
 
         self.fp = new_fp;
@@ -817,7 +817,7 @@ pub fn writeCurrentStackTrace(
 pub noinline fn walkStackWindows(addresses: []usize, existing_context: ?*const windows.CONTEXT) usize {
     if (builtin.cpu.arch == .x86) {
         // RtlVirtualUnwind doesn't exist on x86
-        return windows.ntdll.RtlCaptureStackBackTrace(0, addresses.len, @as(**anyopaque, @ptrCast(addresses.ptr)), null);
+        return windows.ntdll.RtlCaptureStackBackTrace(0, addresses.len, @as(**anyopaque, @ptrcast(addresses.ptr)), null);
     }
 
     const tib = &windows.teb().NtTib;
@@ -851,12 +851,12 @@ pub noinline fn walkStackWindows(addresses: []usize, existing_context: ?*const w
             );
         } else {
             // leaf function
-            context.setIp(@as(*u64, @ptrFromInt(current_regs.sp)).*);
-            context.setSp(current_regs.sp + @sizeOf(usize));
+            context.setIp(@as(*u64, @ptrfromint(current_regs.sp)).*);
+            context.setSp(current_regs.sp + @sizeof(usize));
         }
 
         const next_regs = context.getRegs();
-        if (next_regs.sp < @intFromPtr(tib.StackLimit) or next_regs.sp > @intFromPtr(tib.StackBase)) {
+        if (next_regs.sp < @intfromptr(tib.StackLimit) or next_regs.sp > @intfromptr(tib.StackBase)) {
             break;
         }
 
@@ -1020,7 +1020,7 @@ fn printLineInfo(
             if (printLineFromFile(out_stream, li)) {
                 if (li.column > 0) {
                     // The caret already takes one char
-                    const space_needed = @as(usize, @intCast(li.column - 1));
+                    const space_needed = @as(usize, @intcast(li.column - 1));
 
                     try out_stream.writeByteNTimes(' ', space_needed);
                     try tty_config.setColor(out_stream, .green);
@@ -1041,13 +1041,13 @@ fn printLineInfo(
 pub const OpenSelfDebugInfoError = error{
     MissingDebugInfo,
     UnsupportedOperatingSystem,
-} || @typeInfo(@typeInfo(@TypeOf(DebugInfo.init)).Fn.return_type.?).ErrorUnion.error_set;
+} || @typeinfo(@typeinfo(@TypeOf(DebugInfo.init)).Fn.return_type.?).ErrorUnion.error_set;
 
 pub fn openSelfDebugInfo(allocator: mem.Allocator) OpenSelfDebugInfoError!DebugInfo {
     nosuspend {
         if (builtin.strip_debug_info)
             return error.MissingDebugInfo;
-        if (@hasDecl(root, "os") and @hasDecl(root.os, "debug") and @hasDecl(root.os.debug, "openSelfDebugInfo")) {
+        if (@hasdecl(root, "os") and @hasdecl(root.os, "debug") and @hasdecl(root.os.debug, "openSelfDebugInfo")) {
             return root.os.debug.openSelfDebugInfo(allocator);
         }
         switch (native_os) {
@@ -1079,7 +1079,7 @@ fn readCoffDebugInfo(allocator: mem.Allocator, coff_obj: *coff.Coff) !ModuleDebu
             var sections: DW.DwarfInfo.SectionArray = DW.DwarfInfo.null_section_array;
             errdefer for (sections) |section| if (section) |s| if (s.owned) allocator.free(s.data);
 
-            inline for (@typeInfo(DW.DwarfSection).Enum.fields, 0..) |section, i| {
+            inline for (@typeinfo(DW.DwarfSection).Enum.fields, 0..) |section, i| {
                 sections[i] = if (coff_obj.getSectionByName("." ++ section.name)) |section_header| blk: {
                     break :blk .{
                         .data = try coff_obj.getSectionDataAlloc(section_header, allocator),
@@ -1161,7 +1161,7 @@ pub fn readElfDebugInfo(
         const mapped_mem = try mapWholeFile(elf_file);
         if (expected_crc) |crc| if (crc != std.hash.crc.Crc32.hash(mapped_mem)) return error.InvalidDebugInfo;
 
-        const hdr: *const elf.Ehdr = @ptrCast(&mapped_mem[0]);
+        const hdr: *const elf.Ehdr = @ptrcast(&mapped_mem[0]);
         if (!mem.eql(u8, hdr.e_ident[0..4], elf.MAGIC)) return error.InvalidElfMagic;
         if (hdr.e_ident[elf.EI_VERSION] != 1) return error.InvalidElfVersion;
 
@@ -1174,11 +1174,11 @@ pub fn readElfDebugInfo(
 
         const shoff = hdr.e_shoff;
         const str_section_off = shoff + @as(u64, hdr.e_shentsize) * @as(u64, hdr.e_shstrndx);
-        const str_shdr: *const elf.Shdr = @ptrCast(@alignCast(&mapped_mem[math.cast(usize, str_section_off) orelse return error.Overflow]));
+        const str_shdr: *const elf.Shdr = @ptrcast(@aligncast(&mapped_mem[math.cast(usize, str_section_off) orelse return error.Overflow]));
         const header_strings = mapped_mem[str_shdr.sh_offset..][0..str_shdr.sh_size];
         const shdrs = @as(
             [*]const elf.Shdr,
-            @ptrCast(@alignCast(&mapped_mem[shoff])),
+            @ptrcast(@aligncast(&mapped_mem[shoff])),
         )[0..hdr.e_shnum];
 
         var sections: DW.DwarfInfo.SectionArray = DW.DwarfInfo.null_section_array;
@@ -1201,8 +1201,8 @@ pub fn readElfDebugInfo(
 
             if (mem.eql(u8, name, ".gnu_debuglink")) {
                 const gnu_debuglink = try chopSlice(mapped_mem, shdr.sh_offset, shdr.sh_size);
-                const debug_filename = mem.sliceTo(@as([*:0]const u8, @ptrCast(gnu_debuglink.ptr)), 0);
-                const crc_offset = mem.alignForward(usize, @intFromPtr(&debug_filename[debug_filename.len]) + 1, 4) - @intFromPtr(gnu_debuglink.ptr);
+                const debug_filename = mem.sliceTo(@as([*:0]const u8, @ptrcast(gnu_debuglink.ptr)), 0);
+                const crc_offset = mem.alignForward(usize, @intfromptr(&debug_filename[debug_filename.len]) + 1, 4) - @intfromptr(gnu_debuglink.ptr);
                 const crc_bytes = gnu_debuglink[crc_offset..][0..4];
                 separate_debug_crc = mem.readInt(u32, crc_bytes, native_endian);
                 separate_debug_filename = debug_filename;
@@ -1210,7 +1210,7 @@ pub fn readElfDebugInfo(
             }
 
             var section_index: ?usize = null;
-            inline for (@typeInfo(DW.DwarfSection).Enum.fields, 0..) |section, i| {
+            inline for (@typeinfo(DW.DwarfSection).Enum.fields, 0..) |section, i| {
                 if (mem.eql(u8, "." ++ section.name, name)) section_index = i;
             }
             if (section_index == null) continue;
@@ -1244,10 +1244,10 @@ pub fn readElfDebugInfo(
         }
 
         const missing_debug_info =
-            sections[@intFromEnum(DW.DwarfSection.debug_info)] == null or
-            sections[@intFromEnum(DW.DwarfSection.debug_abbrev)] == null or
-            sections[@intFromEnum(DW.DwarfSection.debug_str)] == null or
-            sections[@intFromEnum(DW.DwarfSection.debug_line)] == null;
+            sections[@intfromenum(DW.DwarfSection.debug_info)] == null or
+            sections[@intfromenum(DW.DwarfSection.debug_abbrev)] == null or
+            sections[@intfromenum(DW.DwarfSection.debug_str)] == null or
+            sections[@intfromenum(DW.DwarfSection.debug_line)] == null;
 
         // Attempt to load debug info from an external file
         // See: https://sourceware.org/gdb/onlinedocs/gdb/Separate-Debug-Files.html
@@ -1338,13 +1338,13 @@ pub fn readElfDebugInfo(
 fn readMachODebugInfo(allocator: mem.Allocator, macho_file: File) !ModuleDebugInfo {
     const mapped_mem = try mapWholeFile(macho_file);
 
-    const hdr: *const macho.mach_header_64 = @ptrCast(@alignCast(mapped_mem.ptr));
+    const hdr: *const macho.mach_header_64 = @ptrcast(@aligncast(mapped_mem.ptr));
     if (hdr.magic != macho.MH_MAGIC_64)
         return error.InvalidDebugInfo;
 
     var it = macho.LoadCommandIterator{
         .ncmds = hdr.ncmds,
-        .buffer = mapped_mem[@sizeOf(macho.mach_header_64)..][0..hdr.sizeofcmds],
+        .buffer = mapped_mem[@sizeof(macho.mach_header_64)..][0..hdr.sizeofcmds],
     };
     const symtab = while (it.next()) |cmd| switch (cmd.cmd()) {
         .SYMTAB => break cmd.cast(macho.symtab_command).?,
@@ -1353,7 +1353,7 @@ fn readMachODebugInfo(allocator: mem.Allocator, macho_file: File) !ModuleDebugIn
 
     const syms = @as(
         [*]const macho.nlist_64,
-        @ptrCast(@alignCast(&mapped_mem[symtab.symoff])),
+        @ptrcast(@aligncast(&mapped_mem[symtab.symoff])),
     )[0..symtab.nsyms];
     const strings = mapped_mem[symtab.stroff..][0 .. symtab.strsize - 1 :0];
 
@@ -1408,7 +1408,7 @@ fn readMachODebugInfo(allocator: mem.Allocator, macho_file: File) !ModuleDebugIn
                     },
                     .fun_strx => {
                         state = .fun_size;
-                        last_sym.size = @as(u32, @intCast(sym.n_value));
+                        last_sym.size = @as(u32, @intcast(sym.n_value));
                     },
                     else => return error.InvalidDebugInfo,
                 }
@@ -1688,7 +1688,7 @@ pub const WindowsModuleInfo = struct {
 
         pub fn deinit(self: @This()) void {
             const process_handle = windows.kernel32.GetCurrentProcess();
-            assert(windows.ntdll.NtUnmapViewOfSection(process_handle, @constCast(@ptrCast(self.section_view.ptr))) == .SUCCESS);
+            assert(windows.ntdll.NtUnmapViewOfSection(process_handle, @constcast(@ptrcast(self.section_view.ptr))) == .SUCCESS);
             windows.CloseHandle(self.section_handle);
             self.file.close();
         }
@@ -1719,7 +1719,7 @@ pub const DebugInfo = struct {
             defer windows.CloseHandle(handle);
 
             var module_entry: windows.MODULEENTRY32 = undefined;
-            module_entry.dwSize = @sizeOf(windows.MODULEENTRY32);
+            module_entry.dwSize = @sizeof(windows.MODULEENTRY32);
             if (windows.kernel32.Module32First(handle, &module_entry) == 0) {
                 return error.MissingDebugInfo;
             }
@@ -1731,7 +1731,7 @@ pub const DebugInfo = struct {
                 errdefer allocator.free(name);
 
                 module_info.* = .{
-                    .base_address = @intFromPtr(module_entry.modBaseAddr),
+                    .base_address = @intfromptr(module_entry.modBaseAddr),
                     .size = module_entry.modBaseSize,
                     .name = name,
                     .handle = module_entry.hModule,
@@ -1798,15 +1798,15 @@ pub const DebugInfo = struct {
         var i: u32 = 0;
         while (i < image_count) : (i += 1) {
             const header = std.c._dyld_get_image_header(i) orelse continue;
-            const base_address = @intFromPtr(header);
+            const base_address = @intfromptr(header);
             if (address < base_address) continue;
             const vmaddr_slide = std.c._dyld_get_image_vmaddr_slide(i);
 
             var it = macho.LoadCommandIterator{
                 .ncmds = header.ncmds,
-                .buffer = @alignCast(@as(
+                .buffer = @aligncast(@as(
                     [*]u8,
-                    @ptrFromInt(@intFromPtr(header) + @sizeOf(macho.mach_header_64)),
+                    @ptrfromint(@intfromptr(header) + @sizeof(macho.mach_header_64)),
                 )[0..header.sizeofcmds]),
             };
 
@@ -1826,9 +1826,9 @@ pub const DebugInfo = struct {
 
                         for (cmd.getSections()) |sect| {
                             if (mem.eql(u8, "__unwind_info", sect.sectName())) {
-                                unwind_info = @as([*]const u8, @ptrFromInt(sect.addr + vmaddr_slide))[0..sect.size];
+                                unwind_info = @as([*]const u8, @ptrfromint(sect.addr + vmaddr_slide))[0..sect.size];
                             } else if (mem.eql(u8, "__eh_frame", sect.sectName())) {
-                                eh_frame = @as([*]const u8, @ptrFromInt(sect.addr + vmaddr_slide))[0..sect.size];
+                                eh_frame = @as([*]const u8, @ptrfromint(sect.addr + vmaddr_slide))[0..sect.size];
                             }
                         }
 
@@ -1865,15 +1865,15 @@ pub const DebugInfo = struct {
         var i: u32 = 0;
         while (i < image_count) : (i += 1) {
             const header = std.c._dyld_get_image_header(i) orelse continue;
-            const base_address = @intFromPtr(header);
+            const base_address = @intfromptr(header);
             if (address < base_address) continue;
             const vmaddr_slide = std.c._dyld_get_image_vmaddr_slide(i);
 
             var it = macho.LoadCommandIterator{
                 .ncmds = header.ncmds,
-                .buffer = @alignCast(@as(
+                .buffer = @aligncast(@as(
                     [*]u8,
-                    @ptrFromInt(@intFromPtr(header) + @sizeOf(macho.mach_header_64)),
+                    @ptrfromint(@intfromptr(header) + @sizeof(macho.mach_header_64)),
                 )[0..header.sizeofcmds]),
             };
 
@@ -1906,7 +1906,7 @@ pub const DebugInfo = struct {
                 const obj_di = try self.allocator.create(ModuleDebugInfo);
                 errdefer self.allocator.destroy(obj_di);
 
-                const mapped_module = @as([*]const u8, @ptrFromInt(module.base_address))[0..module.size];
+                const mapped_module = @as([*]const u8, @ptrfromint(module.base_address))[0..module.size];
                 var coff_obj = try coff.Coff.init(mapped_module, true);
 
                 // The string table is not mapped into memory by the loader, so if a section name is in the
@@ -1921,7 +1921,7 @@ pub const DebugInfo = struct {
                     const len = windows.kernel32.K32GetModuleFileNameExW(
                         process_handle,
                         module.handle,
-                        @ptrCast(&name_buffer[4]),
+                        @ptrcast(&name_buffer[4]),
                         windows.PATH_MAX_WIDE,
                     );
 
@@ -1952,7 +1952,7 @@ pub const DebugInfo = struct {
                     const map_section_rc = windows.ntdll.NtMapViewOfSection(
                         section_handle,
                         process_handle,
-                        @ptrCast(&base_ptr),
+                        @ptrcast(&base_ptr),
                         null,
                         0,
                         null,
@@ -1962,9 +1962,9 @@ pub const DebugInfo = struct {
                         windows.PAGE_READONLY,
                     );
                     if (map_section_rc != .SUCCESS) return error.MissingDebugInfo;
-                    errdefer assert(windows.ntdll.NtUnmapViewOfSection(process_handle, @ptrFromInt(base_ptr)) == .SUCCESS);
+                    errdefer assert(windows.ntdll.NtUnmapViewOfSection(process_handle, @ptrfromint(base_ptr)) == .SUCCESS);
 
-                    const section_view = @as([*]const u8, @ptrFromInt(base_ptr))[0..coff_len];
+                    const section_view = @as([*]const u8, @ptrfromint(base_ptr))[0..coff_len];
                     coff_obj = try coff.Coff.init(section_view, false);
 
                     module.mapped_file = .{
@@ -2072,7 +2072,7 @@ pub const DebugInfo = struct {
                     switch (phdr.p_type) {
                         elf.PT_NOTE => {
                             // Look for .note.gnu.build-id
-                            const note_bytes = @as([*]const u8, @ptrFromInt(info.dlpi_addr + phdr.p_vaddr))[0..phdr.p_memsz];
+                            const note_bytes = @as([*]const u8, @ptrfromint(info.dlpi_addr + phdr.p_vaddr))[0..phdr.p_memsz];
                             const name_size = mem.readInt(u32, note_bytes[0..4], native_endian);
                             if (name_size != 4) continue;
                             const desc_size = mem.readInt(u32, note_bytes[4..8], native_endian);
@@ -2082,7 +2082,7 @@ pub const DebugInfo = struct {
                             context.build_id = note_bytes[16..][0..desc_size];
                         },
                         elf.PT_GNU_EH_FRAME => {
-                            context.gnu_eh_frame = @as([*]const u8, @ptrFromInt(info.dlpi_addr + phdr.p_vaddr))[0..phdr.p_memsz];
+                            context.gnu_eh_frame = @as([*]const u8, @ptrfromint(info.dlpi_addr + phdr.p_vaddr))[0..phdr.p_memsz];
                         },
                         else => {},
                     }
@@ -2110,7 +2110,7 @@ pub const DebugInfo = struct {
             // are encoded relative to its base address, so we must use the
             // version that is already memory mapped, and not the one that
             // will be mapped separately from the ELF file.
-            sections[@intFromEnum(DW.DwarfSection.eh_frame_hdr)] = .{
+            sections[@intfromenum(DW.DwarfSection.eh_frame_hdr)] = .{
                 .data = eh_frame_hdr,
                 .owned = false,
             };
@@ -2175,7 +2175,7 @@ pub const ModuleDebugInfo = switch (native_os) {
             const o_file = try fs.cwd().openFile(o_file_path, .{});
             const mapped_mem = try mapWholeFile(o_file);
 
-            const hdr: *const macho.mach_header_64 = @ptrCast(@alignCast(mapped_mem.ptr));
+            const hdr: *const macho.mach_header_64 = @ptrcast(@aligncast(mapped_mem.ptr));
             if (hdr.magic != std.macho.MH_MAGIC_64)
                 return error.InvalidDebugInfo;
 
@@ -2183,7 +2183,7 @@ pub const ModuleDebugInfo = switch (native_os) {
             var symtabcmd: ?macho.symtab_command = null;
             var it = macho.LoadCommandIterator{
                 .ncmds = hdr.ncmds,
-                .buffer = mapped_mem[@sizeOf(macho.mach_header_64)..][0..hdr.sizeofcmds],
+                .buffer = mapped_mem[@sizeof(macho.mach_header_64)..][0..hdr.sizeofcmds],
             };
             while (it.next()) |cmd| switch (cmd.cmd()) {
                 .SEGMENT_64 => segcmd = cmd,
@@ -2196,16 +2196,16 @@ pub const ModuleDebugInfo = switch (native_os) {
             // Parse symbols
             const strtab = @as(
                 [*]const u8,
-                @ptrCast(&mapped_mem[symtabcmd.?.stroff]),
+                @ptrcast(&mapped_mem[symtabcmd.?.stroff]),
             )[0 .. symtabcmd.?.strsize - 1 :0];
             const symtab = @as(
                 [*]const macho.nlist_64,
-                @ptrCast(@alignCast(&mapped_mem[symtabcmd.?.symoff])),
+                @ptrcast(@aligncast(&mapped_mem[symtabcmd.?.symoff])),
             )[0..symtabcmd.?.nsyms];
 
             // TODO handle tentative (common) symbols
             var addr_table = std.StringHashMap(u64).init(allocator);
-            try addr_table.ensureTotalCapacity(@as(u32, @intCast(symtab.len)));
+            try addr_table.ensureTotalCapacity(@as(u32, @intcast(symtab.len)));
             for (symtab) |sym| {
                 if (sym.n_strx == 0) continue;
                 if (sym.undf() or sym.tentative() or sym.abs()) continue;
@@ -2215,7 +2215,7 @@ pub const ModuleDebugInfo = switch (native_os) {
             }
 
             var sections: DW.DwarfInfo.SectionArray = DW.DwarfInfo.null_section_array;
-            if (self.eh_frame) |eh_frame| sections[@intFromEnum(DW.DwarfSection.eh_frame)] = .{
+            if (self.eh_frame) |eh_frame| sections[@intfromenum(DW.DwarfSection.eh_frame)] = .{
                 .data = eh_frame,
                 .owned = false,
             };
@@ -2224,7 +2224,7 @@ pub const ModuleDebugInfo = switch (native_os) {
                 if (!std.mem.eql(u8, "__DWARF", sect.segName())) continue;
 
                 var section_index: ?usize = null;
-                inline for (@typeInfo(DW.DwarfSection).Enum.fields, 0..) |section, i| {
+                inline for (@typeinfo(DW.DwarfSection).Enum.fields, 0..) |section, i| {
                     if (mem.eql(u8, "__" ++ section.name, sect.sectName())) section_index = i;
                 }
                 if (section_index == null) continue;
@@ -2238,10 +2238,10 @@ pub const ModuleDebugInfo = switch (native_os) {
             }
 
             const missing_debug_info =
-                sections[@intFromEnum(DW.DwarfSection.debug_info)] == null or
-                sections[@intFromEnum(DW.DwarfSection.debug_abbrev)] == null or
-                sections[@intFromEnum(DW.DwarfSection.debug_str)] == null or
-                sections[@intFromEnum(DW.DwarfSection.debug_line)] == null;
+                sections[@intfromenum(DW.DwarfSection.debug_info)] == null or
+                sections[@intfromenum(DW.DwarfSection.debug_abbrev)] == null or
+                sections[@intfromenum(DW.DwarfSection.debug_str)] == null or
+                sections[@intfromenum(DW.DwarfSection.debug_line)] == null;
             if (missing_debug_info) return error.MissingDebugInfo;
 
             var di = DW.DwarfInfo{
@@ -2523,7 +2523,7 @@ pub const have_segfault_handling_support = switch (native_os) {
     .windows,
     => true,
 
-    .freebsd, .openbsd => @hasDecl(std.c, "ucontext_t"),
+    .freebsd, .openbsd => @hasdecl(std.c, "ucontext_t"),
     else => false,
 };
 
@@ -2548,7 +2548,7 @@ pub fn updateSegfaultHandler(act: ?*const posix.Sigaction) error{OperationNotSup
 /// Attaches a global SIGSEGV handler which calls `@panic("segmentation fault");`
 pub fn attachSegfaultHandler() void {
     if (!have_segfault_handling_support) {
-        @compileError("segfault handler not supported for this target");
+        @compileerror("segfault handler not supported for this target");
     }
     if (native_os == .windows) {
         windows_segfault_handle = windows.kernel32.AddVectoredExceptionHandler(0, handleSegfaultWindows);
@@ -2589,11 +2589,11 @@ fn handleSegfaultPosix(sig: i32, info: *const posix.siginfo_t, ctx_ptr: ?*anyopa
     resetSegfaultHandler();
 
     const addr = switch (native_os) {
-        .linux => @intFromPtr(info.fields.sigfault.addr),
-        .freebsd, .macos => @intFromPtr(info.addr),
-        .netbsd => @intFromPtr(info.info.reason.fault.addr),
-        .openbsd => @intFromPtr(info.data.fault.addr),
-        .solaris, .illumos => @intFromPtr(info.reason.fault.addr),
+        .linux => @intfromptr(info.fields.sigfault.addr),
+        .freebsd, .macos => @intfromptr(info.addr),
+        .netbsd => @intfromptr(info.info.reason.fault.addr),
+        .openbsd => @intfromptr(info.data.fault.addr),
+        .solaris, .illumos => @intfromptr(info.reason.fault.addr),
         else => unreachable,
     };
 
@@ -2650,7 +2650,7 @@ fn dumpSegfaultInfoPosix(sig: i32, code: i32, addr: usize, ctx_ptr: ?*const anyo
         .arm,
         .aarch64,
         => {
-            const ctx: *const posix.ucontext_t = @ptrCast(@alignCast(ctx_ptr));
+            const ctx: *const posix.ucontext_t = @ptrcast(@aligncast(ctx_ptr));
             dumpStackTraceFromBase(ctx);
         },
         else => {},
@@ -2672,8 +2672,8 @@ fn handleSegfaultWindowsExtra(
     msg: u8,
     label: ?[]const u8,
 ) noreturn {
-    const exception_address = @intFromPtr(info.ExceptionRecord.ExceptionAddress);
-    if (@hasDecl(windows, "CONTEXT")) {
+    const exception_address = @intfromptr(info.ExceptionRecord.ExceptionAddress);
+    if (@hasdecl(windows, "CONTEXT")) {
         nosuspend switch (panic_stage) {
             0 => {
                 panic_stage = 1;
@@ -2745,7 +2745,7 @@ test "manage resources correctly" {
 }
 
 noinline fn showMyTrace() usize {
-    return @returnAddress();
+    return @returnaddress();
 }
 
 /// This API helps you track where a value originated and where it was mutated,
@@ -2778,7 +2778,7 @@ pub fn ConfigurableTrace(comptime size: usize, comptime stack_frame_count: usize
 
         pub noinline fn addNoInline(t: *@This(), note: []const u8) void {
             comptime assert(enabled);
-            return addAddr(t, @returnAddress(), note);
+            return addAddr(t, @returnaddress(), note);
         }
 
         pub inline fn addNoOp(t: *@This(), note: []const u8) void {
@@ -2813,7 +2813,7 @@ pub fn ConfigurableTrace(comptime size: usize, comptime stack_frame_count: usize
             const debug_info = getSelfDebugInfo() catch |err| {
                 stderr.print(
                     "Unable to dump stack trace: Unable to open debug info: {s}\n",
-                    .{@errorName(err)},
+                    .{@errorname(err)},
                 ) catch return;
                 return;
             };
@@ -2881,7 +2881,7 @@ pub const SafetyLock = struct {
 /// When Valgrind integrations are disabled, this returns comptime-known false.
 /// Otherwise, the result is runtime-known.
 pub inline fn inValgrind() bool {
-    if (@inComptime()) return false;
+    if (@incomptime()) return false;
     if (!builtin.valgrind_support) return false;
     return std.valgrind.runningOnValgrind() > 0;
 }

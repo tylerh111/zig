@@ -1,7 +1,7 @@
 export fn entry1() void {
     const x: i32 = undefined;
-    const y: u32 = @bitCast(x);
-    @compileLog(y);
+    const y: u32 = @bitcast(x);
+    @compilelog(y);
 }
 
 // error

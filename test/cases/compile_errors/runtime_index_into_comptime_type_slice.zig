@@ -6,7 +6,7 @@ fn getIndex() usize {
 }
 export fn entry() void {
     const index = getIndex();
-    const field = @typeInfo(Struct).Struct.fields[index];
+    const field = @typeinfo(Struct).Struct.fields[index];
     _ = field;
 }
 

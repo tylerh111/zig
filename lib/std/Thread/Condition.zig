@@ -1,6 +1,6 @@
 //! Condition variables are used with a Mutex to efficiently wait for an arbitrary condition to occur.
 //! It does this by atomically unlocking the mutex, blocking the thread until notified, and finally re-locking the mutex.
-//! Condition can be statically initialized and is at most `@sizeOf(u64)` large.
+//! Condition can be statically initialized and is at most `@sizeof(u64)` large.
 //!
 //! Example:
 //! ```
@@ -231,12 +231,12 @@ const FutexImpl = struct {
                         // Acquire barrier ensures code before the wake() which added the signal happens before we decrement it and return.
                         while (state & signal_mask != 0) {
                             const new_state = state - one_waiter - one_signal;
-                            state = self.state.cmpxchgWeak(state, new_state, .acquire, .monotonic) orelse return;
+                            state = self.state.cmpxchgweak(state, new_state, .acquire, .monotonic) orelse return;
                         }
 
                         // Remove the waiter we added and officially return timed out.
                         const new_state = state - one_waiter;
-                        state = self.state.cmpxchgWeak(state, new_state, .monotonic, .monotonic) orelse return err;
+                        state = self.state.cmpxchgweak(state, new_state, .monotonic, .monotonic) orelse return err;
                     }
                 },
             };
@@ -248,7 +248,7 @@ const FutexImpl = struct {
             // Acquire barrier ensures code before the wake() which added the signal happens before we decrement it and return.
             while (state & signal_mask != 0) {
                 const new_state = state - one_waiter - one_signal;
-                state = self.state.cmpxchgWeak(state, new_state, .acquire, .monotonic) orelse return;
+                state = self.state.cmpxchgweak(state, new_state, .acquire, .monotonic) orelse return;
             }
         }
     }
@@ -275,7 +275,7 @@ const FutexImpl = struct {
             // Reserve the amount of waiters to wake by incrementing the signals count.
             // Release barrier ensures code before the wake() happens before the signal it posted and consumed by the wait() threads.
             const new_state = state + (one_signal * to_wake);
-            state = self.state.cmpxchgWeak(state, new_state, .release, .monotonic) orelse {
+            state = self.state.cmpxchgweak(state, new_state, .release, .monotonic) orelse {
                 // Wake up the waiting threads we reserved above by changing the epoch value.
                 // NOTE: a waiting thread could miss a wake up if *exactly* ((1<<32)-1) wake()s happen between it observing the epoch and sleeping on it.
                 // This is very unlikely due to how many precise amount of Futex.wake() calls that would be between the waiting thread's potential preemption.
@@ -486,7 +486,7 @@ test "multi signal" {
 
     // The first paddle will be hit one last time by the last paddle.
     for (paddles, 0..) |p, i| {
-        const expected = @as(u32, num_iterations) + @intFromBool(i == 0);
+        const expected = @as(u32, num_iterations) + @intfrombool(i == 0);
         try testing.expectEqual(p.value, expected);
     }
 }

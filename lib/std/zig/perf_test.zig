@@ -4,7 +4,7 @@ const Tokenizer = std.zig.Tokenizer;
 const io = std.io;
 const fmtIntSizeBin = std.fmt.fmtIntSizeBin;
 
-const source = @embedFile("../os.zig");
+const source = @embedfile("../os.zig");
 var fixed_buffer_mem: [10 * 1024 * 1024]u8 = undefined;
 
 pub fn main() !void {
@@ -18,9 +18,9 @@ pub fn main() !void {
     }
     const end = timer.read();
     memory_used /= iterations;
-    const elapsed_s = @as(f64, @floatFromInt(end - start)) / std.time.ns_per_s;
-    const bytes_per_sec_float = @as(f64, @floatFromInt(source.len * iterations)) / elapsed_s;
-    const bytes_per_sec = @as(u64, @intFromFloat(@floor(bytes_per_sec_float)));
+    const elapsed_s = @as(f64, @floatfromint(end - start)) / std.time.ns_per_s;
+    const bytes_per_sec_float = @as(f64, @floatfromint(source.len * iterations)) / elapsed_s;
+    const bytes_per_sec = @as(u64, @intfromfloat(@floor(bytes_per_sec_float)));
 
     var stdout_file = std.io.getStdOut();
     const stdout = stdout_file.writer();

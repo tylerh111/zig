@@ -50,7 +50,7 @@ pub fn format(atom: Atom, comptime fmt: []const u8, options: std.fmt.FormatOptio
     _ = fmt;
     _ = options;
     try writer.print("Atom{{ .sym_index = {d}, .alignment = {d}, .size = {d}, .offset = 0x{x:0>8} }}", .{
-        @intFromEnum(atom.sym_index),
+        @intfromenum(atom.sym_index),
         atom.alignment,
         atom.size,
         atom.offset,
@@ -75,7 +75,7 @@ pub fn resolveRelocs(atom: *Atom, wasm_bin: *const Wasm) void {
     for (atom.relocs.items) |reloc| {
         const value = atom.relocationValue(reloc, wasm_bin);
         log.debug("Relocating '{s}' referenced in '{s}' offset=0x{x:0>8} value={d}", .{
-            (Wasm.SymbolLoc{ .file = atom.file, .index = @enumFromInt(reloc.index) }).getName(wasm_bin),
+            (Wasm.SymbolLoc{ .file = atom.file, .index = @enumfromint(reloc.index) }).getName(wasm_bin),
             symbol_name,
             reloc.offset,
             value,
@@ -114,14 +114,14 @@ pub fn resolveRelocs(atom: *Atom, wasm_bin: *const Wasm) void {
 /// All values will be represented as a `u64` as all values can fit within it.
 /// The final value must be casted to the correct size.
 fn relocationValue(atom: Atom, relocation: types.Relocation, wasm_bin: *const Wasm) u64 {
-    const target_loc = (Wasm.SymbolLoc{ .file = atom.file, .index = @enumFromInt(relocation.index) }).finalLoc(wasm_bin);
+    const target_loc = (Wasm.SymbolLoc{ .file = atom.file, .index = @enumfromint(relocation.index) }).finalLoc(wasm_bin);
     const symbol = target_loc.getSymbol(wasm_bin);
     if (relocation.relocation_type != .R_WASM_TYPE_INDEX_LEB and
         symbol.tag != .section and
         symbol.isDead())
     {
         const val = atom.thombstone(wasm_bin) orelse relocation.addend;
-        return @bitCast(val);
+        return @bitcast(val);
     }
     switch (relocation.relocation_type) {
         .R_WASM_FUNCTION_INDEX_LEB => return symbol.index,
@@ -130,7 +130,7 @@ fn relocationValue(atom: Atom, relocation: types.Relocation, wasm_bin: *const Wa
         .R_WASM_TABLE_INDEX_I64,
         .R_WASM_TABLE_INDEX_SLEB,
         .R_WASM_TABLE_INDEX_SLEB64,
-        => return wasm_bin.function_table.get(.{ .file = atom.file, .index = @enumFromInt(relocation.index) }) orelse 0,
+        => return wasm_bin.function_table.get(.{ .file = atom.file, .index = @enumfromint(relocation.index) }) orelse 0,
         .R_WASM_TYPE_INDEX_LEB => {
             const obj_file = wasm_bin.file(atom.file) orelse return relocation.index;
             const original_type = obj_file.funcTypes()[relocation.index];
@@ -150,31 +150,31 @@ fn relocationValue(atom: Atom, relocation: types.Relocation, wasm_bin: *const Wa
             if (symbol.isUndefined()) {
                 return 0;
             }
-            const va: i33 = @intCast(symbol.virtual_address);
-            return @intCast(va + relocation.addend);
+            const va: i33 = @intcast(symbol.virtual_address);
+            return @intcast(va + relocation.addend);
         },
         .R_WASM_EVENT_INDEX_LEB => return symbol.index,
         .R_WASM_SECTION_OFFSET_I32 => {
             const target_atom_index = wasm_bin.symbol_atom.get(target_loc).?;
             const target_atom = wasm_bin.getAtom(target_atom_index);
-            const rel_value: i33 = @intCast(target_atom.offset);
-            return @intCast(rel_value + relocation.addend);
+            const rel_value: i33 = @intcast(target_atom.offset);
+            return @intcast(rel_value + relocation.addend);
         },
         .R_WASM_FUNCTION_OFFSET_I32 => {
             if (symbol.isUndefined()) {
                 const val = atom.thombstone(wasm_bin) orelse relocation.addend;
-                return @bitCast(val);
+                return @bitcast(val);
             }
             const target_atom_index = wasm_bin.symbol_atom.get(target_loc).?;
             const target_atom = wasm_bin.getAtom(target_atom_index);
-            const rel_value: i33 = @intCast(target_atom.offset);
-            return @intCast(rel_value + relocation.addend);
+            const rel_value: i33 = @intcast(target_atom.offset);
+            return @intcast(rel_value + relocation.addend);
         },
         .R_WASM_MEMORY_ADDR_TLS_SLEB,
         .R_WASM_MEMORY_ADDR_TLS_SLEB64,
         => {
-            const va: i33 = @intCast(symbol.virtual_address);
-            return @intCast(va + relocation.addend);
+            const va: i33 = @intcast(symbol.virtual_address);
+            return @intcast(va + relocation.addend);
         },
     }
 }

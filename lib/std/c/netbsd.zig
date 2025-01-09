@@ -34,7 +34,7 @@ pub const pthread_spin_t = switch (builtin.cpu.arch) {
     .arm, .armeb, .thumb, .thumbeb => i32,
     .sparc, .sparcel, .sparc64 => u8,
     .riscv32, .riscv64 => u32,
-    else => @compileError("undefined pthread_spin_t for this arch"),
+    else => @compileerror("undefined pthread_spin_t for this arch"),
 };
 
 pub const padded_pthread_spin_t = switch (builtin.cpu.arch) {
@@ -89,9 +89,9 @@ pub const RTLD = struct {
     pub const NODELETE = 0x01000;
     pub const NOLOAD = 0x02000;
 
-    pub const NEXT = @as(*anyopaque, @ptrFromInt(@as(usize, @bitCast(@as(isize, -1)))));
-    pub const DEFAULT = @as(*anyopaque, @ptrFromInt(@as(usize, @bitCast(@as(isize, -2)))));
-    pub const SELF = @as(*anyopaque, @ptrFromInt(@as(usize, @bitCast(@as(isize, -3)))));
+    pub const NEXT = @as(*anyopaque, @ptrfromint(@as(usize, @bitcast(@as(isize, -1)))));
+    pub const DEFAULT = @as(*anyopaque, @ptrfromint(@as(usize, @bitcast(@as(isize, -2)))));
+    pub const SELF = @as(*anyopaque, @ptrfromint(@as(usize, @bitcast(@as(isize, -3)))));
 };
 
 pub const dl_phdr_info = extern struct {
@@ -416,13 +416,13 @@ pub const sockaddr = extern struct {
         padding: [126]u8 = undefined,
 
         comptime {
-            assert(@sizeOf(storage) == SS_MAXSIZE);
-            assert(@alignOf(storage) == 8);
+            assert(@sizeof(storage) == SS_MAXSIZE);
+            assert(@alignof(storage) == 8);
         }
     };
 
     pub const in = extern struct {
-        len: u8 = @sizeOf(in),
+        len: u8 = @sizeof(in),
         family: sa_family_t = AF.INET,
         port: in_port_t,
         addr: u32,
@@ -430,7 +430,7 @@ pub const sockaddr = extern struct {
     };
 
     pub const in6 = extern struct {
-        len: u8 = @sizeOf(in6),
+        len: u8 = @sizeof(in6),
         family: sa_family_t = AF.INET6,
         port: in_port_t,
         flowinfo: u32,
@@ -441,7 +441,7 @@ pub const sockaddr = extern struct {
     /// Definitions for UNIX IPC domain.
     pub const un = extern struct {
         /// total sockaddr length
-        len: u8 = @sizeOf(un),
+        len: u8 = @sizeof(un),
 
         family: sa_family_t = AF.LOCAL,
 
@@ -516,7 +516,7 @@ pub const W = struct {
     pub const TRAPPED = 0x00000040;
 
     pub fn EXITSTATUS(s: u32) u8 {
-        return @as(u8, @intCast((s >> 8) & 0xff));
+        return @as(u8, @intcast((s >> 8) & 0xff));
     }
     pub fn TERMSIG(s: u32) u32 {
         return s & 0x7f;
@@ -800,9 +800,9 @@ pub const winsize = extern struct {
 const NSIG = 32;
 
 pub const SIG = struct {
-    pub const DFL: ?Sigaction.handler_fn = @ptrFromInt(0);
-    pub const IGN: ?Sigaction.handler_fn = @ptrFromInt(1);
-    pub const ERR: ?Sigaction.handler_fn = @ptrFromInt(maxInt(usize));
+    pub const DFL: ?Sigaction.handler_fn = @ptrfromint(0);
+    pub const IGN: ?Sigaction.handler_fn = @ptrfromint(1);
+    pub const ERR: ?Sigaction.handler_fn = @ptrfromint(maxInt(usize));
 
     pub const WORDS = 4;
     pub const MAXSIG = 128;
@@ -930,7 +930,7 @@ pub const _ksiginfo = extern struct {
                 pe_lwp: lwpid_t,
             },
         },
-    } align(@sizeOf(usize)),
+    } align(@sizeof(usize)),
 };
 
 pub const sigset_t = extern struct {
@@ -1006,7 +1006,7 @@ pub const ucontext_t = extern struct {
             .x86 => 4,
             .mips, .mipsel, .mips64, .mips64el => 14,
             .arm, .armeb, .thumb, .thumbeb => 1,
-            .sparc, .sparcel, .sparc64 => if (@sizeOf(usize) == 4) 43 else 8,
+            .sparc, .sparcel, .sparc64 => if (@sizeof(usize) == 4) 43 else 8,
             else => 0,
         }
     ]u32,

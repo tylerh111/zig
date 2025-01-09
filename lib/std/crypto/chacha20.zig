@@ -110,7 +110,7 @@ fn ChaChaVecImpl(comptime rounds_nb: usize, comptime degree: comptime_int) type 
                         mem.readInt(u32, c[8..12], .little),
                         mem.readInt(u32, c[12..16], .little),
                     };
-                    const n1 = @addWithOverflow(d[0], 1);
+                    const n1 = @addwithoverflow(d[0], 1);
                     return BlockVec{
                         constant_le,
                         Lane{ key[0], key[1], key[2], key[3], key[0], key[1], key[2], key[3] },
@@ -119,9 +119,9 @@ fn ChaChaVecImpl(comptime rounds_nb: usize, comptime degree: comptime_int) type 
                     };
                 },
                 4 => {
-                    const n1 = @addWithOverflow(d[0], 1);
-                    const n2 = @addWithOverflow(d[0], 2);
-                    const n3 = @addWithOverflow(d[0], 3);
+                    const n1 = @addwithoverflow(d[0], 1);
+                    const n2 = @addwithoverflow(d[0], 2);
+                    const n3 = @addwithoverflow(d[0], 3);
                     const constant_le = Lane{
                         mem.readInt(u32, c[0..4], .little),
                         mem.readInt(u32, c[4..8], .little),
@@ -147,7 +147,7 @@ fn ChaChaVecImpl(comptime rounds_nb: usize, comptime degree: comptime_int) type 
                         Lane{ d[0], d[1], d[2], d[3], n1[0], d[1] +% n1[1], d[2], d[3], n2[0], d[1] +% n2[1], d[2], d[3], n3[0], d[1] +% n3[1], d[2], d[3] },
                     };
                 },
-                else => @compileError("invalid degree"),
+                else => @compileerror("invalid degree"),
             }
         }
 
@@ -158,19 +158,19 @@ fn ChaChaVecImpl(comptime rounds_nb: usize, comptime degree: comptime_int) type 
                 1 => [_]i32{ 3, 0, 1, 2 },
                 2 => [_]i32{ 3, 0, 1, 2 } ++ [_]i32{ 7, 4, 5, 6 },
                 4 => [_]i32{ 3, 0, 1, 2 } ++ [_]i32{ 7, 4, 5, 6 } ++ [_]i32{ 11, 8, 9, 10 } ++ [_]i32{ 15, 12, 13, 14 },
-                else => @compileError("invalid degree"),
+                else => @compileerror("invalid degree"),
             };
             const m1 = switch (degree) {
                 1 => [_]i32{ 2, 3, 0, 1 },
                 2 => [_]i32{ 2, 3, 0, 1 } ++ [_]i32{ 6, 7, 4, 5 },
                 4 => [_]i32{ 2, 3, 0, 1 } ++ [_]i32{ 6, 7, 4, 5 } ++ [_]i32{ 10, 11, 8, 9 } ++ [_]i32{ 14, 15, 12, 13 },
-                else => @compileError("invalid degree"),
+                else => @compileerror("invalid degree"),
             };
             const m2 = switch (degree) {
                 1 => [_]i32{ 1, 2, 3, 0 },
                 2 => [_]i32{ 1, 2, 3, 0 } ++ [_]i32{ 5, 6, 7, 4 },
                 4 => [_]i32{ 1, 2, 3, 0 } ++ [_]i32{ 5, 6, 7, 4 } ++ [_]i32{ 9, 10, 11, 8 } ++ [_]i32{ 13, 14, 15, 12 },
-                else => @compileError("invalid degree"),
+                else => @compileerror("invalid degree"),
             };
 
             var r: usize = 0;
@@ -254,7 +254,7 @@ fn ChaChaVecImpl(comptime rounds_nb: usize, comptime degree: comptime_int) type 
                     }
                     inline for (0..d) |d_| {
                         if (count64) {
-                            const next = @addWithOverflow(ctx[3][4 * d_], d);
+                            const next = @addwithoverflow(ctx[3][4 * d_], d);
                             ctx[3][4 * d_] = next[0];
                             ctx[3][4 * d_ + 1] +%= next[1];
                         } else {
@@ -287,7 +287,7 @@ fn ChaChaVecImpl(comptime rounds_nb: usize, comptime degree: comptime_int) type 
                     hashToBytes(d, out[i..][0 .. 64 * d], x);
                     inline for (0..d) |d_| {
                         if (count64) {
-                            const next = @addWithOverflow(ctx[3][4 * d_], d);
+                            const next = @addwithoverflow(ctx[3][4 * d_], d);
                             ctx[3][4 * d_] = next[0];
                             ctx[3][4 * d_ + 1] +%= next[1];
                         } else {
@@ -428,7 +428,7 @@ fn ChaChaNonVecImpl(comptime rounds_nb: usize) type {
                     xout[j] ^= buf[j];
                 }
                 if (count64) {
-                    const next = @addWithOverflow(ctx[12], 1);
+                    const next = @addwithoverflow(ctx[12], 1);
                     ctx[12] = next[0];
                     ctx[13] +%= next[1];
                 } else {
@@ -457,7 +457,7 @@ fn ChaChaNonVecImpl(comptime rounds_nb: usize) type {
                 contextFeedback(&x, ctx);
                 hashToBytes(out[i..][0..64], x);
                 if (count64) {
-                    const next = @addWithOverflow(ctx[12], 1);
+                    const next = @addwithoverflow(ctx[12], 1);
                     ctx[12] = next[0];
                     ctx[13] +%= next[1];
                 } else {

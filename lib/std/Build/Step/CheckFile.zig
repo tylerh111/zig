@@ -49,12 +49,12 @@ pub fn setName(check_file: *CheckFile, name: []const u8) void {
 fn make(step: *Step, prog_node: std.Progress.Node) !void {
     _ = prog_node;
     const b = step.owner;
-    const check_file: *CheckFile = @fieldParentPtr("step", step);
+    const check_file: *CheckFile = @fieldparentptr("step", step);
 
     const src_path = check_file.source.getPath2(b, step);
     const contents = fs.cwd().readFileAlloc(b.allocator, src_path, check_file.max_bytes) catch |err| {
         return step.fail("unable to read '{s}': {s}", .{
-            src_path, @errorName(err),
+            src_path, @errorname(err),
         });
     };
 

@@ -169,7 +169,7 @@ pub fn classifySystem(ty: Type, zcu: *Module) [8]Class {
 
             return memory_class;
         },
-        else => |bad_ty| std.debug.panic("classifySystem {s}", .{@tagName(bad_ty)}),
+        else => |bad_ty| std.debug.panic("classifySystem {s}", .{@tagname(bad_ty)}),
     }
 }
 
@@ -200,7 +200,7 @@ fn classifyStruct(
         const field_size = field_ty.abiSize(zcu);
 
         combine: {
-            const result_class = &result[@intCast(byte_offset.* / 8)];
+            const result_class = &result[@intcast(byte_offset.* / 8)];
             if (result_class.* == field_class[0]) {
                 break :combine;
             }
@@ -225,7 +225,7 @@ fn classifyStruct(
 
             result_class.* = .integer;
         }
-        @memcpy(result[@intCast(byte_offset.* / 8 + 1)..][0 .. field_class.len - 1], field_class[1..]);
+        @memcpy(result[@intcast(byte_offset.* / 8 + 1)..][0 .. field_class.len - 1], field_class[1..]);
         byte_offset.* += field_size;
     }
 }

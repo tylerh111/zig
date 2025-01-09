@@ -269,7 +269,7 @@ extern "C" {
     STDMETHOD(SaveToStream)(THIS_ mdScope es,IStream *pIStream,DWORD dwSaveFlags) PURE;
     STDMETHOD(GetSaveSize)(THIS_ mdScope es,CorSaveSize fSave,DWORD *pdwSaveSize) PURE;
     STDMETHOD_(void,Close)(THIS_ mdScope scope) PURE;
-    STDMETHOD(Merge)(THIS_ mdScope scEmit,mdScope scImport,IMapToken *pIMap) PURE;
+    STDMETHOD(Merge)(THIS_ mdScope scEmit,mdScope scimport,IMapToken *pIMap) PURE;
     STDMETHOD(DefineCustomValueAsBlob)(THIS_ mdScope es,mdToken tkObj,LPCWSTR szName,void const *pCustomValue,ULONG cbCustomValue,mdCustomValue *pcv) PURE;
     STDMETHOD(DefineTypeDef)(THIS_ mdScope es,LPCWSTR szNamespace,LPCWSTR szTypeDef,const GUID *pguid,CLASSVERSION *pVer,DWORD dwTypeDefFlags,mdToken tkExtends,DWORD dwExtendsFlags,mdToken rtkImplements[],mdToken rtkEvents[],mdTypeDef *ptd) PURE;
     STDMETHOD(SetTypeDefProps)(THIS_ mdScope es,mdTypeDef td,CLASSVERSION *pVer,DWORD dwTypeDefFlags,mdToken tkExtends,DWORD dwExtendsFlags,mdToken rtkImplements[],mdToken rtkEvents[]) PURE;

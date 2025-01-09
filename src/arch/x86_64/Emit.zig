@@ -18,18 +18,18 @@ pub const Error = Lower.Error || error{
 
 pub fn emitMir(emit: *Emit) Error!void {
     for (0..emit.lower.mir.instructions.len) |mir_i| {
-        const mir_index: Mir.Inst.Index = @intCast(mir_i);
+        const mir_index: Mir.Inst.Index = @intcast(mir_i);
         try emit.code_offset_mapping.putNoClobber(
             emit.lower.allocator,
             mir_index,
-            @intCast(emit.code.items.len),
+            @intcast(emit.code.items.len),
         );
         const lowered = try emit.lower.lowerMir(mir_index);
         var lowered_relocs = lowered.relocs;
         for (lowered.insts, 0..) |lowered_inst, lowered_index| {
-            const start_offset: u32 = @intCast(emit.code.items.len);
+            const start_offset: u32 = @intcast(emit.code.items.len);
             try lowered_inst.encode(emit.code.writer(), .{});
-            const end_offset: u32 = @intCast(emit.code.items.len);
+            const end_offset: u32 = @intcast(emit.code.items.len);
             while (lowered_relocs.len > 0 and
                 lowered_relocs[0].lowered_inst_index == lowered_index) : ({
                 lowered_relocs = lowered_relocs[1..];
@@ -38,15 +38,15 @@ pub fn emitMir(emit: *Emit) Error!void {
                     .source = start_offset,
                     .target = target,
                     .offset = end_offset - 4,
-                    .length = @intCast(end_offset - start_offset),
+                    .length = @intcast(end_offset - start_offset),
                 }),
                 .linker_extern_fn => |symbol| if (emit.lower.bin_file.cast(link.File.Elf)) |elf_file| {
                     // Add relocation to the decl.
                     const atom_ptr = elf_file.symbol(symbol.atom_index).atom(elf_file).?;
-                    const r_type = @intFromEnum(std.elf.R_X86_64.PLT32);
+                    const r_type = @intfromenum(std.elf.R_X86_64.PLT32);
                     try atom_ptr.addReloc(elf_file, .{
                         .r_offset = end_offset - 4,
-                        .r_info = (@as(u64, @intCast(symbol.sym_index)) << 32) | r_type,
+                        .r_info = (@as(u64, @intcast(symbol.sym_index)) << 32) | r_type,
                         .r_addend = -4,
                     });
                 } else if (emit.lower.bin_file.cast(link.File.MachO)) |macho_file| {
@@ -63,7 +63,7 @@ pub fn emitMir(emit: *Emit) Error!void {
                             .pcrel = true,
                             .has_subtractor = false,
                             .length = 2,
-                            .symbolnum = @intCast(symbol.sym_index),
+                            .symbolnum = @intcast(symbol.sym_index),
                         },
                     });
                 } else if (emit.lower.bin_file.cast(link.File.Coff)) |coff_file| {
@@ -84,25 +84,25 @@ pub fn emitMir(emit: *Emit) Error!void {
                         .length = 2,
                     });
                 } else return emit.fail("TODO implement extern reloc for {s}", .{
-                    @tagName(emit.lower.bin_file.tag),
+                    @tagname(emit.lower.bin_file.tag),
                 }),
                 .linker_tlsld => |data| {
                     const elf_file = emit.lower.bin_file.cast(link.File.Elf).?;
                     const atom = elf_file.symbol(data.atom_index).atom(elf_file).?;
-                    const r_type = @intFromEnum(std.elf.R_X86_64.TLSLD);
+                    const r_type = @intfromenum(std.elf.R_X86_64.TLSLD);
                     try atom.addReloc(elf_file, .{
                         .r_offset = end_offset - 4,
-                        .r_info = (@as(u64, @intCast(data.sym_index)) << 32) | r_type,
+                        .r_info = (@as(u64, @intcast(data.sym_index)) << 32) | r_type,
                         .r_addend = -4,
                     });
                 },
                 .linker_dtpoff => |data| {
                     const elf_file = emit.lower.bin_file.cast(link.File.Elf).?;
                     const atom = elf_file.symbol(data.atom_index).atom(elf_file).?;
-                    const r_type = @intFromEnum(std.elf.R_X86_64.DTPOFF32);
+                    const r_type = @intfromenum(std.elf.R_X86_64.DTPOFF32);
                     try atom.addReloc(elf_file, .{
                         .r_offset = end_offset - 4,
-                        .r_info = (@as(u64, @intCast(data.sym_index)) << 32) | r_type,
+                        .r_info = (@as(u64, @intcast(data.sym_index)) << 32) | r_type,
                         .r_addend = 0,
                     });
                 },
@@ -122,34 +122,34 @@ pub fn emitMir(emit: *Emit) Error!void {
                         const r_type: u32 = if (sym.flags.needs_zig_got and !is_obj_or_static_lib)
                             link.File.Elf.R_ZIG_GOTPCREL
                         else if (sym.flags.needs_got)
-                            @intFromEnum(std.elf.R_X86_64.GOTPCREL)
+                            @intfromenum(std.elf.R_X86_64.GOTPCREL)
                         else
-                            @intFromEnum(std.elf.R_X86_64.PC32);
+                            @intfromenum(std.elf.R_X86_64.PC32);
                         try atom.addReloc(elf_file, .{
                             .r_offset = end_offset - 4,
-                            .r_info = (@as(u64, @intCast(data.sym_index)) << 32) | r_type,
+                            .r_info = (@as(u64, @intcast(data.sym_index)) << 32) | r_type,
                             .r_addend = -4,
                         });
                     } else {
                         if (lowered_inst.encoding.mnemonic == .call and sym.flags.needs_zig_got and is_obj_or_static_lib) {
-                            const r_type = @intFromEnum(std.elf.R_X86_64.PC32);
+                            const r_type = @intfromenum(std.elf.R_X86_64.PC32);
                             try atom.addReloc(elf_file, .{
                                 .r_offset = end_offset - 4,
-                                .r_info = (@as(u64, @intCast(data.sym_index)) << 32) | r_type,
+                                .r_info = (@as(u64, @intcast(data.sym_index)) << 32) | r_type,
                                 .r_addend = -4,
                             });
                         } else {
                             const r_type: u32 = if (sym.flags.needs_zig_got and !is_obj_or_static_lib)
                                 link.File.Elf.R_ZIG_GOT32
                             else if (sym.flags.needs_got)
-                                @intFromEnum(std.elf.R_X86_64.GOT32)
+                                @intfromenum(std.elf.R_X86_64.GOT32)
                             else if (sym.flags.is_tls)
-                                @intFromEnum(std.elf.R_X86_64.TPOFF32)
+                                @intfromenum(std.elf.R_X86_64.TPOFF32)
                             else
-                                @intFromEnum(std.elf.R_X86_64.@"32");
+                                @intfromenum(std.elf.R_X86_64.@"32");
                             try atom.addReloc(elf_file, .{
                                 .r_offset = end_offset - 4,
-                                .r_info = (@as(u64, @intCast(data.sym_index)) << 32) | r_type,
+                                .r_info = (@as(u64, @intcast(data.sym_index)) << 32) | r_type,
                                 .r_addend = 0,
                             });
                         }
@@ -178,7 +178,7 @@ pub fn emitMir(emit: *Emit) Error!void {
                         .signed;
                     try atom.addReloc(macho_file, .{
                         .tag = .@"extern",
-                        .offset = @intCast(end_offset - 4),
+                        .offset = @intcast(end_offset - 4),
                         .target = sym_index,
                         .addend = 0,
                         .type = @"type",
@@ -186,7 +186,7 @@ pub fn emitMir(emit: *Emit) Error!void {
                             .pcrel = true,
                             .has_subtractor = false,
                             .length = 2,
-                            .symbolnum = @intCast(data.sym_index),
+                            .symbolnum = @intcast(data.sym_index),
                         },
                     });
                 } else unreachable,
@@ -214,7 +214,7 @@ pub fn emitMir(emit: *Emit) Error!void {
                             else => unreachable,
                         },
                         .target = target,
-                        .offset = @intCast(end_offset - 4),
+                        .offset = @intcast(end_offset - 4),
                         .addend = 0,
                         .pcrel = true,
                         .length = 2,
@@ -223,12 +223,12 @@ pub fn emitMir(emit: *Emit) Error!void {
                     const atom_index = symbol.atom_index;
                     try p9_file.addReloc(atom_index, .{ // TODO we may need to add a .type field to the relocs if they are .linker_got instead of just .linker_direct
                         .target = symbol.sym_index, // we set sym_index to just be the atom index
-                        .offset = @intCast(end_offset - 4),
+                        .offset = @intcast(end_offset - 4),
                         .addend = 0,
                         .type = .pcrel,
                     });
                 } else return emit.fail("TODO implement linker reloc for {s}", .{
-                    @tagName(emit.lower.bin_file.tag),
+                    @tagname(emit.lower.bin_file.tag),
                 }),
             };
         }
@@ -322,8 +322,8 @@ fn fixupRelocs(emit: *Emit) Error!void {
     for (emit.relocs.items) |reloc| {
         const target = emit.code_offset_mapping.get(reloc.target) orelse
             return emit.fail("JMP/CALL relocation target not found!", .{});
-        const disp = @as(i64, @intCast(target)) - @as(i64, @intCast(reloc.source + reloc.length));
-        mem.writeInt(i32, emit.code.items[reloc.offset..][0..4], @intCast(disp), .little);
+        const disp = @as(i64, @intcast(target)) - @as(i64, @intcast(reloc.source + reloc.length));
+        mem.writeInt(i32, emit.code.items[reloc.offset..][0..4], @intcast(disp), .little);
     }
 }
 
@@ -343,24 +343,24 @@ fn dbgAdvancePCAndLine(emit: *Emit, line: u32, column: u32) Error!void {
             if (delta_pc <= 0) return; // only do this when the pc changes
 
             // increasing the line number
-            try link.File.Plan9.changeLine(&dbg_out.dbg_line, @intCast(delta_line));
+            try link.File.Plan9.changeLine(&dbg_out.dbg_line, @intcast(delta_line));
             // increasing the pc
-            const d_pc_p9 = @as(i64, @intCast(delta_pc)) - dbg_out.pc_quanta;
+            const d_pc_p9 = @as(i64, @intcast(delta_pc)) - dbg_out.pc_quanta;
             if (d_pc_p9 > 0) {
                 // minus one because if its the last one, we want to leave space to change the line which is one pc quanta
-                var diff = @divExact(d_pc_p9, dbg_out.pc_quanta) - dbg_out.pc_quanta;
+                var diff = @divexact(d_pc_p9, dbg_out.pc_quanta) - dbg_out.pc_quanta;
                 while (diff > 0) {
                     if (diff < 64) {
-                        try dbg_out.dbg_line.append(@intCast(diff + 128));
+                        try dbg_out.dbg_line.append(@intcast(diff + 128));
                         diff = 0;
                     } else {
-                        try dbg_out.dbg_line.append(@intCast(64 + 128));
+                        try dbg_out.dbg_line.append(@intcast(64 + 128));
                         diff -= 64;
                     }
                 }
                 if (dbg_out.pcop_change_index) |pci|
                     dbg_out.dbg_line.items[pci] += 1;
-                dbg_out.pcop_change_index = @intCast(dbg_out.dbg_line.items.len - 1);
+                dbg_out.pcop_change_index = @intcast(dbg_out.dbg_line.items.len - 1);
             } else if (d_pc_p9 == 0) {
                 // we don't need to do anything, because adding the pc quanta does it for us
             } else unreachable;

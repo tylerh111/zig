@@ -159,7 +159,7 @@ pub const Container = enum {
                 if (try reader.read(u32) != hasher.bytesRead()) return error.WrongGzipSize;
             },
             .zlib => {
-                const chksum: u32 = @byteSwap(hasher.chksum());
+                const chksum: u32 = @byteswap(hasher.chksum());
                 if (try reader.read(u32) != chksum) return error.WrongZlibChecksum;
             },
             .raw => {},

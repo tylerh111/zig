@@ -61,7 +61,7 @@ pub const Environment = struct {
         var env: Environment = .{};
         errdefer env.deinit(allocator);
 
-        inline for (@typeInfo(@TypeOf(env)).Struct.fields) |field| {
+        inline for (@typeinfo(@TypeOf(env)).Struct.fields) |field| {
             std.debug.assert(@field(env, field.name) == null);
 
             var env_var_buf: [field.name.len]u8 = undefined;
@@ -78,7 +78,7 @@ pub const Environment = struct {
 
     /// Use this only if environment slices were allocated with `allocator` (such as via `loadAll`)
     pub fn deinit(self: *Environment, allocator: std.mem.Allocator) void {
-        inline for (@typeInfo(@TypeOf(self.*)).Struct.fields) |field| {
+        inline for (@typeinfo(@TypeOf(self.*)).Struct.fields) |field| {
             if (@field(self, field.name)) |slice| {
                 allocator.free(slice);
             }
@@ -191,7 +191,7 @@ fn getTimestamp(comp: *Compilation) !u47 {
         break :blk null;
     };
     const timestamp = provided orelse std.time.timestamp();
-    return @intCast(std.math.clamp(timestamp, 0, max_timestamp));
+    return @intcast(std.math.clamp(timestamp, 0, max_timestamp));
 }
 
 fn generateDateAndTime(w: anytype, timestamp: u47) !void {
@@ -218,7 +218,7 @@ fn generateDateAndTime(w: anytype, timestamp: u47) !void {
 
     const day_names = [_][]const u8{ "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
     // days since Thu Oct 1 1970
-    const day_name = day_names[@intCast((epoch_day.day + 3) % 7)];
+    const day_name = day_names[@intcast((epoch_day.day + 3) % 7)];
     try w.print("#define __TIMESTAMP__ \"{s} {s} {d: >2} {d:0>2}:{d:0>2}:{d:0>2} {d}\"\n", .{
         day_name,
         month_name,
@@ -516,7 +516,7 @@ fn generateSystemDefines(comp: *Compilation, w: anytype) !void {
     // TODO: clang treats __FLT_EVAL_METHOD__ as a special-cased macro because evaluating it within a scope
     // where `#pragma clang fp eval_method(X)` has been called produces an error diagnostic.
     const flt_eval_method = comp.langopts.fp_eval_method orelse target_util.defaultFpEvalMethod(comp.target);
-    try w.print("#define __FLT_EVAL_METHOD__ {d}\n", .{@intFromEnum(flt_eval_method)});
+    try w.print("#define __FLT_EVAL_METHOD__ {d}\n", .{@intfromenum(flt_eval_method)});
 
     try w.writeAll(
         \\#define __FLT_RADIX__ 2
@@ -542,7 +542,7 @@ pub fn generateBuiltinMacros(comp: *Compilation, system_defines_mode: SystemDefi
     }
 
     try buf.appendSlice("#define __STDC__ 1\n");
-    try buf.writer().print("#define __STDC_HOSTED__ {d}\n", .{@intFromBool(comp.target.os.tag != .freestanding)});
+    try buf.writer().print("#define __STDC_HOSTED__ {d}\n", .{@intfrombool(comp.target.os.tag != .freestanding)});
 
     // standard macros
     try buf.appendSlice(
@@ -987,7 +987,7 @@ fn generateVaListType(comp: *Compilation) !Type {
 }
 
 fn generateIntMax(comp: *const Compilation, w: anytype, name: []const u8, ty: Type) !void {
-    const bit_count: u8 = @intCast(ty.sizeof(comp).? * 8);
+    const bit_count: u8 = @intcast(ty.sizeof(comp).? * 8);
     const unsigned = ty.isUnsignedInt(comp);
     const max = if (bit_count == 128)
         @as(u128, if (unsigned) std.math.maxInt(u128) else std.math.maxInt(u128))
@@ -998,7 +998,7 @@ fn generateIntMax(comp: *const Compilation, w: anytype, name: []const u8, ty: Ty
 
 fn generateExactWidthIntMax(comp: *const Compilation, w: anytype, specifier: Type.Specifier) !void {
     var ty = Type{ .specifier = specifier };
-    const bit_count: u8 = @intCast(ty.sizeof(comp).? * 8);
+    const bit_count: u8 = @intcast(ty.sizeof(comp).? * 8);
     const unsigned = ty.isUnsignedInt(comp);
 
     if (bit_count == 64) {
@@ -1086,7 +1086,7 @@ pub fn getSource(comp: *const Compilation, id: Source.Id) Source {
         .splice_locs = &.{},
         .kind = .user,
     };
-    return comp.sources.values()[@intFromEnum(id) - 2];
+    return comp.sources.values()[@intfromenum(id) - 2];
 }
 
 /// Creates a Source from the contents of `reader` and adds it to the Compilation
@@ -1113,7 +1113,7 @@ pub fn addSourceFromOwnedBuffer(comp: *Compilation, buf: []u8, path: []const u8,
     var splice_list = std.ArrayList(u32).init(comp.gpa);
     defer splice_list.deinit();
 
-    const source_id: Source.Id = @enumFromInt(comp.sources.count() + 2);
+    const source_id: Source.Id = @enumfromint(comp.sources.count() + 2);
 
     var i: u32 = 0;
     var backslash_loc: u32 = undefined;
@@ -1227,7 +1227,7 @@ pub fn addSourceFromOwnedBuffer(comp: *Compilation, buf: []u8, path: []const u8,
     errdefer comp.gpa.free(splice_locs);
 
     if (i != contents.len) contents = try comp.gpa.realloc(contents, i);
-    errdefer @compileError("errdefers in callers would possibly free the realloced slice using the original len");
+    errdefer @compileerror("errdefers in callers would possibly free the realloced slice using the original len");
 
     const source = Source{
         .id = source_id,
@@ -1598,7 +1598,7 @@ test "addSourceFromReader" {
             const source = try comp.addSourceFromReader(buf_reader.reader(), "path", .user);
 
             try std.testing.expectEqualStrings(expected, source.buf);
-            try std.testing.expectEqual(warning_count, @as(u32, @intCast(comp.diagnostics.list.items.len)));
+            try std.testing.expectEqual(warning_count, @as(u32, @intcast(comp.diagnostics.list.items.len)));
             try std.testing.expectEqualSlices(u32, splices, source.splice_locs);
         }
 

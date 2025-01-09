@@ -40,9 +40,9 @@ kind: Kind,
 /// Todo: binary search instead of scanning entire `splice_locs`.
 pub fn numSplicesBefore(source: Source, byte_offset: u32) u32 {
     for (source.splice_locs, 0..) |splice_offset, i| {
-        if (splice_offset > byte_offset) return @intCast(i);
+        if (splice_offset > byte_offset) return @intcast(i);
     }
-    return @intCast(source.splice_locs.len);
+    return @intcast(source.splice_locs.len);
 }
 
 /// Returns the actual line number (before newline splicing) of a Location
@@ -61,11 +61,11 @@ pub fn lineCol(source: Source, loc: Location) LineCol {
         if (splice_offset > start) {
             if (splice_offset < loc.byte_offset) {
                 start = splice_offset;
-                break @as(u32, @intCast(i)) + 1;
+                break @as(u32, @intcast(i)) + 1;
             }
-            break @intCast(i);
+            break @intcast(i);
         }
-    } else @intCast(source.splice_locs.len);
+    } else @intcast(source.splice_locs.len);
     var i: usize = start;
     var col: u32 = 1;
     var width: u32 = 0;

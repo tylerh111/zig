@@ -118,24 +118,24 @@ test "simple variadic function" {
 
     const S = struct {
         fn simple(...) callconv(.C) c_int {
-            var ap = @cVaStart();
-            defer @cVaEnd(&ap);
-            return @cVaArg(&ap, c_int);
+            var ap = @cvastart();
+            defer @cvaend(&ap);
+            return @cvaarg(&ap, c_int);
         }
 
         fn compatible(_: c_int, ...) callconv(.C) c_int {
-            var ap = @cVaStart();
-            defer @cVaEnd(&ap);
-            return @cVaArg(&ap, c_int);
+            var ap = @cvastart();
+            defer @cvaend(&ap);
+            return @cvaarg(&ap, c_int);
         }
 
         fn add(count: c_int, ...) callconv(.C) c_int {
-            var ap = @cVaStart();
-            defer @cVaEnd(&ap);
+            var ap = @cvastart();
+            defer @cvaend(&ap);
             var i: usize = 0;
             var sum: c_int = 0;
             while (i < count) : (i += 1) {
-                sum += @cVaArg(&ap, c_int);
+                sum += @cvaarg(&ap, c_int);
             }
             return sum;
         }
@@ -178,12 +178,12 @@ test "coerce reference to var arg" {
 
     const S = struct {
         fn addPtr(count: c_int, ...) callconv(.C) c_int {
-            var ap = @cVaStart();
-            defer @cVaEnd(&ap);
+            var ap = @cvastart();
+            defer @cvaend(&ap);
             var i: usize = 0;
             var sum: c_int = 0;
             while (i < count) : (i += 1) {
-                sum += @cVaArg(&ap, *c_int).*;
+                sum += @cvaarg(&ap, *c_int).*;
             }
             return sum;
         }
@@ -210,8 +210,8 @@ test "variadic functions" {
 
     const S = struct {
         fn printf(list_ptr: *std.ArrayList(u8), format: [*:0]const u8, ...) callconv(.C) void {
-            var ap = @cVaStart();
-            defer @cVaEnd(&ap);
+            var ap = @cvastart();
+            defer @cvaend(&ap);
             vprintf(list_ptr, format, &ap);
         }
 
@@ -222,11 +222,11 @@ test "variadic functions" {
         ) callconv(.C) void {
             for (std.mem.span(format)) |c| switch (c) {
                 's' => {
-                    const arg = @cVaArg(ap, [*:0]const u8);
+                    const arg = @cvaarg(ap, [*:0]const u8);
                     list.writer().print("{s}", .{arg}) catch return;
                 },
                 'd' => {
-                    const arg = @cVaArg(ap, c_int);
+                    const arg = @cvaarg(ap, c_int);
                     list.writer().print("{d}", .{arg}) catch return;
                 },
                 else => unreachable,
@@ -254,15 +254,15 @@ test "copy VaList" {
 
     const S = struct {
         fn add(count: c_int, ...) callconv(.C) c_int {
-            var ap = @cVaStart();
-            defer @cVaEnd(&ap);
-            var copy = @cVaCopy(&ap);
-            defer @cVaEnd(&copy);
+            var ap = @cvastart();
+            defer @cvaend(&ap);
+            var copy = @cvacopy(&ap);
+            defer @cvaend(&copy);
             var i: usize = 0;
             var sum: c_int = 0;
             while (i < count) : (i += 1) {
-                sum += @cVaArg(&ap, c_int);
-                sum += @cVaArg(&copy, c_int) * 2;
+                sum += @cvaarg(&ap, c_int);
+                sum += @cvaarg(&copy, c_int) * 2;
             }
             return sum;
         }
@@ -292,11 +292,11 @@ test "unused VaList arg" {
         fn thirdArg(dummy: c_int, ...) callconv(.C) c_int {
             _ = dummy;
 
-            var ap = @cVaStart();
-            defer @cVaEnd(&ap);
+            var ap = @cvastart();
+            defer @cvaend(&ap);
 
-            _ = @cVaArg(&ap, c_int);
-            return @cVaArg(&ap, c_int);
+            _ = @cvaarg(&ap, c_int);
+            return @cvaarg(&ap, c_int);
         }
     };
     const x = S.thirdArg(0, @as(c_int, 1), @as(c_int, 2));

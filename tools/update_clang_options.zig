@@ -604,14 +604,14 @@ pub fn main() anyerror!void {
 
     var llvm_to_zig_cpu_features = std.StringHashMap([]const u8).init(allocator);
 
-    inline for (@typeInfo(cpu_targets).Struct.decls) |decl| {
+    inline for (@typeinfo(cpu_targets).Struct.decls) |decl| {
         const Feature = @field(cpu_targets, decl.name).Feature;
         const all_features = @field(cpu_targets, decl.name).all_features;
 
         for (all_features, 0..) |feat, i| {
             const llvm_name = feat.llvm_name orelse continue;
-            const zig_feat = @as(Feature, @enumFromInt(i));
-            const zig_name = @tagName(zig_feat);
+            const zig_feat = @as(Feature, @enumfromint(i));
+            const zig_name = @tagname(zig_feat);
             try llvm_to_zig_cpu_features.put(llvm_name, zig_name);
         }
     }
@@ -680,7 +680,7 @@ pub fn main() anyerror!void {
         \\const jspd1 = clang_options.jspd1;
         \\const sepd1 = clang_options.sepd1;
         \\const m = clang_options.m;
-        \\pub const data = blk: { @setEvalBranchQuota(6000); break :blk &[_]CliArg{
+        \\pub const data = blk: { @setevalbranchquota(6000); break :blk &[_]CliArg{
         \\
     );
 
@@ -802,14 +802,14 @@ const Syntax = union(enum) {
         _ = fmt;
         _ = options;
         switch (self) {
-            .multi_arg => |n| return out_stream.print(".{{.{s}={}}}", .{ @tagName(self), n }),
-            else => return out_stream.print(".{s}", .{@tagName(self)}),
+            .multi_arg => |n| return out_stream.print(".{{.{s}={}}}", .{ @tagname(self), n }),
+            else => return out_stream.print(".{s}", .{@tagname(self)}),
         }
     }
 };
 
 fn objSyntax(obj: *json.ObjectMap) ?Syntax {
-    const num_args = @as(u8, @intCast(obj.get("NumArgs").?.integer));
+    const num_args = @as(u8, @intcast(obj.get("NumArgs").?.integer));
     for (obj.get("!superclasses").?.array.items) |superclass_json| {
         const superclass = superclass_json.string;
         if (std.mem.eql(u8, superclass, "Joined")) {

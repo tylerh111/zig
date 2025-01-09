@@ -33,16 +33,16 @@ test "tuple multiplication" {
         fn doTheTest() !void {
             {
                 const t = .{} ** 4;
-                try expect(@typeInfo(@TypeOf(t)).Struct.fields.len == 0);
+                try expect(@typeinfo(@TypeOf(t)).Struct.fields.len == 0);
             }
             {
                 const t = .{'a'} ** 4;
-                try expect(@typeInfo(@TypeOf(t)).Struct.fields.len == 4);
+                try expect(@typeinfo(@TypeOf(t)).Struct.fields.len == 4);
                 inline for (t) |x| try expect(x == 'a');
             }
             {
                 const t = .{ 1, 2, 3 } ** 4;
-                try expect(@typeInfo(@TypeOf(t)).Struct.fields.len == 12);
+                try expect(@typeinfo(@TypeOf(t)).Struct.fields.len == 12);
                 inline for (t, 0..) |x, i| try expect(x == 1 + i % 3);
             }
         }
@@ -146,14 +146,14 @@ test "array-like initializer for tuple types" {
                     .type = i32,
                     .default_value = null,
                     .is_comptime = false,
-                    .alignment = @alignOf(i32),
+                    .alignment = @alignof(i32),
                 },
                 .{
                     .name = "1",
                     .type = u8,
                     .default_value = null,
                     .is_comptime = false,
-                    .alignment = @alignOf(i32),
+                    .alignment = @alignof(i32),
                 },
             },
         },
@@ -217,7 +217,7 @@ test "initializing anon struct with explicit type" {
     _ = &a;
 }
 
-test "fieldParentPtr of tuple" {
+test "fieldparentptr of tuple" {
     if (builtin.zig_backend == .stage2_aarch64) return error.SkipZigTest;
     if (builtin.zig_backend == .stage2_arm) return error.SkipZigTest;
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
@@ -226,10 +226,10 @@ test "fieldParentPtr of tuple" {
     var x: u32 = 0;
     _ = &x;
     const tuple = .{ x, x };
-    try testing.expect(&tuple == @as(@TypeOf(&tuple), @fieldParentPtr("1", &tuple[1])));
+    try testing.expect(&tuple == @as(@TypeOf(&tuple), @fieldparentptr("1", &tuple[1])));
 }
 
-test "fieldParentPtr of anon struct" {
+test "fieldparentptr of anon struct" {
     if (builtin.zig_backend == .stage2_aarch64) return error.SkipZigTest;
     if (builtin.zig_backend == .stage2_arm) return error.SkipZigTest;
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
@@ -238,21 +238,21 @@ test "fieldParentPtr of anon struct" {
     var x: u32 = 0;
     _ = &x;
     const anon_st = .{ .foo = x, .bar = x };
-    try testing.expect(&anon_st == @as(@TypeOf(&anon_st), @fieldParentPtr("bar", &anon_st.bar)));
+    try testing.expect(&anon_st == @as(@TypeOf(&anon_st), @fieldparentptr("bar", &anon_st.bar)));
 }
 
-test "offsetOf tuple" {
+test "offsetof tuple" {
     var x: u32 = 0;
     _ = &x;
     const T = @TypeOf(.{ x, x });
-    try expect(@offsetOf(T, "1") == @sizeOf(u32));
+    try expect(@offsetof(T, "1") == @sizeof(u32));
 }
 
-test "offsetOf anon struct" {
+test "offsetof anon struct" {
     var x: u32 = 0;
     _ = &x;
     const T = @TypeOf(.{ .foo = x, .bar = x });
-    try expect(@offsetOf(T, "bar") == @sizeOf(u32));
+    try expect(@offsetof(T, "bar") == @sizeof(u32));
 }
 
 test "initializing tuple with mixed comptime-runtime fields" {
@@ -346,7 +346,7 @@ test "zero sized struct in tuple handled correctly" {
         }),
 
         pub fn do(this: Self) usize {
-            return @sizeOf(@TypeOf(this));
+            return @sizeof(@TypeOf(this));
         }
     };
 

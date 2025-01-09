@@ -2339,7 +2339,7 @@ int UnwindCursor<A, R>::stepWithTBTable(pint_t pc, tbtable *TBTable,
     lastStack = curStack;
 
   // Return address is the address after call site instruction.
-  pint_t returnAddress;
+  pint_t returnaddress;
 
   if (isSignalFrame) {
     _LIBUNWIND_TRACE_UNWINDING("Possible signal handler frame: lastStack=%p",
@@ -2347,28 +2347,28 @@ int UnwindCursor<A, R>::stepWithTBTable(pint_t pc, tbtable *TBTable,
 
     sigcontext *sigContext = reinterpret_cast<sigcontext *>(
         reinterpret_cast<char *>(lastStack) + STKMINALIGN);
-    returnAddress = sigContext->sc_jmpbuf.jmp_context.iar;
+    returnaddress = sigContext->sc_jmpbuf.jmp_context.iar;
 
     bool useSTKMIN = false;
-    if (returnAddress < 0x10000000) {
+    if (returnaddress < 0x10000000) {
       // Try again using STKMIN.
       sigContext = reinterpret_cast<sigcontext *>(
           reinterpret_cast<char *>(lastStack) + STKMIN);
-      returnAddress = sigContext->sc_jmpbuf.jmp_context.iar;
-      if (returnAddress < 0x10000000) {
-        _LIBUNWIND_TRACE_UNWINDING("Bad returnAddress=%p from sigcontext=%p",
-                                   reinterpret_cast<void *>(returnAddress),
+      returnaddress = sigContext->sc_jmpbuf.jmp_context.iar;
+      if (returnaddress < 0x10000000) {
+        _LIBUNWIND_TRACE_UNWINDING("Bad returnaddress=%p from sigcontext=%p",
+                                   reinterpret_cast<void *>(returnaddress),
                                    reinterpret_cast<void *>(sigContext));
         return UNW_EBADFRAME;
       }
       useSTKMIN = true;
     }
     _LIBUNWIND_TRACE_UNWINDING("Returning from a signal handler %s: "
-                               "sigContext=%p, returnAddress=%p. "
+                               "sigContext=%p, returnaddress=%p. "
                                "Seems to be a valid address",
                                useSTKMIN ? "STKMIN" : "STKMINALIGN",
                                reinterpret_cast<void *>(sigContext),
-                               reinterpret_cast<void *>(returnAddress));
+                               reinterpret_cast<void *>(returnaddress));
 
     // Restore the condition register from sigcontext.
     newRegisters.setCR(sigContext->sc_jmpbuf.jmp_context.cr);
@@ -2407,21 +2407,21 @@ int UnwindCursor<A, R>::stepWithTBTable(pint_t pc, tbtable *TBTable,
     if (!TBTable->tb.saves_lr && registers.getLR()) {
       // This case should only occur if we were called from a signal handler
       // and the signal occurred in a function that doesn't save the LR.
-      returnAddress = static_cast<pint_t>(registers.getLR());
+      returnaddress = static_cast<pint_t>(registers.getLR());
       _LIBUNWIND_TRACE_UNWINDING("Use saved LR=%p",
-                                 reinterpret_cast<void *>(returnAddress));
+                                 reinterpret_cast<void *>(returnaddress));
     } else {
       // Otherwise, use the LR value in the stack link area.
-      returnAddress = reinterpret_cast<pint_t *>(lastStack)[2];
+      returnaddress = reinterpret_cast<pint_t *>(lastStack)[2];
     }
 
     // Reset LR in the current context.
     newRegisters.setLR(NULL);
 
     _LIBUNWIND_TRACE_UNWINDING(
-        "Extract info from lastStack=%p, returnAddress=%p",
+        "Extract info from lastStack=%p, returnaddress=%p",
         reinterpret_cast<void *>(lastStack),
-        reinterpret_cast<void *>(returnAddress));
+        reinterpret_cast<void *>(returnaddress));
     _LIBUNWIND_TRACE_UNWINDING("fpr_regs=%d, gpr_regs=%d, saves_cr=%d",
                                TBTable->tb.fpr_saved, TBTable->tb.gpr_saved,
                                TBTable->tb.saves_cr);
@@ -2512,7 +2512,7 @@ int UnwindCursor<A, R>::stepWithTBTable(pint_t pc, tbtable *TBTable,
     newRegisters.setSP(lastStack);
 
     // The first instruction after return.
-    uint32_t firstInstruction = *(reinterpret_cast<uint32_t *>(returnAddress));
+    uint32_t firstInstruction = *(reinterpret_cast<uint32_t *>(returnaddress));
 
     // Do we need to set the TOC register?
     _LIBUNWIND_TRACE_UNWINDING(
@@ -2525,14 +2525,14 @@ int UnwindCursor<A, R>::stepWithTBTable(pint_t pc, tbtable *TBTable,
       newRegisters.setRegister(2, reinterpret_cast<pint_t *>(lastStack)[5]);
     }
   }
-  _LIBUNWIND_TRACE_UNWINDING("lastStack=%p, returnAddress=%p, pc=%p\n",
+  _LIBUNWIND_TRACE_UNWINDING("lastStack=%p, returnaddress=%p, pc=%p\n",
                              reinterpret_cast<void *>(lastStack),
-                             reinterpret_cast<void *>(returnAddress),
+                             reinterpret_cast<void *>(returnaddress),
                              reinterpret_cast<void *>(pc));
 
   // The return address is the address after call site instruction, so
   // setting IP to that simulates a return.
-  newRegisters.setIP(reinterpret_cast<uintptr_t>(returnAddress));
+  newRegisters.setIP(reinterpret_cast<uintptr_t>(returnaddress));
 
   // Simulate the step by replacing the register set with the new ones.
   registers = newRegisters;

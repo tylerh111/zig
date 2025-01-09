@@ -111,7 +111,7 @@ const ModuleInfo = struct {
             // Result-id can only be the first or second operand
             const maybe_result_id: ?ResultId = for (0..2) |i| {
                 if (inst_spec.operands.len > i and inst_spec.operands[i].kind == .IdResult) {
-                    break @enumFromInt(inst.operands[i]);
+                    break @enumfromint(inst.operands[i]);
                 }
             } else null;
 
@@ -131,10 +131,10 @@ const ModuleInfo = struct {
                         return error.InvalidPhysicalFormat;
                     }
 
-                    maybe_current_function = @enumFromInt(inst.operands[1]);
+                    maybe_current_function = @enumfromint(inst.operands[1]);
                 },
                 .OpFunctionCall => {
-                    const callee: ResultId = @enumFromInt(inst.operands[2]);
+                    const callee: ResultId = @enumfromint(inst.operands[2]);
                     try calls.put(callee, {});
                 },
                 .OpFunctionEnd => {
@@ -234,7 +234,7 @@ const AliveMarker = struct {
         var i = start_offset;
         while (i < end_offset) : (i += 1) {
             const offset = self.result_id_offsets.items[i];
-            try self.markAlive(@enumFromInt(inst.operands[offset]));
+            try self.markAlive(@enumfromint(inst.operands[offset]));
         }
     }
 };
@@ -305,7 +305,7 @@ pub fn run(parser: *BinaryModule.Parser, binary: *BinaryModule, progress: std.Pr
             // Result-id can only be the first or second operand
             const result_id: ResultId = for (0..2) |i| {
                 if (inst_spec.operands.len > i and inst_spec.operands[i].kind == .IdResult) {
-                    break @enumFromInt(inst.operands[i]);
+                    break @enumfromint(inst.operands[i]);
                 }
             } else {
                 // Instruction can be pruned but doesn't have a result id.
@@ -313,7 +313,7 @@ pub fn run(parser: *BinaryModule.Parser, binary: *BinaryModule, progress: std.Pr
                 alive_marker.result_id_offsets.items.len = 0;
                 try parser.parseInstructionResultIds(binary.*, inst, &alive_marker.result_id_offsets);
                 for (alive_marker.result_id_offsets.items) |offset| {
-                    const id: ResultId = @enumFromInt(inst.operands[offset]);
+                    const id: ResultId = @enumfromint(inst.operands[offset]);
                     const index = info.result_id_to_code_offset.getIndex(id).?;
 
                     if (!alive_marker.alive.isSet(index)) {

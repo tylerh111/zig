@@ -19,16 +19,16 @@ pub const Error = Lower.Error || error{
 pub fn emitMir(emit: *Emit) Error!void {
     log.debug("mir instruction len: {}", .{emit.lower.mir.instructions.len});
     for (0..emit.lower.mir.instructions.len) |mir_i| {
-        const mir_index: Mir.Inst.Index = @intCast(mir_i);
+        const mir_index: Mir.Inst.Index = @intcast(mir_i);
         try emit.code_offset_mapping.putNoClobber(
             emit.lower.allocator,
             mir_index,
-            @intCast(emit.code.items.len),
+            @intcast(emit.code.items.len),
         );
         const lowered = try emit.lower.lowerMir(mir_index);
         var lowered_relocs = lowered.relocs;
         for (lowered.insts, 0..) |lowered_inst, lowered_index| {
-            const start_offset: u32 = @intCast(emit.code.items.len);
+            const start_offset: u32 = @intcast(emit.code.items.len);
             try lowered_inst.encode(emit.code.writer());
 
             while (lowered_relocs.len > 0 and
@@ -47,8 +47,8 @@ pub fn emitMir(emit: *Emit) Error!void {
                         const sym_index = elf_file.zigObjectPtr().?.symbol(symbol.sym_index);
                         const sym = elf_file.symbol(sym_index);
 
-                        var hi_r_type: u32 = @intFromEnum(std.elf.R_RISCV.HI20);
-                        var lo_r_type: u32 = @intFromEnum(std.elf.R_RISCV.LO12_I);
+                        var hi_r_type: u32 = @intfromenum(std.elf.R_RISCV.HI20);
+                        var lo_r_type: u32 = @intfromenum(std.elf.R_RISCV.LO12_I);
 
                         if (sym.flags.needs_zig_got) {
                             _ = try sym.getOrCreateZigGotEntry(sym_index, elf_file);
@@ -59,13 +59,13 @@ pub fn emitMir(emit: *Emit) Error!void {
 
                         try atom_ptr.addReloc(elf_file, .{
                             .r_offset = start_offset,
-                            .r_info = (@as(u64, @intCast(symbol.sym_index)) << 32) | hi_r_type,
+                            .r_info = (@as(u64, @intcast(symbol.sym_index)) << 32) | hi_r_type,
                             .r_addend = 0,
                         });
 
                         try atom_ptr.addReloc(elf_file, .{
                             .r_offset = start_offset + 4,
-                            .r_info = (@as(u64, @intCast(symbol.sym_index)) << 32) | lo_r_type,
+                            .r_info = (@as(u64, @intcast(symbol.sym_index)) << 32) | lo_r_type,
                             .r_addend = 0,
                         });
                     } else return emit.fail("TODO: load_symbol_reloc non-ELF", .{});
@@ -141,15 +141,15 @@ fn fixupRelocs(emit: *Emit) Error!void {
         const target = emit.code_offset_mapping.get(reloc.target) orelse
             return emit.fail("relocation target not found!", .{});
 
-        const disp = @as(i32, @intCast(target)) - @as(i32, @intCast(reloc.source));
+        const disp = @as(i32, @intcast(target)) - @as(i32, @intcast(reloc.source));
         const code: *[4]u8 = emit.code.items[reloc.source + reloc.offset ..][0..4];
 
         log.debug("disp: {x}", .{disp});
 
         switch (reloc.enc) {
-            .J => riscv_util.writeInstJ(code, @bitCast(disp)),
-            .B => riscv_util.writeInstB(code, @bitCast(disp)),
-            else => return emit.fail("tried to reloc encoding type {s}", .{@tagName(reloc.enc)}),
+            .J => riscv_util.writeInstJ(code, @bitcast(disp)),
+            .B => riscv_util.writeInstB(code, @bitcast(disp)),
+            else => return emit.fail("tried to reloc encoding type {s}", .{@tagname(reloc.enc)}),
         }
     }
 }

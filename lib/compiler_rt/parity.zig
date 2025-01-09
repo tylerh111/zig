@@ -26,15 +26,15 @@ pub fn __parityti2(a: i128) callconv(.C) i32 {
 }
 
 inline fn parityXi2(comptime T: type, a: T) i32 {
-    var x: std.meta.Int(.unsigned, @typeInfo(T).Int.bits) = @bitCast(a);
+    var x: std.meta.Int(.unsigned, @typeinfo(T).Int.bits) = @bitcast(a);
     // Bit Twiddling Hacks: Compute parity in parallel
-    comptime var shift: u8 = @bitSizeOf(T) / 2;
+    comptime var shift: u8 = @bitsizeof(T) / 2;
     inline while (shift > 2) {
         x ^= x >> shift;
         shift = shift >> 1;
     }
     x &= 0xf;
-    return (@as(u16, 0x6996) >> @intCast(x)) & 1; // optimization for >>2 and >>1
+    return (@as(u16, 0x6996) >> @intcast(x)) & 1; // optimization for >>2 and >>1
 }
 
 test {

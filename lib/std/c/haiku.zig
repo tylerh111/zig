@@ -241,13 +241,13 @@ pub const sockaddr = extern struct {
         padding: [126]u8 = undefined,
 
         comptime {
-            assert(@sizeOf(storage) == SS_MAXSIZE);
-            assert(@alignOf(storage) == 8);
+            assert(@sizeof(storage) == SS_MAXSIZE);
+            assert(@alignof(storage) == 8);
         }
     };
 
     pub const in = extern struct {
-        len: u8 = @sizeOf(in),
+        len: u8 = @sizeof(in),
         family: sa_family_t = AF.INET,
         port: in_port_t,
         addr: u32,
@@ -255,7 +255,7 @@ pub const sockaddr = extern struct {
     };
 
     pub const in6 = extern struct {
-        len: u8 = @sizeOf(in6),
+        len: u8 = @sizeof(in6),
         family: sa_family_t = AF.INET6,
         port: in_port_t,
         flowinfo: u32,
@@ -264,7 +264,7 @@ pub const sockaddr = extern struct {
     };
 
     pub const un = extern struct {
-        len: u8 = @sizeOf(un),
+        len: u8 = @sizeof(un),
         family: sa_family_t = AF.UNIX,
         path: [104]u8,
     };
@@ -307,7 +307,7 @@ pub const W = struct {
     pub const NOWAIT = 0x20;
 
     pub fn EXITSTATUS(s: u32) u8 {
-        return @as(u8, @intCast(s & 0xff));
+        return @as(u8, @intcast(s & 0xff));
     }
 
     pub fn TERMSIG(s: u32) u32 {
@@ -1132,7 +1132,7 @@ pub const DirEnt = extern struct {
     /// name of the entry (null byte terminated)
     name: [0]u8,
     pub fn getName(dirent: *const DirEnt) [*:0]const u8 {
-        return @ptrCast(&dirent.name);
+        return @ptrcast(&dirent.name);
     }
 };
 
@@ -1180,11 +1180,11 @@ pub const empty_sigset: sigset_t = 0;
 pub const filled_sigset = ~@as(sigset_t, 0);
 
 pub const SIG = struct {
-    pub const DFL: ?Sigaction.handler_fn = @ptrFromInt(0);
-    pub const IGN: ?Sigaction.handler_fn = @ptrFromInt(1);
-    pub const ERR: ?Sigaction.handler_fn = @ptrFromInt(maxInt(usize));
+    pub const DFL: ?Sigaction.handler_fn = @ptrfromint(0);
+    pub const IGN: ?Sigaction.handler_fn = @ptrfromint(1);
+    pub const ERR: ?Sigaction.handler_fn = @ptrfromint(maxInt(usize));
 
-    pub const HOLD: ?Sigaction.handler_fn = @ptrFromInt(3);
+    pub const HOLD: ?Sigaction.handler_fn = @ptrfromint(3);
 
     pub const HUP = 1;
     pub const INT = 2;

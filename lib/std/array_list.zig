@@ -17,14 +17,14 @@ pub fn ArrayList(comptime T: type) type {
 
 /// A contiguous, growable list of arbitrarily aligned items in memory.
 /// This is a wrapper around an array of T values aligned to `alignment`-byte
-/// addresses. If the specified alignment is `null`, then `@alignOf(T)` is used.
+/// addresses. If the specified alignment is `null`, then `@alignof(T)` is used.
 /// Initialize with `init`.
 ///
 /// This struct internally stores a `std.mem.Allocator` for memory management.
 /// To manually specify an allocator with each function call see `ArrayListAlignedUnmanaged`.
 pub fn ArrayListAligned(comptime T: type, comptime alignment: ?u29) type {
     if (alignment) |a| {
-        if (a == @alignOf(T)) {
+        if (a == @alignof(T)) {
             return ArrayListAligned(T, null);
         }
     }
@@ -69,7 +69,7 @@ pub fn ArrayListAligned(comptime T: type, comptime alignment: ?u29) type {
 
         /// Release all allocated memory.
         pub fn deinit(self: Self) void {
-            if (@sizeOf(T) > 0) {
+            if (@sizeof(T) > 0) {
                 self.allocator.free(self.allocatedSlice());
             }
         }
@@ -341,8 +341,8 @@ pub fn ArrayListAligned(comptime T: type, comptime alignment: ?u29) type {
         }
 
         pub const Writer = if (T != u8)
-            @compileError("The Writer interface is only defined for ArrayList(u8) " ++
-                "but the given type is ArrayList(" ++ @typeName(T) ++ ")")
+            @compileerror("The Writer interface is only defined for ArrayList(u8) " ++
+                "but the given type is ArrayList(" ++ @typename(T) ++ ")")
         else
             std.io.Writer(*Self, Allocator.Error, appendWrite);
 
@@ -423,7 +423,7 @@ pub fn ArrayListAligned(comptime T: type, comptime alignment: ?u29) type {
         /// modify the array so that it can hold at least `new_capacity` items.
         /// Invalidates element pointers if additional memory is needed.
         pub fn ensureTotalCapacity(self: *Self, new_capacity: usize) Allocator.Error!void {
-            if (@sizeOf(T) == 0) {
+            if (@sizeof(T) == 0) {
                 self.capacity = math.maxInt(usize);
                 return;
             }
@@ -438,7 +438,7 @@ pub fn ArrayListAligned(comptime T: type, comptime alignment: ?u29) type {
         /// modify the array so that it can hold exactly `new_capacity` items.
         /// Invalidates element pointers if additional memory is needed.
         pub fn ensureTotalCapacityPrecise(self: *Self, new_capacity: usize) Allocator.Error!void {
-            if (@sizeOf(T) == 0) {
+            if (@sizeof(T) == 0) {
                 self.capacity = math.maxInt(usize);
                 return;
             }
@@ -595,14 +595,14 @@ pub fn ArrayListUnmanaged(comptime T: type) type {
 
 /// A contiguous, growable list of arbitrarily aligned items in memory.
 /// This is a wrapper around an array of T values aligned to `alignment`-byte
-/// addresses. If the specified alignment is `null`, then `@alignOf(T)` is used.
+/// addresses. If the specified alignment is `null`, then `@alignof(T)` is used.
 ///
 /// Functions that potentially allocate memory accept an `Allocator` parameter.
 /// Initialize directly or with `initCapacity`, and deinitialize with `deinit`
 /// or use `toOwnedSlice`.
 pub fn ArrayListAlignedUnmanaged(comptime T: type, comptime alignment: ?u29) type {
     if (alignment) |a| {
-        if (a == @alignOf(T)) {
+        if (a == @alignof(T)) {
             return ArrayListAlignedUnmanaged(T, null);
         }
     }
@@ -927,8 +927,8 @@ pub fn ArrayListAlignedUnmanaged(comptime T: type, comptime alignment: ?u29) typ
         };
 
         pub const Writer = if (T != u8)
-            @compileError("The Writer interface is only defined for ArrayList(u8) " ++
-                "but the given type is ArrayList(" ++ @typeName(T) ++ ")")
+            @compileerror("The Writer interface is only defined for ArrayList(u8) " ++
+                "but the given type is ArrayList(" ++ @typename(T) ++ ")")
         else
             std.io.Writer(WriterContext, Allocator.Error, appendWrite);
 
@@ -1001,7 +1001,7 @@ pub fn ArrayListAlignedUnmanaged(comptime T: type, comptime alignment: ?u29) typ
         pub fn shrinkAndFree(self: *Self, allocator: Allocator, new_len: usize) void {
             assert(new_len <= self.items.len);
 
-            if (@sizeOf(T) == 0) {
+            if (@sizeof(T) == 0) {
                 self.items.len = new_len;
                 return;
             }
@@ -1062,7 +1062,7 @@ pub fn ArrayListAlignedUnmanaged(comptime T: type, comptime alignment: ?u29) typ
         /// modify the array so that it can hold exactly `new_capacity` items.
         /// Invalidates element pointers if additional memory is needed.
         pub fn ensureTotalCapacityPrecise(self: *Self, allocator: Allocator, new_capacity: usize) Allocator.Error!void {
-            if (@sizeOf(T) == 0) {
+            if (@sizeof(T) == 0) {
                 self.capacity = math.maxInt(usize);
                 return;
             }
@@ -1226,7 +1226,7 @@ fn growCapacity(current: usize, minimum: usize) usize {
 
 /// Integer addition returning `error.OutOfMemory` on overflow.
 fn addOrOom(a: usize, b: usize) error{OutOfMemory}!usize {
-    const result, const overflow = @addWithOverflow(a, b);
+    const result, const overflow = @addwithoverflow(a, b);
     if (overflow != 0) return error.OutOfMemory;
     return result;
 }
@@ -1314,19 +1314,19 @@ test "basic" {
         {
             var i: usize = 0;
             while (i < 10) : (i += 1) {
-                list.append(@as(i32, @intCast(i + 1))) catch unreachable;
+                list.append(@as(i32, @intcast(i + 1))) catch unreachable;
             }
         }
 
         {
             var i: usize = 0;
             while (i < 10) : (i += 1) {
-                try testing.expect(list.items[i] == @as(i32, @intCast(i + 1)));
+                try testing.expect(list.items[i] == @as(i32, @intcast(i + 1)));
             }
         }
 
         for (list.items, 0..) |v, i| {
-            try testing.expect(v == @as(i32, @intCast(i + 1)));
+            try testing.expect(v == @as(i32, @intcast(i + 1)));
         }
 
         try testing.expect(list.pop() == 10);
@@ -1364,19 +1364,19 @@ test "basic" {
         {
             var i: usize = 0;
             while (i < 10) : (i += 1) {
-                list.append(a, @as(i32, @intCast(i + 1))) catch unreachable;
+                list.append(a, @as(i32, @intcast(i + 1))) catch unreachable;
             }
         }
 
         {
             var i: usize = 0;
             while (i < 10) : (i += 1) {
-                try testing.expect(list.items[i] == @as(i32, @intCast(i + 1)));
+                try testing.expect(list.items[i] == @as(i32, @intcast(i + 1)));
             }
         }
 
         for (list.items, 0..) |v, i| {
-            try testing.expect(v == @as(i32, @intCast(i + 1)));
+            try testing.expect(v == @as(i32, @intcast(i + 1)));
         }
 
         try testing.expect(list.pop() == 10);

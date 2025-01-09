@@ -92,35 +92,35 @@ pub const Node = struct {
 
         /// Not thread-safe.
         fn getIpcFd(s: Storage) ?posix.fd_t {
-            return if (s.estimated_total_count == std.math.maxInt(u32)) switch (@typeInfo(posix.fd_t)) {
-                .Int => @bitCast(s.completed_count),
-                .Pointer => @ptrFromInt(s.completed_count),
-                else => @compileError("unsupported fd_t of " ++ @typeName(posix.fd_t)),
+            return if (s.estimated_total_count == std.math.maxInt(u32)) switch (@typeinfo(posix.fd_t)) {
+                .Int => @bitcast(s.completed_count),
+                .Pointer => @ptrfromint(s.completed_count),
+                else => @compileerror("unsupported fd_t of " ++ @typename(posix.fd_t)),
             } else null;
         }
 
         /// Thread-safe.
         fn setIpcFd(s: *Storage, fd: posix.fd_t) void {
-            const integer: u32 = switch (@typeInfo(posix.fd_t)) {
-                .Int => @bitCast(fd),
-                .Pointer => @intFromPtr(fd),
-                else => @compileError("unsupported fd_t of " ++ @typeName(posix.fd_t)),
+            const integer: u32 = switch (@typeinfo(posix.fd_t)) {
+                .Int => @bitcast(fd),
+                .Pointer => @intfromptr(fd),
+                else => @compileerror("unsupported fd_t of " ++ @typename(posix.fd_t)),
             };
             // `estimated_total_count` max int indicates the special state that
             // causes `completed_count` to be treated as a file descriptor, so
             // the order here matters.
-            @atomicStore(u32, &s.completed_count, integer, .monotonic);
-            @atomicStore(u32, &s.estimated_total_count, std.math.maxInt(u32), .release);
+            @atomicstore(u32, &s.completed_count, integer, .monotonic);
+            @atomicstore(u32, &s.estimated_total_count, std.math.maxInt(u32), .release);
         }
 
         /// Not thread-safe.
-        fn byteSwap(s: *Storage) void {
-            s.completed_count = @byteSwap(s.completed_count);
-            s.estimated_total_count = @byteSwap(s.estimated_total_count);
+        fn byteswap(s: *Storage) void {
+            s.completed_count = @byteswap(s.completed_count);
+            s.estimated_total_count = @byteswap(s.estimated_total_count);
         }
 
         comptime {
-            assert((@sizeOf(Storage) % 4) == 0);
+            assert((@sizeof(Storage) % 4) == 0);
         }
     };
 
@@ -135,7 +135,7 @@ pub const Node = struct {
         fn unwrap(i: @This()) ?Index {
             return switch (i) {
                 .unused, .none => return null,
-                else => @enumFromInt(@intFromEnum(i)),
+                else => @enumfromint(@intfromenum(i)),
             };
         }
     };
@@ -147,12 +147,12 @@ pub const Node = struct {
 
         pub fn unwrap(i: @This()) ?Index {
             if (i == .none) return null;
-            return @enumFromInt(@intFromEnum(i));
+            return @enumfromint(@intfromenum(i));
         }
 
         fn toParent(i: @This()) Parent {
-            assert(@intFromEnum(i) != @intFromEnum(Parent.unused));
-            return @enumFromInt(@intFromEnum(i));
+            assert(@intfromenum(i) != @intfromenum(Parent.unused));
+            return @enumfromint(@intfromenum(i));
         }
     };
 
@@ -161,13 +161,13 @@ pub const Node = struct {
         _,
 
         fn toParent(i: @This()) Parent {
-            assert(@intFromEnum(i) != @intFromEnum(Parent.unused));
-            assert(@intFromEnum(i) != @intFromEnum(Parent.none));
-            return @enumFromInt(@intFromEnum(i));
+            assert(@intfromenum(i) != @intfromenum(Parent.unused));
+            assert(@intfromenum(i) != @intfromenum(Parent.none));
+            return @enumfromint(@intfromenum(i));
         }
 
         pub fn toOptional(i: @This()) OptionalIndex {
-            return @enumFromInt(@intFromEnum(i));
+            return @enumfromint(@intfromenum(i));
         }
     };
 
@@ -183,37 +183,37 @@ pub const Node = struct {
         const parent = node_index.toParent();
 
         const freelist_head = &global_progress.node_freelist_first;
-        var opt_free_index = @atomicLoad(Node.OptionalIndex, freelist_head, .seq_cst);
+        var opt_free_index = @atomicload(Node.OptionalIndex, freelist_head, .seq_cst);
         while (opt_free_index.unwrap()) |free_index| {
             const freelist_ptr = freelistByIndex(free_index);
-            opt_free_index = @cmpxchgWeak(Node.OptionalIndex, freelist_head, opt_free_index, freelist_ptr.*, .seq_cst, .seq_cst) orelse {
+            opt_free_index = @cmpxchgweak(Node.OptionalIndex, freelist_head, opt_free_index, freelist_ptr.*, .seq_cst, .seq_cst) orelse {
                 // We won the allocation race.
                 return init(free_index, parent, name, estimated_total_items);
             };
         }
 
-        const free_index = @atomicRmw(u32, &global_progress.node_end_index, .Add, 1, .monotonic);
+        const free_index = @atomicrmw(u32, &global_progress.node_end_index, .Add, 1, .monotonic);
         if (free_index >= global_progress.node_storage.len) {
             // Ran out of node storage memory. Progress for this node will not be tracked.
-            _ = @atomicRmw(u32, &global_progress.node_end_index, .Sub, 1, .monotonic);
+            _ = @atomicrmw(u32, &global_progress.node_end_index, .Sub, 1, .monotonic);
             return .{ .index = .none };
         }
 
-        return init(@enumFromInt(free_index), parent, name, estimated_total_items);
+        return init(@enumfromint(free_index), parent, name, estimated_total_items);
     }
 
     /// This is the same as calling `start` and then `end` on the returned `Node`. Thread-safe.
     pub fn completeOne(n: Node) void {
         const index = n.index.unwrap() orelse return;
         const storage = storageByIndex(index);
-        _ = @atomicRmw(u32, &storage.completed_count, .Add, 1, .monotonic);
+        _ = @atomicrmw(u32, &storage.completed_count, .Add, 1, .monotonic);
     }
 
     /// Thread-safe.
     pub fn setCompletedItems(n: Node, completed_items: usize) void {
         const index = n.index.unwrap() orelse return;
         const storage = storageByIndex(index);
-        @atomicStore(u32, &storage.completed_count, std.math.lossyCast(u32, completed_items), .monotonic);
+        @atomicstore(u32, &storage.completed_count, std.math.lossyCast(u32, completed_items), .monotonic);
     }
 
     /// Thread-safe. 0 means unknown.
@@ -222,14 +222,14 @@ pub const Node = struct {
         const storage = storageByIndex(index);
         // Avoid u32 max int which is used to indicate a special state.
         const saturated = @min(std.math.maxInt(u32) - 1, count);
-        @atomicStore(u32, &storage.estimated_total_count, saturated, .monotonic);
+        @atomicstore(u32, &storage.estimated_total_count, saturated, .monotonic);
     }
 
     /// Thread-safe.
     pub fn increaseEstimatedTotalItems(n: Node, count: usize) void {
         const index = n.index.unwrap() orelse return;
         const storage = storageByIndex(index);
-        _ = @atomicRmw(u32, &storage.estimated_total_count, .Add, std.math.lossyCast(u32, count), .monotonic);
+        _ = @atomicrmw(u32, &storage.estimated_total_count, .Add, std.math.lossyCast(u32, count), .monotonic);
     }
 
     /// Finish a started `Node`. Thread-safe.
@@ -241,17 +241,17 @@ pub const Node = struct {
         const index = n.index.unwrap() orelse return;
         const parent_ptr = parentByIndex(index);
         if (parent_ptr.unwrap()) |parent_index| {
-            _ = @atomicRmw(u32, &storageByIndex(parent_index).completed_count, .Add, 1, .monotonic);
-            @atomicStore(Node.Parent, parent_ptr, .unused, .seq_cst);
+            _ = @atomicrmw(u32, &storageByIndex(parent_index).completed_count, .Add, 1, .monotonic);
+            @atomicstore(Node.Parent, parent_ptr, .unused, .seq_cst);
 
             const freelist_head = &global_progress.node_freelist_first;
-            var first = @atomicLoad(Node.OptionalIndex, freelist_head, .seq_cst);
+            var first = @atomicload(Node.OptionalIndex, freelist_head, .seq_cst);
             while (true) {
                 freelistByIndex(index).* = first;
-                first = @cmpxchgWeak(Node.OptionalIndex, freelist_head, first, index.toOptional(), .seq_cst, .seq_cst) orelse break;
+                first = @cmpxchgweak(Node.OptionalIndex, freelist_head, first, index.toOptional(), .seq_cst, .seq_cst) orelse break;
             }
         } else {
-            @atomicStore(bool, &global_progress.done, true, .seq_cst);
+            @atomicstore(bool, &global_progress.done, true, .seq_cst);
             global_progress.redraw_event.set();
             if (global_progress.update_thread) |thread| thread.join();
         }
@@ -268,15 +268,15 @@ pub const Node = struct {
     }
 
     fn storageByIndex(index: Node.Index) *Node.Storage {
-        return &global_progress.node_storage[@intFromEnum(index)];
+        return &global_progress.node_storage[@intfromenum(index)];
     }
 
     fn parentByIndex(index: Node.Index) *Node.Parent {
-        return &global_progress.node_parents[@intFromEnum(index)];
+        return &global_progress.node_parents[@intfromenum(index)];
     }
 
     fn freelistByIndex(index: Node.Index) *Node.OptionalIndex {
-        return &global_progress.node_freelist[@intFromEnum(index)];
+        return &global_progress.node_freelist[@intfromenum(index)];
     }
 
     fn init(free_index: Index, parent: Parent, name: []const u8, estimated_total_items: usize) Node {
@@ -293,7 +293,7 @@ pub const Node = struct {
 
         const parent_ptr = parentByIndex(free_index);
         assert(parent_ptr.* == .unused);
-        @atomicStore(Node.Parent, parent_ptr, parent, .release);
+        @atomicstore(Node.Parent, parent_ptr, parent, .release);
 
         return .{ .index = free_index.toOptional() };
     }
@@ -347,7 +347,7 @@ pub fn start(options: Options) Node {
     debug_start_trace.add("first initialized here");
 
     @memset(global_progress.node_parents, .unused);
-    const root_node = Node.init(@enumFromInt(0), .none, options.root_name, options.estimated_total_items);
+    const root_node = Node.init(@enumfromint(0), .none, options.root_name, options.estimated_total_items);
     global_progress.done = false;
     global_progress.node_end_index = 1;
 
@@ -361,13 +361,13 @@ pub fn start(options: Options) Node {
 
     if (std.process.parseEnvVarInt("ZIG_PROGRESS", u31, 10)) |ipc_fd| {
         global_progress.update_thread = std.Thread.spawn(.{}, ipcThreadRun, .{
-            @as(posix.fd_t, switch (@typeInfo(posix.fd_t)) {
+            @as(posix.fd_t, switch (@typeinfo(posix.fd_t)) {
                 .Int => ipc_fd,
-                .Pointer => @ptrFromInt(ipc_fd),
-                else => @compileError("unsupported fd_t of " ++ @typeName(posix.fd_t)),
+                .Pointer => @ptrfromint(ipc_fd),
+                else => @compileerror("unsupported fd_t of " ++ @typename(posix.fd_t)),
             }),
         }) catch |err| {
-            std.log.warn("failed to spawn IPC thread for communicating progress to parent: {s}", .{@errorName(err)});
+            std.log.warn("failed to spawn IPC thread for communicating progress to parent: {s}", .{@errorname(err)});
             return .{ .index = .none };
         };
     } else |env_err| switch (env_err) {
@@ -396,7 +396,7 @@ pub fn start(options: Options) Node {
                     .flags = (posix.SA.SIGINFO | posix.SA.RESTART),
                 };
                 posix.sigaction(posix.SIG.WINCH, &act, null) catch |err| {
-                    std.log.warn("failed to install SIGWINCH signal handler for noticing terminal resizes: {s}", .{@errorName(err)});
+                    std.log.warn("failed to install SIGWINCH signal handler for noticing terminal resizes: {s}", .{@errorname(err)});
                 };
             }
 
@@ -407,12 +407,12 @@ pub fn start(options: Options) Node {
             }) |thread| {
                 global_progress.update_thread = thread;
             } else |err| {
-                std.log.warn("unable to spawn thread for printing progress to terminal: {s}", .{@errorName(err)});
+                std.log.warn("unable to spawn thread for printing progress to terminal: {s}", .{@errorname(err)});
                 return .{ .index = .none };
             }
         },
         else => |e| {
-            std.log.warn("invalid ZIG_PROGRESS file descriptor integer: {s}", .{@errorName(e)});
+            std.log.warn("invalid ZIG_PROGRESS file descriptor integer: {s}", .{@errorname(e)});
             return .{ .index = .none };
         },
     }
@@ -438,7 +438,7 @@ fn updateThreadRun() void {
 
     {
         const resize_flag = wait(global_progress.initial_delay_ns);
-        if (@atomicLoad(bool, &global_progress.done, .seq_cst)) return;
+        if (@atomicload(bool, &global_progress.done, .seq_cst)) return;
         maybeUpdateSize(resize_flag);
 
         const buffer, _ = computeRedraw(&serialized_buffer);
@@ -452,7 +452,7 @@ fn updateThreadRun() void {
     while (true) {
         const resize_flag = wait(global_progress.refresh_rate_ns);
 
-        if (@atomicLoad(bool, &global_progress.done, .seq_cst)) {
+        if (@atomicload(bool, &global_progress.done, .seq_cst)) {
             stderr_mutex.lock();
             defer stderr_mutex.unlock();
             return clearWrittenWithEscapeCodes() catch {};
@@ -482,7 +482,7 @@ fn windowsApiUpdateThreadRun() void {
 
     {
         const resize_flag = wait(global_progress.initial_delay_ns);
-        if (@atomicLoad(bool, &global_progress.done, .seq_cst)) return;
+        if (@atomicload(bool, &global_progress.done, .seq_cst)) return;
         maybeUpdateSize(resize_flag);
 
         const buffer, const nl_n = computeRedraw(&serialized_buffer);
@@ -498,7 +498,7 @@ fn windowsApiUpdateThreadRun() void {
     while (true) {
         const resize_flag = wait(global_progress.refresh_rate_ns);
 
-        if (@atomicLoad(bool, &global_progress.done, .seq_cst)) {
+        if (@atomicload(bool, &global_progress.done, .seq_cst)) {
             stderr_mutex.lock();
             defer stderr_mutex.unlock();
             return clearWrittenWindowsApi() catch {};
@@ -538,7 +538,7 @@ fn ipcThreadRun(fd: posix.fd_t) anyerror!void {
     {
         _ = wait(global_progress.initial_delay_ns);
 
-        if (@atomicLoad(bool, &global_progress.done, .seq_cst))
+        if (@atomicload(bool, &global_progress.done, .seq_cst))
             return;
 
         const serialized = serialize(&serialized_buffer);
@@ -550,7 +550,7 @@ fn ipcThreadRun(fd: posix.fd_t) anyerror!void {
     while (true) {
         _ = wait(global_progress.refresh_rate_ns);
 
-        if (@atomicLoad(bool, &global_progress.done, .seq_cst))
+        if (@atomicload(bool, &global_progress.done, .seq_cst))
             return;
 
         const serialized = serialize(&serialized_buffer);
@@ -614,7 +614,7 @@ const TreeSymbol = enum {
 
     fn maxByteLen(symbol: TreeSymbol) usize {
         var max: usize = 0;
-        inline for (@typeInfo(Encoding).Enum.fields) |field| {
+        inline for (@typeinfo(Encoding).Enum.fields) |field| {
             const len = symbol.bytes(@field(Encoding, field.name)).len;
             max = @max(max, len);
         }
@@ -702,7 +702,7 @@ fn windowsApiMoveToMarker(nl_n: usize) error{Unexpected}!void {
         return error.Unexpected;
     }
     const cursor_pos = console_info.dwCursorPosition;
-    const expected_y = cursor_pos.Y - @as(i16, @intCast(nl_n));
+    const expected_y = cursor_pos.Y - @as(i16, @intcast(nl_n));
     var start_pos: windows.COORD = .{ .X = 0, .Y = expected_y };
     while (start_pos.Y >= 0) {
         var wchar: [1]u16 = undefined;
@@ -752,21 +752,21 @@ fn serialize(serialized_buffer: *Serialized.Buffer) Serialized {
 
     // Iterate all of the nodes and construct a serializable copy of the state that can be examined
     // without atomics.
-    const end_index = @atomicLoad(u32, &global_progress.node_end_index, .monotonic);
+    const end_index = @atomicload(u32, &global_progress.node_end_index, .monotonic);
     const node_parents = global_progress.node_parents[0..end_index];
     const node_storage = global_progress.node_storage[0..end_index];
     for (node_parents, node_storage, 0..) |*parent_ptr, *storage_ptr, i| {
-        var begin_parent = @atomicLoad(Node.Parent, parent_ptr, .acquire);
+        var begin_parent = @atomicload(Node.Parent, parent_ptr, .acquire);
         while (begin_parent != .unused) {
             const dest_storage = &serialized_buffer.storage[serialized_len];
             @memcpy(&dest_storage.name, &storage_ptr.name);
-            dest_storage.estimated_total_count = @atomicLoad(u32, &storage_ptr.estimated_total_count, .acquire);
-            dest_storage.completed_count = @atomicLoad(u32, &storage_ptr.completed_count, .monotonic);
-            const end_parent = @atomicLoad(Node.Parent, parent_ptr, .acquire);
+            dest_storage.estimated_total_count = @atomicload(u32, &storage_ptr.estimated_total_count, .acquire);
+            dest_storage.completed_count = @atomicload(u32, &storage_ptr.completed_count, .monotonic);
+            const end_parent = @atomicload(Node.Parent, parent_ptr, .acquire);
             if (begin_parent == end_parent) {
                 any_ipc = any_ipc or (dest_storage.getIpcFd() != null);
                 serialized_buffer.parents[serialized_len] = begin_parent;
-                serialized_buffer.map[i] = @enumFromInt(serialized_len);
+                serialized_buffer.map[i] = @enumfromint(serialized_len);
                 serialized_len += 1;
                 break;
             }
@@ -780,7 +780,7 @@ fn serialize(serialized_buffer: *Serialized.Buffer) Serialized {
         parent.* = switch (parent.*) {
             .unused => unreachable,
             .none => .none,
-            _ => |p| serialized_buffer.map[@intFromEnum(p)].toParent(),
+            _ => |p| serialized_buffer.map[@intfromenum(p)].toParent(),
         };
     }
 
@@ -805,14 +805,14 @@ const Fd = enum(i32) {
     _,
 
     fn init(fd: posix.fd_t) Fd {
-        return @enumFromInt(if (is_windows) @as(isize, @bitCast(@intFromPtr(fd))) else fd);
+        return @enumfromint(if (is_windows) @as(isize, @bitcast(@intfromptr(fd))) else fd);
     }
 
     fn get(fd: Fd) posix.fd_t {
         return if (is_windows)
-            @ptrFromInt(@as(usize, @bitCast(@as(isize, @intFromEnum(fd)))))
+            @ptrfromint(@as(usize, @bitcast(@as(isize, @intfromenum(fd)))))
         else
-            @intFromEnum(fd);
+            @intfromenum(fd);
     }
 };
 
@@ -844,7 +844,7 @@ fn serializeIpc(start_serialized_len: usize, serialized_buffer: *Serialized.Buff
             const n = posix.read(fd, pipe_buf[bytes_read..]) catch |err| switch (err) {
                 error.WouldBlock => break,
                 else => |e| {
-                    std.log.debug("failed to read child progress data: {s}", .{@errorName(e)});
+                    std.log.debug("failed to read child progress data: {s}", .{@errorname(e)});
                     main_storage.completed_count = 0;
                     main_storage.estimated_total_count = 0;
                     continue :main_loop;
@@ -855,7 +855,7 @@ fn serializeIpc(start_serialized_len: usize, serialized_buffer: *Serialized.Buff
                 if (m.remaining_read_trash_bytes > 0) {
                     assert(bytes_read == 0);
                     if (m.remaining_read_trash_bytes >= n) {
-                        m.remaining_read_trash_bytes = @intCast(m.remaining_read_trash_bytes - n);
+                        m.remaining_read_trash_bytes = @intcast(m.remaining_read_trash_bytes - n);
                         continue;
                     }
                     const src = pipe_buf[m.remaining_read_trash_bytes..n];
@@ -876,10 +876,10 @@ fn serializeIpc(start_serialized_len: usize, serialized_buffer: *Serialized.Buff
 
         const storage, const parents = while (true) {
             const subtree_len: usize = input[0];
-            const expected_bytes = 1 + subtree_len * (@sizeOf(Node.Storage) + @sizeOf(Node.Parent));
+            const expected_bytes = 1 + subtree_len * (@sizeof(Node.Storage) + @sizeof(Node.Parent));
             if (input.len < expected_bytes) {
                 // Ignore short reads. We'll handle the next full message when it comes instead.
-                const remaining_read_trash_bytes: u16 = @intCast(expected_bytes - input.len);
+                const remaining_read_trash_bytes: u16 = @intcast(expected_bytes - input.len);
                 serialized_len = useSavedIpcData(serialized_len, serialized_buffer, main_storage, main_index, opt_saved_metadata, remaining_read_trash_bytes, fd);
                 continue :main_loop;
             }
@@ -887,36 +887,36 @@ fn serializeIpc(start_serialized_len: usize, serialized_buffer: *Serialized.Buff
                 input = input[expected_bytes..];
                 continue;
             }
-            const storage_bytes = input[1..][0 .. subtree_len * @sizeOf(Node.Storage)];
-            const parents_bytes = input[1 + storage_bytes.len ..][0 .. subtree_len * @sizeOf(Node.Parent)];
+            const storage_bytes = input[1..][0 .. subtree_len * @sizeof(Node.Storage)];
+            const parents_bytes = input[1 + storage_bytes.len ..][0 .. subtree_len * @sizeof(Node.Parent)];
             break .{
                 std.mem.bytesAsSlice(Node.Storage, storage_bytes),
                 std.mem.bytesAsSlice(Node.Parent, parents_bytes),
             };
         };
 
-        const nodes_len: u8 = @intCast(@min(parents.len - 1, serialized_buffer.storage.len - serialized_len));
+        const nodes_len: u8 = @intcast(@min(parents.len - 1, serialized_buffer.storage.len - serialized_len));
 
         // Remember in case the pipe is empty on next update.
         ipc_metadata_fds[ipc_metadata_len] = Fd.init(fd);
         ipc_metadata[ipc_metadata_len] = .{
             .remaining_read_trash_bytes = 0,
-            .start_index = @intCast(serialized_len),
+            .start_index = @intcast(serialized_len),
             .nodes_len = nodes_len,
-            .main_index = @intCast(main_index),
+            .main_index = @intcast(main_index),
         };
         ipc_metadata_len += 1;
 
         // Mount the root here.
         copyRoot(main_storage, &storage[0]);
-        if (is_big_endian) main_storage.byteSwap();
+        if (is_big_endian) main_storage.byteswap();
 
         // Copy the rest of the tree to the end.
         const storage_dest = serialized_buffer.storage[serialized_len..][0..nodes_len];
         @memcpy(storage_dest, storage[1..][0..nodes_len]);
 
         // Always little-endian over the pipe.
-        if (is_big_endian) for (storage_dest) |*s| s.byteSwap();
+        if (is_big_endian) for (storage_dest) |*s| s.byteswap();
 
         // Patch up parent pointers taking into account how the subtree is mounted.
         for (serialized_buffer.parents[serialized_len..][0..nodes_len], parents[1..][0..nodes_len]) |*dest, p| {
@@ -924,14 +924,14 @@ fn serializeIpc(start_serialized_len: usize, serialized_buffer: *Serialized.Buff
                 // Fix bad data so the rest of the code does not see `unused`.
                 .none, .unused => .none,
                 // Root node is being mounted here.
-                @as(Node.Parent, @enumFromInt(0)) => @enumFromInt(main_index),
+                @as(Node.Parent, @enumfromint(0)) => @enumfromint(main_index),
                 // Other nodes mounted at the end.
                 // Don't trust child data; if the data is outside the expected range, ignore the data.
                 // This also handles the case when data was truncated.
-                _ => |off| if (@intFromEnum(off) > nodes_len)
+                _ => |off| if (@intfromenum(off) > nodes_len)
                     .none
                 else
-                    @enumFromInt(serialized_len + @intFromEnum(off) - 1),
+                    @enumfromint(serialized_len + @intfromenum(off) - 1),
             };
         }
 
@@ -988,9 +988,9 @@ fn useSavedIpcData(
             ipc_metadata_fds[ipc_metadata_len] = Fd.init(fd);
             ipc_metadata[ipc_metadata_len] = .{
                 .remaining_read_trash_bytes = remaining_read_trash_bytes,
-                .start_index = @intCast(start_serialized_len),
+                .start_index = @intcast(start_serialized_len),
                 .nodes_len = 0,
-                .main_index = @intCast(main_index),
+                .main_index = @intcast(main_index),
             };
             ipc_metadata_len += 1;
         }
@@ -1004,9 +1004,9 @@ fn useSavedIpcData(
     ipc_metadata_fds[ipc_metadata_len] = Fd.init(fd);
     ipc_metadata[ipc_metadata_len] = .{
         .remaining_read_trash_bytes = remaining_read_trash_bytes,
-        .start_index = @intCast(start_serialized_len),
+        .start_index = @intcast(start_serialized_len),
         .nodes_len = nodes_len,
-        .main_index = @intCast(main_index),
+        .main_index = @intcast(main_index),
     };
     ipc_metadata_len += 1;
 
@@ -1021,12 +1021,12 @@ fn useSavedIpcData(
         dest.* = switch (p) {
             .none, .unused => .none,
             _ => |prev| d: {
-                if (@intFromEnum(prev) == old_main_index) {
-                    break :d @enumFromInt(main_index);
-                } else if (@intFromEnum(prev) > nodes_len) {
+                if (@intfromenum(prev) == old_main_index) {
+                    break :d @enumfromint(main_index);
+                } else if (@intfromenum(prev) > nodes_len) {
                     break :d .none;
                 } else {
-                    break :d @enumFromInt(@intFromEnum(prev) - start_index + start_serialized_len);
+                    break :d @enumfromint(@intfromenum(prev) - start_index + start_serialized_len);
                 }
             },
         };
@@ -1048,13 +1048,13 @@ fn computeRedraw(serialized_buffer: *Serialized.Buffer) struct { []u8, usize } {
     @memset(children, .{ .child = .none, .sibling = .none });
 
     for (serialized.parents, 0..) |parent, child_index_usize| {
-        const child_index: Node.Index = @enumFromInt(child_index_usize);
+        const child_index: Node.Index = @enumfromint(child_index_usize);
         assert(parent != .unused);
         const parent_index = parent.unwrap() orelse continue;
-        const children_node = &children[@intFromEnum(parent_index)];
+        const children_node = &children[@intfromenum(parent_index)];
         if (children_node.child.unwrap()) |existing_child_index| {
-            const existing_child = &children[@intFromEnum(existing_child_index)];
-            children[@intFromEnum(child_index)].sibling = existing_child.sibling;
+            const existing_child = &children[@intfromenum(existing_child_index)];
+            children[@intfromenum(child_index)].sibling = existing_child.sibling;
             existing_child.sibling = child_index.toOptional();
         } else {
             children_node.child = child_index.toOptional();
@@ -1083,7 +1083,7 @@ fn computeRedraw(serialized_buffer: *Serialized.Buffer) struct { []u8, usize } {
         .windows_api => if (!is_windows) unreachable,
     }
 
-    const root_node_index: Node.Index = @enumFromInt(0);
+    const root_node_index: Node.Index = @enumfromint(0);
     i, const nl_n = computeNode(buf, i, 0, serialized, children, root_node_index);
 
     if (global_progress.terminal_mode == .ansi_escape_codes) {
@@ -1112,15 +1112,15 @@ fn computePrefix(
     node_index: Node.Index,
 ) usize {
     var i = start_i;
-    const parent_index = serialized.parents[@intFromEnum(node_index)].unwrap() orelse return i;
-    if (serialized.parents[@intFromEnum(parent_index)] == .none) return i;
-    if (@intFromEnum(serialized.parents[@intFromEnum(parent_index)]) == 0 and
+    const parent_index = serialized.parents[@intfromenum(node_index)].unwrap() orelse return i;
+    if (serialized.parents[@intfromenum(parent_index)] == .none) return i;
+    if (@intfromenum(serialized.parents[@intfromenum(parent_index)]) == 0 and
         serialized.storage[0].name[0] == 0)
     {
         return i;
     }
     i = computePrefix(buf, i, nl_n, serialized, children, parent_index);
-    if (children[@intFromEnum(parent_index)].sibling == .none) {
+    if (children[@intfromenum(parent_index)].sibling == .none) {
         const prefix = "   ";
         const upper_bound_len = prefix.len + lineUpperBoundLen(nl_n);
         if (i + upper_bound_len > buf.len) return buf.len;
@@ -1159,24 +1159,24 @@ fn computeNode(
     if (i + lineUpperBoundLen(nl_n) > buf.len)
         return .{ start_i, start_nl_n };
 
-    const storage = &serialized.storage[@intFromEnum(node_index)];
+    const storage = &serialized.storage[@intfromenum(node_index)];
     const estimated_total = storage.estimated_total_count;
     const completed_items = storage.completed_count;
     const name = if (std.mem.indexOfScalar(u8, &storage.name, 0)) |end| storage.name[0..end] else &storage.name;
-    const parent = serialized.parents[@intFromEnum(node_index)];
+    const parent = serialized.parents[@intfromenum(node_index)];
 
     if (parent != .none) p: {
-        if (@intFromEnum(parent) == 0 and serialized.storage[0].name[0] == 0) {
+        if (@intfromenum(parent) == 0 and serialized.storage[0].name[0] == 0) {
             break :p;
         }
-        if (children[@intFromEnum(node_index)].sibling == .none) {
+        if (children[@intfromenum(node_index)].sibling == .none) {
             i = appendTreeSymbol(.langle, buf, i);
         } else {
             i = appendTreeSymbol(.tee, buf, i);
         }
     }
 
-    const is_empty_root = @intFromEnum(node_index) == 0 and serialized.storage[0].name[0] == 0;
+    const is_empty_root = @intfromenum(node_index) == 0 and serialized.storage[0].name[0] == 0;
     if (!is_empty_root) {
         if (name.len != 0 or estimated_total > 0) {
             if (estimated_total > 0) {
@@ -1203,13 +1203,13 @@ fn computeNode(
     }
 
     if (global_progress.withinRowLimit(nl_n)) {
-        if (children[@intFromEnum(node_index)].child.unwrap()) |child| {
+        if (children[@intfromenum(node_index)].child.unwrap()) |child| {
             i, nl_n = computeNode(buf, i, nl_n, serialized, children, child);
         }
     }
 
     if (global_progress.withinRowLimit(nl_n)) {
-        if (children[@intFromEnum(node_index)].sibling.unwrap()) |sibling| {
+        if (children[@intfromenum(node_index)].sibling.unwrap()) |sibling| {
             i, nl_n = computeNode(buf, i, nl_n, serialized, children, sibling);
         }
     }
@@ -1233,10 +1233,10 @@ var remaining_write_trash_bytes: usize = 0;
 fn writeIpc(fd: posix.fd_t, serialized: Serialized) error{BrokenPipe}!void {
     // Byteswap if necessary to ensure little endian over the pipe. This is
     // needed because the parent or child process might be running in qemu.
-    if (is_big_endian) for (serialized.storage) |*s| s.byteSwap();
+    if (is_big_endian) for (serialized.storage) |*s| s.byteswap();
 
     assert(serialized.parents.len == serialized.storage.len);
-    const serialized_len: u8 = @intCast(serialized.parents.len);
+    const serialized_len: u8 = @intcast(serialized.parents.len);
     const header = std.mem.asBytes(&serialized_len);
     const storage = std.mem.sliceAsBytes(serialized.storage);
     const parents = std.mem.sliceAsBytes(serialized.parents);
@@ -1248,8 +1248,8 @@ fn writeIpc(fd: posix.fd_t, serialized: Serialized) error{BrokenPipe}!void {
     };
 
     // Ensures the packet can fit in the pipe buffer.
-    const upper_bound_msg_len = 1 + node_storage_buffer_len * @sizeOf(Node.Storage) +
-        node_storage_buffer_len * @sizeOf(Node.OptionalIndex);
+    const upper_bound_msg_len = 1 + node_storage_buffer_len * @sizeof(Node.Storage) +
+        node_storage_buffer_len * @sizeof(Node.OptionalIndex);
     comptime assert(upper_bound_msg_len <= 4096);
 
     while (remaining_write_trash_bytes > 0) {
@@ -1263,7 +1263,7 @@ fn writeIpc(fd: posix.fd_t, serialized: Serialized) error{BrokenPipe}!void {
             error.WouldBlock => return,
             error.BrokenPipe => return error.BrokenPipe,
             else => |e| {
-                std.log.debug("failed to send progress to parent process: {s}", .{@errorName(e)});
+                std.log.debug("failed to send progress to parent process: {s}", .{@errorname(e)});
                 return error.BrokenPipe;
             },
         }
@@ -1280,7 +1280,7 @@ fn writeIpc(fd: posix.fd_t, serialized: Serialized) error{BrokenPipe}!void {
         error.WouldBlock => {},
         error.BrokenPipe => return error.BrokenPipe,
         else => |e| {
-            std.log.debug("failed to send progress to parent process: {s}", .{@errorName(e)});
+            std.log.debug("failed to send progress to parent process: {s}", .{@errorname(e)});
             return error.BrokenPipe;
         },
     }
@@ -1316,8 +1316,8 @@ fn maybeUpdateSize(resize_flag: bool) void {
             // entire scrollback buffer, so we use this instead so that we
             // always get the size of the screen.
             const screen_height = info.srWindow.Bottom - info.srWindow.Top;
-            global_progress.rows = @intCast(screen_height);
-            global_progress.cols = @intCast(info.dwSize.X);
+            global_progress.rows = @intcast(screen_height);
+            global_progress.cols = @intcast(info.dwSize.X);
         } else {
             std.log.debug("failed to determine terminal size; using conservative guess 80x25", .{});
             global_progress.rows = 25;
@@ -1331,7 +1331,7 @@ fn maybeUpdateSize(resize_flag: bool) void {
             .ws_ypixel = 0,
         };
 
-        const err = posix.system.ioctl(fd, posix.T.IOCGWINSZ, @intFromPtr(&winsize));
+        const err = posix.system.ioctl(fd, posix.T.IOCGWINSZ, @intfromptr(&winsize));
         if (posix.errno(err) == .SUCCESS) {
             global_progress.rows = winsize.ws_row;
             global_progress.cols = winsize.ws_col;

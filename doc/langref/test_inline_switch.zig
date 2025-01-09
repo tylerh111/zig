@@ -3,18 +3,18 @@ const expect = std.testing.expect;
 const expectError = std.testing.expectError;
 
 fn isFieldOptional(comptime T: type, field_index: usize) !bool {
-    const fields = @typeInfo(T).Struct.fields;
+    const fields = @typeinfo(T).Struct.fields;
     return switch (field_index) {
         // This prong is analyzed twice with `idx` being a
         // comptime-known value each time.
-        inline 0, 1 => |idx| @typeInfo(fields[idx].type) == .Optional,
+        inline 0, 1 => |idx| @typeinfo(fields[idx].type) == .Optional,
         else => return error.IndexOutOfBounds,
     };
 }
 
 const Struct1 = struct { a: u32, b: ?u32 };
 
-test "using @typeInfo with runtime values" {
+test "using @typeinfo with runtime values" {
     var index: usize = 0;
     try expect(!try isFieldOptional(Struct1, index));
     index += 1;

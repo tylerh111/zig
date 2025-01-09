@@ -27,7 +27,7 @@ comptime {
 
 pub fn __logh(a: f16) callconv(.C) f16 {
     // TODO: more efficient implementation
-    return @floatCast(logf(a));
+    return @floatcast(logf(a));
 }
 
 pub fn logf(x_: f32) callconv(.C) f32 {
@@ -39,7 +39,7 @@ pub fn logf(x_: f32) callconv(.C) f32 {
     const Lg4: f32 = 0xf89e26.0p-26;
 
     var x = x_;
-    var ix: u32 = @bitCast(x);
+    var ix: u32 = @bitcast(x);
     var k: i32 = 0;
 
     // x < 2^(-126)
@@ -56,7 +56,7 @@ pub fn logf(x_: f32) callconv(.C) f32 {
         // subnormal, scale x
         k -= 25;
         x *= 0x1.0p25;
-        ix = @bitCast(x);
+        ix = @bitcast(x);
     } else if (ix >= 0x7F800000) {
         return x;
     } else if (ix == 0x3F800000) {
@@ -65,9 +65,9 @@ pub fn logf(x_: f32) callconv(.C) f32 {
 
     // x into [sqrt(2) / 2, sqrt(2)]
     ix += 0x3F800000 - 0x3F3504F3;
-    k += @as(i32, @intCast(ix >> 23)) - 0x7F;
+    k += @as(i32, @intcast(ix >> 23)) - 0x7F;
     ix = (ix & 0x007FFFFF) + 0x3F3504F3;
-    x = @bitCast(ix);
+    x = @bitcast(ix);
 
     const f = x - 1.0;
     const s = f / (2.0 + f);
@@ -77,7 +77,7 @@ pub fn logf(x_: f32) callconv(.C) f32 {
     const t2 = z * (Lg1 + w * Lg3);
     const R = t2 + t1;
     const hfsq = 0.5 * f * f;
-    const dk: f32 = @floatFromInt(k);
+    const dk: f32 = @floatfromint(k);
 
     return s * (hfsq + R) + dk * ln2_lo - hfsq + f + dk * ln2_hi;
 }
@@ -94,8 +94,8 @@ pub fn log(x_: f64) callconv(.C) f64 {
     const Lg7: f64 = 1.479819860511658591e-01;
 
     var x = x_;
-    var ix: u64 = @bitCast(x);
-    var hx: u32 = @intCast(ix >> 32);
+    var ix: u64 = @bitcast(x);
+    var hx: u32 = @intcast(ix >> 32);
     var k: i32 = 0;
 
     if (hx < 0x00100000 or hx >> 31 != 0) {
@@ -111,7 +111,7 @@ pub fn log(x_: f64) callconv(.C) f64 {
         // subnormal, scale x
         k -= 54;
         x *= 0x1.0p54;
-        hx = @intCast(@as(u64, @bitCast(ix)) >> 32);
+        hx = @intcast(@as(u64, @bitcast(ix)) >> 32);
     } else if (hx >= 0x7FF00000) {
         return x;
     } else if (hx == 0x3FF00000 and ix << 32 == 0) {
@@ -120,10 +120,10 @@ pub fn log(x_: f64) callconv(.C) f64 {
 
     // x into [sqrt(2) / 2, sqrt(2)]
     hx += 0x3FF00000 - 0x3FE6A09E;
-    k += @as(i32, @intCast(hx >> 20)) - 0x3FF;
+    k += @as(i32, @intcast(hx >> 20)) - 0x3FF;
     hx = (hx & 0x000FFFFF) + 0x3FE6A09E;
     ix = (@as(u64, hx) << 32) | (ix & 0xFFFFFFFF);
-    x = @bitCast(ix);
+    x = @bitcast(ix);
 
     const f = x - 1.0;
     const hfsq = 0.5 * f * f;
@@ -133,29 +133,29 @@ pub fn log(x_: f64) callconv(.C) f64 {
     const t1 = w * (Lg2 + w * (Lg4 + w * Lg6));
     const t2 = z * (Lg1 + w * (Lg3 + w * (Lg5 + w * Lg7)));
     const R = t2 + t1;
-    const dk: f64 = @floatFromInt(k);
+    const dk: f64 = @floatfromint(k);
 
     return s * (hfsq + R) + dk * ln2_lo - hfsq + f + dk * ln2_hi;
 }
 
 pub fn __logx(a: f80) callconv(.C) f80 {
     // TODO: more efficient implementation
-    return @floatCast(logq(a));
+    return @floatcast(logq(a));
 }
 
 pub fn logq(a: f128) callconv(.C) f128 {
     // TODO: more correct implementation
-    return log(@floatCast(a));
+    return log(@floatcast(a));
 }
 
 pub fn logl(x: c_longdouble) callconv(.C) c_longdouble {
-    switch (@typeInfo(c_longdouble).Float.bits) {
+    switch (@typeinfo(c_longdouble).Float.bits) {
         16 => return __logh(x),
         32 => return logf(x),
         64 => return log(x),
         80 => return __logx(x),
         128 => return logq(x),
-        else => @compileError("unreachable"),
+        else => @compileerror("unreachable"),
     }
 }
 

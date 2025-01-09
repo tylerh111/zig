@@ -8,10 +8,10 @@ const always_has_lse = std.Target.aarch64.featureSetHas(builtin.cpu.features, .l
 /// It is intentionally not exported in order to make the machine code that
 /// uses it a statically predicted direct branch rather than using the PLT,
 /// which ARM is concerned would have too much overhead.
-var __aarch64_have_lse_atomics: u8 = @intFromBool(always_has_lse);
+var __aarch64_have_lse_atomics: u8 = @intfrombool(always_has_lse);
 
 fn __aarch64_cas1_relax() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x08a07c41 + 0x00000000 + 0x000000
@@ -33,7 +33,7 @@ fn __aarch64_cas1_relax() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_swp1_relax() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38208020 + 0x00000000 + 0x000000
@@ -53,7 +53,7 @@ fn __aarch64_swp1_relax() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldadd1_relax() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x0000 + 0x00000000 + 0x000000
@@ -74,7 +74,7 @@ fn __aarch64_ldadd1_relax() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldclr1_relax() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x1000 + 0x00000000 + 0x000000
@@ -95,7 +95,7 @@ fn __aarch64_ldclr1_relax() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldeor1_relax() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x2000 + 0x00000000 + 0x000000
@@ -116,7 +116,7 @@ fn __aarch64_ldeor1_relax() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldset1_relax() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x3000 + 0x00000000 + 0x000000
@@ -137,7 +137,7 @@ fn __aarch64_ldset1_relax() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_cas1_acq() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x08a07c41 + 0x00000000 + 0x400000
@@ -159,7 +159,7 @@ fn __aarch64_cas1_acq() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_swp1_acq() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38208020 + 0x00000000 + 0x800000
@@ -179,7 +179,7 @@ fn __aarch64_swp1_acq() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldadd1_acq() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x0000 + 0x00000000 + 0x800000
@@ -200,7 +200,7 @@ fn __aarch64_ldadd1_acq() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldclr1_acq() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x1000 + 0x00000000 + 0x800000
@@ -221,7 +221,7 @@ fn __aarch64_ldclr1_acq() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldeor1_acq() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x2000 + 0x00000000 + 0x800000
@@ -242,7 +242,7 @@ fn __aarch64_ldeor1_acq() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldset1_acq() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x3000 + 0x00000000 + 0x800000
@@ -263,7 +263,7 @@ fn __aarch64_ldset1_acq() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_cas1_rel() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x08a07c41 + 0x00000000 + 0x008000
@@ -285,7 +285,7 @@ fn __aarch64_cas1_rel() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_swp1_rel() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38208020 + 0x00000000 + 0x400000
@@ -305,7 +305,7 @@ fn __aarch64_swp1_rel() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldadd1_rel() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x0000 + 0x00000000 + 0x400000
@@ -326,7 +326,7 @@ fn __aarch64_ldadd1_rel() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldclr1_rel() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x1000 + 0x00000000 + 0x400000
@@ -347,7 +347,7 @@ fn __aarch64_ldclr1_rel() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldeor1_rel() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x2000 + 0x00000000 + 0x400000
@@ -368,7 +368,7 @@ fn __aarch64_ldeor1_rel() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldset1_rel() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x3000 + 0x00000000 + 0x400000
@@ -389,7 +389,7 @@ fn __aarch64_ldset1_rel() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_cas1_acq_rel() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x08a07c41 + 0x00000000 + 0x408000
@@ -411,7 +411,7 @@ fn __aarch64_cas1_acq_rel() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_swp1_acq_rel() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38208020 + 0x00000000 + 0xc00000
@@ -431,7 +431,7 @@ fn __aarch64_swp1_acq_rel() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldadd1_acq_rel() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x0000 + 0x00000000 + 0xc00000
@@ -452,7 +452,7 @@ fn __aarch64_ldadd1_acq_rel() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldclr1_acq_rel() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x1000 + 0x00000000 + 0xc00000
@@ -473,7 +473,7 @@ fn __aarch64_ldclr1_acq_rel() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldeor1_acq_rel() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x2000 + 0x00000000 + 0xc00000
@@ -494,7 +494,7 @@ fn __aarch64_ldeor1_acq_rel() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldset1_acq_rel() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x3000 + 0x00000000 + 0xc00000
@@ -515,7 +515,7 @@ fn __aarch64_ldset1_acq_rel() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_cas2_relax() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x08a07c41 + 0x40000000 + 0x000000
@@ -537,7 +537,7 @@ fn __aarch64_cas2_relax() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_swp2_relax() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38208020 + 0x40000000 + 0x000000
@@ -557,7 +557,7 @@ fn __aarch64_swp2_relax() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldadd2_relax() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x0000 + 0x40000000 + 0x000000
@@ -578,7 +578,7 @@ fn __aarch64_ldadd2_relax() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldclr2_relax() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x1000 + 0x40000000 + 0x000000
@@ -599,7 +599,7 @@ fn __aarch64_ldclr2_relax() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldeor2_relax() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x2000 + 0x40000000 + 0x000000
@@ -620,7 +620,7 @@ fn __aarch64_ldeor2_relax() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldset2_relax() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x3000 + 0x40000000 + 0x000000
@@ -641,7 +641,7 @@ fn __aarch64_ldset2_relax() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_cas2_acq() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x08a07c41 + 0x40000000 + 0x400000
@@ -663,7 +663,7 @@ fn __aarch64_cas2_acq() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_swp2_acq() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38208020 + 0x40000000 + 0x800000
@@ -683,7 +683,7 @@ fn __aarch64_swp2_acq() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldadd2_acq() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x0000 + 0x40000000 + 0x800000
@@ -704,7 +704,7 @@ fn __aarch64_ldadd2_acq() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldclr2_acq() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x1000 + 0x40000000 + 0x800000
@@ -725,7 +725,7 @@ fn __aarch64_ldclr2_acq() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldeor2_acq() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x2000 + 0x40000000 + 0x800000
@@ -746,7 +746,7 @@ fn __aarch64_ldeor2_acq() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldset2_acq() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x3000 + 0x40000000 + 0x800000
@@ -767,7 +767,7 @@ fn __aarch64_ldset2_acq() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_cas2_rel() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x08a07c41 + 0x40000000 + 0x008000
@@ -789,7 +789,7 @@ fn __aarch64_cas2_rel() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_swp2_rel() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38208020 + 0x40000000 + 0x400000
@@ -809,7 +809,7 @@ fn __aarch64_swp2_rel() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldadd2_rel() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x0000 + 0x40000000 + 0x400000
@@ -830,7 +830,7 @@ fn __aarch64_ldadd2_rel() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldclr2_rel() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x1000 + 0x40000000 + 0x400000
@@ -851,7 +851,7 @@ fn __aarch64_ldclr2_rel() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldeor2_rel() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x2000 + 0x40000000 + 0x400000
@@ -872,7 +872,7 @@ fn __aarch64_ldeor2_rel() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldset2_rel() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x3000 + 0x40000000 + 0x400000
@@ -893,7 +893,7 @@ fn __aarch64_ldset2_rel() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_cas2_acq_rel() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x08a07c41 + 0x40000000 + 0x408000
@@ -915,7 +915,7 @@ fn __aarch64_cas2_acq_rel() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_swp2_acq_rel() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38208020 + 0x40000000 + 0xc00000
@@ -935,7 +935,7 @@ fn __aarch64_swp2_acq_rel() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldadd2_acq_rel() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x0000 + 0x40000000 + 0xc00000
@@ -956,7 +956,7 @@ fn __aarch64_ldadd2_acq_rel() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldclr2_acq_rel() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x1000 + 0x40000000 + 0xc00000
@@ -977,7 +977,7 @@ fn __aarch64_ldclr2_acq_rel() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldeor2_acq_rel() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x2000 + 0x40000000 + 0xc00000
@@ -998,7 +998,7 @@ fn __aarch64_ldeor2_acq_rel() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldset2_acq_rel() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x3000 + 0x40000000 + 0xc00000
@@ -1019,7 +1019,7 @@ fn __aarch64_ldset2_acq_rel() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_cas4_relax() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x08a07c41 + 0x80000000 + 0x000000
@@ -1041,7 +1041,7 @@ fn __aarch64_cas4_relax() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_swp4_relax() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38208020 + 0x80000000 + 0x000000
@@ -1061,7 +1061,7 @@ fn __aarch64_swp4_relax() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldadd4_relax() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x0000 + 0x80000000 + 0x000000
@@ -1082,7 +1082,7 @@ fn __aarch64_ldadd4_relax() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldclr4_relax() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x1000 + 0x80000000 + 0x000000
@@ -1103,7 +1103,7 @@ fn __aarch64_ldclr4_relax() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldeor4_relax() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x2000 + 0x80000000 + 0x000000
@@ -1124,7 +1124,7 @@ fn __aarch64_ldeor4_relax() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldset4_relax() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x3000 + 0x80000000 + 0x000000
@@ -1145,7 +1145,7 @@ fn __aarch64_ldset4_relax() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_cas4_acq() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x08a07c41 + 0x80000000 + 0x400000
@@ -1167,7 +1167,7 @@ fn __aarch64_cas4_acq() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_swp4_acq() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38208020 + 0x80000000 + 0x800000
@@ -1187,7 +1187,7 @@ fn __aarch64_swp4_acq() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldadd4_acq() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x0000 + 0x80000000 + 0x800000
@@ -1208,7 +1208,7 @@ fn __aarch64_ldadd4_acq() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldclr4_acq() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x1000 + 0x80000000 + 0x800000
@@ -1229,7 +1229,7 @@ fn __aarch64_ldclr4_acq() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldeor4_acq() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x2000 + 0x80000000 + 0x800000
@@ -1250,7 +1250,7 @@ fn __aarch64_ldeor4_acq() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldset4_acq() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x3000 + 0x80000000 + 0x800000
@@ -1271,7 +1271,7 @@ fn __aarch64_ldset4_acq() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_cas4_rel() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x08a07c41 + 0x80000000 + 0x008000
@@ -1293,7 +1293,7 @@ fn __aarch64_cas4_rel() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_swp4_rel() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38208020 + 0x80000000 + 0x400000
@@ -1313,7 +1313,7 @@ fn __aarch64_swp4_rel() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldadd4_rel() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x0000 + 0x80000000 + 0x400000
@@ -1334,7 +1334,7 @@ fn __aarch64_ldadd4_rel() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldclr4_rel() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x1000 + 0x80000000 + 0x400000
@@ -1355,7 +1355,7 @@ fn __aarch64_ldclr4_rel() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldeor4_rel() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x2000 + 0x80000000 + 0x400000
@@ -1376,7 +1376,7 @@ fn __aarch64_ldeor4_rel() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldset4_rel() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x3000 + 0x80000000 + 0x400000
@@ -1397,7 +1397,7 @@ fn __aarch64_ldset4_rel() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_cas4_acq_rel() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x08a07c41 + 0x80000000 + 0x408000
@@ -1419,7 +1419,7 @@ fn __aarch64_cas4_acq_rel() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_swp4_acq_rel() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38208020 + 0x80000000 + 0xc00000
@@ -1439,7 +1439,7 @@ fn __aarch64_swp4_acq_rel() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldadd4_acq_rel() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x0000 + 0x80000000 + 0xc00000
@@ -1460,7 +1460,7 @@ fn __aarch64_ldadd4_acq_rel() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldclr4_acq_rel() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x1000 + 0x80000000 + 0xc00000
@@ -1481,7 +1481,7 @@ fn __aarch64_ldclr4_acq_rel() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldeor4_acq_rel() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x2000 + 0x80000000 + 0xc00000
@@ -1502,7 +1502,7 @@ fn __aarch64_ldeor4_acq_rel() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldset4_acq_rel() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x3000 + 0x80000000 + 0xc00000
@@ -1523,7 +1523,7 @@ fn __aarch64_ldset4_acq_rel() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_cas8_relax() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x08a07c41 + 0xc0000000 + 0x000000
@@ -1545,7 +1545,7 @@ fn __aarch64_cas8_relax() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_swp8_relax() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38208020 + 0xc0000000 + 0x000000
@@ -1565,7 +1565,7 @@ fn __aarch64_swp8_relax() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldadd8_relax() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x0000 + 0xc0000000 + 0x000000
@@ -1586,7 +1586,7 @@ fn __aarch64_ldadd8_relax() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldclr8_relax() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x1000 + 0xc0000000 + 0x000000
@@ -1607,7 +1607,7 @@ fn __aarch64_ldclr8_relax() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldeor8_relax() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x2000 + 0xc0000000 + 0x000000
@@ -1628,7 +1628,7 @@ fn __aarch64_ldeor8_relax() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldset8_relax() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x3000 + 0xc0000000 + 0x000000
@@ -1649,7 +1649,7 @@ fn __aarch64_ldset8_relax() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_cas8_acq() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x08a07c41 + 0xc0000000 + 0x400000
@@ -1671,7 +1671,7 @@ fn __aarch64_cas8_acq() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_swp8_acq() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38208020 + 0xc0000000 + 0x800000
@@ -1691,7 +1691,7 @@ fn __aarch64_swp8_acq() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldadd8_acq() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x0000 + 0xc0000000 + 0x800000
@@ -1712,7 +1712,7 @@ fn __aarch64_ldadd8_acq() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldclr8_acq() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x1000 + 0xc0000000 + 0x800000
@@ -1733,7 +1733,7 @@ fn __aarch64_ldclr8_acq() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldeor8_acq() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x2000 + 0xc0000000 + 0x800000
@@ -1754,7 +1754,7 @@ fn __aarch64_ldeor8_acq() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldset8_acq() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x3000 + 0xc0000000 + 0x800000
@@ -1775,7 +1775,7 @@ fn __aarch64_ldset8_acq() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_cas8_rel() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x08a07c41 + 0xc0000000 + 0x008000
@@ -1797,7 +1797,7 @@ fn __aarch64_cas8_rel() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_swp8_rel() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38208020 + 0xc0000000 + 0x400000
@@ -1817,7 +1817,7 @@ fn __aarch64_swp8_rel() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldadd8_rel() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x0000 + 0xc0000000 + 0x400000
@@ -1838,7 +1838,7 @@ fn __aarch64_ldadd8_rel() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldclr8_rel() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x1000 + 0xc0000000 + 0x400000
@@ -1859,7 +1859,7 @@ fn __aarch64_ldclr8_rel() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldeor8_rel() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x2000 + 0xc0000000 + 0x400000
@@ -1880,7 +1880,7 @@ fn __aarch64_ldeor8_rel() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldset8_rel() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x3000 + 0xc0000000 + 0x400000
@@ -1901,7 +1901,7 @@ fn __aarch64_ldset8_rel() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_cas8_acq_rel() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x08a07c41 + 0xc0000000 + 0x408000
@@ -1923,7 +1923,7 @@ fn __aarch64_cas8_acq_rel() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_swp8_acq_rel() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38208020 + 0xc0000000 + 0xc00000
@@ -1943,7 +1943,7 @@ fn __aarch64_swp8_acq_rel() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldadd8_acq_rel() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x0000 + 0xc0000000 + 0xc00000
@@ -1964,7 +1964,7 @@ fn __aarch64_ldadd8_acq_rel() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldclr8_acq_rel() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x1000 + 0xc0000000 + 0xc00000
@@ -1985,7 +1985,7 @@ fn __aarch64_ldclr8_acq_rel() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldeor8_acq_rel() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x2000 + 0xc0000000 + 0xc00000
@@ -2006,7 +2006,7 @@ fn __aarch64_ldeor8_acq_rel() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_ldset8_acq_rel() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x38200020 + 0x3000 + 0xc0000000 + 0xc00000
@@ -2027,7 +2027,7 @@ fn __aarch64_ldset8_acq_rel() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_cas16_relax() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x48207c82 + 0x000000
@@ -2051,7 +2051,7 @@ fn __aarch64_cas16_relax() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_cas16_acq() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x48207c82 + 0x400000
@@ -2075,7 +2075,7 @@ fn __aarch64_cas16_acq() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_cas16_rel() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x48207c82 + 0x008000
@@ -2099,7 +2099,7 @@ fn __aarch64_cas16_rel() align(16) callconv(.Naked) void {
     unreachable;
 }
 fn __aarch64_cas16_acq_rel() align(16) callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     asm volatile (
         \\        cbz     w16, 8f
         \\        .inst 0x48207c82 + 0x408000

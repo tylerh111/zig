@@ -12,7 +12,7 @@ fn getNum(u: U) u32 {
         // `u.a` or `u.b` and `tag` is `u`'s comptime-known tag value.
         inline else => |num, tag| {
             if (tag == .b) {
-                return @intFromFloat(num);
+                return @intfromfloat(num);
             }
             return num;
         },

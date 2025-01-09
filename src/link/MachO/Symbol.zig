@@ -207,7 +207,7 @@ pub fn addExtra(symbol: *Symbol, opts: AddExtraOpts, macho_file: *MachO) !void {
         symbol.extra = try macho_file.addSymbolExtra(.{});
     }
     var extra = symbol.getExtra(macho_file).?;
-    inline for (@typeInfo(@TypeOf(opts)).Struct.fields) |field| {
+    inline for (@typeinfo(@TypeOf(opts)).Struct.fields) |field| {
         if (@field(opts, field.name)) |x| {
             @field(extra, field.name) = x;
         }
@@ -226,7 +226,7 @@ pub inline fn setExtra(symbol: Symbol, extra: Extra, macho_file: *MachO) void {
 pub fn setOutputSym(symbol: Symbol, macho_file: *MachO, out: *macho.nlist_64) void {
     if (symbol.isLocal()) {
         out.n_type = if (symbol.flags.abs) macho.N_ABS else macho.N_SECT;
-        out.n_sect = if (symbol.flags.abs) 0 else @intCast(symbol.out_n_sect + 1);
+        out.n_sect = if (symbol.flags.abs) 0 else @intcast(symbol.out_n_sect + 1);
         out.n_desc = 0;
         out.n_value = symbol.getAddress(.{ .stubs = false }, macho_file);
 
@@ -238,7 +238,7 @@ pub fn setOutputSym(symbol: Symbol, macho_file: *MachO, out: *macho.nlist_64) vo
         assert(symbol.visibility == .global);
         out.n_type = macho.N_EXT;
         out.n_type |= if (symbol.flags.abs) macho.N_ABS else macho.N_SECT;
-        out.n_sect = if (symbol.flags.abs) 0 else @intCast(symbol.out_n_sect + 1);
+        out.n_sect = if (symbol.flags.abs) 0 else @intcast(symbol.out_n_sect + 1);
         out.n_value = symbol.getAddress(.{ .stubs = false }, macho_file);
         out.n_desc = 0;
 
@@ -257,7 +257,7 @@ pub fn setOutputSym(symbol: Symbol, macho_file: *MachO, out: *macho.nlist_64) vo
 
         // TODO:
         // const ord: u16 = if (macho_file.options.namespace == .flat)
-        //     @as(u8, @bitCast(macho.BIND_SPECIAL_DYLIB_FLAT_LOOKUP))
+        //     @as(u8, @bitcast(macho.BIND_SPECIAL_DYLIB_FLAT_LOOKUP))
         // else if (symbol.getDylibOrdinal(macho_file)) |ord|
         //     ord
         // else
@@ -288,7 +288,7 @@ pub fn format(
     _ = unused_fmt_string;
     _ = options;
     _ = writer;
-    @compileError("do not format symbols directly");
+    @compileerror("do not format symbols directly");
 }
 
 const FormatContext = struct {

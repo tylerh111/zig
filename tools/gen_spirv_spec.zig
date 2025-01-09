@@ -114,7 +114,7 @@ fn readExtRegistry(exts: *std.ArrayList(Extension), a: Allocator, dir: std.fs.Di
 fn readRegistry(comptime RegistryType: type, a: Allocator, dir: std.fs.Dir, path: []const u8) !RegistryType {
     const spec = try dir.readFileAlloc(a, path, std.math.maxInt(usize));
     // Required for json parsing.
-    @setEvalBranchQuota(10000);
+    @setevalbranchquota(10000);
 
     var scanner = std.json.Scanner.initCompleteInput(a, spec);
     var diagnostics = std.json.Diagnostics{};
@@ -133,7 +133,7 @@ fn extendedStructs(
     kinds: []const OperandKind,
 ) !ExtendedStructSet {
     var map = ExtendedStructSet.init(a);
-    try map.ensureTotalCapacity(@as(u32, @intCast(kinds.len)));
+    try map.ensureTotalCapacity(@as(u32, @intcast(kinds.len)));
 
     for (kinds) |kind| {
         const enumerants = kind.enumerants orelse continue;
@@ -179,7 +179,7 @@ fn render(writer: anytype, a: Allocator, registry: CoreRegistry, extensions: []c
         \\    padding0: u8 = 0,
         \\
         \\    pub fn toWord(self: @This()) Word {
-        \\        return @bitCast(self);
+        \\        return @bitcast(self);
         \\    }
         \\};
         \\
@@ -196,7 +196,7 @@ fn render(writer: anytype, a: Allocator, registry: CoreRegistry, extensions: []c
         \\    ) @TypeOf(writer).Error!void {
         \\        switch (self) {
         \\            .none => try writer.writeAll("(none)"),
-        \\            else => try writer.print("%{}", .{@intFromEnum(self)}),
+        \\            else => try writer.print("%{}", .{@intfromenum(self)}),
         \\        }
         \\    }
         \\};
@@ -698,7 +698,7 @@ fn renderBitEnum(
             continue;
         }
 
-        std.debug.assert(@popCount(value) == 1);
+        std.debug.assert(@popcount(value) == 1);
 
         const bitpos = std.math.log2_int(u32, value);
         if (flags_by_bitpos[bitpos]) |*existing| {

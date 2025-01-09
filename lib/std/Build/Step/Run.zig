@@ -577,13 +577,13 @@ fn checksContainStderr(checks: []const StdIo.Check) bool {
 
 const IndexedOutput = struct {
     index: usize,
-    tag: @typeInfo(Arg).Union.tag_type.?,
+    tag: @typeinfo(Arg).Union.tag_type.?,
     output: *Output,
 };
 fn make(step: *Step, prog_node: std.Progress.Node) !void {
     const b = step.owner;
     const arena = b.allocator;
-    const run: *Run = @fieldParentPtr("step", step);
+    const run: *Run = @fieldparentptr("step", step);
     const has_side_effects = run.hasSideEffects();
 
     var argv_list = std.ArrayList([]const u8).init(arena);
@@ -708,7 +708,7 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
             };
             b.cache_root.handle.makePath(output_sub_dir_path) catch |err| {
                 return step.fail("unable to make path '{}{s}': {s}", .{
-                    b.cache_root, output_sub_dir_path, @errorName(err),
+                    b.cache_root, output_sub_dir_path, @errorname(err),
                 });
             };
             const output_path = placeholder.output.generated_file.path.?;
@@ -737,7 +737,7 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
         };
         b.cache_root.handle.makePath(output_sub_dir_path) catch |err| {
             return step.fail("unable to make path '{}{s}': {s}", .{
-                b.cache_root, output_sub_dir_path, @errorName(err),
+                b.cache_root, output_sub_dir_path, @errorname(err),
             });
         };
         const output_path = try b.cache_root.join(arena, &output_components);
@@ -775,21 +775,21 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
                     return step.fail("unable to remove dir '{}'{s}: {s}", .{
                         b.cache_root,
                         tmp_dir_path,
-                        @errorName(del_err),
+                        @errorname(del_err),
                     });
                 };
                 b.cache_root.handle.rename(tmp_dir_path, o_sub_path) catch |retry_err| {
                     return step.fail("unable to rename dir '{}{s}' to '{}{s}': {s}", .{
                         b.cache_root,          tmp_dir_path,
                         b.cache_root,          o_sub_path,
-                        @errorName(retry_err),
+                        @errorname(retry_err),
                     });
                 };
             } else {
                 return step.fail("unable to rename dir '{}{s}' to '{}{s}': {s}", .{
                     b.cache_root,    tmp_dir_path,
                     b.cache_root,    o_sub_path,
-                    @errorName(err),
+                    @errorname(err),
                 });
             }
         };
@@ -960,9 +960,9 @@ fn runCommand(
                             const cpu_arch_name: []const u8 = if (cpu_arch == .x86)
                                 "i686"
                             else
-                                @tagName(cpu_arch);
+                                @tagname(cpu_arch);
                             const full_dir = try std.fmt.allocPrint(b.allocator, fmt_str, .{
-                                dir, cpu_arch_name, @tagName(os_tag), @tagName(abi),
+                                dir, cpu_arch_name, @tagname(os_tag), @tagname(abi),
                             });
 
                             try interp_argv.append("-L");
@@ -1028,12 +1028,12 @@ fn runCommand(
                 if (!run.failing_to_execute_foreign_is_an_error) return error.MakeSkipped;
 
                 return step.fail("unable to spawn interpreter {s}: {s}", .{
-                    interp_argv.items[0], @errorName(e),
+                    interp_argv.items[0], @errorname(e),
                 });
             };
         }
 
-        return step.fail("unable to spawn {s}: {s}", .{ argv[0], @errorName(err) });
+        return step.fail("unable to spawn {s}: {s}", .{ argv[0], @errorname(err) });
     };
 
     step.result_duration_ns = result.elapsed_ns;
@@ -1064,12 +1064,12 @@ fn runCommand(
             const sub_path_dirname = fs.path.dirname(sub_path).?;
             b.cache_root.handle.makePath(sub_path_dirname) catch |err| {
                 return step.fail("unable to make path '{}{s}': {s}", .{
-                    b.cache_root, sub_path_dirname, @errorName(err),
+                    b.cache_root, sub_path_dirname, @errorname(err),
                 });
             };
             b.cache_root.handle.writeFile(.{ .sub_path = sub_path, .data = stream.bytes.? }) catch |err| {
                 return step.fail("unable to write file '{}{s}': {s}", .{
-                    b.cache_root, sub_path, @errorName(err),
+                    b.cache_root, sub_path, @errorname(err),
                 });
             };
         }
@@ -1310,7 +1310,7 @@ fn evalZigTest(
     defer if (sub_prog_node) |n| n.end();
 
     poll: while (true) {
-        while (stdout.readableLength() < @sizeOf(Header)) {
+        while (stdout.readableLength() < @sizeof(Header)) {
             if (!(try poller.poll())) break :poll;
         }
         const header = stdout.reader().readStruct(Header) catch unreachable;
@@ -1330,12 +1330,12 @@ fn evalZigTest(
             },
             .test_metadata => {
                 const TmHdr = std.zig.Server.Message.TestMetadata;
-                const tm_hdr = @as(*align(1) const TmHdr, @ptrCast(body));
+                const tm_hdr = @as(*align(1) const TmHdr, @ptrcast(body));
                 test_count = tm_hdr.tests_len;
 
-                const names_bytes = body[@sizeOf(TmHdr)..][0 .. test_count * @sizeOf(u32)];
-                const expected_panic_msgs_bytes = body[@sizeOf(TmHdr) + names_bytes.len ..][0 .. test_count * @sizeOf(u32)];
-                const string_bytes = body[@sizeOf(TmHdr) + names_bytes.len + expected_panic_msgs_bytes.len ..][0..tm_hdr.string_bytes_len];
+                const names_bytes = body[@sizeof(TmHdr)..][0 .. test_count * @sizeof(u32)];
+                const expected_panic_msgs_bytes = body[@sizeof(TmHdr) + names_bytes.len ..][0 .. test_count * @sizeof(u32)];
+                const string_bytes = body[@sizeof(TmHdr) + names_bytes.len + expected_panic_msgs_bytes.len ..][0..tm_hdr.string_bytes_len];
 
                 const names = std.mem.bytesAsSlice(u32, names_bytes);
                 const expected_panic_msgs = std.mem.bytesAsSlice(u32, expected_panic_msgs_bytes);
@@ -1360,10 +1360,10 @@ fn evalZigTest(
                 const md = metadata.?;
 
                 const TrHdr = std.zig.Server.Message.TestResults;
-                const tr_hdr = @as(*align(1) const TrHdr, @ptrCast(body));
-                fail_count +|= @intFromBool(tr_hdr.flags.fail);
-                skip_count +|= @intFromBool(tr_hdr.flags.skip);
-                leak_count +|= @intFromBool(tr_hdr.flags.leak);
+                const tr_hdr = @as(*align(1) const TrHdr, @ptrcast(body));
+                fail_count +|= @intfrombool(tr_hdr.flags.fail);
+                skip_count +|= @intfrombool(tr_hdr.flags.skip);
+                leak_count +|= @intfrombool(tr_hdr.flags.leak);
                 log_err_count +|= tr_hdr.flags.log_err_count;
 
                 if (tr_hdr.flags.fail or tr_hdr.flags.leak or tr_hdr.flags.log_err_count > 0) {
@@ -1471,7 +1471,7 @@ fn evalGeneric(run: *Run, child: *std.process.Child) !StdIoResult {
     switch (run.stdin) {
         .bytes => |bytes| {
             child.stdin.?.writeAll(bytes) catch |err| {
-                return run.step.fail("unable to write stdin: {s}", .{@errorName(err)});
+                return run.step.fail("unable to write stdin: {s}", .{@errorname(err)});
             };
             child.stdin.?.close();
             child.stdin = null;
@@ -1479,11 +1479,11 @@ fn evalGeneric(run: *Run, child: *std.process.Child) !StdIoResult {
         .lazy_path => |lazy_path| {
             const path = lazy_path.getPath2(b, &run.step);
             const file = b.build_root.handle.openFile(path, .{}) catch |err| {
-                return run.step.fail("unable to open stdin file: {s}", .{@errorName(err)});
+                return run.step.fail("unable to open stdin file: {s}", .{@errorname(err)});
             };
             defer file.close();
             child.stdin.?.writeFileAll(file, .{}) catch |err| {
-                return run.step.fail("unable to write file to stdin: {s}", .{@errorName(err)});
+                return run.step.fail("unable to write file to stdin: {s}", .{@errorname(err)});
             };
             child.stdin.?.close();
             child.stdin = null;

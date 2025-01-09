@@ -193,7 +193,7 @@ fn testCmp(comptime T: type) !void {
         try expect(x <= 2.0);
     }
 
-    @setEvalBranchQuota(2_000);
+    @setevalbranchquota(2_000);
     var edges = [_]T{
         -math.inf(T),
         -math.floatMax(T),
@@ -260,13 +260,13 @@ fn testDifferentSizedFloatComparisons() !void {
 //    }
 //}
 
-test "negative f128 intFromFloat at compile-time" {
+test "negative f128 intfromfloat at compile-time" {
     if (builtin.zig_backend == .stage2_arm) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_spirv64) return error.SkipZigTest;
 
     const a: f128 = -2;
-    var b: i64 = @intFromFloat(a);
+    var b: i64 = @intfromfloat(a);
     _ = &b;
     try expect(@as(i64, -2) == b);
 }
@@ -1568,7 +1568,7 @@ fn testNeg(comptime T: type) !void {
     };
 }
 
-test "eval @setFloatMode at compile-time" {
+test "eval @setfloatmode at compile-time" {
     if (builtin.zig_backend == .stage2_aarch64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
 
@@ -1577,7 +1577,7 @@ test "eval @setFloatMode at compile-time" {
 }
 
 fn fnWithFloatMode() f32 {
-    @setFloatMode(std.builtin.FloatMode.strict);
+    @setfloatmode(std.builtin.FloatMode.strict);
     return 1234.0;
 }
 
@@ -1719,11 +1719,11 @@ test "optimized float mode" {
 
     const S = struct {
         fn strict(x: f64) f64 {
-            @setFloatMode(.strict);
+            @setfloatmode(.strict);
             return x + big - big;
         }
         fn optimized(x: f64) f64 {
-            @setFloatMode(.optimized);
+            @setfloatmode(.optimized);
             return x + big - big;
         }
     };

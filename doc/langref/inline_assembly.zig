@@ -1,6 +1,6 @@
 pub fn main() noreturn {
     const msg = "hello world\n";
-    _ = syscall3(SYS_write, STDOUT_FILENO, @intFromPtr(msg), msg.len);
+    _ = syscall3(SYS_write, STDOUT_FILENO, @intfromptr(msg), msg.len);
     _ = syscall1(SYS_exit, 0);
     unreachable;
 }

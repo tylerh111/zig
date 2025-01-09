@@ -7,6 +7,6 @@ pub const c addrspace("space_c") = 0;
 pub const d addrspace("space_d") = 0;
 
 test {
-    const decls = @typeInfo(@This()).Struct.decls;
+    const decls = @typeinfo(@This()).Struct.decls;
     try expect(decls.len == 4);
 }

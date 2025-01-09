@@ -36,8 +36,8 @@ pub const P256 = struct {
 
     /// Reject the neutral element.
     pub fn rejectIdentity(p: P256) IdentityElementError!void {
-        const affine_0 = @intFromBool(p.x.equivalent(AffineCoordinates.identityElement.x)) & (@intFromBool(p.y.isZero()) | @intFromBool(p.y.equivalent(AffineCoordinates.identityElement.y)));
-        const is_identity = @intFromBool(p.z.isZero()) | affine_0;
+        const affine_0 = @intfrombool(p.x.equivalent(AffineCoordinates.identityElement.x)) & (@intfrombool(p.y.isZero()) | @intfrombool(p.y.equivalent(AffineCoordinates.identityElement.y)));
+        const is_identity = @intfrombool(p.z.isZero()) | affine_0;
         if (is_identity != 0) {
             return error.IdentityElement;
         }
@@ -49,8 +49,8 @@ pub const P256 = struct {
         const y = p.y;
         const x3AxB = x.sq().mul(x).sub(x).sub(x).sub(x).add(B);
         const yy = y.sq();
-        const on_curve = @intFromBool(x3AxB.equivalent(yy));
-        const is_identity = @intFromBool(x.equivalent(AffineCoordinates.identityElement.x)) & @intFromBool(y.equivalent(AffineCoordinates.identityElement.y));
+        const on_curve = @intfrombool(x3AxB.equivalent(yy));
+        const is_identity = @intfrombool(x.equivalent(AffineCoordinates.identityElement.x)) & @intfrombool(y.equivalent(AffineCoordinates.identityElement.y));
         if ((on_curve | is_identity) == 0) {
             return error.InvalidEncoding;
         }
@@ -71,7 +71,7 @@ pub const P256 = struct {
         const x3AxB = x.sq().mul(x).sub(x).sub(x).sub(x).add(B);
         var y = try x3AxB.sqrt();
         const yn = y.neg();
-        y.cMov(yn, @intFromBool(is_odd) ^ @intFromBool(y.isOdd()));
+        y.cMov(yn, @intfrombool(is_odd) ^ @intfrombool(y.isOdd()));
         return y;
     }
 
@@ -219,7 +219,7 @@ pub const P256 = struct {
             .y = Y3,
             .z = Z3,
         };
-        ret.cMov(p, @intFromBool(q.x.isZero()));
+        ret.cMov(p, @intfrombool(q.x.isZero()));
         return ret;
     }
 
@@ -288,8 +288,8 @@ pub const P256 = struct {
 
     /// Return affine coordinates.
     pub fn affineCoordinates(p: P256) AffineCoordinates {
-        const affine_0 = @intFromBool(p.x.equivalent(AffineCoordinates.identityElement.x)) & (@intFromBool(p.y.isZero()) | @intFromBool(p.y.equivalent(AffineCoordinates.identityElement.y)));
-        const is_identity = @intFromBool(p.z.isZero()) | affine_0;
+        const affine_0 = @intfrombool(p.x.equivalent(AffineCoordinates.identityElement.x)) & (@intfrombool(p.y.isZero()) | @intfrombool(p.y.equivalent(AffineCoordinates.identityElement.y)));
+        const is_identity = @intfrombool(p.z.isZero()) | affine_0;
         const zinv = p.z.invert();
         var ret = AffineCoordinates{
             .x = p.x.mul(zinv),
@@ -351,9 +351,9 @@ pub const P256 = struct {
         while (true) : (pos -= 1) {
             const slot = e[pos];
             if (slot > 0) {
-                q = q.add(pc[@as(usize, @intCast(slot))]);
+                q = q.add(pc[@as(usize, @intcast(slot))]);
             } else if (slot < 0) {
-                q = q.sub(pc[@as(usize, @intCast(-slot))]);
+                q = q.sub(pc[@as(usize, @intcast(-slot))]);
             }
             if (pos == 0) break;
             q = q.dbl().dbl().dbl().dbl();
@@ -393,7 +393,7 @@ pub const P256 = struct {
     }
 
     const basePointPc = pc: {
-        @setEvalBranchQuota(50000);
+        @setevalbranchquota(50000);
         break :pc precompute(P256.basePoint, 15);
     };
 
@@ -445,15 +445,15 @@ pub const P256 = struct {
         while (true) : (pos -= 1) {
             const slot1 = e1[pos];
             if (slot1 > 0) {
-                q = q.add(pc1[@as(usize, @intCast(slot1))]);
+                q = q.add(pc1[@as(usize, @intcast(slot1))]);
             } else if (slot1 < 0) {
-                q = q.sub(pc1[@as(usize, @intCast(-slot1))]);
+                q = q.sub(pc1[@as(usize, @intcast(-slot1))]);
             }
             const slot2 = e2[pos];
             if (slot2 > 0) {
-                q = q.add(pc2[@as(usize, @intCast(slot2))]);
+                q = q.add(pc2[@as(usize, @intcast(slot2))]);
             } else if (slot2 < 0) {
-                q = q.sub(pc2[@as(usize, @intCast(-slot2))]);
+                q = q.sub(pc2[@as(usize, @intcast(-slot2))]);
             }
             if (pos == 0) break;
             q = q.dbl().dbl().dbl().dbl();

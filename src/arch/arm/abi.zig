@@ -13,7 +13,7 @@ pub const Class = union(enum) {
     i64_array: u8,
 
     fn arrSize(total_size: u64, arr_size: u64) Class {
-        const count = @as(u8, @intCast(std.mem.alignForward(u64, total_size, arr_size) / arr_size));
+        const count = @as(u8, @intcast(std.mem.alignForward(u64, total_size, arr_size) / arr_size));
         if (arr_size == 32) {
             return .{ .i32_array = count };
         } else {
@@ -66,7 +66,7 @@ pub fn classifyType(ty: Type, mod: *Module, ctx: Context) Class {
 
             for (union_obj.field_types.get(ip), 0..) |field_ty, field_index| {
                 if (Type.fromInterned(field_ty).bitSize(mod) > 32 or
-                    mod.unionFieldNormalAlignment(union_obj, @intCast(field_index)).compare(.gt, .@"32"))
+                    mod.unionFieldNormalAlignment(union_obj, @intcast(field_index)).compare(.gt, .@"32"))
                 {
                     return Class.arrSize(bit_size, 64);
                 }

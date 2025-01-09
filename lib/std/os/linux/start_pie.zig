@@ -16,7 +16,7 @@ const R_RELATIVE = switch (builtin.cpu.arch) {
     .arm => R_ARM_RELATIVE,
     .aarch64 => R_AARCH64_RELATIVE,
     .riscv64 => R_RISCV_RELATIVE,
-    else => @compileError("Missing R_RELATIVE definition for this target"),
+    else => @compileerror("Missing R_RELATIVE definition for this target"),
 };
 
 // Obtain a pointer to the _DYNAMIC array.
@@ -64,13 +64,13 @@ fn getDynamicSymbol() [*]elf.Dyn {
             : [ret] "=r" (-> [*]elf.Dyn),
         ),
         else => {
-            @compileError("PIE startup is not yet supported for this target!");
+            @compileerror("PIE startup is not yet supported for this target!");
         },
     };
 }
 
 pub fn relocate(phdrs: []elf.Phdr) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
 
     const dynv = getDynamicSymbol();
     // Recover the delta applied by the loader by comparing the effective and
@@ -78,7 +78,7 @@ pub fn relocate(phdrs: []elf.Phdr) void {
     const base_addr = base: {
         for (phdrs) |*phdr| {
             if (phdr.p_type != elf.PT_DYNAMIC) continue;
-            break :base @intFromPtr(dynv) - phdr.p_vaddr;
+            break :base @intfromptr(dynv) - phdr.p_vaddr;
         }
         // This is not supposed to happen for well-formed binaries.
         @trap();
@@ -103,17 +103,17 @@ pub fn relocate(phdrs: []elf.Phdr) void {
 
     // Apply the relocations.
     if (rel_addr != 0) {
-        const rel = std.mem.bytesAsSlice(elf.Rel, @as([*]u8, @ptrFromInt(rel_addr))[0..rel_size]);
+        const rel = std.mem.bytesAsSlice(elf.Rel, @as([*]u8, @ptrfromint(rel_addr))[0..rel_size]);
         for (rel) |r| {
             if (r.r_type() != R_RELATIVE) continue;
-            @as(*usize, @ptrFromInt(base_addr + r.r_offset)).* += base_addr;
+            @as(*usize, @ptrfromint(base_addr + r.r_offset)).* += base_addr;
         }
     }
     if (rela_addr != 0) {
-        const rela = std.mem.bytesAsSlice(elf.Rela, @as([*]u8, @ptrFromInt(rela_addr))[0..rela_size]);
+        const rela = std.mem.bytesAsSlice(elf.Rela, @as([*]u8, @ptrfromint(rela_addr))[0..rela_size]);
         for (rela) |r| {
             if (r.r_type() != R_RELATIVE) continue;
-            @as(*usize, @ptrFromInt(base_addr + r.r_offset)).* += base_addr + @as(usize, @bitCast(r.r_addend));
+            @as(*usize, @ptrfromint(base_addr + r.r_offset)).* += base_addr + @as(usize, @bitcast(r.r_addend));
         }
     }
 }

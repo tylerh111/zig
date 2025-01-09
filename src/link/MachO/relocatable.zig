@@ -37,7 +37,7 @@ pub fn flushObject(macho_file: *MachO, comp: *Compilation, module_obj_path: ?[]c
             else => |e| try macho_file.reportParseError(
                 obj.path,
                 "unexpected error: parsing input file failed with error {s}",
-                .{@errorName(e)},
+                .{@errorname(e)},
             ),
         };
     }
@@ -62,7 +62,7 @@ pub fn flushObject(macho_file: *MachO, comp: *Compilation, module_obj_path: ?[]c
     var off = off: {
         const seg = macho_file.segments.items[0];
         const off = math.cast(u32, seg.fileoff + seg.filesize) orelse return error.Overflow;
-        break :off mem.alignForward(u32, off, @alignOf(macho.relocation_info));
+        break :off mem.alignForward(u32, off, @alignof(macho.relocation_info));
     };
     off = allocateSectionsRelocs(macho_file, off);
 
@@ -75,11 +75,11 @@ pub fn flushObject(macho_file: *MachO, comp: *Compilation, module_obj_path: ?[]c
     try writeCompactUnwind(macho_file);
     try writeEhFrame(macho_file);
 
-    off = mem.alignForward(u32, off, @alignOf(u64));
+    off = mem.alignForward(u32, off, @alignof(u64));
     off = try macho_file.writeDataInCode(0, off);
-    off = mem.alignForward(u32, off, @alignOf(u64));
+    off = mem.alignForward(u32, off, @alignof(u64));
     off = try macho_file.writeSymtab(off);
-    off = mem.alignForward(u32, off, @alignOf(u64));
+    off = mem.alignForward(u32, off, @alignof(u64));
     off = try macho_file.writeStrtab(off);
 
     // In order to please Apple ld (and possibly other MachO linkers in the wild),
@@ -120,7 +120,7 @@ pub fn flushStaticLib(macho_file: *MachO, comp: *Compilation, module_obj_path: ?
             else => |e| try macho_file.reportParseError(
                 obj.path,
                 "unexpected error: parsing input file failed with error {s}",
-                .{@errorName(e)},
+                .{@errorname(e)},
             ),
         };
     }
@@ -142,7 +142,7 @@ pub fn flushStaticLib(macho_file: *MachO, comp: *Compilation, module_obj_path: ?
         var off = off: {
             const seg = macho_file.segments.items[0];
             const off = math.cast(u32, seg.fileoff + seg.filesize) orelse return error.Overflow;
-            break :off mem.alignForward(u32, off, @alignOf(macho.relocation_info));
+            break :off mem.alignForward(u32, off, @alignof(macho.relocation_info));
         };
         off = allocateSectionsRelocs(macho_file, off);
 
@@ -153,11 +153,11 @@ pub fn flushStaticLib(macho_file: *MachO, comp: *Compilation, module_obj_path: ?
         try macho_file.calcSymtabSize();
         try writeAtoms(macho_file);
 
-        off = mem.alignForward(u32, off, @alignOf(u64));
+        off = mem.alignForward(u32, off, @alignof(u64));
         off = try macho_file.writeDataInCode(0, off);
-        off = mem.alignForward(u32, off, @alignOf(u64));
+        off = mem.alignForward(u32, off, @alignof(u64));
         off = try macho_file.writeSymtab(off);
-        off = mem.alignForward(u32, off, @alignOf(u64));
+        off = mem.alignForward(u32, off, @alignof(u64));
         off = try macho_file.writeStrtab(off);
 
         // In order to please Apple ld (and possibly other MachO linkers in the wild),
@@ -199,7 +199,7 @@ pub fn flushStaticLib(macho_file: *MachO, comp: *Compilation, module_obj_path: ?
     // Update file offsets of contributing objects
     const total_size: usize = blk: {
         var pos: usize = Archive.SARMAG;
-        pos += @sizeOf(Archive.ar_hdr);
+        pos += @sizeof(Archive.ar_hdr);
         pos += mem.alignForward(usize, Archive.SYMDEF.len + 1, ptr_width);
         pos += ar_symtab.size(format);
 
@@ -217,7 +217,7 @@ pub fn flushStaticLib(macho_file: *MachO, comp: *Compilation, module_obj_path: ?
             };
             pos = mem.alignForward(usize, pos, 2);
             state.file_off = pos;
-            pos += @sizeOf(Archive.ar_hdr);
+            pos += @sizeof(Archive.ar_hdr);
             pos += mem.alignForward(usize, path.len + 1, ptr_width);
             pos += math.cast(usize, state.size) orelse return error.Overflow;
         }
@@ -283,9 +283,9 @@ fn parseObject(macho_file: *MachO, path: []const u8) MachO.ParseError!void {
     const handle = try macho_file.addFileHandle(file);
     const mtime: u64 = mtime: {
         const stat = file.stat() catch break :mtime 0;
-        break :mtime @as(u64, @intCast(@divFloor(stat.mtime, 1_000_000_000)));
+        break :mtime @as(u64, @intcast(@divfloor(stat.mtime, 1_000_000_000)));
     };
-    const index = @as(File.Index, @intCast(try macho_file.files.addOne(gpa)));
+    const index = @as(File.Index, @intcast(try macho_file.files.addOne(gpa)));
     macho_file.files.set(index, .{ .object = .{
         .path = try gpa.dupe(u8, path),
         .file_handle = handle,
@@ -314,7 +314,7 @@ fn parseArchive(macho_file: *MachO, path: []const u8, fat_arch: ?fat.Arch) MachO
 
     var has_parse_error = false;
     for (archive.objects.items) |extracted| {
-        const index = @as(File.Index, @intCast(try macho_file.files.addOne(gpa)));
+        const index = @as(File.Index, @intcast(try macho_file.files.addOne(gpa)));
         macho_file.files.set(index, .{ .object = extracted });
         const object = &macho_file.files.items(.data)[index].object;
         object.index = index;
@@ -423,7 +423,7 @@ fn calcCompactUnwindSize(macho_file: *MachO, sect_index: u8) void {
         for (object.unwind_records.items) |irec| {
             const rec = macho_file.getUnwindRecord(irec);
             if (!rec.alive) continue;
-            size += @sizeOf(macho.compact_unwind_entry);
+            size += @sizeof(macho.compact_unwind_entry);
             nreloc += 1;
             if (rec.getPersonality(macho_file)) |_| {
                 nreloc += 1;
@@ -490,21 +490,21 @@ fn createSegment(macho_file: *MachO) !void {
     // For relocatable, we only ever need a single segment so create it now.
     const prot: macho.vm_prot_t = macho.PROT.READ | macho.PROT.WRITE | macho.PROT.EXEC;
     try macho_file.segments.append(gpa, .{
-        .cmdsize = @sizeOf(macho.segment_command_64),
+        .cmdsize = @sizeof(macho.segment_command_64),
         .segname = MachO.makeStaticString(""),
         .maxprot = prot,
         .initprot = prot,
     });
     const seg = &macho_file.segments.items[0];
-    seg.nsects = @intCast(macho_file.sections.items(.header).len);
-    seg.cmdsize += seg.nsects * @sizeOf(macho.section_64);
+    seg.nsects = @intcast(macho_file.sections.items(.header).len);
+    seg.cmdsize += seg.nsects * @sizeof(macho.section_64);
 }
 
 fn allocateSegment(macho_file: *MachO) void {
     // Allocate the single segment.
     const seg = &macho_file.segments.items[0];
     var vmaddr: u64 = 0;
-    var fileoff: u64 = load_commands.calcLoadCommandsSizeObject(macho_file) + @sizeOf(macho.mach_header_64);
+    var fileoff: u64 = load_commands.calcLoadCommandsSizeObject(macho_file) + @sizeof(macho.mach_header_64);
     seg.vmaddr = vmaddr;
     seg.fileoff = fileoff;
 
@@ -524,8 +524,8 @@ fn allocateSectionsRelocs(macho_file: *MachO, off: u32) u32 {
     const slice = macho_file.sections.slice();
     for (slice.items(.header)) |*header| {
         if (header.nreloc == 0) continue;
-        header.reloff = mem.alignForward(u32, fileoff, @alignOf(macho.relocation_info));
-        fileoff = header.reloff + header.nreloc * @sizeOf(macho.relocation_info);
+        header.reloff = mem.alignForward(u32, fileoff, @alignof(macho.relocation_info));
+        fileoff = header.reloff + header.nreloc * @sizeof(macho.relocation_info);
     }
     return fileoff;
 }
@@ -550,7 +550,7 @@ fn writeAtoms(macho_file: *MachO) !void {
     for (slice.items(.header), slice.items(.atoms), 0..) |header, atoms, i| {
         if (atoms.items.len == 0) continue;
         if (header.isZerofill()) continue;
-        if (macho_file.isZigSection(@intCast(i)) or macho_file.isDebugSection(@intCast(i))) continue;
+        if (macho_file.isZigSection(@intcast(i)) or macho_file.isDebugSection(@intcast(i))) continue;
 
         const size = math.cast(usize, header.size) orelse return error.Overflow;
         const code = try gpa.alloc(u8, size);
@@ -592,8 +592,8 @@ fn writeAtoms(macho_file: *MachO) !void {
 
         for (macho_file.sections.items(.header), 0..) |header, n_sect| {
             if (header.isZerofill()) continue;
-            if (!macho_file.isZigSection(@intCast(n_sect)) and !macho_file.isDebugSection(@intCast(n_sect))) continue;
-            const gop = try zo_relocs.getOrPut(@intCast(n_sect));
+            if (!macho_file.isZigSection(@intcast(n_sect)) and !macho_file.isDebugSection(@intcast(n_sect))) continue;
+            const gop = try zo_relocs.getOrPut(@intcast(n_sect));
             if (gop.found_existing) continue;
             gop.value_ptr.* = try std.ArrayList(macho.relocation_info).initCapacity(gpa, header.nreloc);
         }
@@ -618,7 +618,7 @@ fn writeAtoms(macho_file: *MachO) !void {
                 else => |e| {
                     try macho_file.reportUnexpectedError("unexpected error while fetching code for '{s}': {s}", .{
                         atom.getName(macho_file),
-                        @errorName(e),
+                        @errorname(e),
                     });
                     return error.FlushFailure;
                 },
@@ -643,7 +643,7 @@ fn writeCompactUnwind(macho_file: *MachO) !void {
     const gpa = macho_file.base.comp.gpa;
     const header = macho_file.sections.items(.header)[sect_index];
 
-    const nrecs = math.cast(usize, @divExact(header.size, @sizeOf(macho.compact_unwind_entry))) orelse return error.Overflow;
+    const nrecs = math.cast(usize, @divexact(header.size, @sizeof(macho.compact_unwind_entry))) orelse return error.Overflow;
     var entries = try std.ArrayList(macho.compact_unwind_entry).initCapacity(gpa, nrecs);
     defer entries.deinit();
 
@@ -659,8 +659,8 @@ fn writeCompactUnwind(macho_file: *MachO) !void {
                 .r_length = 3,
                 .r_extern = 0,
                 .r_type = switch (cpu_arch) {
-                    .aarch64 => @intFromEnum(macho.reloc_type_arm64.ARM64_RELOC_UNSIGNED),
-                    .x86_64 => @intFromEnum(macho.reloc_type_x86_64.X86_64_RELOC_UNSIGNED),
+                    .aarch64 => @intfromenum(macho.reloc_type_arm64.ARM64_RELOC_UNSIGNED),
+                    .x86_64 => @intfromenum(macho.reloc_type_x86_64.X86_64_RELOC_UNSIGNED),
                     else => unreachable,
                 },
             };
@@ -711,7 +711,7 @@ fn writeCompactUnwind(macho_file: *MachO) !void {
             }
 
             entries.appendAssumeCapacity(out);
-            offset += @sizeOf(macho.compact_unwind_entry);
+            offset += @sizeof(macho.compact_unwind_entry);
         }
     }
 
@@ -786,7 +786,7 @@ fn writeLoadCommands(macho_file: *MachO) !struct { usize, usize } {
 
     assert(stream.pos == needed_size);
 
-    try macho_file.base.file.?.pwriteAll(buffer, @sizeOf(macho.mach_header_64));
+    try macho_file.base.file.?.pwriteAll(buffer, @sizeof(macho.mach_header_64));
 
     return .{ ncmds, buffer.len };
 }
@@ -815,8 +815,8 @@ fn writeHeader(macho_file: *MachO, ncmds: usize, sizeofcmds: usize) !void {
         else => {},
     }
 
-    header.ncmds = @intCast(ncmds);
-    header.sizeofcmds = @intCast(sizeofcmds);
+    header.ncmds = @intcast(ncmds);
+    header.sizeofcmds = @intcast(sizeofcmds);
 
     try macho_file.base.file.?.pwriteAll(mem.asBytes(&header), 0);
 }

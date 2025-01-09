@@ -619,7 +619,7 @@ test "zig fmt: builtin call with trailing comma" {
     try testCanonical(
         \\pub fn main() void {
         \\    @breakpoint();
-        \\    _ = @intFromBool(a);
+        \\    _ = @intfrombool(a);
         \\    _ = @call(
         \\        a,
         \\        b,
@@ -1099,7 +1099,7 @@ test "zig fmt: async function" {
         \\    handleRequestFn: fn (*Server, *const std.net.Address, File) callconv(.Async) void,
         \\};
         \\test "hi" {
-        \\    var ptr: fn (i32) callconv(.Async) void = @ptrCast(other);
+        \\    var ptr: fn (i32) callconv(.Async) void = @ptrcast(other);
         \\}
         \\
     );
@@ -2548,7 +2548,7 @@ test "zig fmt: same-line comment after non-block if expression" {
 test "zig fmt: same-line comment on comptime expression" {
     try testCanonical(
         \\test "" {
-        \\    comptime assert(@typeInfo(T) == .Int); // must pass an integer to absInt
+        \\    comptime assert(@typeinfo(T) == .Int); // must pass an integer to absInt
         \\}
         \\
     );
@@ -4905,14 +4905,14 @@ test "zig fmt: use of comments and multiline string literals may force the param
         \\    , &[_][]const u8{
         \\        "tmp.zig:2:27: error: type 'u32' does not support array initialization",
         \\    });
-        \\    @compileError(
+        \\    @compileerror(
         \\        \\ unknown-length pointers and C pointers cannot be hashed deeply.
         \\        \\ Consider providing your own hash function.
         \\        \\ unknown-length pointers and C pointers cannot be hashed deeply.
         \\        \\ Consider providing your own hash function.
         \\    );
-        \\    return @intCast(doMemCheckClientRequestExpr(0, // default return
-        \\        .MakeMemUndefined, @intFromPtr(qzz.ptr), qzz.len, 0, 0, 0));
+        \\    return @intcast(doMemCheckClientRequestExpr(0, // default return
+        \\        .MakeMemUndefined, @intfromptr(qzz.ptr), qzz.len, 0, 0, 0));
         \\}
         \\
         \\// This looks like garbage don't do this

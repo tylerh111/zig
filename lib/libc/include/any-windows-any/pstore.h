@@ -343,7 +343,7 @@ public:
     virtual HRESULT WINAPI GetTypeInfo(PST_KEY Key,const GUID *pType,PPST_TYPEINFO *ppInfo,DWORD dwFlags) = 0;
     virtual HRESULT WINAPI DeleteType(PST_KEY Key,const GUID *pType,DWORD dwFlags) = 0;
     virtual HRESULT WINAPI CreateSubtype(PST_KEY Key,const GUID *pType,const GUID *pSubtype,PPST_TYPEINFO pInfo,PPST_ACCESSRULESET pRules,DWORD dwFlags) = 0;
-    virtual HRESULT WINAPI GetSubtypeInfo(PST_KEY Key,const GUID *pType,const GUID *pSubtype,PPST_TYPEINFO *ppInfo,DWORD dwFlags) = 0;
+    virtual HRESULT WINAPI GetSubtypeinfo(PST_KEY Key,const GUID *pType,const GUID *pSubtype,PPST_TYPEINFO *ppInfo,DWORD dwFlags) = 0;
     virtual HRESULT WINAPI DeleteSubtype(PST_KEY Key,const GUID *pType,const GUID *pSubtype,DWORD dwFlags) = 0;
     virtual HRESULT WINAPI ReadAccessRuleset(PST_KEY Key,const GUID *pType,const GUID *pSubtype,PPST_ACCESSRULESET *ppRules,DWORD dwFlags) = 0;
     virtual HRESULT WINAPI WriteAccessRuleset(PST_KEY Key,const GUID *pType,const GUID *pSubtype,PPST_ACCESSRULESET pRules,DWORD dwFlags) = 0;
@@ -369,7 +369,7 @@ public:
       HRESULT (WINAPI *GetTypeInfo)(IPStore *This,PST_KEY Key,const GUID *pType,PPST_TYPEINFO *ppInfo,DWORD dwFlags);
       HRESULT (WINAPI *DeleteType)(IPStore *This,PST_KEY Key,const GUID *pType,DWORD dwFlags);
       HRESULT (WINAPI *CreateSubtype)(IPStore *This,PST_KEY Key,const GUID *pType,const GUID *pSubtype,PPST_TYPEINFO pInfo,PPST_ACCESSRULESET pRules,DWORD dwFlags);
-      HRESULT (WINAPI *GetSubtypeInfo)(IPStore *This,PST_KEY Key,const GUID *pType,const GUID *pSubtype,PPST_TYPEINFO *ppInfo,DWORD dwFlags);
+      HRESULT (WINAPI *GetSubtypeinfo)(IPStore *This,PST_KEY Key,const GUID *pType,const GUID *pSubtype,PPST_TYPEINFO *ppInfo,DWORD dwFlags);
       HRESULT (WINAPI *DeleteSubtype)(IPStore *This,PST_KEY Key,const GUID *pType,const GUID *pSubtype,DWORD dwFlags);
       HRESULT (WINAPI *ReadAccessRuleset)(IPStore *This,PST_KEY Key,const GUID *pType,const GUID *pSubtype,PPST_ACCESSRULESET *ppRules,DWORD dwFlags);
       HRESULT (WINAPI *WriteAccessRuleset)(IPStore *This,PST_KEY Key,const GUID *pType,const GUID *pSubtype,PPST_ACCESSRULESET pRules,DWORD dwFlags);
@@ -397,7 +397,7 @@ public:
 #define IPStore_GetTypeInfo(This,Key,pType,ppInfo,dwFlags) (This)->lpVtbl->GetTypeInfo(This,Key,pType,ppInfo,dwFlags)
 #define IPStore_DeleteType(This,Key,pType,dwFlags) (This)->lpVtbl->DeleteType(This,Key,pType,dwFlags)
 #define IPStore_CreateSubtype(This,Key,pType,pSubtype,pInfo,pRules,dwFlags) (This)->lpVtbl->CreateSubtype(This,Key,pType,pSubtype,pInfo,pRules,dwFlags)
-#define IPStore_GetSubtypeInfo(This,Key,pType,pSubtype,ppInfo,dwFlags) (This)->lpVtbl->GetSubtypeInfo(This,Key,pType,pSubtype,ppInfo,dwFlags)
+#define IPStore_GetSubtypeinfo(This,Key,pType,pSubtype,ppInfo,dwFlags) (This)->lpVtbl->GetSubtypeinfo(This,Key,pType,pSubtype,ppInfo,dwFlags)
 #define IPStore_DeleteSubtype(This,Key,pType,pSubtype,dwFlags) (This)->lpVtbl->DeleteSubtype(This,Key,pType,pSubtype,dwFlags)
 #define IPStore_ReadAccessRuleset(This,Key,pType,pSubtype,ppRules,dwFlags) (This)->lpVtbl->ReadAccessRuleset(This,Key,pType,pSubtype,ppRules,dwFlags)
 #define IPStore_WriteAccessRuleset(This,Key,pType,pSubtype,pRules,dwFlags) (This)->lpVtbl->WriteAccessRuleset(This,Key,pType,pSubtype,pRules,dwFlags)
@@ -425,8 +425,8 @@ public:
   void __RPC_STUB IPStore_DeleteType_Stub(IRpcStubBuffer *This,IRpcChannelBuffer *_pRpcChannelBuffer,PRPC_MESSAGE _pRpcMessage,DWORD *_pdwStubPhase);
   HRESULT WINAPI IPStore_CreateSubtype_Proxy(IPStore *This,PST_KEY Key,const GUID *pType,const GUID *pSubtype,PPST_TYPEINFO pInfo,PPST_ACCESSRULESET pRules,DWORD dwFlags);
   void __RPC_STUB IPStore_CreateSubtype_Stub(IRpcStubBuffer *This,IRpcChannelBuffer *_pRpcChannelBuffer,PRPC_MESSAGE _pRpcMessage,DWORD *_pdwStubPhase);
-  HRESULT WINAPI IPStore_GetSubtypeInfo_Proxy(IPStore *This,PST_KEY Key,const GUID *pType,const GUID *pSubtype,PPST_TYPEINFO *ppInfo,DWORD dwFlags);
-  void __RPC_STUB IPStore_GetSubtypeInfo_Stub(IRpcStubBuffer *This,IRpcChannelBuffer *_pRpcChannelBuffer,PRPC_MESSAGE _pRpcMessage,DWORD *_pdwStubPhase);
+  HRESULT WINAPI IPStore_GetSubtypeinfo_Proxy(IPStore *This,PST_KEY Key,const GUID *pType,const GUID *pSubtype,PPST_TYPEINFO *ppInfo,DWORD dwFlags);
+  void __RPC_STUB IPStore_GetSubtypeinfo_Stub(IRpcStubBuffer *This,IRpcChannelBuffer *_pRpcChannelBuffer,PRPC_MESSAGE _pRpcMessage,DWORD *_pdwStubPhase);
   HRESULT WINAPI IPStore_DeleteSubtype_Proxy(IPStore *This,PST_KEY Key,const GUID *pType,const GUID *pSubtype,DWORD dwFlags);
   void __RPC_STUB IPStore_DeleteSubtype_Stub(IRpcStubBuffer *This,IRpcChannelBuffer *_pRpcChannelBuffer,PRPC_MESSAGE _pRpcMessage,DWORD *_pdwStubPhase);
   HRESULT WINAPI IPStore_ReadAccessRuleset_Proxy(IPStore *This,PST_KEY Key,const GUID *pType,const GUID *pSubtype,PPST_ACCESSRULESET *ppRules,DWORD dwFlags);

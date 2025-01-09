@@ -13,7 +13,7 @@ test "one param, explicit comptime" {
 }
 
 fn checkSize(comptime T: type) usize {
-    return @sizeOf(T);
+    return @sizeof(T);
 }
 
 test "simple generic fn" {
@@ -98,7 +98,7 @@ test "type constructed by comptime function call" {
     l.array[0] = 10;
     l.array[1] = 11;
     l.array[2] = 12;
-    const ptr = @as([*]u8, @ptrCast(&l.array));
+    const ptr = @as([*]u8, @ptrcast(&l.array));
     try expect(ptr[0] == 10);
     try expect(ptr[1] == 11);
     try expect(ptr[2] == 12);
@@ -171,7 +171,7 @@ fn getByte(ptr: ?*const u8) u8 {
     return ptr.?.*;
 }
 fn getFirstByte(comptime T: type, mem: []const T) u8 {
-    return getByte(@as(*const u8, @ptrCast(&mem[0])));
+    return getByte(@as(*const u8, @ptrcast(&mem[0])));
 }
 
 test "generic fn keeps non-generic parameter types" {
@@ -184,7 +184,7 @@ test "generic fn keeps non-generic parameter types" {
 
     const S = struct {
         fn f(comptime T: type, s: []T) !void {
-            try expect(A != @typeInfo(@TypeOf(s)).Pointer.alignment);
+            try expect(A != @typeinfo(@TypeOf(s)).Pointer.alignment);
         }
     };
 
@@ -262,11 +262,11 @@ test "generic function instantiation turns into comptime call" {
             try expect(std.mem.eql(u8, e1f.name, "A"));
         }
 
-        pub fn fieldInfo(comptime T: type, comptime field: FieldEnum(T)) switch (@typeInfo(T)) {
+        pub fn fieldInfo(comptime T: type, comptime field: FieldEnum(T)) switch (@typeinfo(T)) {
             .Enum => std.builtin.Type.EnumField,
             else => void,
         } {
-            return @typeInfo(T).Enum.fields[@intFromEnum(field)];
+            return @typeinfo(T).Enum.fields[@intfromenum(field)];
         }
 
         pub fn FieldEnum(comptime T: type) type {
@@ -371,7 +371,7 @@ test "nested generic function" {
 
         fn g(_: *const fn (anytype) void) void {}
     };
-    try expect(@typeInfo(@TypeOf(S.g)).Fn.is_generic);
+    try expect(@typeinfo(@TypeOf(S.g)).Fn.is_generic);
     try S.foo(u32, S.bar, 123);
 }
 
@@ -428,10 +428,10 @@ test "slice as parameter type" {
 test "null sentinel pointer passed as generic argument" {
     const S = struct {
         fn doTheTest(a: anytype) !void {
-            try std.testing.expect(@intFromPtr(a) == 8);
+            try std.testing.expect(@intfromptr(a) == 8);
         }
     };
-    try S.doTheTest((@as([*:null]const [*c]const u8, @ptrFromInt(8))));
+    try S.doTheTest((@as([*:null]const [*c]const u8, @ptrfromint(8))));
 }
 
 test "generic function passed as comptime argument" {
@@ -564,9 +564,9 @@ test "call generic function with from function called by the generic function" {
     };
     const ArgSerializer = struct {
         fn isCommand(comptime T: type) bool {
-            const tid = @typeInfo(T);
+            const tid = @typeinfo(T);
             return (tid == .Struct or tid == .Enum or tid == .Union) and
-                @hasDecl(T, "Redis") and @hasDecl(T.Redis, "Command");
+                @hasdecl(T, "Redis") and @hasdecl(T.Redis, "Command");
         }
         fn serializeCommand(command: anytype) void {
             const CmdT = @TypeOf(command);

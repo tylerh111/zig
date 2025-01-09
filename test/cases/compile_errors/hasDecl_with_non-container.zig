@@ -1,5 +1,5 @@
 export fn entry() void {
-    _ = @hasDecl(i32, "hi");
+    _ = @hasdecl(i32, "hi");
 }
 
 // error

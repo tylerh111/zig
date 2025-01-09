@@ -11,12 +11,12 @@ const F16T = @import("./common.zig").F16T;
 fn test__extenddfxf2(a: f64, expected: u80) !void {
     const x = __extenddfxf2(a);
 
-    const rep: u80 = @bitCast(x);
+    const rep: u80 = @bitcast(x);
     if (rep == expected)
         return;
 
     // test other possible NaN representation(signal NaN)
-    if (math.isNan(@as(f80, @bitCast(expected))) and math.isNan(x))
+    if (math.isNan(@as(f80, @bitcast(expected))) and math.isNan(x))
         return;
 
     @panic("__extenddfxf2 test failure");
@@ -25,8 +25,8 @@ fn test__extenddfxf2(a: f64, expected: u80) !void {
 fn test__extenddftf2(a: f64, expected_hi: u64, expected_lo: u64) !void {
     const x = __extenddftf2(a);
 
-    const rep: u128 = @bitCast(x);
-    const hi: u64 = @intCast(rep >> 64);
+    const rep: u128 = @bitcast(x);
+    const hi: u64 = @intcast(rep >> 64);
     const lo: u64 = @truncate(rep);
 
     if (hi == expected_hi and lo == expected_lo)
@@ -45,14 +45,14 @@ fn test__extenddftf2(a: f64, expected_hi: u64, expected_lo: u64) !void {
 }
 
 fn test__extendhfsf2(a: u16, expected: u32) !void {
-    const x = __extendhfsf2(@as(F16T(f32), @bitCast(a)));
-    const rep: u32 = @bitCast(x);
+    const x = __extendhfsf2(@as(F16T(f32), @bitcast(a)));
+    const rep: u32 = @bitcast(x);
 
     if (rep == expected) {
         if (rep & 0x7fffffff > 0x7f800000) {
             return; // NaN is always unequal.
         }
-        if (x == @as(f32, @bitCast(expected))) {
+        if (x == @as(f32, @bitcast(expected))) {
             return;
         }
     }
@@ -63,8 +63,8 @@ fn test__extendhfsf2(a: u16, expected: u32) !void {
 fn test__extendsftf2(a: f32, expected_hi: u64, expected_lo: u64) !void {
     const x = __extendsftf2(a);
 
-    const rep: u128 = @bitCast(x);
-    const hi: u64 = @intCast(rep >> 64);
+    const rep: u128 = @bitcast(x);
+    const hi: u64 = @intcast(rep >> 64);
     const lo: u64 = @truncate(rep);
 
     if (hi == expected_hi and lo == expected_lo)
@@ -184,34 +184,34 @@ test "extendsftf2" {
 }
 
 fn makeQNaN64() f64 {
-    return @bitCast(@as(u64, 0x7ff8000000000000));
+    return @bitcast(@as(u64, 0x7ff8000000000000));
 }
 
 fn makeInf64() f64 {
-    return @bitCast(@as(u64, 0x7ff0000000000000));
+    return @bitcast(@as(u64, 0x7ff0000000000000));
 }
 
 fn makeNaN64(rand: u64) f64 {
-    return @bitCast(0x7ff0000000000000 | (rand & 0xfffffffffffff));
+    return @bitcast(0x7ff0000000000000 | (rand & 0xfffffffffffff));
 }
 
 fn makeQNaN32() f32 {
-    return @bitCast(@as(u32, 0x7fc00000));
+    return @bitcast(@as(u32, 0x7fc00000));
 }
 
 fn makeNaN32(rand: u32) f32 {
-    return @bitCast(0x7f800000 | (rand & 0x7fffff));
+    return @bitcast(0x7f800000 | (rand & 0x7fffff));
 }
 
 fn makeInf32() f32 {
-    return @bitCast(@as(u32, 0x7f800000));
+    return @bitcast(@as(u32, 0x7f800000));
 }
 
 fn test__extendhftf2(a: u16, expected_hi: u64, expected_lo: u64) !void {
-    const x = __extendhftf2(@as(F16T(f128), @bitCast(a)));
+    const x = __extendhftf2(@as(F16T(f128), @bitcast(a)));
 
-    const rep: u128 = @bitCast(x);
-    const hi: u64 = @intCast(rep >> 64);
+    const rep: u128 = @bitcast(x);
+    const hi: u64 = @intcast(rep >> 64);
     const lo: u64 = @truncate(rep);
 
     if (hi == expected_hi and lo == expected_lo)

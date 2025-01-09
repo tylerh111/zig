@@ -340,7 +340,7 @@ pub fn addError(
 /// Adds a test case that ensures that the Zig given in `src` fails to
 /// compile for the expected reasons, given in sequential order in
 /// `expected_errors` in the form `:line:column: error: message`.
-pub fn compileError(
+pub fn compileerror(
     ctx: *Cases,
     name: []const u8,
     target: std.Build.ResolvedTarget,
@@ -372,10 +372,10 @@ pub fn addFromDir(ctx: *Cases, dir: std.fs.Dir, b: *std.Build) void {
     var current_file: []const u8 = "none";
     ctx.addFromDirInner(dir, &current_file, b) catch |err| {
         std.debug.panicExtra(
-            @errorReturnTrace(),
-            @returnAddress(),
+            @errorreturntrace(),
+            @returnaddress(),
             "test harness failed to process file '{s}': {s}\n",
-            .{ current_file, @errorName(err) },
+            .{ current_file, @errorname(err) },
         );
     };
 }
@@ -566,7 +566,7 @@ pub fn lowerToTranslateCSteps(
                 if (std.mem.indexOf(u8, annotated_case_name, test_filter)) |_| break;
             } else if (test_filters.len > 0) continue;
             if (!std.process.can_spawn) {
-                std.debug.print("Unable to spawn child processes on {s}, skipping test.\n", .{@tagName(builtin.os.tag)});
+                std.debug.print("Unable to spawn child processes on {s}, skipping test.\n", .{@tagname(builtin.os.tag)});
                 continue; // Pass test.
             }
 
@@ -627,7 +627,7 @@ pub fn lowerToBuildSteps(
     incremental_exe: *std.Build.Step.Compile,
 ) void {
     const host = std.zig.system.resolveTargetQuery(.{}) catch |err|
-        std.debug.panic("unable to detect native host: {s}\n", .{@errorName(err)});
+        std.debug.panic("unable to detect native host: {s}\n", .{@errorname(err)});
 
     for (self.incremental_cases.items) |incr_case| {
         if (true) {
@@ -1199,7 +1199,7 @@ const TestManifest = struct {
             }
         }.parse;
 
-        switch (@typeInfo(T)) {
+        switch (@typeinfo(T)) {
             .Int => return struct {
                 fn parse(str: []const u8) anyerror!T {
                     return try std.fmt.parseInt(T, str, 0);
@@ -1216,13 +1216,13 @@ const TestManifest = struct {
             .Enum => return struct {
                 fn parse(str: []const u8) anyerror!T {
                     return std.meta.stringToEnum(T, str) orelse {
-                        std.log.err("unknown enum variant for {s}: {s}", .{ @typeName(T), str });
+                        std.log.err("unknown enum variant for {s}: {s}", .{ @typename(T), str });
                         return error.UnknownEnumVariant;
                     };
                 }
             }.parse,
-            .Struct => @compileError("no default parser for " ++ @typeName(T)),
-            else => @compileError("no default parser for " ++ @typeName(T)),
+            .Struct => @compileerror("no default parser for " ++ @typename(T)),
+            else => @compileerror("no default parser for " ++ @typename(T)),
         }
     }
 };
@@ -1260,7 +1260,7 @@ pub fn main() !void {
         }
         // We would prefer to use raw libc allocator here, but cannot
         // use it if it won't support the alignment we need.
-        if (@alignOf(std.c.max_align_t) < @alignOf(i128)) {
+        if (@alignof(std.c.max_align_t) < @alignof(i128)) {
             break :gpa std.heap.c_allocator;
         }
         break :gpa std.heap.raw_c_allocator;
@@ -1721,7 +1721,7 @@ fn runOneCase(
             },
             .Execution => |expected_stdout| {
                 if (!std.process.can_spawn) {
-                    std.debug.print("Unable to spawn child processes on {s}, skipping test.\n", .{@tagName(builtin.os.tag)});
+                    std.debug.print("Unable to spawn child processes on {s}, skipping test.\n", .{@tagname(builtin.os.tag)});
                     continue :update; // Pass test.
                 }
 
@@ -1849,7 +1849,7 @@ fn runOneCase(
                             },
                             else => {
                                 std.debug.print("\n{s}.{d} The following command failed with {s}:\n", .{
-                                    case.name, update_index, @errorName(err),
+                                    case.name, update_index, @errorname(err),
                                 });
                                 dumpArgs(argv.items);
                                 return error.ChildProcessExecution;

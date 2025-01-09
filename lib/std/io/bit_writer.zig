@@ -15,8 +15,8 @@ pub fn BitWriter(comptime endian: std.builtin.Endian, comptime WriterType: type)
         pub const Writer = io.Writer(*Self, Error, write);
 
         const Self = @This();
-        const u8_bit_count = @bitSizeOf(u8);
-        const u4_bit_count = @bitSizeOf(u4);
+        const u8_bit_count = @bitsizeof(u8);
+        const u4_bit_count = @bitsizeof(u4);
 
         pub fn init(forward_writer: WriterType) Self {
             return Self{
@@ -33,11 +33,11 @@ pub fn BitWriter(comptime endian: std.builtin.Endian, comptime WriterType: type)
             if (bits == 0) return;
 
             const U = @TypeOf(value);
-            comptime assert(@typeInfo(U).Int.signedness == .unsigned);
+            comptime assert(@typeinfo(U).Int.signedness == .unsigned);
 
             //by extending the buffer to a minimum of u8 we can cover a number of edge cases
             // related to shifting and casting.
-            const u_bit_count = @bitSizeOf(U);
+            const u_bit_count = @bitsizeof(U);
             const buf_bit_count = bc: {
                 assert(u_bit_count >= bits);
                 break :bc if (u_bit_count <= u8_bit_count) u8_bit_count else u_bit_count;
@@ -45,27 +45,27 @@ pub fn BitWriter(comptime endian: std.builtin.Endian, comptime WriterType: type)
             const Buf = std.meta.Int(.unsigned, buf_bit_count);
             const BufShift = math.Log2Int(Buf);
 
-            const buf_value = @as(Buf, @intCast(value));
+            const buf_value = @as(Buf, @intcast(value));
 
-            const high_byte_shift = @as(BufShift, @intCast(buf_bit_count - u8_bit_count));
+            const high_byte_shift = @as(BufShift, @intcast(buf_bit_count - u8_bit_count));
             var in_buffer = switch (endian) {
-                .big => buf_value << @as(BufShift, @intCast(buf_bit_count - bits)),
+                .big => buf_value << @as(BufShift, @intcast(buf_bit_count - bits)),
                 .little => buf_value,
             };
             var in_bits = bits;
 
             if (self.bit_count > 0) {
                 const bits_remaining = u8_bit_count - self.bit_count;
-                const n = @as(u3, @intCast(if (bits_remaining > bits) bits else bits_remaining));
+                const n = @as(u3, @intcast(if (bits_remaining > bits) bits else bits_remaining));
                 switch (endian) {
                     .big => {
-                        const shift = @as(BufShift, @intCast(high_byte_shift + self.bit_count));
-                        const v = @as(u8, @intCast(in_buffer >> shift));
+                        const shift = @as(BufShift, @intcast(high_byte_shift + self.bit_count));
+                        const v = @as(u8, @intcast(in_buffer >> shift));
                         self.bit_buffer |= v;
                         in_buffer <<= n;
                     },
                     .little => {
-                        const v = @as(u8, @truncate(in_buffer)) << @as(u3, @intCast(self.bit_count));
+                        const v = @as(u8, @truncate(in_buffer)) << @as(u3, @intcast(self.bit_count));
                         self.bit_buffer |= v;
                         in_buffer >>= n;
                     },
@@ -85,15 +85,15 @@ pub fn BitWriter(comptime endian: std.builtin.Endian, comptime WriterType: type)
             while (in_bits >= u8_bit_count) {
                 switch (endian) {
                     .big => {
-                        const v = @as(u8, @intCast(in_buffer >> high_byte_shift));
+                        const v = @as(u8, @intcast(in_buffer >> high_byte_shift));
                         try self.forward_writer.writeByte(v);
-                        in_buffer <<= @as(u3, @intCast(u8_bit_count - 1));
+                        in_buffer <<= @as(u3, @intcast(u8_bit_count - 1));
                         in_buffer <<= 1;
                     },
                     .little => {
                         const v = @as(u8, @truncate(in_buffer));
                         try self.forward_writer.writeByte(v);
-                        in_buffer >>= @as(u3, @intCast(u8_bit_count - 1));
+                        in_buffer >>= @as(u3, @intcast(u8_bit_count - 1));
                         in_buffer >>= 1;
                     },
                 }
@@ -101,7 +101,7 @@ pub fn BitWriter(comptime endian: std.builtin.Endian, comptime WriterType: type)
             }
 
             if (in_bits > 0) {
-                self.bit_count = @as(u4, @intCast(in_bits));
+                self.bit_count = @as(u4, @intcast(in_bits));
                 self.bit_buffer = switch (endian) {
                     .big => @as(u8, @truncate(in_buffer >> high_byte_shift)),
                     .little => @as(u8, @truncate(in_buffer)),

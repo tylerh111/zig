@@ -174,16 +174,16 @@ pub const DefaultRwLock = struct {
 
     const IS_WRITING: usize = 1;
     const WRITER: usize = 1 << 1;
-    const READER: usize = 1 << (1 + @bitSizeOf(Count));
+    const READER: usize = 1 << (1 + @bitsizeof(Count));
     const WRITER_MASK: usize = std.math.maxInt(Count) << @ctz(WRITER);
     const READER_MASK: usize = std.math.maxInt(Count) << @ctz(READER);
-    const Count = std.meta.Int(.unsigned, @divFloor(@bitSizeOf(usize) - 1, 2));
+    const Count = std.meta.Int(.unsigned, @divfloor(@bitsizeof(usize) - 1, 2));
 
     pub fn tryLock(rwl: *DefaultRwLock) bool {
         if (rwl.mutex.tryLock()) {
-            const state = @atomicLoad(usize, &rwl.state, .seq_cst);
+            const state = @atomicload(usize, &rwl.state, .seq_cst);
             if (state & READER_MASK == 0) {
-                _ = @atomicRmw(usize, &rwl.state, .Or, IS_WRITING, .seq_cst);
+                _ = @atomicrmw(usize, &rwl.state, .Or, IS_WRITING, .seq_cst);
                 return true;
             }
 
@@ -194,23 +194,23 @@ pub const DefaultRwLock = struct {
     }
 
     pub fn lock(rwl: *DefaultRwLock) void {
-        _ = @atomicRmw(usize, &rwl.state, .Add, WRITER, .seq_cst);
+        _ = @atomicrmw(usize, &rwl.state, .Add, WRITER, .seq_cst);
         rwl.mutex.lock();
 
-        const state = @atomicRmw(usize, &rwl.state, .Add, IS_WRITING -% WRITER, .seq_cst);
+        const state = @atomicrmw(usize, &rwl.state, .Add, IS_WRITING -% WRITER, .seq_cst);
         if (state & READER_MASK != 0)
             rwl.semaphore.wait();
     }
 
     pub fn unlock(rwl: *DefaultRwLock) void {
-        _ = @atomicRmw(usize, &rwl.state, .And, ~IS_WRITING, .seq_cst);
+        _ = @atomicrmw(usize, &rwl.state, .And, ~IS_WRITING, .seq_cst);
         rwl.mutex.unlock();
     }
 
     pub fn tryLockShared(rwl: *DefaultRwLock) bool {
-        const state = @atomicLoad(usize, &rwl.state, .seq_cst);
+        const state = @atomicload(usize, &rwl.state, .seq_cst);
         if (state & (IS_WRITING | WRITER_MASK) == 0) {
-            _ = @cmpxchgStrong(
+            _ = @cmpxchgstrong(
                 usize,
                 &rwl.state,
                 state,
@@ -221,7 +221,7 @@ pub const DefaultRwLock = struct {
         }
 
         if (rwl.mutex.tryLock()) {
-            _ = @atomicRmw(usize, &rwl.state, .Add, READER, .seq_cst);
+            _ = @atomicrmw(usize, &rwl.state, .Add, READER, .seq_cst);
             rwl.mutex.unlock();
             return true;
         }
@@ -230,9 +230,9 @@ pub const DefaultRwLock = struct {
     }
 
     pub fn lockShared(rwl: *DefaultRwLock) void {
-        var state = @atomicLoad(usize, &rwl.state, .seq_cst);
+        var state = @atomicload(usize, &rwl.state, .seq_cst);
         while (state & (IS_WRITING | WRITER_MASK) == 0) {
-            state = @cmpxchgWeak(
+            state = @cmpxchgweak(
                 usize,
                 &rwl.state,
                 state,
@@ -243,12 +243,12 @@ pub const DefaultRwLock = struct {
         }
 
         rwl.mutex.lock();
-        _ = @atomicRmw(usize, &rwl.state, .Add, READER, .seq_cst);
+        _ = @atomicrmw(usize, &rwl.state, .Add, READER, .seq_cst);
         rwl.mutex.unlock();
     }
 
     pub fn unlockShared(rwl: *DefaultRwLock) void {
-        const state = @atomicRmw(usize, &rwl.state, .Sub, READER, .seq_cst);
+        const state = @atomicrmw(usize, &rwl.state, .Sub, READER, .seq_cst);
 
         if ((state & READER_MASK == READER) and (state & IS_WRITING != 0))
             rwl.semaphore.post();

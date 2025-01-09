@@ -16,7 +16,7 @@ pub fn tanh(z: anytype) Complex(@TypeOf(z.re, z.im)) {
     return switch (T) {
         f32 => tanh32(z),
         f64 => tanh64(z),
-        else => @compileError("tan not implemented for " ++ @typeName(z)),
+        else => @compileerror("tan not implemented for " ++ @typename(z)),
     };
 }
 
@@ -24,7 +24,7 @@ fn tanh32(z: Complex(f32)) Complex(f32) {
     const x = z.re;
     const y = z.im;
 
-    const hx = @as(u32, @bitCast(x));
+    const hx = @as(u32, @bitcast(x));
     const ix = hx & 0x7fffffff;
 
     if (ix >= 0x7f800000) {
@@ -32,7 +32,7 @@ fn tanh32(z: Complex(f32)) Complex(f32) {
             const r = if (y == 0) y else x * y;
             return Complex(f32).init(x, r);
         }
-        const xx = @as(f32, @bitCast(hx - 0x40000000));
+        const xx = @as(f32, @bitcast(hx - 0x40000000));
         const r = if (math.isInf(y)) y else @sin(y) * @cos(y);
         return Complex(f32).init(xx, math.copysign(@as(f32, 0.0), r));
     }
@@ -62,10 +62,10 @@ fn tanh64(z: Complex(f64)) Complex(f64) {
     const x = z.re;
     const y = z.im;
 
-    const fx: u64 = @bitCast(x);
+    const fx: u64 = @bitcast(x);
     // TODO: zig should allow this conversion implicitly because it can notice that the value necessarily
     // fits in range.
-    const hx: u32 = @intCast(fx >> 32);
+    const hx: u32 = @intcast(fx >> 32);
     const lx: u32 = @truncate(fx);
     const ix = hx & 0x7fffffff;
 
@@ -75,7 +75,7 @@ fn tanh64(z: Complex(f64)) Complex(f64) {
             return Complex(f64).init(x, r);
         }
 
-        const xx: f64 = @bitCast((@as(u64, hx - 0x40000000) << 32) | lx);
+        const xx: f64 = @bitcast((@as(u64, hx - 0x40000000) << 32) | lx);
         const r = if (math.isInf(y)) y else @sin(y) * @cos(y);
         return Complex(f64).init(xx, math.copysign(@as(f64, 0.0), r));
     }

@@ -681,7 +681,7 @@ fn walkBlock(
                     } });
                     const name_tok = var_decl.ast.mut_token + 1;
                     const name_bytes = ast.tokenSlice(name_tok);
-                    try w.replace_names.put(w.gpa, name_bytes, @intCast(w.transformations.items.len - 1));
+                    try w.replace_names.put(w.gpa, name_bytes, @intcast(w.transformations.items.len - 1));
                 } else {
                     try walkLocalVarDecl(w, var_decl);
                 }

@@ -10,10 +10,10 @@ test "error union" {
     foo = error.SomeError;
 
     // Use compile-time reflection to access the payload type of an error union:
-    try comptime expect(@typeInfo(@TypeOf(foo)).ErrorUnion.payload == i32);
+    try comptime expect(@typeinfo(@TypeOf(foo)).ErrorUnion.payload == i32);
 
     // Use compile-time reflection to access the error set type of an error union:
-    try comptime expect(@typeInfo(@TypeOf(foo)).ErrorUnion.error_set == anyerror);
+    try comptime expect(@typeinfo(@TypeOf(foo)).ErrorUnion.error_set == anyerror);
 }
 
 // test

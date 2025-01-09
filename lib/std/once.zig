@@ -18,7 +18,7 @@ pub fn Once(comptime f: fn () void) type {
         /// first time.
         /// The invocations are thread-safe.
         pub fn call(self: *@This()) void {
-            if (@atomicLoad(bool, &self.done, .acquire))
+            if (@atomicload(bool, &self.done, .acquire))
                 return;
 
             return self.callSlow();
@@ -33,7 +33,7 @@ pub fn Once(comptime f: fn () void) type {
             // The first thread to acquire the mutex gets to run the initializer
             if (!self.done) {
                 f();
-                @atomicStore(bool, &self.done, true, .release);
+                @atomicstore(bool, &self.done, true, .release);
             }
         }
     };

@@ -56,7 +56,7 @@ pub fn findByMnemonic(
 
     var shortest_enc: ?Encoding = null;
     var shortest_len: ?usize = null;
-    next: for (mnemonic_to_encodings_map[@intFromEnum(mnemonic)]) |data| {
+    next: for (mnemonic_to_encodings_map[@intfromenum(mnemonic)]) |data| {
         switch (data.mode) {
             .none, .short => if (rex_required) continue,
             .rex, .rex_short => if (!rex_required) continue,
@@ -84,7 +84,7 @@ pub fn findByOpcode(opc: []const u8, prefixes: struct {
     rex: Rex,
 }, modrm_ext: ?u3) ?Encoding {
     for (mnemonic_to_encodings_map, 0..) |encs, mnemonic_int| for (encs) |data| {
-        const enc = Encoding{ .mnemonic = @as(Mnemonic, @enumFromInt(mnemonic_int)), .data = data };
+        const enc = Encoding{ .mnemonic = @as(Mnemonic, @enumfromint(mnemonic_int)), .data = data };
         if (modrm_ext) |ext| if (ext != data.modrm_ext) continue;
         if (!std.mem.eql(u8, opc, enc.opcode())) continue;
         if (prefixes.rex.w) {
@@ -205,18 +205,18 @@ pub fn format(
         .zo, .fd, .td, .o, .m, .m1, .mc, .mr, .rm, .mrc, .rm0, .rvm, .mvr => {},
     }
 
-    try writer.print("{s} ", .{@tagName(encoding.mnemonic)});
+    try writer.print("{s} ", .{@tagname(encoding.mnemonic)});
 
     for (encoding.data.ops) |op| switch (op) {
         .none, .o16, .o32, .o64 => break,
-        else => try writer.print("{s} ", .{@tagName(op)}),
+        else => try writer.print("{s} ", .{@tagname(op)}),
     };
 
     const op_en = switch (encoding.data.op_en) {
         .zi => .i,
         else => |op_en| op_en,
     };
-    try writer.print("{s}", .{@tagName(op_en)});
+    try writer.print("{s}", .{@tagname(op_en)});
 }
 
 pub const Mnemonic = enum {
@@ -814,15 +814,15 @@ fn estimateInstructionLength(prefix: Prefix, encoding: Encoding, ops: []const Op
         .allow_frame_locs = true,
         .allow_symbols = true,
     }) catch unreachable; // Not allowed to fail here unless OOM.
-    return @as(usize, @intCast(cwriter.bytes_written));
+    return @as(usize, @intcast(cwriter.bytes_written));
 }
 
 const mnemonic_to_encodings_map = init: {
-    @setEvalBranchQuota(5_000);
-    const mnemonic_count = @typeInfo(Mnemonic).Enum.fields.len;
+    @setevalbranchquota(5_000);
+    const mnemonic_count = @typeinfo(Mnemonic).Enum.fields.len;
     var mnemonic_map: [mnemonic_count][]Data = .{&.{}} ** mnemonic_count;
     const encodings = @import("encodings.zig");
-    for (encodings.table) |entry| mnemonic_map[@intFromEnum(entry[0])].len += 1;
+    for (encodings.table) |entry| mnemonic_map[@intfromenum(entry[0])].len += 1;
     var data_storage: [encodings.table.len]Data = undefined;
     var storage_i: usize = 0;
     for (&mnemonic_map) |*value| {
@@ -830,11 +830,11 @@ const mnemonic_to_encodings_map = init: {
         storage_i += value.len;
     }
     var mnemonic_i: [mnemonic_count]usize = .{0} ** mnemonic_count;
-    const ops_len = @typeInfo(std.meta.FieldType(Data, .ops)).Array.len;
-    const opc_len = @typeInfo(std.meta.FieldType(Data, .opc)).Array.len;
+    const ops_len = @typeinfo(std.meta.FieldType(Data, .ops)).Array.len;
+    const opc_len = @typeinfo(std.meta.FieldType(Data, .opc)).Array.len;
     for (encodings.table) |entry| {
-        const i = &mnemonic_i[@intFromEnum(entry[0])];
-        mnemonic_map[@intFromEnum(entry[0])][i.*] = .{
+        const i = &mnemonic_i[@intfromenum(entry[0])];
+        mnemonic_map[@intfromenum(entry[0])][i.*] = .{
             .op_en = entry[1],
             .ops = (entry[2] ++ .{.none} ** (ops_len - entry[2].len)).*,
             .opc_len = entry[3].len,

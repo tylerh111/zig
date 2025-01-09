@@ -1,22 +1,22 @@
 export fn foo() void {
     var a: u32 = 2;
     _ = &a;
-    _ = @as(comptime_int, @intCast(a));
+    _ = @as(comptime_int, @intcast(a));
 }
 export fn bar() void {
     var a: u32 = 2;
     _ = &a;
-    _ = @as(u32, @floatFromInt(a));
+    _ = @as(u32, @floatfromint(a));
 }
 export fn baz() void {
     var a: u32 = 2;
     _ = &a;
-    _ = @as(u32, @intFromFloat(a));
+    _ = @as(u32, @intfromfloat(a));
 }
 export fn qux() void {
     var a: f32 = 2;
     _ = &a;
-    _ = @as(u32, @intCast(a));
+    _ = @as(u32, @intcast(a));
 }
 
 // error

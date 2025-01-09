@@ -1,12 +1,12 @@
 const std = @import("std");
 
-fn hashMaybeSeed(comptime hash_fn: anytype, seed: anytype, buf: []const u8) @typeInfo(@TypeOf(hash_fn)).Fn.return_type.? {
-    const HashFn = @typeInfo(@TypeOf(hash_fn)).Fn;
+fn hashMaybeSeed(comptime hash_fn: anytype, seed: anytype, buf: []const u8) @typeinfo(@TypeOf(hash_fn)).Fn.return_type.? {
+    const HashFn = @typeinfo(@TypeOf(hash_fn)).Fn;
     if (HashFn.params.len > 1) {
-        if (@typeInfo(HashFn.params[0].type.?) == .Int) {
-            return hash_fn(@intCast(seed), buf);
+        if (@typeinfo(HashFn.params[0].type.?) == .Int) {
+            return hash_fn(@intcast(seed), buf);
         } else {
-            return hash_fn(buf, @intCast(seed));
+            return hash_fn(buf, @intcast(seed));
         }
     } else {
         return hash_fn(buf);
@@ -14,9 +14,9 @@ fn hashMaybeSeed(comptime hash_fn: anytype, seed: anytype, buf: []const u8) @typ
 }
 
 fn initMaybeSeed(comptime Hash: anytype, seed: anytype) Hash {
-    const HashFn = @typeInfo(@TypeOf(Hash.init)).Fn;
+    const HashFn = @typeinfo(@TypeOf(Hash.init)).Fn;
     if (HashFn.params.len == 1) {
-        return Hash.init(@intCast(seed));
+        return Hash.init(@intcast(seed));
     } else {
         return Hash.init();
     }
@@ -27,15 +27,15 @@ fn initMaybeSeed(comptime Hash: anytype, seed: anytype) Hash {
 // Hash keys of the form {0}, {0,1}, {0,1,2}... up to N=255, using 256-N as seed.
 // First four-bytes of the hash, interpreted as little-endian is the verification code.
 pub fn smhasher(comptime hash_fn: anytype) u32 {
-    const HashFnTy = @typeInfo(@TypeOf(hash_fn)).Fn;
+    const HashFnTy = @typeinfo(@TypeOf(hash_fn)).Fn;
     const HashResult = HashFnTy.return_type.?;
-    const hash_size = @sizeOf(HashResult);
+    const hash_size = @sizeof(HashResult);
 
     var buf: [256]u8 = undefined;
     var buf_all: [256 * hash_size]u8 = undefined;
 
     for (0..256) |i| {
-        buf[i] = @intCast(i);
+        buf[i] = @intcast(i);
         const h = hashMaybeSeed(hash_fn, 256 - i, buf[0..i]);
         std.mem.writeInt(HashResult, buf_all[i * hash_size ..][0..hash_size], h, .little);
     }

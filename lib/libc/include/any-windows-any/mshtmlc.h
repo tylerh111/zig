@@ -8365,7 +8365,7 @@ IHTMLStyle : public IDispatch {
     virtual HRESULT WINAPI get_className(BSTR *p) = 0;
     virtual HRESULT WINAPI put_id(BSTR v) = 0;
     virtual HRESULT WINAPI get_id(BSTR *p) = 0;
-    virtual HRESULT WINAPI get_tagName(BSTR *p) = 0;
+    virtual HRESULT WINAPI get_tagname(BSTR *p) = 0;
     virtual HRESULT WINAPI get_parentElement(IHTMLElement **p) = 0;
     virtual HRESULT WINAPI get_style(IHTMLStyle **p) = 0;
     virtual HRESULT WINAPI put_onhelp(VARIANT v) = 0;
@@ -8463,7 +8463,7 @@ IHTMLStyle : public IDispatch {
       HRESULT (WINAPI *get_className)(IHTMLElement *This,BSTR *p);
       HRESULT (WINAPI *put_id)(IHTMLElement *This,BSTR v);
       HRESULT (WINAPI *get_id)(IHTMLElement *This,BSTR *p);
-      HRESULT (WINAPI *get_tagName)(IHTMLElement *This,BSTR *p);
+      HRESULT (WINAPI *get_tagname)(IHTMLElement *This,BSTR *p);
       HRESULT (WINAPI *get_parentElement)(IHTMLElement *This,IHTMLElement **p);
       HRESULT (WINAPI *get_style)(IHTMLElement *This,IHTMLStyle **p);
       HRESULT (WINAPI *put_onhelp)(IHTMLElement *This,VARIANT v);
@@ -8563,7 +8563,7 @@ IHTMLStyle : public IDispatch {
 #define IHTMLElement_get_className(This,p) (This)->lpVtbl->get_className(This,p)
 #define IHTMLElement_put_id(This,v) (This)->lpVtbl->put_id(This,v)
 #define IHTMLElement_get_id(This,p) (This)->lpVtbl->get_id(This,p)
-#define IHTMLElement_get_tagName(This,p) (This)->lpVtbl->get_tagName(This,p)
+#define IHTMLElement_get_tagname(This,p) (This)->lpVtbl->get_tagname(This,p)
 #define IHTMLElement_get_parentElement(This,p) (This)->lpVtbl->get_parentElement(This,p)
 #define IHTMLElement_get_style(This,p) (This)->lpVtbl->get_style(This,p)
 #define IHTMLElement_put_onhelp(This,v) (This)->lpVtbl->put_onhelp(This,v)
@@ -8659,8 +8659,8 @@ IHTMLStyle : public IDispatch {
   void __RPC_STUB IHTMLElement_put_id_Stub(IRpcStubBuffer *This,IRpcChannelBuffer *_pRpcChannelBuffer,PRPC_MESSAGE _pRpcMessage,DWORD *_pdwStubPhase);
   HRESULT WINAPI IHTMLElement_get_id_Proxy(IHTMLElement *This,BSTR *p);
   void __RPC_STUB IHTMLElement_get_id_Stub(IRpcStubBuffer *This,IRpcChannelBuffer *_pRpcChannelBuffer,PRPC_MESSAGE _pRpcMessage,DWORD *_pdwStubPhase);
-  HRESULT WINAPI IHTMLElement_get_tagName_Proxy(IHTMLElement *This,BSTR *p);
-  void __RPC_STUB IHTMLElement_get_tagName_Stub(IRpcStubBuffer *This,IRpcChannelBuffer *_pRpcChannelBuffer,PRPC_MESSAGE _pRpcMessage,DWORD *_pdwStubPhase);
+  HRESULT WINAPI IHTMLElement_get_tagname_Proxy(IHTMLElement *This,BSTR *p);
+  void __RPC_STUB IHTMLElement_get_tagname_Stub(IRpcStubBuffer *This,IRpcChannelBuffer *_pRpcChannelBuffer,PRPC_MESSAGE _pRpcMessage,DWORD *_pdwStubPhase);
   HRESULT WINAPI IHTMLElement_get_parentElement_Proxy(IHTMLElement *This,IHTMLElement **p);
   void __RPC_STUB IHTMLElement_get_parentElement_Stub(IRpcStubBuffer *This,IRpcChannelBuffer *_pRpcChannelBuffer,PRPC_MESSAGE _pRpcMessage,DWORD *_pdwStubPhase);
   HRESULT WINAPI IHTMLElement_get_style_Proxy(IHTMLElement *This,IHTMLStyle **p);
@@ -9866,7 +9866,7 @@ IHTMLStyle : public IDispatch {
     virtual HRESULT WINAPI get_length(__LONG32 *p) = 0;
     virtual HRESULT WINAPI get__newEnum(IUnknown **p) = 0;
     virtual HRESULT WINAPI item(VARIANT name,VARIANT index,IDispatch **pdisp) = 0;
-    virtual HRESULT WINAPI tags(VARIANT tagName,IDispatch **pdisp) = 0;
+    virtual HRESULT WINAPI tags(VARIANT tagname,IDispatch **pdisp) = 0;
   };
 #else
   typedef struct IHTMLElementCollectionVtbl {
@@ -9883,7 +9883,7 @@ IHTMLStyle : public IDispatch {
       HRESULT (WINAPI *get_length)(IHTMLElementCollection *This,__LONG32 *p);
       HRESULT (WINAPI *get__newEnum)(IHTMLElementCollection *This,IUnknown **p);
       HRESULT (WINAPI *item)(IHTMLElementCollection *This,VARIANT name,VARIANT index,IDispatch **pdisp);
-      HRESULT (WINAPI *tags)(IHTMLElementCollection *This,VARIANT tagName,IDispatch **pdisp);
+      HRESULT (WINAPI *tags)(IHTMLElementCollection *This,VARIANT tagname,IDispatch **pdisp);
     END_INTERFACE
   } IHTMLElementCollectionVtbl;
   struct IHTMLElementCollection {
@@ -9902,7 +9902,7 @@ IHTMLStyle : public IDispatch {
 #define IHTMLElementCollection_get_length(This,p) (This)->lpVtbl->get_length(This,p)
 #define IHTMLElementCollection_get__newEnum(This,p) (This)->lpVtbl->get__newEnum(This,p)
 #define IHTMLElementCollection_item(This,name,index,pdisp) (This)->lpVtbl->item(This,name,index,pdisp)
-#define IHTMLElementCollection_tags(This,tagName,pdisp) (This)->lpVtbl->tags(This,tagName,pdisp)
+#define IHTMLElementCollection_tags(This,tagname,pdisp) (This)->lpVtbl->tags(This,tagname,pdisp)
 #endif
 #endif
   HRESULT WINAPI IHTMLElementCollection_toString_Proxy(IHTMLElementCollection *This,BSTR *String);
@@ -9915,7 +9915,7 @@ IHTMLStyle : public IDispatch {
   void __RPC_STUB IHTMLElementCollection_get__newEnum_Stub(IRpcStubBuffer *This,IRpcChannelBuffer *_pRpcChannelBuffer,PRPC_MESSAGE _pRpcMessage,DWORD *_pdwStubPhase);
   HRESULT WINAPI IHTMLElementCollection_item_Proxy(IHTMLElementCollection *This,VARIANT name,VARIANT index,IDispatch **pdisp);
   void __RPC_STUB IHTMLElementCollection_item_Stub(IRpcStubBuffer *This,IRpcChannelBuffer *_pRpcChannelBuffer,PRPC_MESSAGE _pRpcMessage,DWORD *_pdwStubPhase);
-  HRESULT WINAPI IHTMLElementCollection_tags_Proxy(IHTMLElementCollection *This,VARIANT tagName,IDispatch **pdisp);
+  HRESULT WINAPI IHTMLElementCollection_tags_Proxy(IHTMLElementCollection *This,VARIANT tagname,IDispatch **pdisp);
   void __RPC_STUB IHTMLElementCollection_tags_Stub(IRpcStubBuffer *This,IRpcChannelBuffer *_pRpcChannelBuffer,PRPC_MESSAGE _pRpcMessage,DWORD *_pdwStubPhase);
 #endif
 
@@ -13044,7 +13044,7 @@ IHTMLStyle : public IDispatch {
     virtual HRESULT WINAPI get_length(__LONG32 *p) = 0;
     virtual HRESULT WINAPI get__newEnum(IUnknown **p) = 0;
     virtual HRESULT WINAPI item(VARIANT name,VARIANT index,IDispatch **pdisp) = 0;
-    virtual HRESULT WINAPI tags(VARIANT tagName,IDispatch **pdisp) = 0;
+    virtual HRESULT WINAPI tags(VARIANT tagname,IDispatch **pdisp) = 0;
   };
 #else
   typedef struct IHTMLFormElementVtbl {
@@ -13079,7 +13079,7 @@ IHTMLStyle : public IDispatch {
       HRESULT (WINAPI *get_length)(IHTMLFormElement *This,__LONG32 *p);
       HRESULT (WINAPI *get__newEnum)(IHTMLFormElement *This,IUnknown **p);
       HRESULT (WINAPI *item)(IHTMLFormElement *This,VARIANT name,VARIANT index,IDispatch **pdisp);
-      HRESULT (WINAPI *tags)(IHTMLFormElement *This,VARIANT tagName,IDispatch **pdisp);
+      HRESULT (WINAPI *tags)(IHTMLFormElement *This,VARIANT tagname,IDispatch **pdisp);
     END_INTERFACE
   } IHTMLFormElementVtbl;
   struct IHTMLFormElement {
@@ -13116,7 +13116,7 @@ IHTMLStyle : public IDispatch {
 #define IHTMLFormElement_get_length(This,p) (This)->lpVtbl->get_length(This,p)
 #define IHTMLFormElement_get__newEnum(This,p) (This)->lpVtbl->get__newEnum(This,p)
 #define IHTMLFormElement_item(This,name,index,pdisp) (This)->lpVtbl->item(This,name,index,pdisp)
-#define IHTMLFormElement_tags(This,tagName,pdisp) (This)->lpVtbl->tags(This,tagName,pdisp)
+#define IHTMLFormElement_tags(This,tagname,pdisp) (This)->lpVtbl->tags(This,tagname,pdisp)
 #endif
 #endif
   HRESULT WINAPI IHTMLFormElement_put_action_Proxy(IHTMLFormElement *This,BSTR v);
@@ -13165,7 +13165,7 @@ IHTMLStyle : public IDispatch {
   void __RPC_STUB IHTMLFormElement_get__newEnum_Stub(IRpcStubBuffer *This,IRpcChannelBuffer *_pRpcChannelBuffer,PRPC_MESSAGE _pRpcMessage,DWORD *_pdwStubPhase);
   HRESULT WINAPI IHTMLFormElement_item_Proxy(IHTMLFormElement *This,VARIANT name,VARIANT index,IDispatch **pdisp);
   void __RPC_STUB IHTMLFormElement_item_Stub(IRpcStubBuffer *This,IRpcChannelBuffer *_pRpcChannelBuffer,PRPC_MESSAGE _pRpcMessage,DWORD *_pdwStubPhase);
-  HRESULT WINAPI IHTMLFormElement_tags_Proxy(IHTMLFormElement *This,VARIANT tagName,IDispatch **pdisp);
+  HRESULT WINAPI IHTMLFormElement_tags_Proxy(IHTMLFormElement *This,VARIANT tagname,IDispatch **pdisp);
   void __RPC_STUB IHTMLFormElement_tags_Stub(IRpcStubBuffer *This,IRpcChannelBuffer *_pRpcChannelBuffer,PRPC_MESSAGE _pRpcMessage,DWORD *_pdwStubPhase);
 #endif
 
@@ -16823,7 +16823,7 @@ IHTMLStyle : public IDispatch {
     virtual HRESULT WINAPI get_length(__LONG32 *p) = 0;
     virtual HRESULT WINAPI get__newEnum(IUnknown **p) = 0;
     virtual HRESULT WINAPI item(VARIANT name,VARIANT index,IDispatch **pdisp) = 0;
-    virtual HRESULT WINAPI tags(VARIANT tagName,IDispatch **pdisp) = 0;
+    virtual HRESULT WINAPI tags(VARIANT tagname,IDispatch **pdisp) = 0;
   };
 #else
   typedef struct IHTMLSelectElementVtbl {
@@ -16858,7 +16858,7 @@ IHTMLStyle : public IDispatch {
       HRESULT (WINAPI *get_length)(IHTMLSelectElement *This,__LONG32 *p);
       HRESULT (WINAPI *get__newEnum)(IHTMLSelectElement *This,IUnknown **p);
       HRESULT (WINAPI *item)(IHTMLSelectElement *This,VARIANT name,VARIANT index,IDispatch **pdisp);
-      HRESULT (WINAPI *tags)(IHTMLSelectElement *This,VARIANT tagName,IDispatch **pdisp);
+      HRESULT (WINAPI *tags)(IHTMLSelectElement *This,VARIANT tagname,IDispatch **pdisp);
     END_INTERFACE
   } IHTMLSelectElementVtbl;
   struct IHTMLSelectElement {
@@ -16895,7 +16895,7 @@ IHTMLStyle : public IDispatch {
 #define IHTMLSelectElement_get_length(This,p) (This)->lpVtbl->get_length(This,p)
 #define IHTMLSelectElement_get__newEnum(This,p) (This)->lpVtbl->get__newEnum(This,p)
 #define IHTMLSelectElement_item(This,name,index,pdisp) (This)->lpVtbl->item(This,name,index,pdisp)
-#define IHTMLSelectElement_tags(This,tagName,pdisp) (This)->lpVtbl->tags(This,tagName,pdisp)
+#define IHTMLSelectElement_tags(This,tagname,pdisp) (This)->lpVtbl->tags(This,tagname,pdisp)
 #endif
 #endif
   HRESULT WINAPI IHTMLSelectElement_put_size_Proxy(IHTMLSelectElement *This,__LONG32 v);
@@ -16944,7 +16944,7 @@ IHTMLStyle : public IDispatch {
   void __RPC_STUB IHTMLSelectElement_get__newEnum_Stub(IRpcStubBuffer *This,IRpcChannelBuffer *_pRpcChannelBuffer,PRPC_MESSAGE _pRpcMessage,DWORD *_pdwStubPhase);
   HRESULT WINAPI IHTMLSelectElement_item_Proxy(IHTMLSelectElement *This,VARIANT name,VARIANT index,IDispatch **pdisp);
   void __RPC_STUB IHTMLSelectElement_item_Stub(IRpcStubBuffer *This,IRpcChannelBuffer *_pRpcChannelBuffer,PRPC_MESSAGE _pRpcMessage,DWORD *_pdwStubPhase);
-  HRESULT WINAPI IHTMLSelectElement_tags_Proxy(IHTMLSelectElement *This,VARIANT tagName,IDispatch **pdisp);
+  HRESULT WINAPI IHTMLSelectElement_tags_Proxy(IHTMLSelectElement *This,VARIANT tagname,IDispatch **pdisp);
   void __RPC_STUB IHTMLSelectElement_tags_Stub(IRpcStubBuffer *This,IRpcChannelBuffer *_pRpcChannelBuffer,PRPC_MESSAGE _pRpcMessage,DWORD *_pdwStubPhase);
 #endif
 
@@ -24234,7 +24234,7 @@ IHTMLStyle : public IDispatch {
     virtual HRESULT WINAPI get_length(__LONG32 *p) = 0;
     virtual HRESULT WINAPI get__newEnum(IUnknown **p) = 0;
     virtual HRESULT WINAPI item(VARIANT name,VARIANT index,IDispatch **pdisp) = 0;
-    virtual HRESULT WINAPI tags(VARIANT tagName,IDispatch **pdisp) = 0;
+    virtual HRESULT WINAPI tags(VARIANT tagname,IDispatch **pdisp) = 0;
     virtual HRESULT WINAPI add(IHTMLElement *element,VARIANT before) = 0;
     virtual HRESULT WINAPI remove(__LONG32 index = -1) = 0;
   };
@@ -24252,7 +24252,7 @@ IHTMLStyle : public IDispatch {
       HRESULT (WINAPI *get_length)(IHTMLAreasCollection *This,__LONG32 *p);
       HRESULT (WINAPI *get__newEnum)(IHTMLAreasCollection *This,IUnknown **p);
       HRESULT (WINAPI *item)(IHTMLAreasCollection *This,VARIANT name,VARIANT index,IDispatch **pdisp);
-      HRESULT (WINAPI *tags)(IHTMLAreasCollection *This,VARIANT tagName,IDispatch **pdisp);
+      HRESULT (WINAPI *tags)(IHTMLAreasCollection *This,VARIANT tagname,IDispatch **pdisp);
       HRESULT (WINAPI *add)(IHTMLAreasCollection *This,IHTMLElement *element,VARIANT before);
       HRESULT (WINAPI *remove)(IHTMLAreasCollection *This,__LONG32 index);
     END_INTERFACE
@@ -24272,7 +24272,7 @@ IHTMLStyle : public IDispatch {
 #define IHTMLAreasCollection_get_length(This,p) (This)->lpVtbl->get_length(This,p)
 #define IHTMLAreasCollection_get__newEnum(This,p) (This)->lpVtbl->get__newEnum(This,p)
 #define IHTMLAreasCollection_item(This,name,index,pdisp) (This)->lpVtbl->item(This,name,index,pdisp)
-#define IHTMLAreasCollection_tags(This,tagName,pdisp) (This)->lpVtbl->tags(This,tagName,pdisp)
+#define IHTMLAreasCollection_tags(This,tagname,pdisp) (This)->lpVtbl->tags(This,tagname,pdisp)
 #define IHTMLAreasCollection_add(This,element,before) (This)->lpVtbl->add(This,element,before)
 #define IHTMLAreasCollection_remove(This,index) (This)->lpVtbl->remove(This,index)
 #endif
@@ -24286,7 +24286,7 @@ IHTMLStyle : public IDispatch {
   void __RPC_STUB IHTMLAreasCollection_get__newEnum_Stub(IRpcStubBuffer *This,IRpcChannelBuffer *_pRpcChannelBuffer,PRPC_MESSAGE _pRpcMessage,DWORD *_pdwStubPhase);
   HRESULT WINAPI IHTMLAreasCollection_item_Proxy(IHTMLAreasCollection *This,VARIANT name,VARIANT index,IDispatch **pdisp);
   void __RPC_STUB IHTMLAreasCollection_item_Stub(IRpcStubBuffer *This,IRpcChannelBuffer *_pRpcChannelBuffer,PRPC_MESSAGE _pRpcMessage,DWORD *_pdwStubPhase);
-  HRESULT WINAPI IHTMLAreasCollection_tags_Proxy(IHTMLAreasCollection *This,VARIANT tagName,IDispatch **pdisp);
+  HRESULT WINAPI IHTMLAreasCollection_tags_Proxy(IHTMLAreasCollection *This,VARIANT tagname,IDispatch **pdisp);
   void __RPC_STUB IHTMLAreasCollection_tags_Stub(IRpcStubBuffer *This,IRpcChannelBuffer *_pRpcChannelBuffer,PRPC_MESSAGE _pRpcMessage,DWORD *_pdwStubPhase);
   HRESULT WINAPI IHTMLAreasCollection_add_Proxy(IHTMLAreasCollection *This,IHTMLElement *element,VARIANT before);
   void __RPC_STUB IHTMLAreasCollection_add_Stub(IRpcStubBuffer *This,IRpcChannelBuffer *_pRpcChannelBuffer,PRPC_MESSAGE _pRpcMessage,DWORD *_pdwStubPhase);
@@ -31925,7 +31925,7 @@ IHTMLStyle : public IDispatch {
   public:
     virtual HRESULT WINAPI get_name(BSTR *p) = 0;
     virtual HRESULT WINAPI get_urn(BSTR *p) = 0;
-    virtual HRESULT WINAPI get_tagNames(IDispatch **p) = 0;
+    virtual HRESULT WINAPI get_tagnames(IDispatch **p) = 0;
     virtual HRESULT WINAPI get_readyState(VARIANT *p) = 0;
     virtual HRESULT WINAPI put_onreadystatechange(VARIANT v) = 0;
     virtual HRESULT WINAPI get_onreadystatechange(VARIANT *p) = 0;
@@ -31945,7 +31945,7 @@ IHTMLStyle : public IDispatch {
       HRESULT (WINAPI *Invoke)(IHTMLNamespace *This,DISPID dispIdMember,REFIID riid,LCID lcid,WORD wFlags,DISPPARAMS *pDispParams,VARIANT *pVarResult,EXCEPINFO *pExcepInfo,UINT *puArgErr);
       HRESULT (WINAPI *get_name)(IHTMLNamespace *This,BSTR *p);
       HRESULT (WINAPI *get_urn)(IHTMLNamespace *This,BSTR *p);
-      HRESULT (WINAPI *get_tagNames)(IHTMLNamespace *This,IDispatch **p);
+      HRESULT (WINAPI *get_tagnames)(IHTMLNamespace *This,IDispatch **p);
       HRESULT (WINAPI *get_readyState)(IHTMLNamespace *This,VARIANT *p);
       HRESULT (WINAPI *put_onreadystatechange)(IHTMLNamespace *This,VARIANT v);
       HRESULT (WINAPI *get_onreadystatechange)(IHTMLNamespace *This,VARIANT *p);
@@ -31967,7 +31967,7 @@ IHTMLStyle : public IDispatch {
 #define IHTMLNamespace_Invoke(This,dispIdMember,riid,lcid,wFlags,pDispParams,pVarResult,pExcepInfo,puArgErr) (This)->lpVtbl->Invoke(This,dispIdMember,riid,lcid,wFlags,pDispParams,pVarResult,pExcepInfo,puArgErr)
 #define IHTMLNamespace_get_name(This,p) (This)->lpVtbl->get_name(This,p)
 #define IHTMLNamespace_get_urn(This,p) (This)->lpVtbl->get_urn(This,p)
-#define IHTMLNamespace_get_tagNames(This,p) (This)->lpVtbl->get_tagNames(This,p)
+#define IHTMLNamespace_get_tagnames(This,p) (This)->lpVtbl->get_tagnames(This,p)
 #define IHTMLNamespace_get_readyState(This,p) (This)->lpVtbl->get_readyState(This,p)
 #define IHTMLNamespace_put_onreadystatechange(This,v) (This)->lpVtbl->put_onreadystatechange(This,v)
 #define IHTMLNamespace_get_onreadystatechange(This,p) (This)->lpVtbl->get_onreadystatechange(This,p)
@@ -31981,8 +31981,8 @@ IHTMLStyle : public IDispatch {
   void __RPC_STUB IHTMLNamespace_get_name_Stub(IRpcStubBuffer *This,IRpcChannelBuffer *_pRpcChannelBuffer,PRPC_MESSAGE _pRpcMessage,DWORD *_pdwStubPhase);
   HRESULT WINAPI IHTMLNamespace_get_urn_Proxy(IHTMLNamespace *This,BSTR *p);
   void __RPC_STUB IHTMLNamespace_get_urn_Stub(IRpcStubBuffer *This,IRpcChannelBuffer *_pRpcChannelBuffer,PRPC_MESSAGE _pRpcMessage,DWORD *_pdwStubPhase);
-  HRESULT WINAPI IHTMLNamespace_get_tagNames_Proxy(IHTMLNamespace *This,IDispatch **p);
-  void __RPC_STUB IHTMLNamespace_get_tagNames_Stub(IRpcStubBuffer *This,IRpcChannelBuffer *_pRpcChannelBuffer,PRPC_MESSAGE _pRpcMessage,DWORD *_pdwStubPhase);
+  HRESULT WINAPI IHTMLNamespace_get_tagnames_Proxy(IHTMLNamespace *This,IDispatch **p);
+  void __RPC_STUB IHTMLNamespace_get_tagnames_Stub(IRpcStubBuffer *This,IRpcChannelBuffer *_pRpcChannelBuffer,PRPC_MESSAGE _pRpcMessage,DWORD *_pdwStubPhase);
   HRESULT WINAPI IHTMLNamespace_get_readyState_Proxy(IHTMLNamespace *This,VARIANT *p);
   void __RPC_STUB IHTMLNamespace_get_readyState_Stub(IRpcStubBuffer *This,IRpcChannelBuffer *_pRpcChannelBuffer,PRPC_MESSAGE _pRpcMessage,DWORD *_pdwStubPhase);
   HRESULT WINAPI IHTMLNamespace_put_onreadystatechange_Proxy(IHTMLNamespace *This,VARIANT v);

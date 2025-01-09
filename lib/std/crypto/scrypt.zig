@@ -73,11 +73,11 @@ fn salsaXor(tmp: *align(16) [16]u32, in: []align(16) const u32, out: []align(16)
 }
 
 fn blockMix(tmp: *align(16) [16]u32, in: []align(16) const u32, out: []align(16) u32, r: u30) void {
-    blockCopy(tmp, @alignCast(in[(2 * r - 1) * 16 ..]), 1);
+    blockCopy(tmp, @aligncast(in[(2 * r - 1) * 16 ..]), 1);
     var i: usize = 0;
     while (i < 2 * r) : (i += 2) {
-        salsaXor(tmp, @alignCast(in[i * 16 ..]), @alignCast(out[i * 8 ..]));
-        salsaXor(tmp, @alignCast(in[i * 16 + 16 ..]), @alignCast(out[i * 8 + r * 16 ..]));
+        salsaXor(tmp, @aligncast(in[i * 16 ..]), @aligncast(out[i * 8 ..]));
+        salsaXor(tmp, @aligncast(in[i * 16 + 16 ..]), @aligncast(out[i * 8 + r * 16 ..]));
     }
 }
 
@@ -87,8 +87,8 @@ fn integerify(b: []align(16) const u32, r: u30) u64 {
 }
 
 fn smix(b: []align(16) u8, r: u30, n: usize, v: []align(16) u32, xy: []align(16) u32) void {
-    const x: []align(16) u32 = @alignCast(xy[0 .. 32 * r]);
-    const y: []align(16) u32 = @alignCast(xy[32 * r ..]);
+    const x: []align(16) u32 = @aligncast(xy[0 .. 32 * r]);
+    const y: []align(16) u32 = @aligncast(xy[32 * r ..]);
 
     for (x, 0..) |*v1, j| {
         v1.* = mem.readInt(u32, b[4 * j ..][0..4], .little);
@@ -97,21 +97,21 @@ fn smix(b: []align(16) u8, r: u30, n: usize, v: []align(16) u32, xy: []align(16)
     var tmp: [16]u32 align(16) = undefined;
     var i: usize = 0;
     while (i < n) : (i += 2) {
-        blockCopy(@alignCast(v[i * (32 * r) ..]), x, 2 * r);
+        blockCopy(@aligncast(v[i * (32 * r) ..]), x, 2 * r);
         blockMix(&tmp, x, y, r);
 
-        blockCopy(@alignCast(v[(i + 1) * (32 * r) ..]), y, 2 * r);
+        blockCopy(@aligncast(v[(i + 1) * (32 * r) ..]), y, 2 * r);
         blockMix(&tmp, y, x, r);
     }
 
     i = 0;
     while (i < n) : (i += 2) {
-        var j = @as(usize, @intCast(integerify(x, r) & (n - 1)));
-        blockXor(x, @alignCast(v[j * (32 * r) ..]), 2 * r);
+        var j = @as(usize, @intcast(integerify(x, r) & (n - 1)));
+        blockXor(x, @aligncast(v[j * (32 * r) ..]), 2 * r);
         blockMix(&tmp, x, y, r);
 
-        j = @as(usize, @intCast(integerify(y, r) & (n - 1)));
-        blockXor(y, @alignCast(v[j * (32 * r) ..]), 2 * r);
+        j = @as(usize, @intcast(integerify(y, r) & (n - 1)));
+        blockXor(y, @aligncast(v[j * (32 * r) ..]), 2 * r);
         blockMix(&tmp, y, x, r);
     }
 
@@ -147,12 +147,12 @@ pub const Params = struct {
         const r: u30 = 8;
         if (ops < mem_limit / 32) {
             const max_n = ops / (r * 4);
-            return Self{ .r = r, .p = 1, .ln = @as(u6, @intCast(math.log2(max_n))) };
+            return Self{ .r = r, .p = 1, .ln = @as(u6, @intcast(math.log2(max_n))) };
         } else {
-            const max_n = mem_limit / (@as(usize, @intCast(r)) * 128);
-            const ln = @as(u6, @intCast(math.log2(max_n)));
+            const max_n = mem_limit / (@as(usize, @intcast(r)) * 128);
+            const ln = @as(u6, @intcast(math.log2(max_n)));
             const max_rp = @min(0x3fffffff, (ops / 4) / (@as(u64, 1) << ln));
-            return Self{ .r = r, .p = @as(u30, @intCast(max_rp / @as(u64, r))), .ln = ln };
+            return Self{ .r = r, .p = @as(u30, @intcast(max_rp / @as(u64, r))), .ln = ln };
         }
     }
 };
@@ -185,7 +185,7 @@ pub fn kdf(
 
     const n64 = @as(u64, 1) << params.ln;
     if (n64 > max_size) return KdfError.WeakParameters;
-    const n = @as(usize, @intCast(n64));
+    const n = @as(usize, @intcast(n64));
     if (@as(u64, params.r) * @as(u64, params.p) >= 1 << 30 or
         params.r > max_int / 128 / @as(u64, params.p) or
         params.r > max_int / 256 or
@@ -201,7 +201,7 @@ pub fn kdf(
     try pwhash.pbkdf2(dk, password, salt, 1, HmacSha256);
     var i: u32 = 0;
     while (i < params.p) : (i += 1) {
-        smix(@alignCast(dk[i * 128 * params.r ..]), params.r, n, v, xy);
+        smix(@aligncast(dk[i * 128 * params.r ..]), params.r, n, v, xy);
     }
     try pwhash.pbkdf2(derived_key, password, dk, 1, HmacSha256);
 }
@@ -290,10 +290,10 @@ const crypt_format = struct {
         var it = mem.splitScalar(u8, str[14..], '$');
 
         const salt = it.first();
-        if (@hasField(T, "salt")) out.salt = salt;
+        if (@hasfield(T, "salt")) out.salt = salt;
 
         const hash_str = it.next() orelse return EncodingError.InvalidEncoding;
-        if (@hasField(T, "hash")) try out.hash.fromB64(hash_str);
+        if (@hasfield(T, "hash")) try out.hash.fromB64(hash_str);
 
         return out;
     }
@@ -309,7 +309,7 @@ const crypt_format = struct {
     pub fn calcSize(params: anytype) usize {
         var buf = io.countingWriter(io.null_writer);
         serializeTo(params, buf.writer()) catch unreachable;
-        return @as(usize, @intCast(buf.bytes_written));
+        return @as(usize, @intcast(buf.bytes_written));
     }
 
     fn serializeTo(params: anytype, out: anytype) !void {
@@ -348,11 +348,11 @@ const crypt_format = struct {
                 }
             }
 
-            fn intDecode(comptime T: type, src: *const [(@bitSizeOf(T) + 5) / 6]u8) !T {
+            fn intDecode(comptime T: type, src: *const [(@bitsizeof(T) + 5) / 6]u8) !T {
                 var v: T = 0;
                 for (src, 0..) |x, i| {
                     const vi = mem.indexOfScalar(u8, &map64, x) orelse return EncodingError.InvalidEncoding;
-                    v |= @as(T, @intCast(vi)) << @as(math.Log2Int(T), @intCast(i * 6));
+                    v |= @as(T, @intcast(vi)) << @as(math.Log2Int(T), @intcast(i * 6));
                 }
                 return v;
             }
@@ -366,10 +366,10 @@ const crypt_format = struct {
                 const leftover = src[i * 4 ..];
                 var v: u24 = 0;
                 for (leftover, 0..) |_, j| {
-                    v |= @as(u24, try intDecode(u6, leftover[j..][0..1])) << @as(u5, @intCast(j * 6));
+                    v |= @as(u24, try intDecode(u6, leftover[j..][0..1])) << @as(u5, @intcast(j * 6));
                 }
                 for (dst[i * 3 ..], 0..) |*x, j| {
-                    x.* = @as(u8, @truncate(v >> @as(u5, @intCast(j * 8))));
+                    x.* = @as(u8, @truncate(v >> @as(u5, @intcast(j * 8))));
                 }
             }
 
@@ -382,7 +382,7 @@ const crypt_format = struct {
                 const leftover = src[i * 3 ..];
                 var v: u24 = 0;
                 for (leftover, 0..) |x, j| {
-                    v |= @as(u24, x) << @as(u5, @intCast(j * 8));
+                    v |= @as(u24, x) << @as(u5, @intcast(j * 8));
                 }
                 intEncode(dst[i * 4 ..], v);
             }

@@ -3,7 +3,7 @@ const derp: usize = 1234;
 const a = derp ++ "foo";
 
 export fn entry() usize {
-    return @sizeOf(@TypeOf(a));
+    return @sizeof(@TypeOf(a));
 }
 
 // error

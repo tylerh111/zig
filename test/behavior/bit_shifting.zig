@@ -3,7 +3,7 @@ const expect = std.testing.expect;
 const builtin = @import("builtin");
 
 fn ShardedTable(comptime Key: type, comptime mask_bit_count: comptime_int, comptime V: type) type {
-    const key_bits = @typeInfo(Key).Int.bits;
+    const key_bits = @typeinfo(Key).Int.bits;
     std.debug.assert(Key == std.meta.Int(.unsigned, key_bits));
     std.debug.assert(key_bits >= mask_bit_count);
     const shard_key_bits = mask_bit_count;
@@ -28,7 +28,7 @@ fn ShardedTable(comptime Key: type, comptime mask_bit_count: comptime_int, compt
             // TODO: https://github.com/ziglang/zig/issues/1544
             // This cast could be implicit if we teach the compiler that
             // u32 >> 30 -> u2
-            return @as(ShardKey, @intCast(shard_key));
+            return @as(ShardKey, @intcast(shard_key));
         }
 
         pub fn put(self: *Self, node: *Node) void {
@@ -86,14 +86,14 @@ fn testShardedTable(comptime Key: type, comptime mask_bit_count: comptime_int, c
     var table = Table.create();
     var node_buffer: [node_count]Table.Node = undefined;
     for (&node_buffer, 0..) |*node, i| {
-        const key = @as(Key, @intCast(i));
+        const key = @as(Key, @intcast(i));
         try expect(table.get(key) == null);
         node.init(key, {});
         table.put(node);
     }
 
     for (&node_buffer, 0..) |*node, i| {
-        try expect(table.get(@as(Key, @intCast(i))) == node);
+        try expect(table.get(@as(Key, @intcast(i))) == node);
     }
 }
 
@@ -108,7 +108,7 @@ test "comptime shr of BigInt" {
 }
 
 test "comptime shift safety check" {
-    _ = @as(usize, 42) << @sizeOf(usize);
+    _ = @as(usize, 42) << @sizeof(usize);
 }
 
 test "Saturating Shift Left where lhs is of a computed type" {
@@ -121,7 +121,7 @@ test "Saturating Shift Left where lhs is of a computed type" {
 
     const S = struct {
         fn getIntShiftType(comptime T: type) type {
-            var unsigned_shift_type = @typeInfo(std.math.Log2Int(T)).Int;
+            var unsigned_shift_type = @typeinfo(std.math.Log2Int(T)).Int;
             unsigned_shift_type.signedness = .signed;
 
             return @Type(.{
@@ -158,5 +158,5 @@ test "Saturating Shift Left where lhs is of a computed type" {
 comptime {
     var image: [1]u8 = undefined;
     _ = &image;
-    _ = @shlExact(@as(u16, image[0]), 8);
+    _ = @shlexact(@as(u16, image[0]), 8);
 }

@@ -2,7 +2,7 @@ const std = @import("std");
 
 inline fn offsetPtr(ptr: [*]const u8, offset: usize) [*]const u8 {
     // ptr + offset doesn't work at comptime so we need this instead.
-    return @as([*]const u8, @ptrCast(&ptr[offset]));
+    return @as([*]const u8, @ptrcast(&ptr[offset]));
 }
 
 fn fetch32(ptr: [*]const u8, offset: usize) u32 {
@@ -53,7 +53,7 @@ pub const CityHash32 = struct {
         var b: u32 = 0;
         var c: u32 = 9;
         for (str) |v| {
-            b = b *% c1 +% @as(u32, @bitCast(@as(i32, @intCast(@as(i8, @bitCast(v))))));
+            b = b *% c1 +% @as(u32, @bitcast(@as(i32, @intcast(@as(i8, @bitcast(v))))));
             c ^= b;
         }
         return fmix(mur(b, mur(len, c)));
@@ -143,9 +143,9 @@ pub const CityHash32 = struct {
             h = rotr32(h, 19);
             h = h *% 5 +% 0xe6546b64;
             g ^= b4;
-            g = @byteSwap(g) *% 5;
+            g = @byteswap(g) *% 5;
             h +%= b4 *% 5;
-            h = @byteSwap(h);
+            h = @byteswap(h);
             f +%= b0;
             const t: u32 = h;
             h = f;
@@ -220,9 +220,9 @@ pub const CityHash64 = struct {
             const a: u8 = str[0];
             const b: u8 = str[str.len >> 1];
             const c: u8 = str[str.len - 1];
-            const y: u32 = @as(u32, @intCast(a)) +% (@as(u32, @intCast(b)) << 8);
-            const z: u32 = @as(u32, @truncate(str.len)) +% (@as(u32, @intCast(c)) << 2);
-            return shiftmix(@as(u64, @intCast(y)) *% k2 ^ @as(u64, @intCast(z)) *% k0) *% k2;
+            const y: u32 = @as(u32, @intcast(a)) +% (@as(u32, @intcast(b)) << 8);
+            const z: u32 = @as(u32, @truncate(str.len)) +% (@as(u32, @intcast(c)) << 2);
+            return shiftmix(@as(u64, @intcast(y)) *% k2 ^ @as(u64, @intcast(z)) *% k0) *% k2;
         }
         return k2;
     }
@@ -252,11 +252,11 @@ pub const CityHash64 = struct {
 
         const u: u64 = rotr64(a +% g, 43) +% (rotr64(b, 30) +% c) *% 9;
         const v: u64 = ((a +% g) ^ d) +% f +% 1;
-        const w: u64 = @byteSwap((u +% v) *% mul) +% h;
+        const w: u64 = @byteswap((u +% v) *% mul) +% h;
         const x: u64 = rotr64(e +% f, 42) +% c;
-        const y: u64 = (@byteSwap((v +% w) *% mul) +% g) *% mul;
+        const y: u64 = (@byteswap((v +% w) *% mul) +% g) *% mul;
         const z: u64 = e +% f +% c;
-        const a1: u64 = @byteSwap((x +% z) *% mul +% y) +% b;
+        const a1: u64 = @byteswap((x +% z) *% mul +% y) +% b;
         const b1: u64 = shiftmix((z +% a1) *% mul +% d +% h) *% mul;
         return b1 +% x;
     }
@@ -309,7 +309,7 @@ pub const CityHash64 = struct {
         var w: WeakPair = weakHashLen32WithSeeds(offsetPtr(str.ptr, str.len - 32), y +% k1, x);
 
         x = x *% k1 +% fetch64(str.ptr, 0);
-        len = (len - 1) & ~@as(u64, @intCast(63));
+        len = (len - 1) & ~@as(u64, @intcast(63));
 
         var ptr: [*]const u8 = str.ptr;
         while (true) {
@@ -358,7 +358,7 @@ test "cityhash32" {
         }
     };
     try Test.do();
-    @setEvalBranchQuota(75000);
+    @setevalbranchquota(75000);
     try comptime Test.do();
 }
 
@@ -371,6 +371,6 @@ test "cityhash64" {
         }
     };
     try Test.do();
-    @setEvalBranchQuota(75000);
+    @setevalbranchquota(75000);
     try comptime Test.do();
 }

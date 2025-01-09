@@ -1,4 +1,4 @@
-test "@unionInit on union w/ tag but no fields" {
+test "@unioninit on union w/ tag but no fields" {
     const S = struct {
         comptime {
             try expect(false);

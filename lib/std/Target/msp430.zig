@@ -17,30 +17,30 @@ pub const featureSetHasAny = CpuFeature.feature_set_fns(Feature).featureSetHasAn
 pub const featureSetHasAll = CpuFeature.feature_set_fns(Feature).featureSetHasAll;
 
 pub const all_features = blk: {
-    const len = @typeInfo(Feature).Enum.fields.len;
+    const len = @typeinfo(Feature).Enum.fields.len;
     std.debug.assert(len <= CpuFeature.Set.needed_bit_count);
     var result: [len]CpuFeature = undefined;
-    result[@intFromEnum(Feature.ext)] = .{
+    result[@intfromenum(Feature.ext)] = .{
         .llvm_name = "ext",
         .description = "Enable MSP430-X extensions",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.hwmult16)] = .{
+    result[@intfromenum(Feature.hwmult16)] = .{
         .llvm_name = "hwmult16",
         .description = "Enable 16-bit hardware multiplier",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.hwmult32)] = .{
+    result[@intfromenum(Feature.hwmult32)] = .{
         .llvm_name = "hwmult32",
         .description = "Enable 32-bit hardware multiplier",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.hwmultf5)] = .{
+    result[@intfromenum(Feature.hwmultf5)] = .{
         .llvm_name = "hwmultf5",
         .description = "Enable F5 series hardware multiplier",
         .dependencies = featureSet(&[_]Feature{}),
     };
-    const ti = @typeInfo(Feature);
+    const ti = @typeinfo(Feature);
     for (&result, 0..) |*elem, i| {
         elem.index = i;
         elem.name = ti.Enum.fields[i].name;

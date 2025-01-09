@@ -552,7 +552,7 @@ test "vector division operators" {
 
     const S = struct {
         fn doTheTestDiv(comptime T: type, x: @Vector(4, T), y: @Vector(4, T)) !void {
-            const is_signed_int = switch (@typeInfo(T)) {
+            const is_signed_int = switch (@typeinfo(T)) {
                 .Int => |info| info.signedness == .signed,
                 else => false,
             };
@@ -562,26 +562,26 @@ test "vector division operators" {
                     try expect(x[i] / y[i] == v);
                 }
             }
-            const d1 = @divExact(x, y);
+            const d1 = @divexact(x, y);
             for (@as([4]T, d1), 0..) |v, i| {
-                try expect(@divExact(x[i], y[i]) == v);
+                try expect(@divexact(x[i], y[i]) == v);
             }
-            const d2 = @divFloor(x, y);
+            const d2 = @divfloor(x, y);
             for (@as([4]T, d2), 0..) |v, i| {
-                try expect(@divFloor(x[i], y[i]) == v);
+                try expect(@divfloor(x[i], y[i]) == v);
             }
-            const d3 = @divTrunc(x, y);
+            const d3 = @divtrunc(x, y);
             for (@as([4]T, d3), 0..) |v, i| {
-                try expect(@divTrunc(x[i], y[i]) == v);
+                try expect(@divtrunc(x[i], y[i]) == v);
             }
         }
 
         fn doTheTestMod(comptime T: type, x: @Vector(4, T), y: @Vector(4, T)) !void {
-            const is_signed_int = switch (@typeInfo(T)) {
+            const is_signed_int = switch (@typeinfo(T)) {
                 .Int => |info| info.signedness == .signed,
                 else => false,
             };
-            if (!is_signed_int and @typeInfo(T) != .Float) {
+            if (!is_signed_int and @typeinfo(T) != .Float) {
                 const r0 = x % y;
                 for (@as([4]T, r0), 0..) |v, i| {
                     try expect(x[i] % y[i] == v);
@@ -675,9 +675,9 @@ test "vector shift operators" {
 
     const S = struct {
         fn doTheTestShift(x: anytype, y: anytype) !void {
-            const N = @typeInfo(@TypeOf(x)).Array.len;
-            const TX = @typeInfo(@TypeOf(x)).Array.child;
-            const TY = @typeInfo(@TypeOf(y)).Array.child;
+            const N = @typeinfo(@TypeOf(x)).Array.len;
+            const TX = @typeinfo(@TypeOf(x)).Array.child;
+            const TY = @typeinfo(@TypeOf(y)).Array.child;
 
             const xv = @as(@Vector(N, TX), x);
             const yv = @as(@Vector(N, TY), y);
@@ -692,14 +692,14 @@ test "vector shift operators" {
             }
         }
         fn doTheTestShiftExact(x: anytype, y: anytype, dir: enum { Left, Right }) !void {
-            const N = @typeInfo(@TypeOf(x)).Array.len;
-            const TX = @typeInfo(@TypeOf(x)).Array.child;
-            const TY = @typeInfo(@TypeOf(y)).Array.child;
+            const N = @typeinfo(@TypeOf(x)).Array.len;
+            const TX = @typeinfo(@TypeOf(x)).Array.child;
+            const TY = @typeinfo(@TypeOf(y)).Array.child;
 
             const xv = @as(@Vector(N, TX), x);
             const yv = @as(@Vector(N, TY), y);
 
-            const z = if (dir == .Left) @shlExact(xv, yv) else @shrExact(xv, yv);
+            const z = if (dir == .Left) @shlexact(xv, yv) else @shrexact(xv, yv);
             for (@as([N]TX, z), 0..) |v, i| {
                 const check = if (dir == .Left) x[i] << y[i] else x[i] >> y[i];
                 try expect(check == v);
@@ -766,11 +766,11 @@ test "vector reduce operation" {
 
     const S = struct {
         fn testReduce(comptime op: std.builtin.ReduceOp, x: anytype, expected: anytype) !void {
-            const N = @typeInfo(@TypeOf(x)).Array.len;
-            const TX = @typeInfo(@TypeOf(x)).Array.child;
+            const N = @typeinfo(@TypeOf(x)).Array.len;
+            const TX = @typeinfo(@TypeOf(x)).Array.child;
 
             const r = @reduce(op, @as(@Vector(N, TX), x));
-            switch (@typeInfo(TX)) {
+            switch (@typeinfo(TX)) {
                 .Int, .Bool => try expect(expected == r),
                 .Float => {
                     const expected_nan = math.isNan(expected);
@@ -930,10 +930,10 @@ test "mask parameter of @shuffle is comptime scope" {
     var v4_b = __v4hi{ 5, 6, 7, 8 };
     _ = .{ &v4_a, &v4_b };
     const shuffled: __v4hi = @shuffle(i16, v4_a, v4_b, @Vector(4, i32){
-        std.zig.c_translation.shuffleVectorIndex(0, @typeInfo(@TypeOf(v4_a)).Vector.len),
-        std.zig.c_translation.shuffleVectorIndex(2, @typeInfo(@TypeOf(v4_a)).Vector.len),
-        std.zig.c_translation.shuffleVectorIndex(4, @typeInfo(@TypeOf(v4_a)).Vector.len),
-        std.zig.c_translation.shuffleVectorIndex(6, @typeInfo(@TypeOf(v4_a)).Vector.len),
+        std.zig.c_translation.shuffleVectorIndex(0, @typeinfo(@TypeOf(v4_a)).Vector.len),
+        std.zig.c_translation.shuffleVectorIndex(2, @typeinfo(@TypeOf(v4_a)).Vector.len),
+        std.zig.c_translation.shuffleVectorIndex(4, @typeinfo(@TypeOf(v4_a)).Vector.len),
+        std.zig.c_translation.shuffleVectorIndex(6, @typeinfo(@TypeOf(v4_a)).Vector.len),
     });
     try expect(shuffled[0] == 1);
     try expect(shuffled[1] == 3);
@@ -1076,7 +1076,7 @@ test "multiplication-assignment operator with an array operand" {
     try comptime S.doTheTest();
 }
 
-test "@addWithOverflow" {
+test "@addwithoverflow" {
     if (builtin.zig_backend == .stage2_wasm) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_x86_64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_aarch64) return error.SkipZigTest; // TODO
@@ -1090,7 +1090,7 @@ test "@addWithOverflow" {
                 var lhs = @Vector(4, u8){ 250, 250, 250, 250 };
                 var rhs = @Vector(4, u8){ 0, 5, 6, 10 };
                 _ = .{ &lhs, &rhs };
-                const overflow = @addWithOverflow(lhs, rhs)[1];
+                const overflow = @addwithoverflow(lhs, rhs)[1];
                 const expected: @Vector(4, u1) = .{ 0, 0, 1, 1 };
                 try expectEqual(expected, overflow);
             }
@@ -1098,7 +1098,7 @@ test "@addWithOverflow" {
                 var lhs = @Vector(4, i8){ -125, -125, 125, 125 };
                 var rhs = @Vector(4, i8){ -3, -4, 2, 3 };
                 _ = .{ &lhs, &rhs };
-                const overflow = @addWithOverflow(lhs, rhs)[1];
+                const overflow = @addwithoverflow(lhs, rhs)[1];
                 const expected: @Vector(4, u1) = .{ 0, 1, 0, 1 };
                 try expectEqual(expected, overflow);
             }
@@ -1106,7 +1106,7 @@ test "@addWithOverflow" {
                 var lhs = @Vector(4, u1){ 0, 0, 1, 1 };
                 var rhs = @Vector(4, u1){ 0, 1, 0, 1 };
                 _ = .{ &lhs, &rhs };
-                const overflow = @addWithOverflow(lhs, rhs)[1];
+                const overflow = @addwithoverflow(lhs, rhs)[1];
                 const expected: @Vector(4, u1) = .{ 0, 0, 0, 1 };
                 try expectEqual(expected, overflow);
             }
@@ -1114,7 +1114,7 @@ test "@addWithOverflow" {
                 var lhs = @Vector(4, u0){ 0, 0, 0, 0 };
                 var rhs = @Vector(4, u0){ 0, 0, 0, 0 };
                 _ = .{ &lhs, &rhs };
-                const overflow = @addWithOverflow(lhs, rhs)[1];
+                const overflow = @addwithoverflow(lhs, rhs)[1];
                 const expected: @Vector(4, u1) = .{ 0, 0, 0, 0 };
                 try expectEqual(expected, overflow);
             }
@@ -1124,7 +1124,7 @@ test "@addWithOverflow" {
     try comptime S.doTheTest();
 }
 
-test "@subWithOverflow" {
+test "@subwithoverflow" {
     if (builtin.zig_backend == .stage2_wasm) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_x86_64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_aarch64) return error.SkipZigTest; // TODO
@@ -1138,7 +1138,7 @@ test "@subWithOverflow" {
                 var lhs = @Vector(2, u8){ 5, 5 };
                 var rhs = @Vector(2, u8){ 5, 6 };
                 _ = .{ &lhs, &rhs };
-                const overflow = @subWithOverflow(lhs, rhs)[1];
+                const overflow = @subwithoverflow(lhs, rhs)[1];
                 const expected: @Vector(2, u1) = .{ 0, 1 };
                 try expectEqual(expected, overflow);
             }
@@ -1146,7 +1146,7 @@ test "@subWithOverflow" {
                 var lhs = @Vector(4, i8){ -120, -120, 120, 120 };
                 var rhs = @Vector(4, i8){ 8, 9, -7, -8 };
                 _ = .{ &lhs, &rhs };
-                const overflow = @subWithOverflow(lhs, rhs)[1];
+                const overflow = @subwithoverflow(lhs, rhs)[1];
                 const expected: @Vector(4, u1) = .{ 0, 1, 0, 1 };
                 try expectEqual(expected, overflow);
             }
@@ -1156,7 +1156,7 @@ test "@subWithOverflow" {
     try comptime S.doTheTest();
 }
 
-test "@mulWithOverflow" {
+test "@mulwithoverflow" {
     if (builtin.zig_backend == .stage2_wasm) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_x86_64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_aarch64) return error.SkipZigTest; // TODO
@@ -1169,7 +1169,7 @@ test "@mulWithOverflow" {
             var lhs = @Vector(4, u8){ 10, 10, 10, 10 };
             var rhs = @Vector(4, u8){ 25, 26, 0, 30 };
             _ = .{ &lhs, &rhs };
-            const overflow = @mulWithOverflow(lhs, rhs)[1];
+            const overflow = @mulwithoverflow(lhs, rhs)[1];
             const expected: @Vector(4, u1) = .{ 0, 1, 0, 1 };
             try expectEqual(expected, overflow);
         }
@@ -1178,7 +1178,7 @@ test "@mulWithOverflow" {
     try comptime S.doTheTest();
 }
 
-test "@shlWithOverflow" {
+test "@shlwithoverflow" {
     if (builtin.zig_backend == .stage2_wasm) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_x86_64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_aarch64) return error.SkipZigTest; // TODO
@@ -1191,7 +1191,7 @@ test "@shlWithOverflow" {
             var lhs = @Vector(4, u8){ 0, 1, 8, 255 };
             var rhs = @Vector(4, u3){ 7, 7, 7, 7 };
             _ = .{ &lhs, &rhs };
-            const overflow = @shlWithOverflow(lhs, rhs)[1];
+            const overflow = @shlwithoverflow(lhs, rhs)[1];
             const expected: @Vector(4, u1) = .{ 0, 0, 1, 1 };
             try expectEqual(expected, overflow);
         }
@@ -1201,24 +1201,24 @@ test "@shlWithOverflow" {
 }
 
 test "alignment of vectors" {
-    try expect(@alignOf(@Vector(2, u8)) == switch (builtin.zig_backend) {
+    try expect(@alignof(@Vector(2, u8)) == switch (builtin.zig_backend) {
         else => 2,
-        .stage2_c => @alignOf(u8),
+        .stage2_c => @alignof(u8),
         .stage2_x86_64 => 16,
     });
-    try expect(@alignOf(@Vector(2, u1)) == switch (builtin.zig_backend) {
+    try expect(@alignof(@Vector(2, u1)) == switch (builtin.zig_backend) {
         else => 1,
-        .stage2_c => @alignOf(u1),
+        .stage2_c => @alignof(u1),
         .stage2_x86_64 => 16,
     });
-    try expect(@alignOf(@Vector(1, u1)) == switch (builtin.zig_backend) {
+    try expect(@alignof(@Vector(1, u1)) == switch (builtin.zig_backend) {
         else => 1,
-        .stage2_c => @alignOf(u1),
+        .stage2_c => @alignof(u1),
         .stage2_x86_64 => 16,
     });
-    try expect(@alignOf(@Vector(2, u16)) == switch (builtin.zig_backend) {
+    try expect(@alignof(@Vector(2, u16)) == switch (builtin.zig_backend) {
         else => 4,
-        .stage2_c => @alignOf(u16),
+        .stage2_c => @alignof(u16),
         .stage2_x86_64 => 16,
     });
 }
@@ -1230,7 +1230,7 @@ test "loading the second vector from a slice of vectors" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
     var small_bases = [2]@Vector(2, u8){
         @Vector(2, u8){ 0, 1 },
         @Vector(2, u8){ 2, 3 },
@@ -1272,7 +1272,7 @@ test "byte vector initialized in inline function" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     if (comptime builtin.zig_backend == .stage2_llvm and builtin.cpu.arch == .x86_64 and
-        builtin.cpu.features.isEnabled(@intFromEnum(std.Target.x86.Feature.avx512f)))
+        builtin.cpu.features.isEnabled(@intfromenum(std.Target.x86.Feature.avx512f)))
     {
         // TODO https://github.com/ziglang/zig/issues/13279
         return error.SkipZigTest;
@@ -1301,9 +1301,9 @@ test "zero divisor" {
     const ones = @Vector(2, f32){ 1.0, 1.0 };
 
     const v1 = zeros / ones;
-    const v2 = @divExact(zeros, ones);
-    const v3 = @divTrunc(zeros, ones);
-    const v4 = @divFloor(zeros, ones);
+    const v2 = @divexact(zeros, ones);
+    const v3 = @divtrunc(zeros, ones);
+    const v4 = @divfloor(zeros, ones);
 
     _ = v1[0];
     _ = v2[0];
@@ -1334,7 +1334,7 @@ test "zero multiplicand" {
     _ = (zeros *% ones)[0];
 }
 
-test "@intCast to u0" {
+test "@intcast to u0" {
     if (builtin.zig_backend == .stage2_wasm) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_aarch64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_arm) return error.SkipZigTest; // TODO
@@ -1343,7 +1343,7 @@ test "@intCast to u0" {
 
     var zeros = @Vector(2, u32){ 0, 0 };
     _ = &zeros;
-    const casted = @as(@Vector(2, u0), @intCast(zeros));
+    const casted = @as(@Vector(2, u0), @intcast(zeros));
 
     _ = casted[0];
 }
@@ -1481,7 +1481,7 @@ test "addition of vectors represented as strings" {
 
     const V = @Vector(3, u8);
     const foo: V = "foo".*;
-    const bar: V = @typeName(u32).*;
+    const bar: V = @typename(u32).*;
     try expectEqual(V{ 219, 162, 161 }, foo + bar);
 }
 
@@ -1554,8 +1554,8 @@ test "bitcast to vector with different child type" {
 
             var vec_a = VecA{ 1, 1, 1, 1, 1, 1, 1, 1 };
             _ = &vec_a;
-            const vec_b: VecB = @bitCast(vec_a);
-            const vec_c: VecA = @bitCast(vec_b);
+            const vec_b: VecB = @bitcast(vec_a);
+            const vec_c: VecA = @bitcast(vec_b);
             try expectEqual(vec_a, vec_c);
         }
     };
@@ -1567,7 +1567,7 @@ test "bitcast to vector with different child type" {
 
 test "index into comptime-known vector is comptime-known" {
     const vec: @Vector(2, f16) = [2]f16{ 1.5, 3.5 };
-    if (vec[0] != 1.5) @compileError("vec should be comptime");
+    if (vec[0] != 1.5) @compileerror("vec should be comptime");
 }
 
 test "arithmetic on zero-length vectors" {
@@ -1614,13 +1614,13 @@ test "bitcast vector to array of smaller vectors" {
     const u8x64 = @Vector(64, u8);
     const S = struct {
         fn doTheTest(input_vec: u8x64) !void {
-            try compare(@bitCast(input_vec));
+            try compare(@bitcast(input_vec));
         }
         fn compare(chunks: [2]u8x32) !void {
             try expectEqual(@as(u8x32, @splat(1)), chunks[0]);
             try expectEqual(@as(u8x32, @splat(2)), chunks[1]);
         }
     };
-    const input: u8x64 = @bitCast([2]u8x32{ @splat(1), @splat(2) });
+    const input: u8x64 = @bitcast([2]u8x32{ @splat(1), @splat(2) });
     try S.doTheTest(input);
 }

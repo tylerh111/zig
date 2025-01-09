@@ -6,7 +6,7 @@ comptime {
 }
 
 pub fn bcmp(vl: [*]allowzero const u8, vr: [*]allowzero const u8, n: usize) callconv(.C) c_int {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
 
     var index: usize = 0;
     while (index != n) : (index += 1) {

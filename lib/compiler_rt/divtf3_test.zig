@@ -5,7 +5,7 @@ const testing = std.testing;
 const __divtf3 = @import("divtf3.zig").__divtf3;
 
 fn compareResultLD(result: f128, expectedHi: u64, expectedLo: u64) bool {
-    const rep: u128 = @bitCast(result);
+    const rep: u128 = @bitcast(result);
     const hi: u64 = @truncate(rep >> 64);
     const lo: u64 = @truncate(rep);
 

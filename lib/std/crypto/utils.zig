@@ -11,34 +11,34 @@ const Order = std.math.Order;
 /// This function was designed to compare short cryptographic secrets (MACs, signatures).
 /// For all other applications, use mem.eql() instead.
 pub fn timingSafeEql(comptime T: type, a: T, b: T) bool {
-    switch (@typeInfo(T)) {
+    switch (@typeinfo(T)) {
         .Array => |info| {
             const C = info.child;
-            if (@typeInfo(C) != .Int) {
-                @compileError("Elements to be compared must be integers");
+            if (@typeinfo(C) != .Int) {
+                @compileerror("Elements to be compared must be integers");
             }
             var acc = @as(C, 0);
             for (a, 0..) |x, i| {
                 acc |= x ^ b[i];
             }
-            const s = @typeInfo(C).Int.bits;
+            const s = @typeinfo(C).Int.bits;
             const Cu = std.meta.Int(.unsigned, s);
             const Cext = std.meta.Int(.unsigned, s + 1);
-            return @as(bool, @bitCast(@as(u1, @truncate((@as(Cext, @as(Cu, @bitCast(acc))) -% 1) >> s))));
+            return @as(bool, @bitcast(@as(u1, @truncate((@as(Cext, @as(Cu, @bitcast(acc))) -% 1) >> s))));
         },
         .Vector => |info| {
             const C = info.child;
-            if (@typeInfo(C) != .Int) {
-                @compileError("Elements to be compared must be integers");
+            if (@typeinfo(C) != .Int) {
+                @compileerror("Elements to be compared must be integers");
             }
             const acc = @reduce(.Or, a ^ b);
-            const s = @typeInfo(C).Int.bits;
+            const s = @typeinfo(C).Int.bits;
             const Cu = std.meta.Int(.unsigned, s);
             const Cext = std.meta.Int(.unsigned, s + 1);
-            return @as(bool, @bitCast(@as(u1, @truncate((@as(Cext, @as(Cu, @bitCast(acc))) -% 1) >> s))));
+            return @as(bool, @bitcast(@as(u1, @truncate((@as(Cext, @as(Cu, @bitcast(acc))) -% 1) >> s))));
         },
         else => {
-            @compileError("Only arrays and vectors can be compared");
+            @compileerror("Only arrays and vectors can be compared");
         },
     }
 }
@@ -47,9 +47,9 @@ pub fn timingSafeEql(comptime T: type, a: T, b: T) bool {
 /// Returns .lt if a<b, .gt if a>b and .eq if a=b
 pub fn timingSafeCompare(comptime T: type, a: []const T, b: []const T, endian: Endian) Order {
     debug.assert(a.len == b.len);
-    const bits = switch (@typeInfo(T)) {
-        .Int => |cinfo| if (cinfo.signedness != .unsigned) @compileError("Elements to be compared must be unsigned") else cinfo.bits,
-        else => @compileError("Elements to be compared must be integers"),
+    const bits = switch (@typeinfo(T)) {
+        .Int => |cinfo| if (cinfo.signedness != .unsigned) @compileerror("Elements to be compared must be unsigned") else cinfo.bits,
+        else => @compileerror("Elements to be compared must be integers"),
     };
     const Cext = std.meta.Int(.unsigned, bits + 1);
     var gt: T = 0;
@@ -87,8 +87,8 @@ pub fn timingSafeAdd(comptime T: type, a: []const T, b: []const T, result: []T, 
     if (endian == .little) {
         var i: usize = 0;
         while (i < len) : (i += 1) {
-            const ov1 = @addWithOverflow(a[i], b[i]);
-            const ov2 = @addWithOverflow(ov1[0], carry);
+            const ov1 = @addwithoverflow(a[i], b[i]);
+            const ov2 = @addwithoverflow(ov1[0], carry);
             result[i] = ov2[0];
             carry = ov1[1] | ov2[1];
         }
@@ -96,13 +96,13 @@ pub fn timingSafeAdd(comptime T: type, a: []const T, b: []const T, result: []T, 
         var i: usize = len;
         while (i != 0) {
             i -= 1;
-            const ov1 = @addWithOverflow(a[i], b[i]);
-            const ov2 = @addWithOverflow(ov1[0], carry);
+            const ov1 = @addwithoverflow(a[i], b[i]);
+            const ov2 = @addwithoverflow(ov1[0], carry);
             result[i] = ov2[0];
             carry = ov1[1] | ov2[1];
         }
     }
-    return @as(bool, @bitCast(carry));
+    return @as(bool, @bitcast(carry));
 }
 
 /// Subtract two integers serialized as arrays of the same size, in constant time.
@@ -114,8 +114,8 @@ pub fn timingSafeSub(comptime T: type, a: []const T, b: []const T, result: []T, 
     if (endian == .little) {
         var i: usize = 0;
         while (i < len) : (i += 1) {
-            const ov1 = @subWithOverflow(a[i], b[i]);
-            const ov2 = @subWithOverflow(ov1[0], borrow);
+            const ov1 = @subwithoverflow(a[i], b[i]);
+            const ov2 = @subwithoverflow(ov1[0], borrow);
             result[i] = ov2[0];
             borrow = ov1[1] | ov2[1];
         }
@@ -123,13 +123,13 @@ pub fn timingSafeSub(comptime T: type, a: []const T, b: []const T, result: []T, 
         var i: usize = len;
         while (i != 0) {
             i -= 1;
-            const ov1 = @subWithOverflow(a[i], b[i]);
-            const ov2 = @subWithOverflow(ov1[0], borrow);
+            const ov1 = @subwithoverflow(a[i], b[i]);
+            const ov2 = @subwithoverflow(ov1[0], borrow);
             result[i] = ov2[0];
             borrow = ov1[1] | ov2[1];
         }
     }
-    return @as(bool, @bitCast(borrow));
+    return @as(bool, @bitcast(borrow));
 }
 
 /// Sets a slice to zeroes.

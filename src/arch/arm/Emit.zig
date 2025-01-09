@@ -78,7 +78,7 @@ pub fn emitMir(
 
     // Emit machine code
     for (mir_tags, 0..) |tag, index| {
-        const inst = @as(u32, @intCast(index));
+        const inst = @as(u32, @intcast(index));
         switch (tag) {
             .add => try emit.mirDataProcessing(inst),
             .adds => try emit.mirDataProcessing(inst),
@@ -171,7 +171,7 @@ fn optimalBranchType(emit: *Emit, tag: Mir.Inst.Tag, offset: i64) !BranchType {
 
     switch (tag) {
         .b => {
-            if (std.math.cast(i24, @divExact(offset, 4))) |_| {
+            if (std.math.cast(i24, @divexact(offset, 4))) |_| {
                 return BranchType.b;
             } else {
                 return emit.fail("TODO support larger branches", .{});
@@ -245,7 +245,7 @@ fn lowerBranches(emit: *Emit) !void {
     // TODO optimization opportunity: do this in codegen while
     // generating MIR
     for (mir_tags, 0..) |tag, index| {
-        const inst = @as(u32, @intCast(index));
+        const inst = @as(u32, @intcast(index));
         if (isBranch(tag)) {
             const target_inst = emit.branchTarget(inst);
 
@@ -290,7 +290,7 @@ fn lowerBranches(emit: *Emit) !void {
         var current_code_offset: usize = 0;
 
         for (mir_tags, 0..) |tag, index| {
-            const inst = @as(u32, @intCast(index));
+            const inst = @as(u32, @intcast(index));
 
             // If this instruction contained in the code offset
             // mapping (when it is a target of a branch or if it is a
@@ -305,7 +305,7 @@ fn lowerBranches(emit: *Emit) !void {
                 const target_inst = emit.branchTarget(inst);
                 if (target_inst < inst) {
                     const target_offset = emit.code_offset_mapping.get(target_inst).?;
-                    const offset = @as(i64, @intCast(target_offset)) - @as(i64, @intCast(current_code_offset + 8));
+                    const offset = @as(i64, @intcast(target_offset)) - @as(i64, @intcast(current_code_offset + 8));
                     const branch_type = emit.branch_types.getPtr(inst).?;
                     const optimal_branch_type = try emit.optimalBranchType(tag, offset);
                     if (branch_type.* != optimal_branch_type) {
@@ -324,7 +324,7 @@ fn lowerBranches(emit: *Emit) !void {
                 for (origin_list.items) |forward_branch_inst| {
                     const branch_tag = emit.mir.instructions.items(.tag)[forward_branch_inst];
                     const forward_branch_inst_offset = emit.code_offset_mapping.get(forward_branch_inst).?;
-                    const offset = @as(i64, @intCast(current_code_offset)) - @as(i64, @intCast(forward_branch_inst_offset + 8));
+                    const offset = @as(i64, @intcast(current_code_offset)) - @as(i64, @intcast(forward_branch_inst_offset + 8));
                     const branch_type = emit.branch_types.getPtr(forward_branch_inst).?;
                     const optimal_branch_type = try emit.optimalBranchType(branch_tag, offset);
                     if (branch_type.* != optimal_branch_type) {
@@ -357,7 +357,7 @@ fn fail(emit: *Emit, comptime format: []const u8, args: anytype) InnerError {
 }
 
 fn dbgAdvancePCAndLine(self: *Emit, line: u32, column: u32) !void {
-    const delta_line = @as(i32, @intCast(line)) - @as(i32, @intCast(self.prev_di_line));
+    const delta_line = @as(i32, @intcast(line)) - @as(i32, @intcast(self.prev_di_line));
     const delta_pc: usize = self.code.items.len - self.prev_di_pc;
     switch (self.debug_output) {
         .dwarf => |dw| {
@@ -372,13 +372,13 @@ fn dbgAdvancePCAndLine(self: *Emit, line: u32, column: u32) !void {
             // increasing the line number
             try link.File.Plan9.changeLine(&dbg_out.dbg_line, delta_line);
             // increasing the pc
-            const d_pc_p9 = @as(i64, @intCast(delta_pc)) - dbg_out.pc_quanta;
+            const d_pc_p9 = @as(i64, @intcast(delta_pc)) - dbg_out.pc_quanta;
             if (d_pc_p9 > 0) {
                 // minus one because if its the last one, we want to leave space to change the line which is one pc quanta
-                try dbg_out.dbg_line.append(@as(u8, @intCast(@divExact(d_pc_p9, dbg_out.pc_quanta) + 128)) - dbg_out.pc_quanta);
+                try dbg_out.dbg_line.append(@as(u8, @intcast(@divexact(d_pc_p9, dbg_out.pc_quanta) + 128)) - dbg_out.pc_quanta);
                 if (dbg_out.pcop_change_index) |pci|
                     dbg_out.dbg_line.items[pci] += 1;
-                dbg_out.pcop_change_index = @as(u32, @intCast(dbg_out.dbg_line.items.len - 1));
+                dbg_out.pcop_change_index = @as(u32, @intcast(dbg_out.dbg_line.items.len - 1));
             } else if (d_pc_p9 == 0) {
                 // we don't need to do anything, because adding the pc quanta does it for us
             } else unreachable;
@@ -488,12 +488,12 @@ fn mirBranch(emit: *Emit, inst: Mir.Inst.Index) !void {
     const cond = emit.mir.instructions.items(.cond)[inst];
     const target_inst = emit.mir.instructions.items(.data)[inst].inst;
 
-    const offset = @as(i64, @intCast(emit.code_offset_mapping.get(target_inst).?)) - @as(i64, @intCast(emit.code.items.len + 8));
+    const offset = @as(i64, @intcast(emit.code_offset_mapping.get(target_inst).?)) - @as(i64, @intcast(emit.code.items.len + 8));
     const branch_type = emit.branch_types.get(inst).?;
 
     switch (branch_type) {
         .b => switch (tag) {
-            .b => try emit.writeInstruction(Instruction.b(cond, @as(i26, @intCast(offset)))),
+            .b => try emit.writeInstruction(Instruction.b(cond, @as(i26, @intcast(offset)))),
             else => unreachable,
         },
     }
@@ -589,7 +589,7 @@ fn mirLoadStackArgument(emit: *Emit, inst: Mir.Inst.Index) !void {
         .ldrb_stack_argument,
         => {
             const offset = if (raw_offset <= math.maxInt(u12)) blk: {
-                break :blk Instruction.Offset.imm(@as(u12, @intCast(raw_offset)));
+                break :blk Instruction.Offset.imm(@as(u12, @intcast(raw_offset)));
             } else return emit.fail("TODO mirLoadStack larger offsets", .{});
 
             switch (tag) {
@@ -603,7 +603,7 @@ fn mirLoadStackArgument(emit: *Emit, inst: Mir.Inst.Index) !void {
         .ldrsh_stack_argument,
         => {
             const offset = if (raw_offset <= math.maxInt(u8)) blk: {
-                break :blk Instruction.ExtraLoadStoreOffset.imm(@as(u8, @intCast(raw_offset)));
+                break :blk Instruction.ExtraLoadStoreOffset.imm(@as(u8, @intcast(raw_offset)));
             } else return emit.fail("TODO mirLoadStack larger offsets", .{});
 
             switch (tag) {

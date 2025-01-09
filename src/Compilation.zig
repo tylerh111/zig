@@ -172,7 +172,7 @@ local_cache_directory: Directory,
 global_cache_directory: Directory,
 libc_include_dir_list: []const []const u8,
 libc_framework_dir_list: []const []const u8,
-rc_includes: RcIncludes,
+rc_includes: Rcincludes,
 mingw_unicode_entry_point: bool,
 thread_pool: *ThreadPool,
 
@@ -299,7 +299,7 @@ pub const RcSourceFile = struct {
     extra_flags: []const []const u8 = &.{},
 };
 
-pub const RcIncludes = enum {
+pub const Rcincludes = enum {
     /// Use MSVC if available, fall back to MinGW.
     any,
     /// Use MSVC include paths (MSVC install + Windows SDK, must be present on the system).
@@ -411,7 +411,7 @@ pub const CObject = struct {
 
         pub fn addToErrorBundle(diag: Diag, eb: *ErrorBundle.Wip, bundle: Bundle, note: *u32) !void {
             const err_msg = try eb.addErrorMessage(try diag.toErrorMessage(eb, bundle, 0));
-            eb.extra.items[note.*] = @intFromEnum(err_msg);
+            eb.extra.items[note.*] = @intfromenum(err_msg);
             note.* += 1;
             for (diag.sub_diags) |sub_diag| try sub_diag.addToErrorBundle(eb, bundle, note);
         }
@@ -542,58 +542,58 @@ pub const CObject = struct {
 
                 try bc.checkMagic("DIAG");
                 while (try bc.next()) |item| switch (item) {
-                    .start_block => |block| switch (@as(BlockId, @enumFromInt(block.id))) {
+                    .start_block => |block| switch (@as(BlockId, @enumfromint(block.id))) {
                         .Meta => if (stack.items.len > 0) try bc.skipBlock(block),
                         .Diag => try stack.append(gpa, .{}),
                         _ => try bc.skipBlock(block),
                     },
-                    .record => |record| switch (@as(RecordId, @enumFromInt(record.id))) {
+                    .record => |record| switch (@as(RecordId, @enumfromint(record.id))) {
                         .Version => if (record.operands[0] != 2) return error.InvalidVersion,
                         .DiagInfo => {
                             const top = &stack.items[stack.items.len - 1];
-                            top.level = @intCast(record.operands[0]);
+                            top.level = @intcast(record.operands[0]);
                             top.src_loc = .{
-                                .file = @intCast(record.operands[1]),
-                                .line = @intCast(record.operands[2]),
-                                .column = @intCast(record.operands[3]),
-                                .offset = @intCast(record.operands[4]),
+                                .file = @intcast(record.operands[1]),
+                                .line = @intcast(record.operands[2]),
+                                .column = @intcast(record.operands[3]),
+                                .offset = @intcast(record.operands[4]),
                             };
-                            top.category = @intCast(record.operands[5]);
+                            top.category = @intcast(record.operands[5]);
                             top.msg = try gpa.dupe(u8, record.blob);
                         },
                         .SrcRange => try stack.items[stack.items.len - 1].src_ranges.append(gpa, .{
                             .start = .{
-                                .file = @intCast(record.operands[0]),
-                                .line = @intCast(record.operands[1]),
-                                .column = @intCast(record.operands[2]),
-                                .offset = @intCast(record.operands[3]),
+                                .file = @intcast(record.operands[0]),
+                                .line = @intcast(record.operands[1]),
+                                .column = @intcast(record.operands[2]),
+                                .offset = @intcast(record.operands[3]),
                             },
                             .end = .{
-                                .file = @intCast(record.operands[4]),
-                                .line = @intCast(record.operands[5]),
-                                .column = @intCast(record.operands[6]),
-                                .offset = @intCast(record.operands[7]),
+                                .file = @intcast(record.operands[4]),
+                                .line = @intcast(record.operands[5]),
+                                .column = @intcast(record.operands[6]),
+                                .offset = @intcast(record.operands[7]),
                             },
                         }),
                         .DiagFlag => {},
                         .CatName => {
                             try category_names.ensureUnusedCapacity(gpa, 1);
                             category_names.putAssumeCapacity(
-                                @intCast(record.operands[0]),
+                                @intcast(record.operands[0]),
                                 try gpa.dupe(u8, record.blob),
                             );
                         },
                         .FileName => {
                             try file_names.ensureUnusedCapacity(gpa, 1);
                             file_names.putAssumeCapacity(
-                                @intCast(record.operands[0]),
+                                @intcast(record.operands[0]),
                                 try gpa.dupe(u8, record.blob),
                             );
                         },
                         .FixIt => {},
                         _ => {},
                     },
-                    .end_block => |block| switch (@as(BlockId, @enumFromInt(block.id))) {
+                    .end_block => |block| switch (@as(BlockId, @enumfromint(block.id))) {
                         .Meta => {},
                         .Diag => {
                             var wip_diag = stack.pop();
@@ -852,7 +852,7 @@ pub const cache_helpers = struct {
     }
 
     pub fn addDebugFormat(hh: *Cache.HashHelper, x: Config.DebugFormat) void {
-        const tag: @typeInfo(Config.DebugFormat).Union.tag_type.? = x;
+        const tag: @typeinfo(Config.DebugFormat).Union.tag_type.? = x;
         hh.add(tag);
         switch (x) {
             .strip, .code_view => {},
@@ -1006,7 +1006,7 @@ pub const CreateOptions = struct {
     c_source_files: []const CSourceFile = &.{},
     rc_source_files: []const RcSourceFile = &.{},
     manifest_file: ?[]const u8 = null,
-    rc_includes: RcIncludes = .any,
+    rc_includes: Rcincludes = .any,
     link_objects: []LinkObject = &[0]LinkObject{},
     framework_dirs: []const []const u8 = &[0][]const u8{},
     frameworks: []const Framework = &.{},
@@ -1673,7 +1673,7 @@ pub fn create(gpa: Allocator, arena: Allocator, options: CreateOptions) !*Compil
 
     // Add a `Win32Resource` for each `rc_source_files` and one for `manifest_file`.
     if (!build_options.only_core_functionality) {
-        try comp.win32_resource_table.ensureTotalCapacity(gpa, options.rc_source_files.len + @intFromBool(options.manifest_file != null));
+        try comp.win32_resource_table.ensureTotalCapacity(gpa, options.rc_source_files.len + @intfrombool(options.manifest_file != null));
         for (options.rc_source_files) |rc_source_file| {
             const win32_resource = try gpa.create(Win32Resource);
             errdefer gpa.destroy(win32_resource);
@@ -2003,7 +2003,7 @@ pub fn update(comp: *Compilation, main_progress_node: std.Progress.Node) !void {
                 return comp.setMiscFailure(
                     .check_whole_cache,
                     "unable to check cache: stat file '{}{s}' failed: {s}",
-                    .{ prefix, pp.sub_path, @errorName(err) },
+                    .{ prefix, pp.sub_path, @errorname(err) },
                 );
             };
             if (is_hit) {
@@ -2113,7 +2113,7 @@ pub fn update(comp: *Compilation, main_progress_node: std.Progress.Node) !void {
             comp.astgen_work_queue.writeItemAssumeCapacity(file);
         }
 
-        // Put a work item in for checking if any files used with `@embedFile` changed.
+        // Put a work item in for checking if any files used with `@embedfile` changed.
         try comp.embed_file_work_queue.ensureUnusedCapacity(module.embed_table.count());
         for (module.embed_table.values()) |embed_file| {
             comp.embed_file_work_queue.writeItemAssumeCapacity(embed_file);
@@ -2142,7 +2142,7 @@ pub fn update(comp: *Compilation, main_progress_node: std.Progress.Node) !void {
         if (build_options.enable_debug_extensions and comp.verbose_generic_instances) {
             std.debug.print("generic instances for '{s}:0x{x}':\n", .{
                 comp.root_name,
-                @as(usize, @intFromPtr(module)),
+                @as(usize, @intfromptr(module)),
             });
             module.intern_pool.dumpGenericInstances(gpa);
         }
@@ -2212,7 +2212,7 @@ pub fn update(comp: *Compilation, main_progress_node: std.Progress.Node) !void {
                     .{
                         comp.local_cache_directory, tmp_dir_sub_path,
                         comp.local_cache_directory, o_sub_path,
-                        @errorName(err),
+                        @errorname(err),
                     },
                 );
             };
@@ -2238,7 +2238,7 @@ pub fn update(comp: *Compilation, main_progress_node: std.Progress.Node) !void {
 
             // Failure here only means an unnecessary cache miss.
             man.writeManifest() catch |err| {
-                log.warn("failed to write cache manifest: {s}", .{@errorName(err)});
+                log.warn("failed to write cache manifest: {s}", .{@errorname(err)});
             };
 
             if (comp.bin_file) |lf| {
@@ -2548,12 +2548,12 @@ fn emitOthers(comp: *Compilation) void {
                 const src_path = std.fmt.allocPrint(comp.gpa, "{s}{s}", .{
                     basename, out.ext,
                 }) catch |err| {
-                    log.err("unable to copy {s}{s}: {s}", .{ basename, out.ext, @errorName(err) });
+                    log.err("unable to copy {s}{s}: {s}", .{ basename, out.ext, @errorname(err) });
                     continue;
                 };
                 defer comp.gpa.free(src_path);
                 cwd.copyFile(src_path, directory.handle, loc.basename, .{}) catch |err| {
-                    log.err("unable to copy {s}: {s}", .{ src_path, @errorName(err) });
+                    log.err("unable to copy {s}: {s}", .{ src_path, @errorname(err) });
                 };
             }
         }
@@ -2568,7 +2568,7 @@ pub fn emitLlvmObject(
     llvm_object: *LlvmObject,
     prog_node: std.Progress.Node,
 ) !void {
-    if (build_options.only_c) @compileError("unreachable");
+    if (build_options.only_c) @compileerror("unreachable");
 
     const sub_prog_node = prog_node.start("LLVM Emit Object", 0);
     defer sub_prog_node.end();
@@ -2747,18 +2747,18 @@ pub fn saveState(comp: *Compilation) !void {
         const ip = &zcu.intern_pool;
         const header: Header = .{
             .intern_pool = .{
-                .items_len = @intCast(ip.items.len),
-                .extra_len = @intCast(ip.extra.items.len),
-                .limbs_len = @intCast(ip.limbs.items.len),
-                .string_bytes_len = @intCast(ip.string_bytes.items.len),
-                .tracked_insts_len = @intCast(ip.tracked_insts.count()),
-                .src_hash_deps_len = @intCast(ip.src_hash_deps.count()),
-                .decl_val_deps_len = @intCast(ip.decl_val_deps.count()),
-                .namespace_deps_len = @intCast(ip.namespace_deps.count()),
-                .namespace_name_deps_len = @intCast(ip.namespace_name_deps.count()),
-                .first_dependency_len = @intCast(ip.first_dependency.count()),
-                .dep_entries_len = @intCast(ip.dep_entries.items.len),
-                .free_dep_entries_len = @intCast(ip.free_dep_entries.items.len),
+                .items_len = @intcast(ip.items.len),
+                .extra_len = @intcast(ip.extra.items.len),
+                .limbs_len = @intcast(ip.limbs.items.len),
+                .string_bytes_len = @intcast(ip.string_bytes.items.len),
+                .tracked_insts_len = @intcast(ip.tracked_insts.count()),
+                .src_hash_deps_len = @intcast(ip.src_hash_deps.count()),
+                .decl_val_deps_len = @intcast(ip.decl_val_deps.count()),
+                .namespace_deps_len = @intcast(ip.namespace_deps.count()),
+                .namespace_name_deps_len = @intcast(ip.namespace_name_deps.count()),
+                .first_dependency_len = @intcast(ip.first_dependency.count()),
+                .dep_entries_len = @intcast(ip.dep_entries.items.len),
+                .free_dep_entries_len = @intcast(ip.free_dep_entries.items.len),
             },
         };
         addBuf(&bufs_list, &bufs_len, mem.asBytes(&header));
@@ -2818,7 +2818,7 @@ fn addBuf(bufs_list: []std.posix.iovec_const, bufs_len: *usize, buf: []const u8)
 pub fn totalErrorCount(comp: *Compilation) u32 {
     var total: usize =
         comp.misc_failures.count() +
-        @intFromBool(comp.alloc_failure_occurred) +
+        @intfrombool(comp.alloc_failure_occurred) +
         comp.lld_errors.items.len;
 
     for (comp.failed_c_objects.values()) |bundle| {
@@ -2840,7 +2840,7 @@ pub fn totalErrorCount(comp: *Compilation) u32 {
                 total += 1;
             } else {
                 assert(file.zir_loaded);
-                const payload_index = file.zir.extra[@intFromEnum(Zir.ExtraIndex.compile_errors)];
+                const payload_index = file.zir.extra[@intfromenum(Zir.ExtraIndex.compile_errors)];
                 assert(payload_index != 0);
                 const header = file.zir.extraData(Zir.Inst.CompileErrors, payload_index);
                 total += header.data.items_len;
@@ -2874,20 +2874,20 @@ pub fn totalErrorCount(comp: *Compilation) u32 {
 
     // The "no entry point found" error only counts if there are no semantic analysis errors.
     if (total == 0) {
-        total += @intFromBool(comp.link_error_flags.no_entry_point_found);
+        total += @intfrombool(comp.link_error_flags.no_entry_point_found);
     }
-    total += @intFromBool(comp.link_error_flags.missing_libc);
+    total += @intfrombool(comp.link_error_flags.missing_libc);
 
     total += comp.link_errors.items.len;
 
     // Compile log errors only count if there are no other errors.
     if (total == 0) {
         if (comp.module) |module| {
-            total += @intFromBool(module.compile_log_decls.count() != 0);
+            total += @intfrombool(module.compile_log_decls.count() != 0);
         }
     }
 
-    return @as(u32, @intCast(total));
+    return @as(u32, @intcast(total));
 }
 
 /// This function is temporally single-threaded.
@@ -2909,7 +2909,7 @@ pub fn getAllErrorsAlloc(comp: *Compilation) !ErrorBundle {
     }
 
     for (comp.lld_errors.items) |lld_error| {
-        const notes_len = @as(u32, @intCast(lld_error.context_lines.len));
+        const notes_len = @as(u32, @intcast(lld_error.context_lines.len));
 
         try bundle.addRootErrorMessage(.{
             .msg = try bundle.addString(lld_error.msg),
@@ -2917,7 +2917,7 @@ pub fn getAllErrorsAlloc(comp: *Compilation) !ErrorBundle {
         });
         const notes_start = try bundle.reserveNotes(notes_len);
         for (notes_start.., lld_error.context_lines) |note, context_line| {
-            bundle.extra.items[note] = @intFromEnum(bundle.addErrorMessageAssumeCapacity(.{
+            bundle.extra.items[note] = @intfromenum(bundle.addErrorMessageAssumeCapacity(.{
                 .msg = try bundle.addString(context_line),
             }));
         }
@@ -2997,7 +2997,7 @@ pub fn getAllErrorsAlloc(comp: *Compilation) !ErrorBundle {
                 .notes_len = 1,
             });
             const notes_start = try bundle.reserveNotes(1);
-            bundle.extra.items[notes_start] = @intFromEnum(try bundle.addErrorMessage(.{
+            bundle.extra.items[notes_start] = @intfromenum(try bundle.addErrorMessage(.{
                 .msg = try bundle.printString("use '--error-limit {d}' to increase limit", .{
                     actual_error_count,
                 }),
@@ -3019,10 +3019,10 @@ pub fn getAllErrorsAlloc(comp: *Compilation) !ErrorBundle {
             .notes_len = 2,
         });
         const notes_start = try bundle.reserveNotes(2);
-        bundle.extra.items[notes_start + 0] = @intFromEnum(try bundle.addErrorMessage(.{
+        bundle.extra.items[notes_start + 0] = @intfromenum(try bundle.addErrorMessage(.{
             .msg = try bundle.addString("run 'zig libc -h' to learn about libc installations"),
         }));
-        bundle.extra.items[notes_start + 1] = @intFromEnum(try bundle.addErrorMessage(.{
+        bundle.extra.items[notes_start + 1] = @intfromenum(try bundle.addErrorMessage(.{
             .msg = try bundle.addString("run 'zig targets' to see the targets for which zig can always provide libc"),
         }));
     }
@@ -3030,11 +3030,11 @@ pub fn getAllErrorsAlloc(comp: *Compilation) !ErrorBundle {
     for (comp.link_errors.items) |link_err| {
         try bundle.addRootErrorMessage(.{
             .msg = try bundle.addString(link_err.msg),
-            .notes_len = @intCast(link_err.notes.len),
+            .notes_len = @intcast(link_err.notes.len),
         });
-        const notes_start = try bundle.reserveNotes(@intCast(link_err.notes.len));
+        const notes_start = try bundle.reserveNotes(@intcast(link_err.notes.len));
         for (link_err.notes, 0..) |note, i| {
-            bundle.extra.items[notes_start + i] = @intFromEnum(try bundle.addErrorMessage(.{
+            bundle.extra.items[notes_start + i] = @intfromenum(try bundle.addErrorMessage(.{
                 .msg = try bundle.addString(note.msg),
             }));
         }
@@ -3126,7 +3126,7 @@ pub fn addModuleErrorMsg(mod: *Module, eb: *ErrorBundle.Wip, module_err_msg: Mod
         defer gpa.free(file_path);
         try eb.addRootErrorMessage(.{
             .msg = try eb.printString("unable to load '{s}': {s}", .{
-                file_path, @errorName(err),
+                file_path, @errorname(err),
             }),
         });
         return;
@@ -3148,7 +3148,7 @@ pub fn addModuleErrorMsg(mod: *Module, eb: *ErrorBundle.Wip, module_err_msg: Mod
         break :remaining null;
     };
     try ref_traces.ensureTotalCapacityPrecise(gpa, module_err_msg.reference_trace.len +
-        @intFromBool(remaining_references != null));
+        @intfrombool(remaining_references != null));
 
     for (module_err_msg.reference_trace) |module_reference| {
         const source = try module_reference.src_loc.file_scope.getSource(gpa);
@@ -3163,8 +3163,8 @@ pub fn addModuleErrorMsg(mod: *Module, eb: *ErrorBundle.Wip, module_err_msg: Mod
                 .span_start = span.start,
                 .span_main = span.main,
                 .span_end = span.end,
-                .line = @intCast(loc.line),
-                .column = @intCast(loc.column),
+                .line = @intcast(loc.line),
+                .column = @intcast(loc.column),
                 .source_line = 0,
             }),
         });
@@ -3178,13 +3178,13 @@ pub fn addModuleErrorMsg(mod: *Module, eb: *ErrorBundle.Wip, module_err_msg: Mod
         .span_start = err_span.start,
         .span_main = err_span.main,
         .span_end = err_span.end,
-        .line = @intCast(err_loc.line),
-        .column = @intCast(err_loc.column),
+        .line = @intcast(err_loc.line),
+        .column = @intcast(err_loc.column),
         .source_line = if (module_err_msg.src_loc.lazy == .entire_file)
             0
         else
             try eb.addString(err_loc.source_line),
-        .reference_trace_len = @intCast(ref_traces.items.len),
+        .reference_trace_len = @intcast(ref_traces.items.len),
     });
 
     for (ref_traces.items) |rt| {
@@ -3210,8 +3210,8 @@ pub fn addModuleErrorMsg(mod: *Module, eb: *ErrorBundle.Wip, module_err_msg: Mod
                 .span_start = span.start,
                 .span_main = span.main,
                 .span_end = span.end,
-                .line = @intCast(loc.line),
-                .column = @intCast(loc.column),
+                .line = @intcast(loc.line),
+                .column = @intcast(loc.column),
                 .source_line = if (err_loc.eql(loc)) 0 else try eb.addString(loc.source_line),
             }),
         }, .{ .eb = eb });
@@ -3220,7 +3220,7 @@ pub fn addModuleErrorMsg(mod: *Module, eb: *ErrorBundle.Wip, module_err_msg: Mod
         }
     }
 
-    const notes_len: u32 = @intCast(notes.entries.len);
+    const notes_len: u32 = @intcast(notes.entries.len);
 
     try eb.addRootErrorMessage(.{
         .msg = try eb.addString(module_err_msg.msg),
@@ -3231,7 +3231,7 @@ pub fn addModuleErrorMsg(mod: *Module, eb: *ErrorBundle.Wip, module_err_msg: Mod
     const notes_start = try eb.reserveNotes(notes_len);
 
     for (notes_start.., notes.keys()) |i, note| {
-        eb.extra.items[i] = @intFromEnum(try eb.addErrorMessage(note));
+        eb.extra.items[i] = @intfromenum(try eb.addErrorMessage(note));
     }
 }
 
@@ -3494,7 +3494,7 @@ fn processOneJob(comp: *Compilation, job: Job, prog_node: std.Progress.Node) !vo
                     gpa,
                     decl.srcLoc(module),
                     "unable to update line number: {s}",
-                    .{@errorName(err)},
+                    .{@errorname(err)},
                 ));
                 decl.analysis = .codegen_failure;
                 try module.retryable_failures.append(gpa, InternPool.Depender.wrap(.{ .decl = decl_index }));
@@ -3517,7 +3517,7 @@ fn processOneJob(comp: *Compilation, job: Job, prog_node: std.Progress.Node) !vo
             glibc.buildCRTFile(comp, crt_file, prog_node) catch |err| {
                 // TODO Surface more error details.
                 comp.lockAndSetMiscFailure(.glibc_crt_file, "unable to build glibc CRT file: {s}", .{
-                    @errorName(err),
+                    @errorname(err),
                 });
             };
         },
@@ -3530,7 +3530,7 @@ fn processOneJob(comp: *Compilation, job: Job, prog_node: std.Progress.Node) !vo
                 comp.lockAndSetMiscFailure(
                     .glibc_shared_objects,
                     "unable to build glibc shared objects: {s}",
-                    .{@errorName(err)},
+                    .{@errorname(err)},
                 );
             };
         },
@@ -3543,7 +3543,7 @@ fn processOneJob(comp: *Compilation, job: Job, prog_node: std.Progress.Node) !vo
                 comp.lockAndSetMiscFailure(
                     .musl_crt_file,
                     "unable to build musl CRT file: {s}",
-                    .{@errorName(err)},
+                    .{@errorname(err)},
                 );
             };
         },
@@ -3556,7 +3556,7 @@ fn processOneJob(comp: *Compilation, job: Job, prog_node: std.Progress.Node) !vo
                 comp.lockAndSetMiscFailure(
                     .mingw_crt_file,
                     "unable to build mingw-w64 CRT file {s}: {s}",
-                    .{ @tagName(crt_file), @errorName(err) },
+                    .{ @tagname(crt_file), @errorname(err) },
                 );
             };
         },
@@ -3573,7 +3573,7 @@ fn processOneJob(comp: *Compilation, job: Job, prog_node: std.Progress.Node) !vo
                 comp.lockAndSetMiscFailure(
                     .windows_import_lib,
                     "unable to generate DLL import .lib file for {s}: {s}",
-                    .{ link_lib, @errorName(err) },
+                    .{ link_lib, @errorname(err) },
                 );
             };
         },
@@ -3587,7 +3587,7 @@ fn processOneJob(comp: *Compilation, job: Job, prog_node: std.Progress.Node) !vo
                 else => comp.lockAndSetMiscFailure(
                     .libunwind,
                     "unable to build libunwind: {s}",
-                    .{@errorName(err)},
+                    .{@errorname(err)},
                 ),
             };
         },
@@ -3601,7 +3601,7 @@ fn processOneJob(comp: *Compilation, job: Job, prog_node: std.Progress.Node) !vo
                 else => comp.lockAndSetMiscFailure(
                     .libcxx,
                     "unable to build libcxx: {s}",
-                    .{@errorName(err)},
+                    .{@errorname(err)},
                 ),
             };
         },
@@ -3615,7 +3615,7 @@ fn processOneJob(comp: *Compilation, job: Job, prog_node: std.Progress.Node) !vo
                 else => comp.lockAndSetMiscFailure(
                     .libcxxabi,
                     "unable to build libcxxabi: {s}",
-                    .{@errorName(err)},
+                    .{@errorname(err)},
                 ),
             };
         },
@@ -3629,7 +3629,7 @@ fn processOneJob(comp: *Compilation, job: Job, prog_node: std.Progress.Node) !vo
                 else => comp.lockAndSetMiscFailure(
                     .libtsan,
                     "unable to build TSAN library: {s}",
-                    .{@errorName(err)},
+                    .{@errorname(err)},
                 ),
             };
         },
@@ -3642,7 +3642,7 @@ fn processOneJob(comp: *Compilation, job: Job, prog_node: std.Progress.Node) !vo
                 comp.lockAndSetMiscFailure(
                     .wasi_libc_crt_file,
                     "unable to build WASI libc CRT file: {s}",
-                    .{@errorName(err)},
+                    .{@errorname(err)},
                 );
             };
         },
@@ -3662,7 +3662,7 @@ fn processOneJob(comp: *Compilation, job: Job, prog_node: std.Progress.Node) !vo
                 else => comp.lockAndSetMiscFailure(
                     .zig_libc,
                     "unable to build zig's multitarget libc: {s}",
-                    .{@errorName(err)},
+                    .{@errorname(err)},
                 ),
             };
         },
@@ -3674,7 +3674,7 @@ fn workerDocsCopy(comp: *Compilation) void {
         return comp.lockAndSetMiscFailure(
             .docs_copy,
             "unable to copy autodocs artifacts: {s}",
-            .{@errorName(err)},
+            .{@errorname(err)},
         );
     };
 }
@@ -3688,7 +3688,7 @@ fn docsCopyFallible(comp: *Compilation) anyerror!void {
         return comp.lockAndSetMiscFailure(
             .docs_copy,
             "unable to create output directory '{}{s}': {s}",
-            .{ emit.directory, emit.sub_path, @errorName(err) },
+            .{ emit.directory, emit.sub_path, @errorname(err) },
         );
     };
     defer out_dir.close();
@@ -3698,7 +3698,7 @@ fn docsCopyFallible(comp: *Compilation) anyerror!void {
         comp.zig_lib_directory.handle.copyFile(sub_path, out_dir, basename, .{}) catch |err| {
             comp.lockAndSetMiscFailure(.docs_copy, "unable to copy {s}: {s}", .{
                 sub_path,
-                @errorName(err),
+                @errorname(err),
             });
             return;
         };
@@ -3708,7 +3708,7 @@ fn docsCopyFallible(comp: *Compilation) anyerror!void {
         return comp.lockAndSetMiscFailure(
             .docs_copy,
             "unable to create '{}{s}/sources.tar': {s}",
-            .{ emit.directory, emit.sub_path, @errorName(err) },
+            .{ emit.directory, emit.sub_path, @errorname(err) },
         );
     };
     defer tar_file.close();
@@ -3735,7 +3735,7 @@ fn docsCopyModule(comp: *Compilation, module: *Package.Module, name: []const u8,
     const sub_path = if (root.sub_path.len == 0) "." else root.sub_path;
     var mod_dir = root.root_dir.handle.openDir(sub_path, .{ .iterate = true }) catch |err| {
         return comp.lockAndSetMiscFailure(.docs_copy, "unable to open directory '{}': {s}", .{
-            root, @errorName(err),
+            root, @errorname(err),
         });
     };
     defer mod_dir.close();
@@ -3757,14 +3757,14 @@ fn docsCopyModule(comp: *Compilation, module: *Package.Module, name: []const u8,
 
         var file = mod_dir.openFile(entry.path, .{}) catch |err| {
             return comp.lockAndSetMiscFailure(.docs_copy, "unable to open '{}{s}': {s}", .{
-                root, entry.path, @errorName(err),
+                root, entry.path, @errorname(err),
             });
         };
         defer file.close();
 
         const stat = file.stat() catch |err| {
             return comp.lockAndSetMiscFailure(.docs_copy, "unable to stat '{}{s}': {s}", .{
-                root, entry.path, @errorName(err),
+                root, entry.path, @errorname(err),
             });
         };
 
@@ -3776,7 +3776,7 @@ fn docsCopyModule(comp: *Compilation, module: *Package.Module, name: []const u8,
 
         const header_bytes = std.mem.asBytes(&file_header);
         const padding = p: {
-            const remainder: u16 = @intCast(stat.size % 512);
+            const remainder: u16 = @intcast(stat.size % 512);
             const n = if (remainder > 0) 512 - remainder else 0;
             break :p padding_buffer[0..n];
         };
@@ -3800,7 +3800,7 @@ fn workerDocsWasm(comp: *Compilation, parent_prog_node: std.Progress.Node) void 
 
     workerDocsWasmFallible(comp, prog_node) catch |err| {
         comp.lockAndSetMiscFailure(.docs_wasm, "unable to build autodocs: {s}", .{
-            @errorName(err),
+            @errorname(err),
         });
     };
 }
@@ -3914,7 +3914,7 @@ fn workerDocsWasmFallible(comp: *Compilation, prog_node: std.Progress.Node) anye
         return comp.lockAndSetMiscFailure(
             .docs_copy,
             "unable to create output directory '{}{s}': {s}",
-            .{ emit.directory, emit.sub_path, @errorName(err) },
+            .{ emit.directory, emit.sub_path, @errorname(err) },
         );
     };
     defer out_dir.close();
@@ -3930,7 +3930,7 @@ fn workerDocsWasmFallible(comp: *Compilation, prog_node: std.Progress.Node) anye
             sub_compilation.cache_use.whole.bin_sub_path.?,
             emit.directory,
             emit.sub_path,
-            @errorName(err),
+            @errorname(err),
         });
     };
 }
@@ -3971,7 +3971,7 @@ fn workerAstGenFile(
     // If we experience an error preemptively fetching the
     // file, just ignore it and let it happen again later during Sema.
     assert(file.zir_loaded);
-    const imports_index = file.zir.extra[@intFromEnum(Zir.ExtraIndex.imports)];
+    const imports_index = file.zir.extra[@intfromenum(Zir.ExtraIndex.imports)];
     if (imports_index != 0) {
         const extra = file.zir.extraData(Zir.Inst.Imports, imports_index);
         var import_i: u32 = 0;
@@ -4025,7 +4025,7 @@ fn workerUpdateBuiltinZigFile(
         defer comp.mutex.unlock();
 
         comp.setMiscFailure(.write_builtin_zig, "unable to write '{}{s}': {s}", .{
-            mod.root, mod.root_src_path, @errorName(err),
+            mod.root, mod.root_src_path, @errorname(err),
         });
     };
 }
@@ -4066,7 +4066,7 @@ pub fn obtainCObjectCacheManifest(
     var man = comp.cache_parent.obtain();
 
     // Only things that need to be added on top of the base hash, and only things
-    // that apply both to @cImport and compiling C objects. No linking stuff here!
+    // that apply both to @cimport and compiling C objects. No linking stuff here!
     // Also nothing that applies only to compiling .zig code.
     cache_helpers.addModule(&man.hash, owner_mod);
     man.hash.addListOfBytes(comp.global_cc_argv);
@@ -4104,8 +4104,8 @@ pub const CImportResult = struct {
 /// Caller owns returned memory.
 /// This API is currently coupled pretty tightly to stage1's needs; it will need to be reworked
 /// a bit when we want to start using it from self-hosted.
-pub fn cImport(comp: *Compilation, c_src: []const u8, owner_mod: *Package.Module) !CImportResult {
-    if (build_options.only_core_functionality) @panic("@cImport is not available in a zig2.c build");
+pub fn cimport(comp: *Compilation, c_src: []const u8, owner_mod: *Package.Module) !CImportResult {
+    if (build_options.only_core_functionality) @panic("@cimport is not available in a zig2.c build");
     const tracy_trace = trace(@src());
     defer tracy_trace.end();
 
@@ -4153,7 +4153,7 @@ pub fn cImport(comp: *Compilation, c_src: []const u8, owner_mod: *Package.Module
         var argv = std.ArrayList([]const u8).init(comp.gpa);
         defer argv.deinit();
 
-        try argv.append(@tagName(comp.config.c_frontend)); // argv[0] is program name, actual args start at [1]
+        try argv.append(@tagname(comp.config.c_frontend)); // argv[0] is program name, actual args start at [1]
         try comp.addTranslateCCArgs(arena, &argv, .c, out_dep_path, owner_mod);
 
         try argv.append(out_h_path);
@@ -4238,7 +4238,7 @@ pub fn cImport(comp: *Compilation, c_src: []const u8, owner_mod: *Package.Module
         // the contents were the same, we hit the cache but the manifest is dirty and we need to update
         // it to prevent doing a full file content comparison the next time around.
         man.writeManifest() catch |err| {
-            log.warn("failed to write cache manifest for C import: {s}", .{@errorName(err)});
+            log.warn("failed to write cache manifest for C import: {s}", .{@errorname(err)});
         };
     }
 
@@ -4306,7 +4306,7 @@ fn buildCompilerRtOneShot(
         else => comp.lockAndSetMiscFailure(
             .compiler_rt,
             "unable to build compiler_rt: {s}",
-            .{@errorName(err)},
+            .{@errorname(err)},
         ),
     };
 }
@@ -4318,7 +4318,7 @@ fn reportRetryableCObjectError(
 ) error{OutOfMemory}!void {
     c_object.status = .failure_retryable;
 
-    switch (comp.failCObj(c_object, "{s}", .{@errorName(err)})) {
+    switch (comp.failCObj(c_object, "{s}", .{@errorname(err)})) {
         error.AnalysisFail => return,
         else => |e| return e,
     }
@@ -4335,7 +4335,7 @@ fn reportRetryableWin32ResourceError(
     try bundle.init(comp.gpa);
     errdefer bundle.deinit();
     try bundle.addRootErrorMessage(.{
-        .msg = try bundle.printString("{s}", .{@errorName(err)}),
+        .msg = try bundle.printString("{s}", .{@errorname(err)}),
         .src_loc = try bundle.addSourceLocation(.{
             .src_path = try bundle.addString(switch (win32_resource.src) {
                 .rc => |rc_src| rc_src.src_path,
@@ -4385,7 +4385,7 @@ fn reportRetryableAstGenError(
     };
 
     const err_msg = try Module.ErrorMsg.create(gpa, src_loc, "unable to load '{}{s}': {s}", .{
-        file.mod.root, file.sub_file_path, @errorName(err),
+        file.mod.root, file.sub_file_path, @errorname(err),
     });
     errdefer err_msg.destroy(gpa);
 
@@ -4408,7 +4408,7 @@ fn reportRetryableEmbedFileError(
     const err_msg = try Module.ErrorMsg.create(gpa, src_loc, "unable to load '{}{s}': {s}", .{
         embed_file.owner.root,
         embed_file.sub_file_path.toSlice(ip),
-        @errorName(err),
+        @errorname(err),
     });
 
     errdefer err_msg.destroy(gpa);
@@ -4510,7 +4510,7 @@ fn updateCObject(comp: *Compilation, c_object: *CObject, c_obj_prog_node: std.Pr
                 .cu => "cuda",
                 .m => "objective-c",
                 .mm => "objective-c++",
-                else => fatal("language '{s}' is unsupported in this context", .{@tagName(ext)}),
+                else => fatal("language '{s}' is unsupported in this context", .{@tagname(ext)}),
             } });
         }
         try argv.append(c_object.src.src_path);
@@ -4553,7 +4553,7 @@ fn updateCObject(comp: *Compilation, c_object: *CObject, c_obj_prog_node: std.Pr
             }
 
             const err = std.process.execv(arena, argv.items);
-            fatal("unable to execv clang: {s}", .{@errorName(err)});
+            fatal("unable to execv clang: {s}", .{@errorname(err)});
         }
 
         // We can't know the digest until we do the C compiler invocation,
@@ -4600,10 +4600,10 @@ fn updateCObject(comp: *Compilation, c_object: *CObject, c_obj_prog_node: std.Pr
 
         // Just to save disk space, we delete the files that are never needed again.
         defer if (out_diag_path) |diag_file_path| zig_cache_tmp_dir.deleteFile(std.fs.path.basename(diag_file_path)) catch |err| {
-            log.warn("failed to delete '{s}': {s}", .{ diag_file_path, @errorName(err) });
+            log.warn("failed to delete '{s}': {s}", .{ diag_file_path, @errorname(err) });
         };
         defer if (out_dep_path) |dep_file_path| zig_cache_tmp_dir.deleteFile(std.fs.path.basename(dep_file_path)) catch |err| {
-            log.warn("failed to delete '{s}': {s}", .{ dep_file_path, @errorName(err) });
+            log.warn("failed to delete '{s}': {s}", .{ dep_file_path, @errorname(err) });
         };
         if (std.process.can_spawn) {
             var child = std.process.Child.init(argv.items, arena);
@@ -4613,7 +4613,7 @@ fn updateCObject(comp: *Compilation, c_object: *CObject, c_obj_prog_node: std.Pr
                 child.stderr_behavior = .Inherit;
 
                 const term = child.spawnAndWait() catch |err| {
-                    return comp.failCObj(c_object, "unable to spawn {s}: {s}", .{ argv.items[0], @errorName(err) });
+                    return comp.failCObj(c_object, "unable to spawn {s}: {s}", .{ argv.items[0], @errorname(err) });
                 };
                 switch (term) {
                     .Exited => |code| {
@@ -4635,7 +4635,7 @@ fn updateCObject(comp: *Compilation, c_object: *CObject, c_obj_prog_node: std.Pr
                 const stderr = try child.stderr.?.reader().readAllAlloc(arena, std.math.maxInt(usize));
 
                 const term = child.wait() catch |err| {
-                    return comp.failCObj(c_object, "unable to spawn {s}: {s}", .{ argv.items[0], @errorName(err) });
+                    return comp.failCObj(c_object, "unable to spawn {s}: {s}", .{ argv.items[0], @errorname(err) });
                 };
 
                 switch (term) {
@@ -4706,7 +4706,7 @@ fn updateCObject(comp: *Compilation, c_object: *CObject, c_obj_prog_node: std.Pr
         // the contents were the same, we hit the cache but the manifest is dirty and we need to update
         // it to prevent doing a full file content comparison the next time around.
         man.writeManifest() catch |err| {
-            log.warn("failed to write cache manifest when compiling '{s}': {s}", .{ c_object.src.src_path, @errorName(err) });
+            log.warn("failed to write cache manifest when compiling '{s}': {s}", .{ c_object.src.src_path, @errorname(err) });
         };
     }
 
@@ -4724,7 +4724,7 @@ fn updateCObject(comp: *Compilation, c_object: *CObject, c_obj_prog_node: std.Pr
 
 fn updateWin32Resource(comp: *Compilation, win32_resource: *Win32Resource, win32_resource_prog_node: std.Progress.Node) !void {
     if (!std.process.can_spawn) {
-        return comp.failWin32Resource(win32_resource, "{s} does not support spawning a child process", .{@tagName(builtin.os.tag)});
+        return comp.failWin32Resource(win32_resource, "{s} does not support spawning a child process", .{@tagname(builtin.os.tag)});
     }
 
     const self_exe_path = comp.self_exe_path orelse
@@ -4829,7 +4829,7 @@ fn updateWin32Resource(comp: *Compilation, win32_resource: *Win32Resource, win32
 
         if (man.have_exclusive_lock) {
             man.writeManifest() catch |err| {
-                log.warn("failed to write cache manifest when compiling '{s}': {s}", .{ src_path, @errorName(err) });
+                log.warn("failed to write cache manifest when compiling '{s}': {s}", .{ src_path, @errorname(err) });
             };
         }
 
@@ -4877,7 +4877,7 @@ fn updateWin32Resource(comp: *Compilation, win32_resource: *Win32Resource, win32
             "json",
             "/x", // ignore INCLUDE environment variable
             "/:auto-includes",
-            @tagName(comp.rc_includes),
+            @tagname(comp.rc_includes),
         });
         // While these defines are not normally present when calling rc.exe directly,
         // them being defined matches the behavior of how MSVC calls rc.exe which is the more
@@ -4936,7 +4936,7 @@ fn updateWin32Resource(comp: *Compilation, win32_resource: *Win32Resource, win32
         // the contents were the same, we hit the cache but the manifest is dirty and we need to update
         // it to prevent doing a full file content comparison the next time around.
         man.writeManifest() catch |err| {
-            log.warn("failed to write cache manifest when compiling '{s}': {s}", .{ rc_src.src_path, @errorName(err) });
+            log.warn("failed to write cache manifest when compiling '{s}': {s}", .{ rc_src.src_path, @errorname(err) });
         };
     }
 
@@ -4969,7 +4969,7 @@ fn spawnZigRc(
     child.progress_node = child_progress_node;
 
     child.spawn() catch |err| {
-        return comp.failWin32Resource(win32_resource, "unable to spawn {s} rc: {s}", .{ argv[0], @errorName(err) });
+        return comp.failWin32Resource(win32_resource, "unable to spawn {s} rc: {s}", .{ argv[0], @errorname(err) });
     };
 
     var poller = std.io.poll(comp.gpa, enum { stdout }, .{
@@ -4980,7 +4980,7 @@ fn spawnZigRc(
     const stdout = poller.fifo(.stdout);
 
     poll: while (true) {
-        while (stdout.readableLength() < @sizeOf(std.zig.Server.Message.Header)) {
+        while (stdout.readableLength() < @sizeof(std.zig.Server.Message.Header)) {
             if (!(try poller.poll())) break :poll;
         }
         const header = stdout.reader().readStruct(std.zig.Server.Message.Header) catch unreachable;
@@ -4994,11 +4994,11 @@ fn spawnZigRc(
             // sent then it's a fatal error.
             .error_bundle => {
                 const EbHdr = std.zig.Server.Message.ErrorBundle;
-                const eb_hdr = @as(*align(1) const EbHdr, @ptrCast(body));
+                const eb_hdr = @as(*align(1) const EbHdr, @ptrcast(body));
                 const extra_bytes =
-                    body[@sizeOf(EbHdr)..][0 .. @sizeOf(u32) * eb_hdr.extra_len];
+                    body[@sizeof(EbHdr)..][0 .. @sizeof(u32) * eb_hdr.extra_len];
                 const string_bytes =
-                    body[@sizeOf(EbHdr) + extra_bytes.len ..][0..eb_hdr.string_bytes_len];
+                    body[@sizeof(EbHdr) + extra_bytes.len ..][0..eb_hdr.string_bytes_len];
                 const unaligned_extra = std.mem.bytesAsSlice(u32, extra_bytes);
                 const extra_array = try comp.gpa.alloc(u32, unaligned_extra.len);
                 @memcpy(extra_array, unaligned_extra);
@@ -5019,7 +5019,7 @@ fn spawnZigRc(
     const stderr = try stderr_reader.readAllAlloc(arena, 10 * 1024 * 1024);
 
     const term = child.wait() catch |err| {
-        return comp.failWin32Resource(win32_resource, "unable to wait for {s} rc: {s}", .{ argv[0], @errorName(err) });
+        return comp.failWin32Resource(win32_resource, "unable to wait for {s} rc: {s}", .{ argv[0], @errorname(err) });
     };
 
     switch (term) {
@@ -5131,10 +5131,10 @@ pub fn addCCArgs(
         try argv.append("-D_LIBCPP_PSTL_CPU_BACKEND_SERIAL");
 
         try argv.append(try std.fmt.allocPrint(arena, "-D_LIBCPP_ABI_VERSION={d}", .{
-            @intFromEnum(comp.libcxx_abi_version),
+            @intfromenum(comp.libcxx_abi_version),
         }));
         try argv.append(try std.fmt.allocPrint(arena, "-D_LIBCPP_ABI_NAMESPACE=__{d}", .{
-            @intFromEnum(comp.libcxx_abi_version),
+            @intfromenum(comp.libcxx_abi_version),
         }));
 
         try argv.append(libcxx.hardeningModeFlag(mod.optimize_mode));
@@ -5161,7 +5161,7 @@ pub fn addCCArgs(
 
             switch (ext) {
                 .c, .cpp, .m, .mm, .h, .hpp, .hm, .hmm, .cu, .rc, .assembly, .assembly_with_cpp => {
-                    const minver: u16 = @truncate(@intFromEnum(target.os.getVersionRange().windows.min) >> 16);
+                    const minver: u16 = @truncate(@intfromenum(target.os.getVersionRange().windows.min) >> 16);
                     try argv.append(
                         try std.fmt.allocPrint(arena, "-D_WIN32_WINNT=0x{x:0>4}", .{minver}),
                     );
@@ -5218,18 +5218,18 @@ pub fn addCCArgs(
             const all_features_list = target.cpu.arch.allFeaturesList();
             try argv.ensureUnusedCapacity(all_features_list.len * 4);
             for (all_features_list, 0..) |feature, index_usize| {
-                const index = @as(std.Target.Cpu.Feature.Set.Index, @intCast(index_usize));
+                const index = @as(std.Target.Cpu.Feature.Set.Index, @intcast(index_usize));
                 const is_enabled = target.cpu.features.isEnabled(index);
 
                 if (feature.llvm_name) |llvm_name| {
                     argv.appendSliceAssumeCapacity(&[_][]const u8{ "-Xclang", "-target-feature", "-Xclang" });
-                    const plus_or_minus = "-+"[@intFromBool(is_enabled)];
+                    const plus_or_minus = "-+"[@intfrombool(is_enabled)];
                     const arg = try std.fmt.allocPrint(arena, "{c}{s}", .{ plus_or_minus, llvm_name });
                     argv.appendAssumeCapacity(arg);
                 }
             }
             if (mod.code_model != .default) {
-                try argv.append(try std.fmt.allocPrint(arena, "-mcmodel={s}", .{@tagName(mod.code_model)}));
+                try argv.append(try std.fmt.allocPrint(arena, "-mcmodel={s}", .{@tagname(mod.code_model)}));
             }
 
             switch (target.os.tag) {
@@ -5261,13 +5261,13 @@ pub fn addCCArgs(
                         try argv.append(try std.fmt.allocPrint(
                             arena,
                             "-m{s}-simulator-version-min={d}.{d}.{d}",
-                            .{ @tagName(target.os.tag), ver.major, ver.minor, ver.patch },
+                            .{ @tagname(target.os.tag), ver.major, ver.minor, ver.patch },
                         ));
                     },
                     else => {
                         const ver = target.os.version_range.semver.min;
                         try argv.append(try std.fmt.allocPrint(arena, "-m{s}-version-min={d}.{d}.{d}", .{
-                            @tagName(target.os.tag), ver.major, ver.minor, ver.patch,
+                            @tagname(target.os.tag), ver.major, ver.minor, ver.patch,
                         }));
                     },
                 },
@@ -5965,7 +5965,7 @@ pub fn updateSubCompilation(
     prog_node: std.Progress.Node,
 ) !void {
     {
-        const sub_node = prog_node.start(@tagName(misc_task), 0);
+        const sub_node = prog_node.start(@tagname(misc_task), 0);
         defer sub_node.end();
 
         try sub_comp.update(sub_node);
@@ -5981,7 +5981,7 @@ pub fn updateSubCompilation(
         try parent_comp.misc_failures.ensureUnusedCapacity(gpa, 1);
         parent_comp.misc_failures.putAssumeCapacityNoClobber(misc_task, .{
             .msg = try std.fmt.allocPrint(gpa, "sub-compilation of {s} failed", .{
-                @tagName(misc_task),
+                @tagname(misc_task),
             }),
             .children = errors,
         });

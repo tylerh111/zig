@@ -12,7 +12,7 @@ pub fn main() void {
     foo(Set1.B);
 }
 fn foo(set1: Set1) void {
-    const x: Set2 = @errorCast(set1);
+    const x: Set2 = @errorcast(set1);
     std.debug.print("value: {}\n", .{x});
 }
 

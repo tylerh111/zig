@@ -462,12 +462,12 @@ pub const ImportLookupEntry32 = struct {
 
     pub fn getImportByName(raw: u32) ?ByName {
         if (mask & raw != 0) return null;
-        return @as(ByName, @bitCast(raw));
+        return @as(ByName, @bitcast(raw));
     }
 
     pub fn getImportByOrdinal(raw: u32) ?ByOrdinal {
         if (mask & raw == 0) return null;
-        return @as(ByOrdinal, @bitCast(raw));
+        return @as(ByOrdinal, @bitcast(raw));
     }
 };
 
@@ -488,12 +488,12 @@ pub const ImportLookupEntry64 = struct {
 
     pub fn getImportByName(raw: u64) ?ByName {
         if (mask & raw != 0) return null;
-        return @as(ByName, @bitCast(raw));
+        return @as(ByName, @bitcast(raw));
     }
 
     pub fn getImportByOrdinal(raw: u64) ?ByOrdinal {
         if (mask & raw == 0) return null;
-        return @as(ByOrdinal, @bitCast(raw));
+        return @as(ByOrdinal, @bitcast(raw));
     }
 };
 
@@ -659,7 +659,7 @@ pub const Symbol = struct {
     storage_class: StorageClass,
     number_of_aux_symbols: u8,
 
-    pub fn sizeOf() usize {
+    pub fn sizeof() usize {
         return 18;
     }
 
@@ -1126,9 +1126,9 @@ pub const Coff = struct {
         assert(self.is_image);
 
         const data_dirs = self.getDataDirectories();
-        if (@intFromEnum(DirectoryEntry.DEBUG) >= data_dirs.len) return null;
+        if (@intfromenum(DirectoryEntry.DEBUG) >= data_dirs.len) return null;
 
-        const debug_dir = data_dirs[@intFromEnum(DirectoryEntry.DEBUG)];
+        const debug_dir = data_dirs[@intfromenum(DirectoryEntry.DEBUG)];
         var stream = std.io.fixedBufferStream(self.data);
         const reader = stream.reader();
 
@@ -1146,7 +1146,7 @@ pub const Coff = struct {
 
         // Find the correct DebugDirectoryEntry, and where its data is stored.
         // It can be in any section.
-        const debug_dir_entry_count = debug_dir.size / @sizeOf(DebugDirectoryEntry);
+        const debug_dir_entry_count = debug_dir.size / @sizeof(DebugDirectoryEntry);
         var i: u32 = 0;
         while (i < debug_dir_entry_count) : (i += 1) {
             const debug_dir_entry = try reader.readStruct(DebugDirectoryEntry);
@@ -1172,25 +1172,25 @@ pub const Coff = struct {
     }
 
     pub fn getCoffHeader(self: Coff) CoffHeader {
-        return @as(*align(1) const CoffHeader, @ptrCast(self.data[self.coff_header_offset..][0..@sizeOf(CoffHeader)])).*;
+        return @as(*align(1) const CoffHeader, @ptrcast(self.data[self.coff_header_offset..][0..@sizeof(CoffHeader)])).*;
     }
 
     pub fn getOptionalHeader(self: Coff) OptionalHeader {
         assert(self.is_image);
-        const offset = self.coff_header_offset + @sizeOf(CoffHeader);
-        return @as(*align(1) const OptionalHeader, @ptrCast(self.data[offset..][0..@sizeOf(OptionalHeader)])).*;
+        const offset = self.coff_header_offset + @sizeof(CoffHeader);
+        return @as(*align(1) const OptionalHeader, @ptrcast(self.data[offset..][0..@sizeof(OptionalHeader)])).*;
     }
 
     pub fn getOptionalHeader32(self: Coff) OptionalHeaderPE32 {
         assert(self.is_image);
-        const offset = self.coff_header_offset + @sizeOf(CoffHeader);
-        return @as(*align(1) const OptionalHeaderPE32, @ptrCast(self.data[offset..][0..@sizeOf(OptionalHeaderPE32)])).*;
+        const offset = self.coff_header_offset + @sizeof(CoffHeader);
+        return @as(*align(1) const OptionalHeaderPE32, @ptrcast(self.data[offset..][0..@sizeof(OptionalHeaderPE32)])).*;
     }
 
     pub fn getOptionalHeader64(self: Coff) OptionalHeaderPE64 {
         assert(self.is_image);
-        const offset = self.coff_header_offset + @sizeOf(CoffHeader);
-        return @as(*align(1) const OptionalHeaderPE64, @ptrCast(self.data[offset..][0..@sizeOf(OptionalHeaderPE64)])).*;
+        const offset = self.coff_header_offset + @sizeof(CoffHeader);
+        return @as(*align(1) const OptionalHeaderPE64, @ptrcast(self.data[offset..][0..@sizeof(OptionalHeaderPE64)])).*;
     }
 
     pub fn getImageBase(self: Coff) u64 {
@@ -1214,12 +1214,12 @@ pub const Coff = struct {
     pub fn getDataDirectories(self: *const Coff) []align(1) const ImageDataDirectory {
         const hdr = self.getOptionalHeader();
         const size: usize = switch (hdr.magic) {
-            IMAGE_NT_OPTIONAL_HDR32_MAGIC => @sizeOf(OptionalHeaderPE32),
-            IMAGE_NT_OPTIONAL_HDR64_MAGIC => @sizeOf(OptionalHeaderPE64),
+            IMAGE_NT_OPTIONAL_HDR32_MAGIC => @sizeof(OptionalHeaderPE32),
+            IMAGE_NT_OPTIONAL_HDR64_MAGIC => @sizeof(OptionalHeaderPE64),
             else => unreachable, // We assume we have validated the header already
         };
-        const offset = self.coff_header_offset + @sizeOf(CoffHeader) + size;
-        return @as([*]align(1) const ImageDataDirectory, @ptrCast(self.data[offset..]))[0..self.getNumberOfDataDirectories()];
+        const offset = self.coff_header_offset + @sizeof(CoffHeader) + size;
+        return @as([*]align(1) const ImageDataDirectory, @ptrcast(self.data[offset..]))[0..self.getNumberOfDataDirectories()];
     }
 
     pub fn getSymtab(self: *const Coff) ?Symtab {
@@ -1227,7 +1227,7 @@ pub const Coff = struct {
         if (coff_header.pointer_to_symbol_table == 0) return null;
 
         const offset = coff_header.pointer_to_symbol_table;
-        const size = coff_header.number_of_symbols * Symbol.sizeOf();
+        const size = coff_header.number_of_symbols * Symbol.sizeof();
         return .{ .buffer = self.data[offset..][0..size] };
     }
 
@@ -1235,7 +1235,7 @@ pub const Coff = struct {
         const coff_header = self.getCoffHeader();
         if (coff_header.pointer_to_symbol_table == 0) return null;
 
-        const offset = coff_header.pointer_to_symbol_table + Symbol.sizeOf() * coff_header.number_of_symbols;
+        const offset = coff_header.pointer_to_symbol_table + Symbol.sizeof() * coff_header.number_of_symbols;
         const size = mem.readInt(u32, self.data[offset..][0..4], .little);
         if ((offset + size) > self.data.len) return error.InvalidStrtabSize;
 
@@ -1249,8 +1249,8 @@ pub const Coff = struct {
 
     pub fn getSectionHeaders(self: *const Coff) []align(1) const SectionHeader {
         const coff_header = self.getCoffHeader();
-        const offset = self.coff_header_offset + @sizeOf(CoffHeader) + coff_header.size_of_optional_header;
-        return @as([*]align(1) const SectionHeader, @ptrCast(self.data.ptr + offset))[0..coff_header.number_of_sections];
+        const offset = self.coff_header_offset + @sizeof(CoffHeader) + coff_header.size_of_optional_header;
+        return @as([*]align(1) const SectionHeader, @ptrcast(self.data.ptr + offset))[0..coff_header.number_of_sections];
     }
 
     pub fn getSectionHeadersAlloc(self: *const Coff, allocator: mem.Allocator) ![]SectionHeader {
@@ -1299,7 +1299,7 @@ pub const Symtab = struct {
     buffer: []const u8,
 
     pub fn len(self: Symtab) usize {
-        return @divExact(self.buffer.len, Symbol.sizeOf());
+        return @divexact(self.buffer.len, Symbol.sizeof());
     }
 
     pub const Tag = enum {
@@ -1322,8 +1322,8 @@ pub const Symtab = struct {
 
     /// Lives as long as Symtab instance.
     pub fn at(self: Symtab, index: usize, tag: Tag) Record {
-        const offset = index * Symbol.sizeOf();
-        const raw = self.buffer[offset..][0..Symbol.sizeOf()];
+        const offset = index * Symbol.sizeof();
+        const raw = self.buffer[offset..][0..Symbol.sizeof()];
         return switch (tag) {
             .symbol => .{ .symbol = asSymbol(raw) },
             .debug_info => .{ .debug_info = asDebugInfo(raw) },
@@ -1338,9 +1338,9 @@ pub const Symtab = struct {
         return .{
             .name = raw[0..8].*,
             .value = mem.readInt(u32, raw[8..12], .little),
-            .section_number = @as(SectionNumber, @enumFromInt(mem.readInt(u16, raw[12..14], .little))),
-            .type = @as(SymType, @bitCast(mem.readInt(u16, raw[14..16], .little))),
-            .storage_class = @as(StorageClass, @enumFromInt(raw[16])),
+            .section_number = @as(SectionNumber, @enumfromint(mem.readInt(u16, raw[12..14], .little))),
+            .type = @as(SymType, @bitcast(mem.readInt(u16, raw[14..16], .little))),
+            .storage_class = @as(StorageClass, @enumfromint(raw[16])),
             .number_of_aux_symbols = raw[17],
         };
     }
@@ -1368,7 +1368,7 @@ pub const Symtab = struct {
     fn asWeakExtDef(raw: []const u8) WeakExternalDefinition {
         return .{
             .tag_index = mem.readInt(u32, raw[0..4], .little),
-            .flag = @as(WeakExternalFlag, @enumFromInt(mem.readInt(u32, raw[4..8], .little))),
+            .flag = @as(WeakExternalFlag, @enumfromint(mem.readInt(u32, raw[4..8], .little))),
             .unused = raw[8..18].*,
         };
     }
@@ -1386,7 +1386,7 @@ pub const Symtab = struct {
             .number_of_linenumbers = mem.readInt(u16, raw[6..8], .little),
             .checksum = mem.readInt(u32, raw[8..12], .little),
             .number = mem.readInt(u16, raw[12..14], .little),
-            .selection = @as(ComdatSelection, @enumFromInt(raw[14])),
+            .selection = @as(ComdatSelection, @enumfromint(raw[14])),
             .unused = raw[15..18].*,
         };
     }
@@ -1399,17 +1399,17 @@ pub const Symtab = struct {
         /// Lives as long as Symtab instance.
         pub fn next(self: *Slice) ?Symbol {
             if (self.count >= self.num) return null;
-            const sym = asSymbol(self.buffer[0..Symbol.sizeOf()]);
+            const sym = asSymbol(self.buffer[0..Symbol.sizeof()]);
             self.count += 1;
-            self.buffer = self.buffer[Symbol.sizeOf()..];
+            self.buffer = self.buffer[Symbol.sizeof()..];
             return sym;
         }
     };
 
     pub fn slice(self: Symtab, start: usize, end: ?usize) Slice {
-        const offset = start * Symbol.sizeOf();
-        const llen = if (end) |e| e * Symbol.sizeOf() else self.buffer.len;
-        const num = @divExact(llen - offset, Symbol.sizeOf());
+        const offset = start * Symbol.sizeof();
+        const llen = if (end) |e| e * Symbol.sizeof() else self.buffer.len;
+        const num = @divexact(llen - offset, Symbol.sizeof());
         return Slice{ .buffer = self.buffer[offset..][0..llen], .num = num };
     }
 };
@@ -1419,7 +1419,7 @@ pub const Strtab = struct {
 
     pub fn get(self: Strtab, off: u32) []const u8 {
         assert(off < self.buffer.len);
-        return mem.sliceTo(@as([*:0]const u8, @ptrCast(self.buffer.ptr + off)), 0);
+        return mem.sliceTo(@as([*:0]const u8, @ptrcast(self.buffer.ptr + off)), 0);
     }
 };
 

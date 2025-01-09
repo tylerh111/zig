@@ -8,7 +8,7 @@ test "aligned struct fields" {
     };
     var foo = S{ .a = 1, .b = 2 };
 
-    try expectEqual(64, @alignOf(S));
+    try expectEqual(64, @alignof(S));
     try expectEqual(*align(2) u32, @TypeOf(&foo.a));
     try expectEqual(*align(64) u32, @TypeOf(&foo.b));
 }

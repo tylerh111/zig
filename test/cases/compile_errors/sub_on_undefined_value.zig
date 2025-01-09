@@ -3,8 +3,8 @@ comptime {
     const not_undef: i64 = 32;
 
     // If the rhs is zero, then the other operand is returned, even if it is undefined.
-    @compileLog(undef - 0);
-    @compileLog(not_undef - 0);
+    @compilelog(undef - 0);
+    @compilelog(not_undef - 0);
 
     _ = undef - undef;
 }

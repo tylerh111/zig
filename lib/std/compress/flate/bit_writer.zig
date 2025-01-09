@@ -61,7 +61,7 @@ pub fn BitWriter(comptime WriterType: type) type {
         }
 
         pub fn writeBits(self: *Self, b: u32, nb: u32) Error!void {
-            self.bits |= @as(u64, @intCast(b)) << @as(u6, @intCast(self.nbits));
+            self.bits |= @as(u64, @intcast(b)) << @as(u6, @intcast(self.nbits));
             self.nbits += nb;
             if (self.nbits < 48)
                 return;

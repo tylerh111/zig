@@ -243,7 +243,7 @@ pub const Lexer = struct {
     }
 
     pub fn dump(self: *Self, token: *const Token) void {
-        std.debug.print("{s}:{d}: {s}\n", .{ @tagName(token.id), token.line_number, std.fmt.fmtSliceEscapeLower(token.slice(self.buffer)) });
+        std.debug.print("{s}:{d}: {s}\n", .{ @tagname(token.id), token.line_number, std.fmt.fmtSliceEscapeLower(token.slice(self.buffer)) });
     }
 
     pub const LexMethod = enum {
@@ -752,7 +752,7 @@ pub const Lexer = struct {
                         if (!string_literal_collapsing_whitespace) {
                             // Literal tab characters are counted as the number of space characters
                             // needed to reach the next 8-column tab stop.
-                            const width = columnWidth(string_literal_column, @intCast(c), 8);
+                            const width = columnWidth(string_literal_column, @intcast(c), 8);
                             string_literal_length += width;
                             string_literal_column += width;
                         }
@@ -978,7 +978,7 @@ pub const Lexer = struct {
                 return error.CodePagePragmaInvalidCodePage;
             }
 
-            break :code_page code_pages.CodePage.getByIdentifierEnsureSupported(@intCast(num)) catch |err| switch (err) {
+            break :code_page code_pages.CodePage.getByIdentifierEnsureSupported(@intcast(num)) catch |err| switch (err) {
                 error.InvalidCodePage => return error.CodePagePragmaInvalidCodePage,
                 error.UnsupportedCodePage => return error.CodePagePragmaUnsupportedCodePage,
             };

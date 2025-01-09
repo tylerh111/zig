@@ -8,7 +8,7 @@ var result_len: [7]usize = undefined;
 var result_index: usize = 0;
 
 noinline fn insertionSort(data: []u64) void {
-    result_off[result_index] = @intFromPtr(data.ptr) - base;
+    result_off[result_index] = @intfromptr(data.ptr) - base;
     result_len[result_index] = data.len;
     result_index += 1;
     if (data.len > 1) {
@@ -52,7 +52,7 @@ test "arguments pointed to on stack into tailcall" {
     if (builtin.zig_backend == .stage2_c and builtin.os.tag == .windows) return error.SkipZigTest; // MSVC doesn't support always tail calls
 
     var data = [_]u64{ 1, 6, 2, 7, 1, 9, 3 };
-    base = @intFromPtr(&data);
+    base = @intfromptr(&data);
     insertionSort(data[0..]);
     try expect(result_len[0] == 7);
     try expect(result_len[1] == 6);

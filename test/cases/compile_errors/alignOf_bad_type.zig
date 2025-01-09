@@ -1,5 +1,5 @@
 export fn entry() usize {
-    return @alignOf(noreturn);
+    return @alignof(noreturn);
 }
 
 // error

@@ -4,5 +4,5 @@ void foo() { if(0 && "error message") {} }
 // c_frontend=clang
 //
 // pub export fn foo() void {
-//     if (false and (@intFromPtr("error message") != 0)) {}
+//     if (false and (@intfromptr("error message") != 0)) {}
 // }

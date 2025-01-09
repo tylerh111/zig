@@ -4,7 +4,7 @@ const expect = std.testing.expect;
 const expectEqual = std.testing.expectEqual;
 const maxInt = std.math.maxInt;
 
-test "@intCast i32 to u7" {
+test "@intcast i32 to u7" {
     if (builtin.zig_backend == .stage2_aarch64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_arm) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
@@ -14,11 +14,11 @@ test "@intCast i32 to u7" {
     var x: u128 = maxInt(u128);
     var y: i32 = 120;
     _ = .{ &x, &y };
-    const z = x >> @as(u7, @intCast(y));
+    const z = x >> @as(u7, @intcast(y));
     try expect(z == 0xff);
 }
 
-test "coerce i8 to i32 and @intCast back" {
+test "coerce i8 to i32 and @intcast back" {
     if (builtin.zig_backend == .stage2_aarch64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_arm) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
@@ -31,7 +31,7 @@ test "coerce i8 to i32 and @intCast back" {
     var x2: i32 = -5;
     var y2: i8 = -5;
     _ = .{ &x2, &y2 };
-    try expect(y2 == @as(i8, @intCast(x2)));
+    try expect(y2 == @as(i8, @intcast(x2)));
 }
 
 test "coerce non byte-sized integers accross 32bits boundary" {
@@ -95,7 +95,7 @@ test "coerce non byte-sized integers accross 32bits boundary" {
         const c: i64 = a;
         var w: i64 = -12345;
         _ = &w;
-        const d: i21 = @intCast(w);
+        const d: i21 = @intcast(w);
         const e: i60 = d;
         try expectEqual(@as(i32, -6417), a);
         try expectEqual(@as(i64, -6417), b);
@@ -112,7 +112,7 @@ test "coerce non byte-sized integers accross 32bits boundary" {
         const c: i64 = a;
         var w: i64 = -456;
         _ = &w;
-        const d: i10 = @intCast(w);
+        const d: i10 = @intcast(w);
         const e: i60 = d;
         try expectEqual(@as(i32, -234), a);
         try expectEqual(@as(i64, -234), b);
@@ -128,7 +128,7 @@ test "coerce non byte-sized integers accross 32bits boundary" {
         const c: i64 = a;
         var w: i64 = -42;
         _ = &w;
-        const d: i7 = @intCast(w);
+        const d: i7 = @intcast(w);
         const e: i60 = d;
         try expectEqual(@as(i32, -11), a);
         try expectEqual(@as(i64, -11), b);
@@ -177,7 +177,7 @@ test "load non byte-sized optional value" {
     try expect(opt.?.color == .BLACK);
 
     var p: Piece = undefined;
-    @as(*u8, @ptrCast(&p)).* = 0b11111011;
+    @as(*u8, @ptrcast(&p)).* = 0b11111011;
     try expect(p.type == .PAWN);
     try expect(p.color == .BLACK);
 }
@@ -189,13 +189,13 @@ test "load non byte-sized value in struct" {
     if (builtin.zig_backend == .stage2_spirv64) return error.SkipZigTest;
 
     // note: this bug is triggered by the == operator, expectEqual will hide it
-    // using ptrCast not to depend on unitialised memory state
+    // using ptrcast not to depend on unitialised memory state
 
     var struct0: struct {
         p: Piece,
         int: u8,
     } = undefined;
-    @as(*u8, @ptrCast(&struct0.p)).* = 0b11111011;
+    @as(*u8, @ptrcast(&struct0.p)).* = 0b11111011;
     try expect(struct0.p.type == .PAWN);
     try expect(struct0.p.color == .BLACK);
 
@@ -205,7 +205,7 @@ test "load non byte-sized value in struct" {
         pad: u1,
         p2: Piece,
     } = undefined;
-    @as(*u8, @ptrCast(&struct1.p0)).* = 0b11111011;
+    @as(*u8, @ptrcast(&struct1.p0)).* = 0b11111011;
     struct1.p1 = try Piece.charToPiece('p');
     struct1.p2 = try Piece.charToPiece('p');
     try expect(struct1.p0.type == .PAWN);
@@ -225,7 +225,7 @@ test "load non byte-sized value in union" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     // note: this bug is triggered by the == operator, expectEqual will hide it
-    // using ptrCast not to depend on unitialised memory state
+    // using ptrcast not to depend on unitialised memory state
 
     var union0: packed union {
         p: Piece,
@@ -239,12 +239,12 @@ test "load non byte-sized value in union" {
         p: Piece,
         int: u8,
     } = .{ .p = .{ .color = .WHITE, .type = .KING } };
-    @as(*u8, @ptrCast(&union1.p)).* = 0b11111011;
+    @as(*u8, @ptrcast(&union1.p)).* = 0b11111011;
     try expect(union1.p.type == .PAWN);
     try expect(union1.p.color == .BLACK);
 
     var pieces: [3]Piece = undefined;
-    @as(*u8, @ptrCast(&pieces[1])).* = 0b11111011;
+    @as(*u8, @ptrcast(&pieces[1])).* = 0b11111011;
     try expect(pieces[1].type == .PAWN);
     try expect(pieces[1].color == .BLACK);
 }

@@ -3,7 +3,7 @@ const S = struct {
 };
 
 export fn entry() usize {
-    return @alignOf(S);
+    return @alignof(S);
 }
 
 // error

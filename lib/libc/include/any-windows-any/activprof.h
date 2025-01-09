@@ -436,7 +436,7 @@ typedef struct _PROFILER_HEAP_OBJECT {
         PROFILER_HEAP_OBJECT_ID objectId;
         PROFILER_EXTERNAL_OBJECT_ADDRESS externalObjectAddress;
     } __C89_NAMELESSUNIONNAME;
-    PROFILER_HEAP_OBJECT_NAME_ID typeNameId;
+    PROFILER_HEAP_OBJECT_NAME_ID typenameId;
     ULONG flags;
     USHORT unused;
     USHORT optionalInfoCount;

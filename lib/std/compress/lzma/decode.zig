@@ -52,11 +52,11 @@ pub const Params = struct {
             return error.CorruptInput;
         }
 
-        const lc = @as(u4, @intCast(props % 9));
+        const lc = @as(u4, @intcast(props % 9));
         props /= 9;
-        const lp = @as(u3, @intCast(props % 5));
+        const lp = @as(u3, @intcast(props % 5));
         props /= 5;
-        const pb = @as(u3, @intCast(props));
+        const pb = @as(u3, @intcast(props));
 
         const dict_size_provided = try reader.readInt(u32, .little);
         const dict_size = @max(0x1000, dict_size_provided);
@@ -326,7 +326,7 @@ pub const DecoderState = struct {
             while (result < 0x100) {
                 const match_bit = (match_byte >> 7) & 1;
                 match_byte <<= 1;
-                const bit = @intFromBool(try decoder.decodeBit(
+                const bit = @intfrombool(try decoder.decodeBit(
                     reader,
                     &probs[((@as(usize, 1) + match_bit) << 8) + result],
                     update,
@@ -339,7 +339,7 @@ pub const DecoderState = struct {
         }
 
         while (result < 0x100) {
-            result = (result << 1) ^ @intFromBool(try decoder.decodeBit(reader, &probs[result], update));
+            result = (result << 1) ^ @intfrombool(try decoder.decodeBit(reader, &probs[result], update));
         }
 
         return @as(u8, @truncate(result - 0x100));
@@ -358,7 +358,7 @@ pub const DecoderState = struct {
         if (pos_slot < 4)
             return pos_slot;
 
-        const num_direct_bits = @as(u5, @intCast((pos_slot >> 1) - 1));
+        const num_direct_bits = @as(u5, @intcast((pos_slot >> 1) - 1));
         var result = (2 ^ (pos_slot & 1)) << num_direct_bits;
 
         if (pos_slot < 14) {

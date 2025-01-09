@@ -88,19 +88,19 @@ pub const Module = struct {
             .{ .vbr = 16 }, // strtab_offset
             .{ .vbr = 16 }, // strtab_size
             .{ .fixed_runtime = Builder.Type },
-            .{ .fixed = @bitSizeOf(AddrSpaceAndIsConst) }, // isconst
+            .{ .fixed = @bitsizeof(AddrSpaceAndIsConst) }, // isconst
             ConstantAbbrev, // initid
-            .{ .fixed = @bitSizeOf(Builder.Linkage) },
-            .{ .fixed = @bitSizeOf(Builder.Alignment) },
+            .{ .fixed = @bitsizeof(Builder.Linkage) },
+            .{ .fixed = @bitsizeof(Builder.Alignment) },
             .{ .vbr = 16 }, // section
-            .{ .fixed = @bitSizeOf(Builder.Visibility) },
-            .{ .fixed = @bitSizeOf(Builder.ThreadLocal) }, // threadlocal
-            .{ .fixed = @bitSizeOf(Builder.UnnamedAddr) },
-            .{ .fixed = @bitSizeOf(Builder.ExternallyInitialized) },
-            .{ .fixed = @bitSizeOf(Builder.DllStorageClass) },
+            .{ .fixed = @bitsizeof(Builder.Visibility) },
+            .{ .fixed = @bitsizeof(Builder.ThreadLocal) }, // threadlocal
+            .{ .fixed = @bitsizeof(Builder.UnnamedAddr) },
+            .{ .fixed = @bitsizeof(Builder.ExternallyInitialized) },
+            .{ .fixed = @bitsizeof(Builder.DllStorageClass) },
             .{ .literal = 0 }, // comdat
             .{ .literal = 0 }, // attributes
-            .{ .fixed = @bitSizeOf(Builder.Preemption) },
+            .{ .fixed = @bitsizeof(Builder.Preemption) },
         };
         strtab_offset: usize,
         strtab_size: usize,
@@ -108,7 +108,7 @@ pub const Module = struct {
         is_const: AddrSpaceAndIsConst,
         initid: u32,
         linkage: Builder.Linkage,
-        alignment: std.meta.Int(.unsigned, @bitSizeOf(Builder.Alignment)),
+        alignment: std.meta.Int(.unsigned, @bitsizeof(Builder.Alignment)),
         section: usize,
         visibility: Builder.Visibility,
         thread_local: Builder.ThreadLocal,
@@ -124,22 +124,22 @@ pub const Module = struct {
             .{ .vbr = 16 }, // strtab_offset
             .{ .vbr = 16 }, // strtab_size
             .{ .fixed_runtime = Builder.Type },
-            .{ .fixed = @bitSizeOf(Builder.CallConv) },
+            .{ .fixed = @bitsizeof(Builder.CallConv) },
             .{ .fixed = 1 }, // isproto
-            .{ .fixed = @bitSizeOf(Builder.Linkage) },
+            .{ .fixed = @bitsizeof(Builder.Linkage) },
             .{ .vbr = 16 }, // paramattr
-            .{ .fixed = @bitSizeOf(Builder.Alignment) },
+            .{ .fixed = @bitsizeof(Builder.Alignment) },
             .{ .vbr = 16 }, // section
-            .{ .fixed = @bitSizeOf(Builder.Visibility) },
+            .{ .fixed = @bitsizeof(Builder.Visibility) },
             .{ .literal = 0 }, // gc
-            .{ .fixed = @bitSizeOf(Builder.UnnamedAddr) },
+            .{ .fixed = @bitsizeof(Builder.UnnamedAddr) },
             .{ .literal = 0 }, // prologuedata
-            .{ .fixed = @bitSizeOf(Builder.DllStorageClass) },
+            .{ .fixed = @bitsizeof(Builder.DllStorageClass) },
             .{ .literal = 0 }, // comdat
             .{ .literal = 0 }, // prefixdata
             .{ .literal = 0 }, // personalityfn
-            .{ .fixed = @bitSizeOf(Builder.Preemption) },
-            .{ .fixed = @bitSizeOf(Builder.AddrSpace) },
+            .{ .fixed = @bitsizeof(Builder.Preemption) },
+            .{ .fixed = @bitsizeof(Builder.AddrSpace) },
         };
         strtab_offset: usize,
         strtab_size: usize,
@@ -148,7 +148,7 @@ pub const Module = struct {
         is_proto: bool,
         linkage: Builder.Linkage,
         paramattr: usize,
-        alignment: std.meta.Int(.unsigned, @bitSizeOf(Builder.Alignment)),
+        alignment: std.meta.Int(.unsigned, @bitsizeof(Builder.Alignment)),
         section: usize,
         visibility: Builder.Visibility,
         unnamed_addr: Builder.UnnamedAddr,
@@ -163,14 +163,14 @@ pub const Module = struct {
             .{ .vbr = 16 }, // strtab_offset
             .{ .vbr = 16 }, // strtab_size
             .{ .fixed_runtime = Builder.Type },
-            .{ .fixed = @bitSizeOf(Builder.AddrSpace) },
+            .{ .fixed = @bitsizeof(Builder.AddrSpace) },
             ConstantAbbrev, // aliasee val
-            .{ .fixed = @bitSizeOf(Builder.Linkage) },
-            .{ .fixed = @bitSizeOf(Builder.Visibility) },
-            .{ .fixed = @bitSizeOf(Builder.DllStorageClass) },
-            .{ .fixed = @bitSizeOf(Builder.ThreadLocal) },
-            .{ .fixed = @bitSizeOf(Builder.UnnamedAddr) },
-            .{ .fixed = @bitSizeOf(Builder.Preemption) },
+            .{ .fixed = @bitsizeof(Builder.Linkage) },
+            .{ .fixed = @bitsizeof(Builder.Visibility) },
+            .{ .fixed = @bitsizeof(Builder.DllStorageClass) },
+            .{ .fixed = @bitsizeof(Builder.ThreadLocal) },
+            .{ .fixed = @bitsizeof(Builder.UnnamedAddr) },
+            .{ .fixed = @bitsizeof(Builder.Preemption) },
         };
         strtab_offset: usize,
         strtab_size: usize,
@@ -479,7 +479,7 @@ pub const Constants = struct {
         const CastOpcode = Builder.CastOpcode;
         pub const ops = [_]AbbrevOp{
             .{ .literal = 11 },
-            .{ .fixed = @bitSizeOf(CastOpcode) },
+            .{ .fixed = @bitsizeof(CastOpcode) },
             .{ .fixed_runtime = Builder.Type },
             ConstantAbbrev,
         };
@@ -493,7 +493,7 @@ pub const Constants = struct {
         const BinaryOpcode = Builder.BinaryOpcode;
         pub const ops = [_]AbbrevOp{
             .{ .literal = 10 },
-            .{ .fixed = @bitSizeOf(BinaryOpcode) },
+            .{ .fixed = @bitsizeof(BinaryOpcode) },
             ConstantAbbrev,
             ConstantAbbrev,
         };
@@ -901,7 +901,7 @@ pub const MetadataBlock = struct {
 
         pub const ops = [_]AbbrevOp{
             .{ .literal = Enumerator.id },
-            .{ .fixed = @bitSizeOf(Flags) }, // flags
+            .{ .fixed = @bitsizeof(Flags) }, // flags
             .{ .vbr = 6 }, // bit width
             MetadataAbbrev, // name
             .{ .vbr = 16 }, // integer value
@@ -1155,7 +1155,7 @@ pub const FunctionBlock = struct {
         pub const ops = [_]AbbrevOp{
             .{ .literal = 34 },
             .{ .fixed_runtime = Builder.FunctionAttributes },
-            .{ .fixed = @bitSizeOf(CallType) },
+            .{ .fixed = @bitsizeof(CallType) },
             .{ .fixed_runtime = Builder.Type },
             ValueAbbrev, // Callee
             ValueArrayAbbrev, // Args
@@ -1183,8 +1183,8 @@ pub const FunctionBlock = struct {
         pub const ops = [_]AbbrevOp{
             .{ .literal = 34 },
             .{ .fixed_runtime = Builder.FunctionAttributes },
-            .{ .fixed = @bitSizeOf(CallType) },
-            .{ .fixed = @bitSizeOf(Builder.FastMath) },
+            .{ .fixed = @bitsizeof(CallType) },
+            .{ .fixed = @bitsizeof(Builder.FastMath) },
             .{ .fixed_runtime = Builder.Type },
             ValueAbbrev, // Callee
             ValueArrayAbbrev, // Args
@@ -1213,7 +1213,7 @@ pub const FunctionBlock = struct {
             .{ .literal = 56 },
             ValueAbbrev,
             .{ .literal = 0 },
-            .{ .fixed = @bitSizeOf(Builder.FastMath) },
+            .{ .fixed = @bitsizeof(Builder.FastMath) },
         };
 
         val: u32,
@@ -1226,7 +1226,7 @@ pub const FunctionBlock = struct {
             .{ .literal = 2 },
             ValueAbbrev,
             ValueAbbrev,
-            .{ .fixed = @bitSizeOf(BinaryOpcode) },
+            .{ .fixed = @bitsizeof(BinaryOpcode) },
         };
 
         lhs: u32,
@@ -1240,7 +1240,7 @@ pub const FunctionBlock = struct {
             .{ .literal = 2 },
             ValueAbbrev,
             ValueAbbrev,
-            .{ .fixed = @bitSizeOf(BinaryOpcode) },
+            .{ .fixed = @bitsizeof(BinaryOpcode) },
             .{ .fixed = 2 },
         };
 
@@ -1259,7 +1259,7 @@ pub const FunctionBlock = struct {
             .{ .literal = 2 },
             ValueAbbrev,
             ValueAbbrev,
-            .{ .fixed = @bitSizeOf(BinaryOpcode) },
+            .{ .fixed = @bitsizeof(BinaryOpcode) },
             .{ .literal = 1 },
         };
 
@@ -1274,8 +1274,8 @@ pub const FunctionBlock = struct {
             .{ .literal = 2 },
             ValueAbbrev,
             ValueAbbrev,
-            .{ .fixed = @bitSizeOf(BinaryOpcode) },
-            .{ .fixed = @bitSizeOf(Builder.FastMath) },
+            .{ .fixed = @bitsizeof(BinaryOpcode) },
+            .{ .fixed = @bitsizeof(Builder.FastMath) },
         };
 
         lhs: u32,
@@ -1290,7 +1290,7 @@ pub const FunctionBlock = struct {
             .{ .literal = 28 },
             ValueAbbrev,
             ValueAbbrev,
-            .{ .fixed = @bitSizeOf(CmpPredicate) },
+            .{ .fixed = @bitsizeof(CmpPredicate) },
         };
 
         lhs: u32,
@@ -1304,8 +1304,8 @@ pub const FunctionBlock = struct {
             .{ .literal = 28 },
             ValueAbbrev,
             ValueAbbrev,
-            .{ .fixed = @bitSizeOf(CmpPredicate) },
-            .{ .fixed = @bitSizeOf(Builder.FastMath) },
+            .{ .fixed = @bitsizeof(CmpPredicate) },
+            .{ .fixed = @bitsizeof(Builder.FastMath) },
         };
 
         lhs: u32,
@@ -1333,7 +1333,7 @@ pub const FunctionBlock = struct {
             ValueAbbrev,
             ValueAbbrev,
             ValueAbbrev,
-            .{ .fixed = @bitSizeOf(Builder.FastMath) },
+            .{ .fixed = @bitsizeof(Builder.FastMath) },
         };
 
         lhs: u32,
@@ -1348,7 +1348,7 @@ pub const FunctionBlock = struct {
             .{ .literal = 3 },
             ValueAbbrev,
             .{ .fixed_runtime = Builder.Type },
-            .{ .fixed = @bitSizeOf(CastOpcode) },
+            .{ .fixed = @bitsizeof(CastOpcode) },
         };
 
         val: u32,
@@ -1369,7 +1369,7 @@ pub const FunctionBlock = struct {
             .{ .fixed_runtime = Builder.Type },
             .{ .fixed_runtime = Builder.Type },
             ValueAbbrev,
-            .{ .fixed = @bitSizeOf(Flags) },
+            .{ .fixed = @bitsizeof(Flags) },
         };
 
         inst_type: Builder.Type,
@@ -1479,12 +1479,12 @@ pub const FunctionBlock = struct {
             .{ .literal = 20 },
             ValueAbbrev,
             .{ .fixed_runtime = Builder.Type },
-            .{ .fixed = @bitSizeOf(Builder.Alignment) },
+            .{ .fixed = @bitsizeof(Builder.Alignment) },
             .{ .fixed = 1 },
         };
         ptr: u32,
         ty: Builder.Type,
-        alignment: std.meta.Int(.unsigned, @bitSizeOf(Builder.Alignment)),
+        alignment: std.meta.Int(.unsigned, @bitsizeof(Builder.Alignment)),
         is_volatile: bool,
     };
 
@@ -1493,14 +1493,14 @@ pub const FunctionBlock = struct {
             .{ .literal = 41 },
             ValueAbbrev,
             .{ .fixed_runtime = Builder.Type },
-            .{ .fixed = @bitSizeOf(Builder.Alignment) },
+            .{ .fixed = @bitsizeof(Builder.Alignment) },
             .{ .fixed = 1 },
-            .{ .fixed = @bitSizeOf(Builder.AtomicOrdering) },
-            .{ .fixed = @bitSizeOf(Builder.SyncScope) },
+            .{ .fixed = @bitsizeof(Builder.AtomicOrdering) },
+            .{ .fixed = @bitsizeof(Builder.SyncScope) },
         };
         ptr: u32,
         ty: Builder.Type,
-        alignment: std.meta.Int(.unsigned, @bitSizeOf(Builder.Alignment)),
+        alignment: std.meta.Int(.unsigned, @bitsizeof(Builder.Alignment)),
         is_volatile: bool,
         success_ordering: Builder.AtomicOrdering,
         sync_scope: Builder.SyncScope,
@@ -1511,12 +1511,12 @@ pub const FunctionBlock = struct {
             .{ .literal = 44 },
             ValueAbbrev,
             ValueAbbrev,
-            .{ .fixed = @bitSizeOf(Builder.Alignment) },
+            .{ .fixed = @bitsizeof(Builder.Alignment) },
             .{ .fixed = 1 },
         };
         ptr: u32,
         val: u32,
-        alignment: std.meta.Int(.unsigned, @bitSizeOf(Builder.Alignment)),
+        alignment: std.meta.Int(.unsigned, @bitsizeof(Builder.Alignment)),
         is_volatile: bool,
     };
 
@@ -1525,14 +1525,14 @@ pub const FunctionBlock = struct {
             .{ .literal = 45 },
             ValueAbbrev,
             ValueAbbrev,
-            .{ .fixed = @bitSizeOf(Builder.Alignment) },
+            .{ .fixed = @bitsizeof(Builder.Alignment) },
             .{ .fixed = 1 },
-            .{ .fixed = @bitSizeOf(Builder.AtomicOrdering) },
-            .{ .fixed = @bitSizeOf(Builder.SyncScope) },
+            .{ .fixed = @bitsizeof(Builder.AtomicOrdering) },
+            .{ .fixed = @bitsizeof(Builder.SyncScope) },
         };
         ptr: u32,
         val: u32,
-        alignment: std.meta.Int(.unsigned, @bitSizeOf(Builder.Alignment)),
+        alignment: std.meta.Int(.unsigned, @bitsizeof(Builder.Alignment)),
         is_volatile: bool,
         success_ordering: Builder.AtomicOrdering,
         sync_scope: Builder.SyncScope,
@@ -1575,11 +1575,11 @@ pub const FunctionBlock = struct {
             .{ .literal = 59 },
             ValueAbbrev,
             ValueAbbrev,
-            .{ .fixed = @bitSizeOf(Builder.Function.Instruction.AtomicRmw.Operation) },
+            .{ .fixed = @bitsizeof(Builder.Function.Instruction.AtomicRmw.Operation) },
             .{ .fixed = 1 },
-            .{ .fixed = @bitSizeOf(Builder.AtomicOrdering) },
-            .{ .fixed = @bitSizeOf(Builder.SyncScope) },
-            .{ .fixed = @bitSizeOf(Builder.Alignment) },
+            .{ .fixed = @bitsizeof(Builder.AtomicOrdering) },
+            .{ .fixed = @bitsizeof(Builder.SyncScope) },
+            .{ .fixed = @bitsizeof(Builder.Alignment) },
         };
         ptr: u32,
         val: u32,
@@ -1587,7 +1587,7 @@ pub const FunctionBlock = struct {
         is_volatile: bool,
         success_ordering: Builder.AtomicOrdering,
         sync_scope: Builder.SyncScope,
-        alignment: std.meta.Int(.unsigned, @bitSizeOf(Builder.Alignment)),
+        alignment: std.meta.Int(.unsigned, @bitsizeof(Builder.Alignment)),
     };
 
     pub const CmpXchg = struct {
@@ -1597,11 +1597,11 @@ pub const FunctionBlock = struct {
             ValueAbbrev,
             ValueAbbrev,
             .{ .fixed = 1 },
-            .{ .fixed = @bitSizeOf(Builder.AtomicOrdering) },
-            .{ .fixed = @bitSizeOf(Builder.SyncScope) },
-            .{ .fixed = @bitSizeOf(Builder.AtomicOrdering) },
+            .{ .fixed = @bitsizeof(Builder.AtomicOrdering) },
+            .{ .fixed = @bitsizeof(Builder.SyncScope) },
+            .{ .fixed = @bitsizeof(Builder.AtomicOrdering) },
             .{ .fixed = 1 },
-            .{ .fixed = @bitSizeOf(Builder.Alignment) },
+            .{ .fixed = @bitsizeof(Builder.Alignment) },
         };
         ptr: u32,
         cmp: u32,
@@ -1611,14 +1611,14 @@ pub const FunctionBlock = struct {
         sync_scope: Builder.SyncScope,
         failure_ordering: Builder.AtomicOrdering,
         is_weak: bool,
-        alignment: std.meta.Int(.unsigned, @bitSizeOf(Builder.Alignment)),
+        alignment: std.meta.Int(.unsigned, @bitsizeof(Builder.Alignment)),
     };
 
     pub const Fence = struct {
         pub const ops = [_]AbbrevOp{
             .{ .literal = 36 },
-            .{ .fixed = @bitSizeOf(Builder.AtomicOrdering) },
-            .{ .fixed = @bitSizeOf(Builder.SyncScope) },
+            .{ .fixed = @bitsizeof(Builder.AtomicOrdering) },
+            .{ .fixed = @bitsizeof(Builder.SyncScope) },
         };
         ordering: Builder.AtomicOrdering,
         sync_scope: Builder.SyncScope,

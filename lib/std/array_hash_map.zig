@@ -124,8 +124,8 @@ pub fn ArrayHashMap(
 
         /// Create an ArrayHashMap instance which will use a specified allocator.
         pub fn init(allocator: Allocator) Self {
-            if (@sizeOf(Context) != 0)
-                @compileError("Cannot infer context " ++ @typeName(Context) ++ ", call initContext instead.");
+            if (@sizeof(Context) != 0)
+                @compileerror("Cannot infer context " ++ @typename(Context) ++ ", call initContext instead.");
             return initContext(allocator, undefined);
         }
         pub fn initContext(allocator: Allocator, ctx: Context) Self {
@@ -590,8 +590,8 @@ pub fn ArrayHashMapUnmanaged(
         /// Convert from an unmanaged map to a managed map.  After calling this,
         /// the promoted map should no longer be used.
         pub fn promote(self: Self, allocator: Allocator) Managed {
-            if (@sizeOf(Context) != 0)
-                @compileError("Cannot infer context " ++ @typeName(Context) ++ ", call promoteContext instead.");
+            if (@sizeof(Context) != 0)
+                @compileerror("Cannot infer context " ++ @typename(Context) ++ ", call promoteContext instead.");
             return self.promoteContext(allocator, undefined);
         }
         pub fn promoteContext(self: Self, allocator: Allocator, ctx: Context) Managed {
@@ -607,7 +607,7 @@ pub fn ArrayHashMapUnmanaged(
             try self.entries.resize(allocator, key_list.len);
             errdefer self.entries.deinit(allocator);
             @memcpy(self.keys(), key_list);
-            if (@sizeOf(V) != 0) {
+            if (@sizeof(V) != 0) {
                 assert(key_list.len == value_list.len);
                 @memcpy(self.values(), value_list);
             }
@@ -697,7 +697,7 @@ pub fn ArrayHashMapUnmanaged(
             return .{
                 .keys = slice.items(.key).ptr,
                 .values = slice.items(.value).ptr,
-                .len = @as(u32, @intCast(slice.len)),
+                .len = @as(u32, @intcast(slice.len)),
             };
         }
         pub const Iterator = struct {
@@ -711,7 +711,7 @@ pub fn ArrayHashMapUnmanaged(
                 const result = Entry{
                     .key_ptr = &it.keys[it.index],
                     // workaround for #6974
-                    .value_ptr = if (@sizeOf(*V) == 0) undefined else &it.values[it.index],
+                    .value_ptr = if (@sizeof(*V) == 0) undefined else &it.values[it.index],
                 };
                 it.index += 1;
                 return result;
@@ -730,8 +730,8 @@ pub fn ArrayHashMapUnmanaged(
         /// the `Entry` pointer points to it. Caller should then initialize
         /// the value (but not the key).
         pub fn getOrPut(self: *Self, allocator: Allocator, key: K) !GetOrPutResult {
-            if (@sizeOf(Context) != 0)
-                @compileError("Cannot infer context " ++ @typeName(Context) ++ ", call getOrPutContext instead.");
+            if (@sizeof(Context) != 0)
+                @compileerror("Cannot infer context " ++ @typename(Context) ++ ", call getOrPutContext instead.");
             return self.getOrPutContext(allocator, key, undefined);
         }
         pub fn getOrPutContext(self: *Self, allocator: Allocator, key: K, ctx: Context) !GetOrPutResult {
@@ -742,8 +742,8 @@ pub fn ArrayHashMapUnmanaged(
             return gop;
         }
         pub fn getOrPutAdapted(self: *Self, allocator: Allocator, key: anytype, key_ctx: anytype) !GetOrPutResult {
-            if (@sizeOf(Context) != 0)
-                @compileError("Cannot infer context " ++ @typeName(Context) ++ ", call getOrPutContextAdapted instead.");
+            if (@sizeof(Context) != 0)
+                @compileerror("Cannot infer context " ++ @typename(Context) ++ ", call getOrPutContextAdapted instead.");
             return self.getOrPutContextAdapted(allocator, key, key_ctx, undefined);
         }
         pub fn getOrPutContextAdapted(self: *Self, allocator: Allocator, key: anytype, key_ctx: anytype, ctx: Context) !GetOrPutResult {
@@ -754,7 +754,7 @@ pub fn ArrayHashMapUnmanaged(
                 return GetOrPutResult{
                     .key_ptr = &slice.items(.key)[index],
                     // workaround for #6974
-                    .value_ptr = if (@sizeOf(*V) == 0) undefined else &slice.items(.value)[index],
+                    .value_ptr = if (@sizeof(*V) == 0) undefined else &slice.items(.value)[index],
                     .found_existing = true,
                     .index = index,
                 };
@@ -770,8 +770,8 @@ pub fn ArrayHashMapUnmanaged(
         /// If a new entry needs to be stored, this function asserts there
         /// is enough capacity to store it.
         pub fn getOrPutAssumeCapacity(self: *Self, key: K) GetOrPutResult {
-            if (@sizeOf(Context) != 0)
-                @compileError("Cannot infer context " ++ @typeName(Context) ++ ", call getOrPutAssumeCapacityContext instead.");
+            if (@sizeof(Context) != 0)
+                @compileerror("Cannot infer context " ++ @typename(Context) ++ ", call getOrPutAssumeCapacityContext instead.");
             return self.getOrPutAssumeCapacityContext(key, undefined);
         }
         pub fn getOrPutAssumeCapacityContext(self: *Self, key: K, ctx: Context) GetOrPutResult {
@@ -800,7 +800,7 @@ pub fn ArrayHashMapUnmanaged(
                         return GetOrPutResult{
                             .key_ptr = item_key,
                             // workaround for #6974
-                            .value_ptr = if (@sizeOf(*V) == 0) undefined else &slice.items(.value)[i],
+                            .value_ptr = if (@sizeof(*V) == 0) undefined else &slice.items(.value)[i],
                             .found_existing = true,
                             .index = i,
                         };
@@ -814,7 +814,7 @@ pub fn ArrayHashMapUnmanaged(
                 return GetOrPutResult{
                     .key_ptr = &keys_array.ptr[index],
                     // workaround for #6974
-                    .value_ptr = if (@sizeOf(*V) == 0) undefined else &slice.items(.value).ptr[index],
+                    .value_ptr = if (@sizeof(*V) == 0) undefined else &slice.items(.value).ptr[index],
                     .found_existing = false,
                     .index = index,
                 };
@@ -828,8 +828,8 @@ pub fn ArrayHashMapUnmanaged(
         }
 
         pub fn getOrPutValue(self: *Self, allocator: Allocator, key: K, value: V) !GetOrPutResult {
-            if (@sizeOf(Context) != 0)
-                @compileError("Cannot infer context " ++ @typeName(Context) ++ ", call getOrPutValueContext instead.");
+            if (@sizeof(Context) != 0)
+                @compileerror("Cannot infer context " ++ @typename(Context) ++ ", call getOrPutValueContext instead.");
             return self.getOrPutValueContext(allocator, key, value, undefined);
         }
         pub fn getOrPutValueContext(self: *Self, allocator: Allocator, key: K, value: V, ctx: Context) !GetOrPutResult {
@@ -844,8 +844,8 @@ pub fn ArrayHashMapUnmanaged(
         /// Increases capacity, guaranteeing that insertions up until the
         /// `expected_count` will not cause an allocation, and therefore cannot fail.
         pub fn ensureTotalCapacity(self: *Self, allocator: Allocator, new_capacity: usize) !void {
-            if (@sizeOf(ByIndexContext) != 0)
-                @compileError("Cannot infer context " ++ @typeName(Context) ++ ", call ensureTotalCapacityContext instead.");
+            if (@sizeof(ByIndexContext) != 0)
+                @compileerror("Cannot infer context " ++ @typename(Context) ++ ", call ensureTotalCapacityContext instead.");
             return self.ensureTotalCapacityContext(allocator, new_capacity, undefined);
         }
         pub fn ensureTotalCapacityContext(self: *Self, allocator: Allocator, new_capacity: usize, ctx: Context) !void {
@@ -881,8 +881,8 @@ pub fn ArrayHashMapUnmanaged(
             allocator: Allocator,
             additional_capacity: usize,
         ) !void {
-            if (@sizeOf(Context) != 0)
-                @compileError("Cannot infer context " ++ @typeName(Context) ++ ", call ensureTotalCapacityContext instead.");
+            if (@sizeof(Context) != 0)
+                @compileerror("Cannot infer context " ++ @typename(Context) ++ ", call ensureTotalCapacityContext instead.");
             return self.ensureUnusedCapacityContext(allocator, additional_capacity, undefined);
         }
         pub fn ensureUnusedCapacityContext(
@@ -906,8 +906,8 @@ pub fn ArrayHashMapUnmanaged(
         /// Clobbers any existing data. To detect if a put would clobber
         /// existing data, see `getOrPut`.
         pub fn put(self: *Self, allocator: Allocator, key: K, value: V) !void {
-            if (@sizeOf(Context) != 0)
-                @compileError("Cannot infer context " ++ @typeName(Context) ++ ", call putContext instead.");
+            if (@sizeof(Context) != 0)
+                @compileerror("Cannot infer context " ++ @typename(Context) ++ ", call putContext instead.");
             return self.putContext(allocator, key, value, undefined);
         }
         pub fn putContext(self: *Self, allocator: Allocator, key: K, value: V, ctx: Context) !void {
@@ -918,8 +918,8 @@ pub fn ArrayHashMapUnmanaged(
         /// Inserts a key-value pair into the hash map, asserting that no previous
         /// entry with the same key is already present
         pub fn putNoClobber(self: *Self, allocator: Allocator, key: K, value: V) !void {
-            if (@sizeOf(Context) != 0)
-                @compileError("Cannot infer context " ++ @typeName(Context) ++ ", call putNoClobberContext instead.");
+            if (@sizeof(Context) != 0)
+                @compileerror("Cannot infer context " ++ @typename(Context) ++ ", call putNoClobberContext instead.");
             return self.putNoClobberContext(allocator, key, value, undefined);
         }
         pub fn putNoClobberContext(self: *Self, allocator: Allocator, key: K, value: V, ctx: Context) !void {
@@ -932,8 +932,8 @@ pub fn ArrayHashMapUnmanaged(
         /// Clobbers any existing data. To detect if a put would clobber
         /// existing data, see `getOrPutAssumeCapacity`.
         pub fn putAssumeCapacity(self: *Self, key: K, value: V) void {
-            if (@sizeOf(Context) != 0)
-                @compileError("Cannot infer context " ++ @typeName(Context) ++ ", call putAssumeCapacityContext instead.");
+            if (@sizeof(Context) != 0)
+                @compileerror("Cannot infer context " ++ @typename(Context) ++ ", call putAssumeCapacityContext instead.");
             return self.putAssumeCapacityContext(key, value, undefined);
         }
         pub fn putAssumeCapacityContext(self: *Self, key: K, value: V, ctx: Context) void {
@@ -945,8 +945,8 @@ pub fn ArrayHashMapUnmanaged(
         /// Asserts that it does not clobber any existing data.
         /// To detect if a put would clobber existing data, see `getOrPutAssumeCapacity`.
         pub fn putAssumeCapacityNoClobber(self: *Self, key: K, value: V) void {
-            if (@sizeOf(Context) != 0)
-                @compileError("Cannot infer context " ++ @typeName(Context) ++ ", call putAssumeCapacityNoClobberContext instead.");
+            if (@sizeof(Context) != 0)
+                @compileerror("Cannot infer context " ++ @typename(Context) ++ ", call putAssumeCapacityNoClobberContext instead.");
             return self.putAssumeCapacityNoClobberContext(key, value, undefined);
         }
         pub fn putAssumeCapacityNoClobberContext(self: *Self, key: K, value: V, ctx: Context) void {
@@ -957,8 +957,8 @@ pub fn ArrayHashMapUnmanaged(
 
         /// Inserts a new `Entry` into the hash map, returning the previous one, if any.
         pub fn fetchPut(self: *Self, allocator: Allocator, key: K, value: V) !?KV {
-            if (@sizeOf(Context) != 0)
-                @compileError("Cannot infer context " ++ @typeName(Context) ++ ", call fetchPutContext instead.");
+            if (@sizeof(Context) != 0)
+                @compileerror("Cannot infer context " ++ @typename(Context) ++ ", call fetchPutContext instead.");
             return self.fetchPutContext(allocator, key, value, undefined);
         }
         pub fn fetchPutContext(self: *Self, allocator: Allocator, key: K, value: V, ctx: Context) !?KV {
@@ -977,8 +977,8 @@ pub fn ArrayHashMapUnmanaged(
         /// Inserts a new `Entry` into the hash map, returning the previous one, if any.
         /// If insertion happens, asserts there is enough capacity without allocating.
         pub fn fetchPutAssumeCapacity(self: *Self, key: K, value: V) ?KV {
-            if (@sizeOf(Context) != 0)
-                @compileError("Cannot infer context " ++ @typeName(Context) ++ ", call fetchPutAssumeCapacityContext instead.");
+            if (@sizeof(Context) != 0)
+                @compileerror("Cannot infer context " ++ @typename(Context) ++ ", call fetchPutAssumeCapacityContext instead.");
             return self.fetchPutAssumeCapacityContext(key, value, undefined);
         }
         pub fn fetchPutAssumeCapacityContext(self: *Self, key: K, value: V, ctx: Context) ?KV {
@@ -996,8 +996,8 @@ pub fn ArrayHashMapUnmanaged(
 
         /// Finds pointers to the key and value storage associated with a key.
         pub fn getEntry(self: Self, key: K) ?Entry {
-            if (@sizeOf(Context) != 0)
-                @compileError("Cannot infer context " ++ @typeName(Context) ++ ", call getEntryContext instead.");
+            if (@sizeof(Context) != 0)
+                @compileerror("Cannot infer context " ++ @typename(Context) ++ ", call getEntryContext instead.");
             return self.getEntryContext(key, undefined);
         }
         pub fn getEntryContext(self: Self, key: K, ctx: Context) ?Entry {
@@ -1009,14 +1009,14 @@ pub fn ArrayHashMapUnmanaged(
             return Entry{
                 .key_ptr = &slice.items(.key)[index],
                 // workaround for #6974
-                .value_ptr = if (@sizeOf(*V) == 0) undefined else &slice.items(.value)[index],
+                .value_ptr = if (@sizeof(*V) == 0) undefined else &slice.items(.value)[index],
             };
         }
 
         /// Finds the index in the `entries` array where a key is stored
         pub fn getIndex(self: Self, key: K) ?usize {
-            if (@sizeOf(Context) != 0)
-                @compileError("Cannot infer context " ++ @typeName(Context) ++ ", call getIndexContext instead.");
+            if (@sizeof(Context) != 0)
+                @compileerror("Cannot infer context " ++ @typename(Context) ++ ", call getIndexContext instead.");
             return self.getIndexContext(key, undefined);
         }
         pub fn getIndexContext(self: Self, key: K, ctx: Context) ?usize {
@@ -1050,8 +1050,8 @@ pub fn ArrayHashMapUnmanaged(
 
         /// Find the value associated with a key
         pub fn get(self: Self, key: K) ?V {
-            if (@sizeOf(Context) != 0)
-                @compileError("Cannot infer context " ++ @typeName(Context) ++ ", call getContext instead.");
+            if (@sizeof(Context) != 0)
+                @compileerror("Cannot infer context " ++ @typename(Context) ++ ", call getContext instead.");
             return self.getContext(key, undefined);
         }
         pub fn getContext(self: Self, key: K, ctx: Context) ?V {
@@ -1064,8 +1064,8 @@ pub fn ArrayHashMapUnmanaged(
 
         /// Find a pointer to the value associated with a key
         pub fn getPtr(self: Self, key: K) ?*V {
-            if (@sizeOf(Context) != 0)
-                @compileError("Cannot infer context " ++ @typeName(Context) ++ ", call getPtrContext instead.");
+            if (@sizeof(Context) != 0)
+                @compileerror("Cannot infer context " ++ @typename(Context) ++ ", call getPtrContext instead.");
             return self.getPtrContext(key, undefined);
         }
         pub fn getPtrContext(self: Self, key: K, ctx: Context) ?*V {
@@ -1074,13 +1074,13 @@ pub fn ArrayHashMapUnmanaged(
         pub fn getPtrAdapted(self: Self, key: anytype, ctx: anytype) ?*V {
             const index = self.getIndexAdapted(key, ctx) orelse return null;
             // workaround for #6974
-            return if (@sizeOf(*V) == 0) @as(*V, undefined) else &self.values()[index];
+            return if (@sizeof(*V) == 0) @as(*V, undefined) else &self.values()[index];
         }
 
         /// Find the actual key associated with an adapted key
         pub fn getKey(self: Self, key: K) ?K {
-            if (@sizeOf(Context) != 0)
-                @compileError("Cannot infer context " ++ @typeName(Context) ++ ", call getKeyContext instead.");
+            if (@sizeof(Context) != 0)
+                @compileerror("Cannot infer context " ++ @typename(Context) ++ ", call getKeyContext instead.");
             return self.getKeyContext(key, undefined);
         }
         pub fn getKeyContext(self: Self, key: K, ctx: Context) ?K {
@@ -1093,8 +1093,8 @@ pub fn ArrayHashMapUnmanaged(
 
         /// Find a pointer to the actual key associated with an adapted key
         pub fn getKeyPtr(self: Self, key: K) ?*K {
-            if (@sizeOf(Context) != 0)
-                @compileError("Cannot infer context " ++ @typeName(Context) ++ ", call getKeyPtrContext instead.");
+            if (@sizeof(Context) != 0)
+                @compileerror("Cannot infer context " ++ @typename(Context) ++ ", call getKeyPtrContext instead.");
             return self.getKeyPtrContext(key, undefined);
         }
         pub fn getKeyPtrContext(self: Self, key: K, ctx: Context) ?*K {
@@ -1107,8 +1107,8 @@ pub fn ArrayHashMapUnmanaged(
 
         /// Check whether a key is stored in the map
         pub fn contains(self: Self, key: K) bool {
-            if (@sizeOf(Context) != 0)
-                @compileError("Cannot infer context " ++ @typeName(Context) ++ ", call containsContext instead.");
+            if (@sizeof(Context) != 0)
+                @compileerror("Cannot infer context " ++ @typename(Context) ++ ", call containsContext instead.");
             return self.containsContext(key, undefined);
         }
         pub fn containsContext(self: Self, key: K, ctx: Context) bool {
@@ -1123,16 +1123,16 @@ pub fn ArrayHashMapUnmanaged(
         /// removed from the underlying array by swapping it with the last
         /// element.
         pub fn fetchSwapRemove(self: *Self, key: K) ?KV {
-            if (@sizeOf(Context) != 0)
-                @compileError("Cannot infer context " ++ @typeName(Context) ++ ", call fetchSwapRemoveContext instead.");
+            if (@sizeof(Context) != 0)
+                @compileerror("Cannot infer context " ++ @typename(Context) ++ ", call fetchSwapRemoveContext instead.");
             return self.fetchSwapRemoveContext(key, undefined);
         }
         pub fn fetchSwapRemoveContext(self: *Self, key: K, ctx: Context) ?KV {
             return self.fetchSwapRemoveContextAdapted(key, ctx, ctx);
         }
         pub fn fetchSwapRemoveAdapted(self: *Self, key: anytype, ctx: anytype) ?KV {
-            if (@sizeOf(ByIndexContext) != 0)
-                @compileError("Cannot infer context " ++ @typeName(Context) ++ ", call fetchSwapRemoveContextAdapted instead.");
+            if (@sizeof(ByIndexContext) != 0)
+                @compileerror("Cannot infer context " ++ @typename(Context) ++ ", call fetchSwapRemoveContextAdapted instead.");
             return self.fetchSwapRemoveContextAdapted(key, ctx, undefined);
         }
         pub fn fetchSwapRemoveContextAdapted(self: *Self, key: anytype, key_ctx: anytype, ctx: Context) ?KV {
@@ -1147,16 +1147,16 @@ pub fn ArrayHashMapUnmanaged(
         /// removed from the underlying array by shifting all elements forward
         /// thereby maintaining the current ordering.
         pub fn fetchOrderedRemove(self: *Self, key: K) ?KV {
-            if (@sizeOf(Context) != 0)
-                @compileError("Cannot infer context " ++ @typeName(Context) ++ ", call fetchOrderedRemoveContext instead.");
+            if (@sizeof(Context) != 0)
+                @compileerror("Cannot infer context " ++ @typename(Context) ++ ", call fetchOrderedRemoveContext instead.");
             return self.fetchOrderedRemoveContext(key, undefined);
         }
         pub fn fetchOrderedRemoveContext(self: *Self, key: K, ctx: Context) ?KV {
             return self.fetchOrderedRemoveContextAdapted(key, ctx, ctx);
         }
         pub fn fetchOrderedRemoveAdapted(self: *Self, key: anytype, ctx: anytype) ?KV {
-            if (@sizeOf(ByIndexContext) != 0)
-                @compileError("Cannot infer context " ++ @typeName(Context) ++ ", call fetchOrderedRemoveContextAdapted instead.");
+            if (@sizeof(ByIndexContext) != 0)
+                @compileerror("Cannot infer context " ++ @typename(Context) ++ ", call fetchOrderedRemoveContextAdapted instead.");
             return self.fetchOrderedRemoveContextAdapted(key, ctx, undefined);
         }
         pub fn fetchOrderedRemoveContextAdapted(self: *Self, key: anytype, key_ctx: anytype, ctx: Context) ?KV {
@@ -1171,16 +1171,16 @@ pub fn ArrayHashMapUnmanaged(
         /// by swapping it with the last element.  Returns true if an entry
         /// was removed, false otherwise.
         pub fn swapRemove(self: *Self, key: K) bool {
-            if (@sizeOf(Context) != 0)
-                @compileError("Cannot infer context " ++ @typeName(Context) ++ ", call swapRemoveContext instead.");
+            if (@sizeof(Context) != 0)
+                @compileerror("Cannot infer context " ++ @typename(Context) ++ ", call swapRemoveContext instead.");
             return self.swapRemoveContext(key, undefined);
         }
         pub fn swapRemoveContext(self: *Self, key: K, ctx: Context) bool {
             return self.swapRemoveContextAdapted(key, ctx, ctx);
         }
         pub fn swapRemoveAdapted(self: *Self, key: anytype, ctx: anytype) bool {
-            if (@sizeOf(ByIndexContext) != 0)
-                @compileError("Cannot infer context " ++ @typeName(Context) ++ ", call swapRemoveContextAdapted instead.");
+            if (@sizeof(ByIndexContext) != 0)
+                @compileerror("Cannot infer context " ++ @typename(Context) ++ ", call swapRemoveContextAdapted instead.");
             return self.swapRemoveContextAdapted(key, ctx, undefined);
         }
         pub fn swapRemoveContextAdapted(self: *Self, key: anytype, key_ctx: anytype, ctx: Context) bool {
@@ -1195,16 +1195,16 @@ pub fn ArrayHashMapUnmanaged(
         /// by shifting all elements forward, thereby maintaining the
         /// current ordering.  Returns true if an entry was removed, false otherwise.
         pub fn orderedRemove(self: *Self, key: K) bool {
-            if (@sizeOf(Context) != 0)
-                @compileError("Cannot infer context " ++ @typeName(Context) ++ ", call orderedRemoveContext instead.");
+            if (@sizeof(Context) != 0)
+                @compileerror("Cannot infer context " ++ @typename(Context) ++ ", call orderedRemoveContext instead.");
             return self.orderedRemoveContext(key, undefined);
         }
         pub fn orderedRemoveContext(self: *Self, key: K, ctx: Context) bool {
             return self.orderedRemoveContextAdapted(key, ctx, ctx);
         }
         pub fn orderedRemoveAdapted(self: *Self, key: anytype, ctx: anytype) bool {
-            if (@sizeOf(ByIndexContext) != 0)
-                @compileError("Cannot infer context " ++ @typeName(Context) ++ ", call orderedRemoveContextAdapted instead.");
+            if (@sizeof(ByIndexContext) != 0)
+                @compileerror("Cannot infer context " ++ @typename(Context) ++ ", call orderedRemoveContextAdapted instead.");
             return self.orderedRemoveContextAdapted(key, ctx, undefined);
         }
         pub fn orderedRemoveContextAdapted(self: *Self, key: anytype, key_ctx: anytype, ctx: Context) bool {
@@ -1218,8 +1218,8 @@ pub fn ArrayHashMapUnmanaged(
         /// the hash map. The entry is removed from the underlying array
         /// by swapping it with the last element.
         pub fn swapRemoveAt(self: *Self, index: usize) void {
-            if (@sizeOf(ByIndexContext) != 0)
-                @compileError("Cannot infer context " ++ @typeName(Context) ++ ", call swapRemoveAtContext instead.");
+            if (@sizeof(ByIndexContext) != 0)
+                @compileerror("Cannot infer context " ++ @typename(Context) ++ ", call swapRemoveAtContext instead.");
             return self.swapRemoveAtContext(index, undefined);
         }
         pub fn swapRemoveAtContext(self: *Self, index: usize, ctx: Context) void {
@@ -1234,8 +1234,8 @@ pub fn ArrayHashMapUnmanaged(
         /// by shifting all elements forward, thereby maintaining the
         /// current ordering.
         pub fn orderedRemoveAt(self: *Self, index: usize) void {
-            if (@sizeOf(ByIndexContext) != 0)
-                @compileError("Cannot infer context " ++ @typeName(Context) ++ ", call orderedRemoveAtContext instead.");
+            if (@sizeof(ByIndexContext) != 0)
+                @compileerror("Cannot infer context " ++ @typename(Context) ++ ", call orderedRemoveAtContext instead.");
             return self.orderedRemoveAtContext(index, undefined);
         }
         pub fn orderedRemoveAtContext(self: *Self, index: usize, ctx: Context) void {
@@ -1249,8 +1249,8 @@ pub fn ArrayHashMapUnmanaged(
         /// The copy uses the same context as this instance, but is allocated
         /// with the provided allocator.
         pub fn clone(self: Self, allocator: Allocator) !Self {
-            if (@sizeOf(ByIndexContext) != 0)
-                @compileError("Cannot infer context " ++ @typeName(Context) ++ ", call cloneContext instead.");
+            if (@sizeof(ByIndexContext) != 0)
+                @compileerror("Cannot infer context " ++ @typename(Context) ++ ", call cloneContext instead.");
             return self.cloneContext(allocator, undefined);
         }
         pub fn cloneContext(self: Self, allocator: Allocator, ctx: Context) !Self {
@@ -1288,8 +1288,8 @@ pub fn ArrayHashMapUnmanaged(
         ///
         /// The time complexity of this operation is O(n).
         pub fn reIndex(self: *Self, allocator: Allocator) !void {
-            if (@sizeOf(ByIndexContext) != 0)
-                @compileError("Cannot infer context " ++ @typeName(Context) ++ ", call reIndexContext instead.");
+            if (@sizeof(ByIndexContext) != 0)
+                @compileerror("Cannot infer context " ++ @typename(Context) ++ ", call reIndexContext instead.");
             return self.reIndexContext(allocator, undefined);
         }
 
@@ -1318,8 +1318,8 @@ pub fn ArrayHashMapUnmanaged(
         /// `fn lessThan(ctx: @TypeOf(ctx), a_index: usize, b_index: usize) bool`
         /// Uses a stable sorting algorithm.
         pub inline fn sort(self: *Self, sort_ctx: anytype) void {
-            if (@sizeOf(ByIndexContext) != 0)
-                @compileError("Cannot infer context " ++ @typeName(Context) ++ ", call sortContext instead.");
+            if (@sizeof(ByIndexContext) != 0)
+                @compileerror("Cannot infer context " ++ @typename(Context) ++ ", call sortContext instead.");
             return sortContextInternal(self, .stable, sort_ctx, undefined);
         }
 
@@ -1328,8 +1328,8 @@ pub fn ArrayHashMapUnmanaged(
         /// `fn lessThan(ctx: @TypeOf(ctx), a_index: usize, b_index: usize) bool`
         /// Uses an unstable sorting algorithm.
         pub inline fn sortUnstable(self: *Self, sort_ctx: anytype) void {
-            if (@sizeOf(ByIndexContext) != 0)
-                @compileError("Cannot infer context " ++ @typeName(Context) ++ ", call sortUnstableContext instead.");
+            if (@sizeof(ByIndexContext) != 0)
+                @compileerror("Cannot infer context " ++ @typename(Context) ++ ", call sortUnstableContext instead.");
             return self.sortContextInternal(.unstable, sort_ctx, undefined);
         }
 
@@ -1362,8 +1362,8 @@ pub fn ArrayHashMapUnmanaged(
         /// Shrinks the underlying `Entry` array to `new_len` elements and discards any associated
         /// index entries. Keeps capacity the same.
         pub fn shrinkRetainingCapacity(self: *Self, new_len: usize) void {
-            if (@sizeOf(ByIndexContext) != 0)
-                @compileError("Cannot infer context " ++ @typeName(Context) ++ ", call shrinkRetainingCapacityContext instead.");
+            if (@sizeof(ByIndexContext) != 0)
+                @compileerror("Cannot infer context " ++ @typename(Context) ++ ", call shrinkRetainingCapacityContext instead.");
             return self.shrinkRetainingCapacityContext(new_len, undefined);
         }
         pub fn shrinkRetainingCapacityContext(self: *Self, new_len: usize, ctx: Context) void {
@@ -1384,8 +1384,8 @@ pub fn ArrayHashMapUnmanaged(
         /// Shrinks the underlying `Entry` array to `new_len` elements and discards any associated
         /// index entries. Reduces allocated capacity.
         pub fn shrinkAndFree(self: *Self, allocator: Allocator, new_len: usize) void {
-            if (@sizeOf(ByIndexContext) != 0)
-                @compileError("Cannot infer context " ++ @typeName(Context) ++ ", call shrinkAndFreeContext instead.");
+            if (@sizeof(ByIndexContext) != 0)
+                @compileerror("Cannot infer context " ++ @typename(Context) ++ ", call shrinkAndFreeContext instead.");
             return self.shrinkAndFreeContext(allocator, new_len, undefined);
         }
         pub fn shrinkAndFreeContext(self: *Self, allocator: Allocator, new_len: usize, ctx: Context) void {
@@ -1405,8 +1405,8 @@ pub fn ArrayHashMapUnmanaged(
 
         /// Removes the last inserted `Entry` in the hash map and returns it.
         pub fn pop(self: *Self) KV {
-            if (@sizeOf(ByIndexContext) != 0)
-                @compileError("Cannot infer context " ++ @typeName(Context) ++ ", call popContext instead.");
+            if (@sizeof(ByIndexContext) != 0)
+                @compileerror("Cannot infer context " ++ @typename(Context) ++ ", call popContext instead.");
             return self.popContext(undefined);
         }
         pub fn popContext(self: *Self, ctx: Context) KV {
@@ -1426,8 +1426,8 @@ pub fn ArrayHashMapUnmanaged(
         /// Removes the last inserted `Entry` in the hash map and returns it if count is nonzero.
         /// Otherwise returns null.
         pub fn popOrNull(self: *Self) ?KV {
-            if (@sizeOf(ByIndexContext) != 0)
-                @compileError("Cannot infer context " ++ @typeName(Context) ++ ", call popContext instead.");
+            if (@sizeof(ByIndexContext) != 0)
+                @compileerror("Cannot infer context " ++ @typename(Context) ++ ", call popContext instead.");
             return self.popOrNullContext(undefined);
         }
         pub fn popOrNullContext(self: *Self, ctx: Context) ?KV {
@@ -1585,7 +1585,7 @@ pub fn ArrayHashMapUnmanaged(
             indexes: []Index(I),
         ) void {
             const slot = self.getSlotByIndex(old_entry_index, ctx, header, I, indexes);
-            indexes[slot].entry_index = @as(I, @intCast(new_entry_index));
+            indexes[slot].entry_index = @as(I, @intcast(new_entry_index));
         }
 
         fn removeFromIndexByIndex(self: *Self, entry_index: usize, ctx: ByIndexContext, header: *IndexHeader) void {
@@ -1684,7 +1684,7 @@ pub fn ArrayHashMapUnmanaged(
                     const new_index = self.entries.addOneAssumeCapacity();
                     indexes[slot] = .{
                         .distance_from_start_index = distance_from_start_index,
-                        .entry_index = @as(I, @intCast(new_index)),
+                        .entry_index = @as(I, @intcast(new_index)),
                     };
 
                     // update the hash if applicable
@@ -1694,7 +1694,7 @@ pub fn ArrayHashMapUnmanaged(
                         .found_existing = false,
                         .key_ptr = &keys_array.ptr[new_index],
                         // workaround for #6974
-                        .value_ptr = if (@sizeOf(*V) == 0) undefined else &values_array.ptr[new_index],
+                        .value_ptr = if (@sizeof(*V) == 0) undefined else &values_array.ptr[new_index],
                         .index = new_index,
                     };
                 }
@@ -1708,7 +1708,7 @@ pub fn ArrayHashMapUnmanaged(
                         .found_existing = true,
                         .key_ptr = &keys_array[slot_data.entry_index],
                         // workaround for #6974
-                        .value_ptr = if (@sizeOf(*V) == 0) undefined else &values_array[slot_data.entry_index],
+                        .value_ptr = if (@sizeof(*V) == 0) undefined else &values_array[slot_data.entry_index],
                         .index = slot_data.entry_index,
                     };
                 }
@@ -1725,7 +1725,7 @@ pub fn ArrayHashMapUnmanaged(
                     const new_index = self.entries.addOneAssumeCapacity();
                     if (store_hash) hashes_array.ptr[new_index] = h;
                     indexes[slot] = .{
-                        .entry_index = @as(I, @intCast(new_index)),
+                        .entry_index = @as(I, @intcast(new_index)),
                         .distance_from_start_index = distance_from_start_index,
                     };
                     distance_from_start_index = slot_data.distance_from_start_index;
@@ -1750,7 +1750,7 @@ pub fn ArrayHashMapUnmanaged(
                                 .found_existing = false,
                                 .key_ptr = &keys_array.ptr[new_index],
                                 // workaround for #6974
-                                .value_ptr = if (@sizeOf(*V) == 0) undefined else &values_array.ptr[new_index],
+                                .value_ptr = if (@sizeof(*V) == 0) undefined else &values_array.ptr[new_index],
                                 .index = new_index,
                             };
                         }
@@ -1815,7 +1815,7 @@ pub fn ArrayHashMapUnmanaged(
                 const start_index = safeTruncate(usize, h);
                 const end_index = start_index +% indexes.len;
                 var index = start_index;
-                var entry_index = @as(I, @intCast(i));
+                var entry_index = @as(I, @intcast(i));
                 var distance_from_start_index: I = 0;
                 while (index != end_index) : ({
                     index +%= 1;
@@ -1856,13 +1856,13 @@ pub fn ArrayHashMapUnmanaged(
         }
 
         fn dumpState(self: Self, comptime keyFmt: []const u8, comptime valueFmt: []const u8) void {
-            if (@sizeOf(ByIndexContext) != 0)
-                @compileError("Cannot infer context " ++ @typeName(Context) ++ ", call dumpStateContext instead.");
+            if (@sizeof(ByIndexContext) != 0)
+                @compileerror("Cannot infer context " ++ @typename(Context) ++ ", call dumpStateContext instead.");
             self.dumpStateContext(keyFmt, valueFmt, undefined);
         }
         fn dumpStateContext(self: Self, comptime keyFmt: []const u8, comptime valueFmt: []const u8, ctx: Context) void {
             const p = std.debug.print;
-            p("{s}:\n", .{@typeName(Self)});
+            p("{s}:\n", .{@typename(Self)});
             const slice = self.entries.slice();
             const hash_status = if (store_hash) "stored" else "computed";
             p("  len={} capacity={} hashes {s}\n", .{ slice.len, slice.capacity, hash_status });
@@ -1928,9 +1928,9 @@ fn capacityIndexType(bit_index: u8) CapacityIndexType {
 
 fn capacityIndexSize(bit_index: u8) usize {
     switch (capacityIndexType(bit_index)) {
-        .u8 => return @sizeOf(Index(u8)),
-        .u16 => return @sizeOf(Index(u16)),
-        .u32 => return @sizeOf(Index(u32)),
+        .u8 => return @sizeof(Index(u8)),
+        .u16 => return @sizeof(Index(u16)),
+        .u32 => return @sizeof(Index(u32)),
     }
 }
 
@@ -1941,7 +1941,7 @@ fn capacityIndexSize(bit_index: u8) usize {
 /// parameter has dynamic size, and will perform widening conversion
 /// when needed.  Both arguments must have the same signedness.
 fn safeTruncate(comptime T: type, val: anytype) T {
-    if (@bitSizeOf(T) >= @bitSizeOf(@TypeOf(val)))
+    if (@bitsizeof(T) >= @bitsizeof(@TypeOf(val)))
         return val;
     return @as(T, @truncate(val));
 }
@@ -1987,7 +1987,7 @@ fn Index(comptime I: type) type {
 /// the byte size of the index must fit in a usize.  This is a power of two
 /// length * the size of an Index(u32).  The index is 8 bytes (3 bits repr)
 /// and max_usize + 1 is not representable, so we need to subtract out 4 bits.
-const max_representable_index_len = @bitSizeOf(usize) - 4;
+const max_representable_index_len = @bitsizeof(usize) - 4;
 const max_bit_index = @min(32, max_representable_index_len);
 const min_bit_index = 5;
 const max_capacity = (1 << max_bit_index) - 1;
@@ -2013,19 +2013,19 @@ const IndexHeader = struct {
     /// This field tracks the total number of items in the arrays following
     /// this header.  It is the bit index of the power of two number of indices.
     /// This value is between min_bit_index and max_bit_index, inclusive.
-    bit_index: u8 align(@alignOf(u32)),
+    bit_index: u8 align(@alignof(u32)),
 
     /// Map from an incrementing index to an index slot in the attached arrays.
     fn constrainIndex(header: IndexHeader, i: usize) usize {
         // This is an optimization for modulo of power of two integers;
         // it requires `indexes_len` to always be a power of two.
-        return @as(usize, @intCast(i & header.mask()));
+        return @as(usize, @intcast(i & header.mask()));
     }
 
     /// Returns the attached array of indexes.  I must match the type
     /// returned by capacityIndexType.
     fn indexes(header: *IndexHeader, comptime I: type) []Index(I) {
-        const start_ptr: [*]Index(I) = @alignCast(@ptrCast(@as([*]u8, @ptrCast(header)) + @sizeOf(IndexHeader)));
+        const start_ptr: [*]Index(I) = @aligncast(@ptrcast(@as([*]u8, @ptrcast(header)) + @sizeof(IndexHeader)));
         return start_ptr[0..header.length()];
     }
 
@@ -2038,15 +2038,15 @@ const IndexHeader = struct {
         return index_capacities[self.bit_index];
     }
     fn length(self: IndexHeader) usize {
-        return @as(usize, 1) << @as(math.Log2Int(usize), @intCast(self.bit_index));
+        return @as(usize, 1) << @as(math.Log2Int(usize), @intcast(self.bit_index));
     }
     fn mask(self: IndexHeader) u32 {
-        return @as(u32, @intCast(self.length() - 1));
+        return @as(u32, @intcast(self.length() - 1));
     }
 
     fn findBitIndex(desired_capacity: usize) !u8 {
         if (desired_capacity > max_capacity) return error.OutOfMemory;
-        var new_bit_index = @as(u8, @intCast(std.math.log2_int_ceil(usize, desired_capacity)));
+        var new_bit_index = @as(u8, @intcast(std.math.log2_int_ceil(usize, desired_capacity)));
         if (desired_capacity > index_capacities[new_bit_index]) new_bit_index += 1;
         if (new_bit_index < min_bit_index) new_bit_index = min_bit_index;
         assert(desired_capacity <= index_capacities[new_bit_index]);
@@ -2056,12 +2056,12 @@ const IndexHeader = struct {
     /// Allocates an index header, and fills the entryIndexes array with empty.
     /// The distance array contents are undefined.
     fn alloc(allocator: Allocator, new_bit_index: u8) !*IndexHeader {
-        const len = @as(usize, 1) << @as(math.Log2Int(usize), @intCast(new_bit_index));
+        const len = @as(usize, 1) << @as(math.Log2Int(usize), @intcast(new_bit_index));
         const index_size = hash_map.capacityIndexSize(new_bit_index);
-        const nbytes = @sizeOf(IndexHeader) + index_size * len;
-        const bytes = try allocator.alignedAlloc(u8, @alignOf(IndexHeader), nbytes);
-        @memset(bytes[@sizeOf(IndexHeader)..], 0xff);
-        const result: *IndexHeader = @alignCast(@ptrCast(bytes.ptr));
+        const nbytes = @sizeof(IndexHeader) + index_size * len;
+        const bytes = try allocator.alignedAlloc(u8, @alignof(IndexHeader), nbytes);
+        @memset(bytes[@sizeof(IndexHeader)..], 0xff);
+        const result: *IndexHeader = @aligncast(@ptrcast(bytes.ptr));
         result.* = .{
             .bit_index = new_bit_index,
         };
@@ -2071,23 +2071,23 @@ const IndexHeader = struct {
     /// Releases the memory for a header and its associated arrays.
     fn free(header: *IndexHeader, allocator: Allocator) void {
         const index_size = hash_map.capacityIndexSize(header.bit_index);
-        const ptr: [*]align(@alignOf(IndexHeader)) u8 = @ptrCast(header);
-        const slice = ptr[0 .. @sizeOf(IndexHeader) + header.length() * index_size];
+        const ptr: [*]align(@alignof(IndexHeader)) u8 = @ptrcast(header);
+        const slice = ptr[0 .. @sizeof(IndexHeader) + header.length() * index_size];
         allocator.free(slice);
     }
 
     /// Puts an IndexHeader into the state that it would be in after being freshly allocated.
     fn reset(header: *IndexHeader) void {
         const index_size = hash_map.capacityIndexSize(header.bit_index);
-        const ptr: [*]align(@alignOf(IndexHeader)) u8 = @ptrCast(header);
-        const nbytes = @sizeOf(IndexHeader) + header.length() * index_size;
-        @memset(ptr[@sizeOf(IndexHeader)..nbytes], 0xff);
+        const ptr: [*]align(@alignof(IndexHeader)) u8 = @ptrcast(header);
+        const nbytes = @sizeof(IndexHeader) + header.length() * index_size;
+        @memset(ptr[@sizeof(IndexHeader)..nbytes], 0xff);
     }
 
     // Verify that the header has sufficient alignment to produce aligned arrays.
     comptime {
-        if (@alignOf(u32) > @alignOf(IndexHeader))
-            @compileError("IndexHeader must have a larger alignment than its indexes!");
+        if (@alignof(u32) > @alignof(IndexHeader))
+            @compileerror("IndexHeader must have a larger alignment than its indexes!");
     }
 };
 
@@ -2187,25 +2187,25 @@ test "iterator hash map" {
 
     var count: usize = 0;
     while (it.next()) |entry| : (count += 1) {
-        buffer[@as(usize, @intCast(entry.key_ptr.*))] = entry.value_ptr.*;
+        buffer[@as(usize, @intcast(entry.key_ptr.*))] = entry.value_ptr.*;
     }
     try testing.expect(count == 3);
     try testing.expect(it.next() == null);
 
     for (buffer, 0..) |_, i| {
-        try testing.expect(buffer[@as(usize, @intCast(keys[i]))] == values[i]);
+        try testing.expect(buffer[@as(usize, @intcast(keys[i]))] == values[i]);
     }
 
     it.reset();
     count = 0;
     while (it.next()) |entry| {
-        buffer[@as(usize, @intCast(entry.key_ptr.*))] = entry.value_ptr.*;
+        buffer[@as(usize, @intcast(entry.key_ptr.*))] = entry.value_ptr.*;
         count += 1;
         if (count >= 2) break;
     }
 
     for (buffer[0..2], 0..) |_, i| {
-        try testing.expect(buffer[@as(usize, @intCast(keys[i]))] == values[i]);
+        try testing.expect(buffer[@as(usize, @intcast(keys[i]))] == values[i]);
     }
 
     it.reset();
@@ -2416,8 +2416,8 @@ test "reIndex" {
     const num_unindexed_entries = 20;
     try map.unmanaged.entries.resize(std.testing.allocator, num_indexed_entries + num_unindexed_entries);
     for (map.keys()[num_indexed_entries..], map.values()[num_indexed_entries..], num_indexed_entries..) |*key, *value, j| {
-        key.* = @intCast(j);
-        value.* = @intCast(j * 10);
+        key.* = @intcast(j);
+        value.* = @intcast(j * 10);
     }
 
     // After reindexing, we should see everything.
@@ -2502,7 +2502,7 @@ pub fn getHashPtrAddrFn(comptime K: type, comptime Context: type) (fn (Context, 
     return struct {
         fn hash(ctx: Context, key: K) u32 {
             _ = ctx;
-            return getAutoHashFn(usize, void)({}, @intFromPtr(key));
+            return getAutoHashFn(usize, void)({}, @intfromptr(key));
         }
     }.hash;
 }
@@ -2549,7 +2549,7 @@ pub fn getAutoEqlFn(comptime K: type, comptime Context: type) (fn (Context, K, K
 }
 
 pub fn autoEqlIsCheap(comptime K: type) bool {
-    return switch (@typeInfo(K)) {
+    return switch (@typeinfo(K)) {
         .Bool,
         .Int,
         .Float,

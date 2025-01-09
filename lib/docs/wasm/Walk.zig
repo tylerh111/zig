@@ -22,7 +22,7 @@ pub const Category = union(enum(u8)) {
     /// A function that returns a type.
     type_function: Ast.Node.Index,
 
-    pub const Tag = @typeInfo(Category).Union.tag_type.?;
+    pub const Tag = @typeinfo(Category).Union.tag_type.?;
 };
 
 pub const File = struct {
@@ -48,7 +48,7 @@ pub const File = struct {
     pub fn field_count(file: *const File, node: Ast.Node.Index) u32 {
         const scope = file.scopes.get(node) orelse return 0;
         if (scope.tag != .namespace) return 0;
-        const namespace: *Scope.Namespace = @alignCast(@fieldParentPtr("base", scope));
+        const namespace: *Scope.Namespace = @aligncast(@fieldparentptr("base", scope));
         return namespace.field_count;
     }
 
@@ -61,13 +61,13 @@ pub const File = struct {
                 .file = i,
                 .parent = parent_decl,
             });
-            const decl_index: Decl.Index = @enumFromInt(decls.items.len - 1);
+            const decl_index: Decl.Index = @enumfromint(decls.items.len - 1);
             try i.get().node_decls.put(gpa, node, decl_index);
             return decl_index;
         }
 
         pub fn get(i: File.Index) *File {
-            return &files.values()[@intFromEnum(i)];
+            return &files.values()[@intfromenum(i)];
         }
 
         pub fn get_ast(i: File.Index) *Ast {
@@ -75,7 +75,7 @@ pub const File = struct {
         }
 
         pub fn path(i: File.Index) []const u8 {
-            return files.keys()[@intFromEnum(i)];
+            return files.keys()[@intfromenum(i)];
         }
 
         pub fn findRootDecl(file_index: File.Index) Decl.Index {
@@ -140,7 +140,7 @@ pub const File = struct {
             const node_tags = ast.nodes.items(.tag);
             const node_datas = ast.nodes.items(.data);
             const main_tokens = ast.nodes.items(.main_token);
-            //log.debug("categorize_expr tag {s}", .{@tagName(node_tags[node])});
+            //log.debug("categorize_expr tag {s}", .{@tagname(node_tags[node])});
             return switch (node_tags[node]) {
                 .container_decl,
                 .container_decl_trailing,
@@ -311,7 +311,7 @@ pub const File = struct {
                     base_path, file_path, resolved_path,
                 });
                 if (files.getIndex(resolved_path)) |imported_file_index| {
-                    return .{ .alias = File.Index.findRootDecl(@enumFromInt(imported_file_index)) };
+                    return .{ .alias = File.Index.findRootDecl(@enumfromint(imported_file_index)) };
                 } else {
                     log.warn("import target '{s}' did not resolve to any file", .{resolved_path});
                 }
@@ -371,7 +371,7 @@ pub const ModuleIndex = enum(u32) {
 
 pub fn add_file(file_name: []const u8, bytes: []u8) !File.Index {
     const ast = try parse(bytes);
-    const file_index: File.Index = @enumFromInt(files.entries.len);
+    const file_index: File.Index = @enumfromint(files.entries.len);
     try files.put(gpa, file_name, .{ .ast = ast });
 
     if (ast.errors.len > 0) {
@@ -439,11 +439,11 @@ pub const Scope = struct {
         while (true) switch (it.tag) {
             .top => unreachable,
             .local => {
-                const local: *Local = @alignCast(@fieldParentPtr("base", it));
+                const local: *Local = @aligncast(@fieldparentptr("base", it));
                 it = local.parent;
             },
             .namespace => {
-                const namespace: *Namespace = @alignCast(@fieldParentPtr("base", it));
+                const namespace: *Namespace = @aligncast(@fieldparentptr("base", it));
                 return namespace.decl_index;
             },
         };
@@ -453,7 +453,7 @@ pub const Scope = struct {
         switch (scope.tag) {
             .top, .local => return null,
             .namespace => {
-                const namespace: *Namespace = @alignCast(@fieldParentPtr("base", scope));
+                const namespace: *Namespace = @aligncast(@fieldparentptr("base", scope));
                 return namespace.names.get(name);
             },
         }
@@ -465,7 +465,7 @@ pub const Scope = struct {
         while (true) switch (it.tag) {
             .top => break,
             .local => {
-                const local: *Local = @alignCast(@fieldParentPtr("base", it));
+                const local: *Local = @aligncast(@fieldparentptr("base", it));
                 const name_token = main_tokens[local.var_node] + 1;
                 const ident_name = ast.tokenSlice(name_token);
                 if (std.mem.eql(u8, ident_name, name)) {
@@ -474,7 +474,7 @@ pub const Scope = struct {
                 it = local.parent;
             },
             .namespace => {
-                const namespace: *Namespace = @alignCast(@fieldParentPtr("base", it));
+                const namespace: *Namespace = @aligncast(@fieldparentptr("base", it));
                 if (namespace.names.get(name)) |node| {
                     return node;
                 }
@@ -1093,7 +1093,7 @@ pub fn isPrimitiveNonType(name: []const u8) bool {
 //
 //    // example test command:
 //    // zig test --dep input.zig -Mroot=src/Walk.zig -Minput.zig=/home/andy/dev/zig/lib/std/fs/File/zig
-//    var ast = try Ast.parse(gpa, @embedFile("input.zig"), .zig);
+//    var ast = try Ast.parse(gpa, @embedfile("input.zig"), .zig);
 //    defer ast.deinit(gpa);
 //
 //    var w: Walk = .{

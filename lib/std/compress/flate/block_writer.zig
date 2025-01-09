@@ -94,12 +94,12 @@ pub fn BlockWriter(comptime WriterType: type) type {
             // Copy the concatenated code sizes to codegen. Put a marker at the end.
             var cgnl = codegen[0..num_literals];
             for (cgnl, 0..) |_, i| {
-                cgnl[i] = @as(u8, @intCast(lit_enc.codes[i].len));
+                cgnl[i] = @as(u8, @intcast(lit_enc.codes[i].len));
             }
 
             cgnl = codegen[num_literals .. num_literals + num_distances];
             for (cgnl, 0..) |_, i| {
-                cgnl[i] = @as(u8, @intCast(dist_enc.codes[i].len));
+                cgnl[i] = @as(u8, @intcast(dist_enc.codes[i].len));
             }
             codegen[num_literals + num_distances] = end_code_mark;
 
@@ -128,7 +128,7 @@ pub fn BlockWriter(comptime WriterType: type) type {
                         }
                         codegen[out_index] = 16;
                         out_index += 1;
-                        codegen[out_index] = @as(u8, @intCast(n - 3));
+                        codegen[out_index] = @as(u8, @intcast(n - 3));
                         out_index += 1;
                         self.codegen_freq[16] += 1;
                         count -= n;
@@ -141,7 +141,7 @@ pub fn BlockWriter(comptime WriterType: type) type {
                         }
                         codegen[out_index] = 18;
                         out_index += 1;
-                        codegen[out_index] = @as(u8, @intCast(n - 11));
+                        codegen[out_index] = @as(u8, @intcast(n - 11));
                         out_index += 1;
                         self.codegen_freq[18] += 1;
                         count -= n;
@@ -150,7 +150,7 @@ pub fn BlockWriter(comptime WriterType: type) type {
                         // 3 <= count <= 10
                         codegen[out_index] = 17;
                         out_index += 1;
-                        codegen[out_index] = @as(u8, @intCast(count - 3));
+                        codegen[out_index] = @as(u8, @intcast(count - 3));
                         out_index += 1;
                         self.codegen_freq[17] += 1;
                         count = 0;
@@ -197,8 +197,8 @@ pub fn BlockWriter(comptime WriterType: type) type {
                 extra_bits;
 
             return DynamicSize{
-                .size = @as(u32, @intCast(size)),
-                .num_codegens = @as(u32, @intCast(num_codegens)),
+                .size = @as(u32, @intcast(size)),
+                .num_codegens = @as(u32, @intcast(num_codegens)),
             };
         }
 
@@ -223,7 +223,7 @@ pub fn BlockWriter(comptime WriterType: type) type {
                 return .{ .size = 0, .storable = false };
             }
             if (in.?.len <= consts.max_store_block_size) {
-                return .{ .size = @as(u32, @intCast((in.?.len + 5) * 8)), .storable = true };
+                return .{ .size = @as(u32, @intcast((in.?.len + 5) * 8)), .storable = true };
             }
             return .{ .size = 0, .storable = false };
         }
@@ -255,12 +255,12 @@ pub fn BlockWriter(comptime WriterType: type) type {
 
             i = 0;
             while (true) {
-                const code_word: u32 = @as(u32, @intCast(self.codegen[i]));
+                const code_word: u32 = @as(u32, @intcast(self.codegen[i]));
                 i += 1;
                 if (code_word == end_code_mark) {
                     break;
                 }
-                try self.writeCode(self.codegen_encoding.codes[@as(u32, @intCast(code_word))]);
+                try self.writeCode(self.codegen_encoding.codes[@as(u32, @intcast(code_word))]);
 
                 switch (code_word) {
                     16 => {
@@ -285,7 +285,7 @@ pub fn BlockWriter(comptime WriterType: type) type {
             const flag: u32 = if (eof) 1 else 0;
             try self.bit_writer.writeBits(flag, 3);
             try self.flush();
-            const l: u16 = @intCast(length);
+            const l: u16 = @intcast(length);
             try self.bit_writer.writeBits(l, 16);
             try self.bit_writer.writeBits(~l, 16);
         }
@@ -322,14 +322,14 @@ pub fn BlockWriter(comptime WriterType: type) type {
                 var length_code: u16 = Token.length_codes_start + 8;
                 while (length_code < num_literals) : (length_code += 1) {
                     // First eight length codes have extra size = 0.
-                    extra_bits += @as(u32, @intCast(self.literal_freq[length_code])) *
-                        @as(u32, @intCast(Token.lengthExtraBits(length_code)));
+                    extra_bits += @as(u32, @intcast(self.literal_freq[length_code])) *
+                        @as(u32, @intcast(Token.lengthExtraBits(length_code)));
                 }
                 var distance_code: u16 = 4;
                 while (distance_code < num_distances) : (distance_code += 1) {
                     // First four distance codes have extra size = 0.
-                    extra_bits += @as(u32, @intCast(self.distance_freq[distance_code])) *
-                        @as(u32, @intCast(Token.distanceExtraBits(distance_code)));
+                    extra_bits += @as(u32, @intcast(self.distance_freq[distance_code])) *
+                        @as(u32, @intcast(Token.distanceExtraBits(distance_code)));
                 }
             }
 
@@ -372,7 +372,7 @@ pub fn BlockWriter(comptime WriterType: type) type {
             }
 
             // Huffman.
-            if (@intFromPtr(literal_encoding) == @intFromPtr(&self.fixed_literal_encoding)) {
+            if (@intfromptr(literal_encoding) == @intfromptr(&self.fixed_literal_encoding)) {
                 try self.fixedHeader(eof);
             } else {
                 try self.dynamicHeader(num_literals, num_distances, num_codegens, eof);
@@ -464,12 +464,12 @@ pub fn BlockWriter(comptime WriterType: type) type {
             self.literal_freq[consts.end_block_marker] += 1;
 
             // get the number of literals
-            num_literals = @as(u32, @intCast(self.literal_freq.len));
+            num_literals = @as(u32, @intcast(self.literal_freq.len));
             while (self.literal_freq[num_literals - 1] == 0) {
                 num_literals -= 1;
             }
             // get the number of distances
-            num_distances = @as(u32, @intCast(self.distance_freq.len));
+            num_distances = @as(u32, @intcast(self.distance_freq.len));
             while (num_distances > 0 and self.distance_freq[num_distances - 1] == 0) {
                 num_distances -= 1;
             }
@@ -667,8 +667,8 @@ const TestFn = enum {
 fn testBlock(comptime tc: TestCase, comptime tfn: TestFn) !void {
     if (tc.input.len != 0 and tc.want.len != 0) {
         const want_name = comptime fmt.comptimePrint(tc.want, .{tfn.to_s()});
-        const input = @embedFile("testdata/block_writer/" ++ tc.input);
-        const want = @embedFile("testdata/block_writer/" ++ want_name);
+        const input = @embedfile("testdata/block_writer/" ++ tc.input);
+        const want = @embedfile("testdata/block_writer/" ++ want_name);
         try testWriteBlock(tfn, input, want, tc.tokens);
     }
 
@@ -677,7 +677,7 @@ fn testBlock(comptime tc: TestCase, comptime tfn: TestFn) !void {
     }
 
     const want_name_no_input = comptime fmt.comptimePrint(tc.want_no_input, .{tfn.to_s()});
-    const want = @embedFile("testdata/block_writer/" ++ want_name_no_input);
+    const want = @embedfile("testdata/block_writer/" ++ want_name_no_input);
     try testWriteBlock(tfn, null, want, tc.tokens);
 }
 

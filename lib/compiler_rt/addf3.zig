@@ -7,7 +7,7 @@ const normalize = common.normalize;
 ///
 /// https://github.com/llvm/llvm-project/blob/02d85149a05cb1f6dc49f0ba7a2ceca53718ae17/compiler-rt/lib/builtins/fp_add_impl.inc
 pub inline fn addf3(comptime T: type, a: T, b: T) T {
-    const bits = @typeInfo(T).Float.bits;
+    const bits = @typeinfo(T).Float.bits;
     const Z = std.meta.Int(.unsigned, bits);
 
     const typeWidth = bits;
@@ -23,28 +23,28 @@ pub inline fn addf3(comptime T: type, a: T, b: T) T {
     const significandMask = (@as(Z, 1) << significandBits) - 1;
 
     const absMask = signBit - 1;
-    const qnanRep = @as(Z, @bitCast(math.nan(T))) | quietBit;
+    const qnanRep = @as(Z, @bitcast(math.nan(T))) | quietBit;
 
-    var aRep: Z = @bitCast(a);
-    var bRep: Z = @bitCast(b);
+    var aRep: Z = @bitcast(a);
+    var bRep: Z = @bitcast(b);
     const aAbs = aRep & absMask;
     const bAbs = bRep & absMask;
 
-    const infRep: Z = @bitCast(math.inf(T));
+    const infRep: Z = @bitcast(math.inf(T));
 
     // Detect if a or b is zero, infinity, or NaN.
     if (aAbs -% @as(Z, 1) >= infRep - @as(Z, 1) or
         bAbs -% @as(Z, 1) >= infRep - @as(Z, 1))
     {
         // NaN + anything = qNaN
-        if (aAbs > infRep) return @bitCast(@as(Z, @bitCast(a)) | quietBit);
+        if (aAbs > infRep) return @bitcast(@as(Z, @bitcast(a)) | quietBit);
         // anything + NaN = qNaN
-        if (bAbs > infRep) return @bitCast(@as(Z, @bitCast(b)) | quietBit);
+        if (bAbs > infRep) return @bitcast(@as(Z, @bitcast(b)) | quietBit);
 
         if (aAbs == infRep) {
             // +/-infinity + -/+infinity = qNaN
-            if ((@as(Z, @bitCast(a)) ^ @as(Z, @bitCast(b))) == signBit) {
-                return @bitCast(qnanRep);
+            if ((@as(Z, @bitcast(a)) ^ @as(Z, @bitcast(b))) == signBit) {
+                return @bitcast(qnanRep);
             }
             // +/-infinity + anything remaining = +/- infinity
             else {
@@ -59,7 +59,7 @@ pub inline fn addf3(comptime T: type, a: T, b: T) T {
         if (aAbs == 0) {
             // but we need to get the sign right for zero + zero
             if (bAbs == 0) {
-                return @bitCast(@as(Z, @bitCast(a)) & @as(Z, @bitCast(b)));
+                return @bitcast(@as(Z, @bitcast(a)) & @as(Z, @bitcast(b)));
             } else {
                 return b;
             }
@@ -77,8 +77,8 @@ pub inline fn addf3(comptime T: type, a: T, b: T) T {
     }
 
     // Extract the exponent and significand from the (possibly swapped) a and b.
-    var aExponent: i32 = @intCast((aRep >> significandBits) & maxExponent);
-    var bExponent: i32 = @intCast((bRep >> significandBits) & maxExponent);
+    var aExponent: i32 = @intcast((aRep >> significandBits) & maxExponent);
+    var bExponent: i32 = @intcast((bRep >> significandBits) & maxExponent);
     var aSignificand = aRep & significandMask;
     var bSignificand = bRep & significandMask;
 
@@ -100,10 +100,10 @@ pub inline fn addf3(comptime T: type, a: T, b: T) T {
 
     // Shift the significand of b by the difference in exponents, with a sticky
     // bottom bit to get rounding correct.
-    const @"align": u32 = @intCast(aExponent - bExponent);
+    const @"align": u32 = @intcast(aExponent - bExponent);
     if (@"align" != 0) {
         if (@"align" < typeWidth) {
-            const sticky = if (bSignificand << @intCast(typeWidth - @"align") != 0) @as(Z, 1) else 0;
+            const sticky = if (bSignificand << @intcast(typeWidth - @"align") != 0) @as(Z, 1) else 0;
             bSignificand = (bSignificand >> @truncate(@"align")) | sticky;
         } else {
             bSignificand = 1; // sticky; b is known to be non-zero.
@@ -112,13 +112,13 @@ pub inline fn addf3(comptime T: type, a: T, b: T) T {
     if (subtraction) {
         aSignificand -= bSignificand;
         // If a == -b, return +zero.
-        if (aSignificand == 0) return @bitCast(@as(Z, 0));
+        if (aSignificand == 0) return @bitcast(@as(Z, 0));
 
         // If partial cancellation occurred, we need to left-shift the result
         // and adjust the exponent:
         if (aSignificand < integerBit << 3) {
-            const shift = @as(i32, @intCast(@clz(aSignificand))) - @as(i32, @intCast(@clz(integerBit << 3)));
-            aSignificand <<= @intCast(shift);
+            const shift = @as(i32, @intcast(@clz(aSignificand))) - @as(i32, @intcast(@clz(integerBit << 3)));
+            aSignificand <<= @intcast(shift);
             aExponent -= shift;
         }
     } else { // addition
@@ -134,13 +134,13 @@ pub inline fn addf3(comptime T: type, a: T, b: T) T {
     }
 
     // If we have overflowed the type, return +/- infinity:
-    if (aExponent >= maxExponent) return @bitCast(infRep | resultSign);
+    if (aExponent >= maxExponent) return @bitcast(infRep | resultSign);
 
     if (aExponent <= 0) {
         // Result is denormal; the exponent and round/sticky bits are zero.
         // All we need to do is shift the significand and apply the correct sign.
-        aSignificand >>= @intCast(4 - aExponent);
-        return @bitCast(resultSign | aSignificand);
+        aSignificand >>= @intcast(4 - aExponent);
+        return @bitcast(resultSign | aSignificand);
     }
 
     // Low three bits are round, guard, and sticky.
@@ -150,7 +150,7 @@ pub inline fn addf3(comptime T: type, a: T, b: T) T {
     var result = (aSignificand >> 3) & significandMask;
 
     // Insert the exponent and sign.
-    result |= @as(Z, @intCast(aExponent)) << significandBits;
+    result |= @as(Z, @intcast(aExponent)) << significandBits;
     result |= resultSign;
 
     // Final rounding.  The result may overflow to infinity, but that is the
@@ -163,7 +163,7 @@ pub inline fn addf3(comptime T: type, a: T, b: T) T {
         if ((result >> significandBits) != 0) result |= integerBit;
     }
 
-    return @bitCast(result);
+    return @bitcast(result);
 }
 
 test {

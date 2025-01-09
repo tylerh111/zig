@@ -32,7 +32,7 @@ comptime {
 
 pub fn __sinh(x: f16) callconv(.C) f16 {
     // TODO: more efficient implementation
-    return @floatCast(sinf(x));
+    return @floatcast(sinf(x));
 }
 
 pub fn sinf(x: f32) callconv(.C) f32 {
@@ -42,7 +42,7 @@ pub fn sinf(x: f32) callconv(.C) f32 {
     const s3pio2: f64 = 3.0 * math.pi / 2.0; // 0x4012D97C, 0x7F3321D2
     const s4pio2: f64 = 4.0 * math.pi / 2.0; // 0x401921FB, 0x54442D18
 
-    var ix: u32 = @bitCast(x);
+    var ix: u32 = @bitcast(x);
     const sign = ix >> 31 != 0;
     ix &= 0x7fffffff;
 
@@ -91,7 +91,7 @@ pub fn sinf(x: f32) callconv(.C) f32 {
 }
 
 pub fn sin(x: f64) callconv(.C) f64 {
-    var ix = @as(u64, @bitCast(x)) >> 32;
+    var ix = @as(u64, @bitcast(x)) >> 32;
     ix &= 0x7fffffff;
 
     // |x| ~< pi/4
@@ -121,22 +121,22 @@ pub fn sin(x: f64) callconv(.C) f64 {
 
 pub fn __sinx(x: f80) callconv(.C) f80 {
     // TODO: more efficient implementation
-    return @floatCast(sinq(x));
+    return @floatcast(sinq(x));
 }
 
 pub fn sinq(x: f128) callconv(.C) f128 {
     // TODO: more correct implementation
-    return sin(@floatCast(x));
+    return sin(@floatcast(x));
 }
 
 pub fn sinl(x: c_longdouble) callconv(.C) c_longdouble {
-    switch (@typeInfo(c_longdouble).Float.bits) {
+    switch (@typeinfo(c_longdouble).Float.bits) {
         16 => return __sinh(x),
         32 => return sinf(x),
         64 => return sin(x),
         80 => return __sinx(x),
         128 => return sinq(x),
-        else => @compileError("unreachable"),
+        else => @compileerror("unreachable"),
     }
 }
 
@@ -181,11 +181,11 @@ test "sin64.special" {
 }
 
 test "sin32 #9901" {
-    const float: f32 = @bitCast(@as(u32, 0b11100011111111110000000000000000));
+    const float: f32 = @bitcast(@as(u32, 0b11100011111111110000000000000000));
     _ = sinf(float);
 }
 
 test "sin64 #9901" {
-    const float: f64 = @bitCast(@as(u64, 0b1111111101000001000000001111110111111111100000000000000000000001));
+    const float: f64 = @bitcast(@as(u64, 0b1111111101000001000000001111110111111111100000000000000000000001));
     _ = sin(float);
 }

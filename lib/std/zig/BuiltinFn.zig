@@ -159,31 +159,31 @@ illegal_outside_function: bool = false,
 param_count: ?u8,
 
 pub const list = list: {
-    @setEvalBranchQuota(3000);
+    @setevalbranchquota(3000);
     break :list std.StaticStringMap(@This()).initComptime(.{
         .{
-            "@addWithOverflow",
+            "@addwithoverflow",
             .{
                 .tag = .add_with_overflow,
                 .param_count = 2,
             },
         },
         .{
-            "@addrSpaceCast",
+            "@addrspacecast",
             .{
                 .tag = .addrspace_cast,
                 .param_count = 1,
             },
         },
         .{
-            "@alignCast",
+            "@aligncast",
             .{
                 .tag = .align_cast,
                 .param_count = 1,
             },
         },
         .{
-            "@alignOf",
+            "@alignof",
             .{
                 .tag = .align_of,
                 .param_count = 1,
@@ -206,28 +206,28 @@ pub const list = list: {
             },
         },
         .{
-            "@atomicLoad",
+            "@atomicload",
             .{
                 .tag = .atomic_load,
                 .param_count = 3,
             },
         },
         .{
-            "@atomicRmw",
+            "@atomicrmw",
             .{
                 .tag = .atomic_rmw,
                 .param_count = 5,
             },
         },
         .{
-            "@atomicStore",
+            "@atomicstore",
             .{
                 .tag = .atomic_store,
                 .param_count = 4,
             },
         },
         .{
-            "@bitCast",
+            "@bitcast",
             .{
                 .tag = .bit_cast,
                 .needs_mem_loc = .forward0,
@@ -235,21 +235,21 @@ pub const list = list: {
             },
         },
         .{
-            "@bitOffsetOf",
+            "@bitoffsetof",
             .{
                 .tag = .bit_offset_of,
                 .param_count = 2,
             },
         },
         .{
-            "@intFromBool",
+            "@intfrombool",
             .{
                 .tag = .int_from_bool,
                 .param_count = 1,
             },
         },
         .{
-            "@bitSizeOf",
+            "@bitsizeof",
             .{
                 .tag = .bit_size_of,
                 .param_count = 1,
@@ -264,28 +264,28 @@ pub const list = list: {
             },
         },
         .{
-            "@mulAdd",
+            "@muladd",
             .{
                 .tag = .mul_add,
                 .param_count = 4,
             },
         },
         .{
-            "@byteSwap",
+            "@byteswap",
             .{
                 .tag = .byte_swap,
                 .param_count = 1,
             },
         },
         .{
-            "@bitReverse",
+            "@bitreverse",
             .{
                 .tag = .bit_reverse,
                 .param_count = 1,
             },
         },
         .{
-            "@offsetOf",
+            "@offsetof",
             .{
                 .tag = .offset_of,
                 .param_count = 2,
@@ -301,21 +301,21 @@ pub const list = list: {
             },
         },
         .{
-            "@cDefine",
+            "@cdefine",
             .{
                 .tag = .c_define,
                 .param_count = 2,
             },
         },
         .{
-            "@cImport",
+            "@cimport",
             .{
                 .tag = .c_import,
                 .param_count = 1,
             },
         },
         .{
-            "@cInclude",
+            "@cinclude",
             .{
                 .tag = .c_include,
                 .param_count = 1,
@@ -329,35 +329,35 @@ pub const list = list: {
             },
         },
         .{
-            "@cmpxchgStrong",
+            "@cmpxchgstrong",
             .{
                 .tag = .cmpxchg_strong,
                 .param_count = 6,
             },
         },
         .{
-            "@cmpxchgWeak",
+            "@cmpxchgweak",
             .{
                 .tag = .cmpxchg_weak,
                 .param_count = 6,
             },
         },
         .{
-            "@compileError",
+            "@compileerror",
             .{
                 .tag = .compile_error,
                 .param_count = 1,
             },
         },
         .{
-            "@compileLog",
+            "@compilelog",
             .{
                 .tag = .compile_log,
                 .param_count = null,
             },
         },
         .{
-            "@constCast",
+            "@constcast",
             .{
                 .tag = .const_cast,
                 .param_count = 1,
@@ -371,98 +371,98 @@ pub const list = list: {
             },
         },
         .{
-            "@cUndef",
+            "@cundef",
             .{
                 .tag = .c_undef,
                 .param_count = 1,
             },
         },
         .{
-            "@cVaArg", .{
+            "@cvaarg", .{
                 .tag = .c_va_arg,
                 .param_count = 2,
                 .illegal_outside_function = true,
             },
         },
         .{
-            "@cVaCopy", .{
+            "@cvacopy", .{
                 .tag = .c_va_copy,
                 .param_count = 1,
                 .illegal_outside_function = true,
             },
         },
         .{
-            "@cVaEnd", .{
+            "@cvaend", .{
                 .tag = .c_va_end,
                 .param_count = 1,
                 .illegal_outside_function = true,
             },
         },
         .{
-            "@cVaStart", .{
+            "@cvastart", .{
                 .tag = .c_va_start,
                 .param_count = 0,
                 .illegal_outside_function = true,
             },
         },
         .{
-            "@divExact",
+            "@divexact",
             .{
                 .tag = .div_exact,
                 .param_count = 2,
             },
         },
         .{
-            "@divFloor",
+            "@divfloor",
             .{
                 .tag = .div_floor,
                 .param_count = 2,
             },
         },
         .{
-            "@divTrunc",
+            "@divtrunc",
             .{
                 .tag = .div_trunc,
                 .param_count = 2,
             },
         },
         .{
-            "@embedFile",
+            "@embedfile",
             .{
                 .tag = .embed_file,
                 .param_count = 1,
             },
         },
         .{
-            "@intFromEnum",
+            "@intfromenum",
             .{
                 .tag = .int_from_enum,
                 .param_count = 1,
             },
         },
         .{
-            "@errorName",
+            "@errorname",
             .{
                 .tag = .error_name,
                 .param_count = 1,
             },
         },
         .{
-            "@errorReturnTrace",
+            "@errorreturntrace",
             .{
                 .tag = .error_return_trace,
                 .param_count = 0,
             },
         },
         .{
-            "@intFromError",
+            "@intfromerror",
             .{
                 .tag = .int_from_error,
                 .param_count = 1,
             },
         },
         .{
-            "@errorCast",
+            "@errorcast",
             .{
                 .tag = .error_cast,
                 .eval_to_error = .always,
@@ -501,21 +501,21 @@ pub const list = list: {
             },
         },
         .{
-            "@fieldParentPtr",
+            "@fieldparentptr",
             .{
                 .tag = .field_parent_ptr,
                 .param_count = 2,
             },
         },
         .{
-            "@floatCast",
+            "@floatcast",
             .{
                 .tag = .float_cast,
                 .param_count = 1,
             },
         },
         .{
-            "@intFromFloat",
+            "@intfromfloat",
             .{
                 .tag = .int_from_float,
                 .param_count = 1,
@@ -536,7 +536,7 @@ pub const list = list: {
             },
         },
         .{
-            "@frameAddress",
+            "@frameaddress",
             .{
                 .tag = .frame_address,
                 .param_count = 0,
@@ -551,14 +551,14 @@ pub const list = list: {
             },
         },
         .{
-            "@hasDecl",
+            "@hasdecl",
             .{
                 .tag = .has_decl,
                 .param_count = 2,
             },
         },
         .{
-            "@hasField",
+            "@hasfield",
             .{
                 .tag = .has_field,
                 .param_count = 2,
@@ -572,28 +572,28 @@ pub const list = list: {
             },
         },
         .{
-            "@inComptime",
+            "@incomptime",
             .{
                 .tag = .in_comptime,
                 .param_count = 0,
             },
         },
         .{
-            "@intCast",
+            "@intcast",
             .{
                 .tag = .int_cast,
                 .param_count = 1,
             },
         },
         .{
-            "@enumFromInt",
+            "@enumfromint",
             .{
                 .tag = .enum_from_int,
                 .param_count = 1,
             },
         },
         .{
-            "@errorFromInt",
+            "@errorfromint",
             .{
                 .tag = .error_from_int,
                 .eval_to_error = .always,
@@ -601,14 +601,14 @@ pub const list = list: {
             },
         },
         .{
-            "@floatFromInt",
+            "@floatfromint",
             .{
                 .tag = .float_from_int,
                 .param_count = 1,
             },
         },
         .{
-            "@ptrFromInt",
+            "@ptrfromint",
             .{
                 .tag = .ptr_from_int,
                 .param_count = 1,
@@ -643,14 +643,14 @@ pub const list = list: {
             },
         },
         .{
-            "@wasmMemorySize",
+            "@wasmmemorysize",
             .{
                 .tag = .wasm_memory_size,
                 .param_count = 1,
             },
         },
         .{
-            "@wasmMemoryGrow",
+            "@wasmmemorygrow",
             .{
                 .tag = .wasm_memory_grow,
                 .param_count = 2,
@@ -664,7 +664,7 @@ pub const list = list: {
             },
         },
         .{
-            "@mulWithOverflow",
+            "@mulwithoverflow",
             .{
                 .tag = .mul_with_overflow,
                 .param_count = 2,
@@ -678,7 +678,7 @@ pub const list = list: {
             },
         },
         .{
-            "@popCount",
+            "@popcount",
             .{
                 .tag = .pop_count,
                 .param_count = 1,
@@ -692,14 +692,14 @@ pub const list = list: {
             },
         },
         .{
-            "@ptrCast",
+            "@ptrcast",
             .{
                 .tag = .ptr_cast,
                 .param_count = 1,
             },
         },
         .{
-            "@intFromPtr",
+            "@intfromptr",
             .{
                 .tag = .int_from_ptr,
                 .param_count = 1,
@@ -713,7 +713,7 @@ pub const list = list: {
             },
         },
         .{
-            "@returnAddress",
+            "@returnaddress",
             .{
                 .tag = .return_address,
                 .param_count = 0,
@@ -744,42 +744,42 @@ pub const list = list: {
             },
         },
         .{
-            "@setEvalBranchQuota",
+            "@setevalbranchquota",
             .{
                 .tag = .set_eval_branch_quota,
                 .param_count = 1,
             },
         },
         .{
-            "@setFloatMode",
+            "@setfloatmode",
             .{
                 .tag = .set_float_mode,
                 .param_count = 1,
             },
         },
         .{
-            "@setRuntimeSafety",
+            "@setruntimesafety",
             .{
                 .tag = .set_runtime_safety,
                 .param_count = 1,
             },
         },
         .{
-            "@shlExact",
+            "@shlexact",
             .{
                 .tag = .shl_exact,
                 .param_count = 2,
             },
         },
         .{
-            "@shlWithOverflow",
+            "@shlwithoverflow",
             .{
                 .tag = .shl_with_overflow,
                 .param_count = 2,
             },
         },
         .{
-            "@shrExact",
+            "@shrexact",
             .{
                 .tag = .shr_exact,
                 .param_count = 2,
@@ -793,7 +793,7 @@ pub const list = list: {
             },
         },
         .{
-            "@sizeOf",
+            "@sizeof",
             .{
                 .tag = .size_of,
                 .param_count = 1,
@@ -921,14 +921,14 @@ pub const list = list: {
             },
         },
         .{
-            "@subWithOverflow",
+            "@subwithoverflow",
             .{
                 .tag = .sub_with_overflow,
                 .param_count = 2,
             },
         },
         .{
-            "@tagName",
+            "@tagname",
             .{
                 .tag = .tag_name,
                 .param_count = 1,
@@ -963,14 +963,14 @@ pub const list = list: {
             },
         },
         .{
-            "@typeInfo",
+            "@typeinfo",
             .{
                 .tag = .type_info,
                 .param_count = 1,
             },
         },
         .{
-            "@typeName",
+            "@typename",
             .{
                 .tag = .type_name,
                 .param_count = 1,
@@ -984,7 +984,7 @@ pub const list = list: {
             },
         },
         .{
-            "@unionInit",
+            "@unioninit",
             .{
                 .tag = .union_init,
                 .needs_mem_loc = .always,
@@ -999,7 +999,7 @@ pub const list = list: {
             },
         },
         .{
-            "@volatileCast",
+            "@volatilecast",
             .{
                 .tag = .volatile_cast,
                 .param_count = 1,
@@ -1013,7 +1013,7 @@ pub const list = list: {
             },
         },
         .{
-            "@workGroupSize",
+            "@workgroupsize",
             .{
                 .tag = .work_group_size,
                 .param_count = 1,
@@ -1021,7 +1021,7 @@ pub const list = list: {
             },
         },
         .{
-            "@workGroupId",
+            "@workgroupid",
             .{
                 .tag = .work_group_id,
                 .param_count = 1,

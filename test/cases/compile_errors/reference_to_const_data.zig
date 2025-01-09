@@ -21,7 +21,7 @@ export fn qux() void {
     ptr.x = 2;
 }
 export fn quux() void {
-    var x = &@returnAddress();
+    var x = &@returnaddress();
     x.* = 6;
     _ = &x;
 }

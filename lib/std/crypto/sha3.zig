@@ -507,7 +507,7 @@ pub const NistLengthEncoding = enum {
         /// The size of the encoded value, in bytes.
         len: usize = 0,
         /// A buffer to store the encoded length.
-        buf: [@sizeOf(usize) + 1]u8 = undefined,
+        buf: [@sizeof(usize) + 1]u8 = undefined,
 
         /// Return the encoded length as a slice.
         pub fn slice(self: *const Length) []const u8 {
@@ -517,12 +517,12 @@ pub const NistLengthEncoding = enum {
 
     /// Encode a length according to NIST SP 800-185.
     pub fn encode(comptime encoding: NistLengthEncoding, len: usize) Length {
-        const len_bits = @bitSizeOf(@TypeOf(len)) - @clz(len) + 3;
+        const len_bits = @bitsizeof(@TypeOf(len)) - @clz(len) + 3;
         const len_bytes = std.math.divCeil(usize, len_bits, 8) catch unreachable;
 
         var res = Length{ .len = len_bytes + 1 };
         if (encoding == .right) {
-            res.buf[len_bytes] = @intCast(len_bytes);
+            res.buf[len_bytes] = @intcast(len_bytes);
         }
         const end = if (encoding == .right) len_bytes - 1 else len_bytes;
         res.buf[end] = @truncate(len << 3);
@@ -532,7 +532,7 @@ pub const NistLengthEncoding = enum {
             len_ >>= 8;
         }
         if (encoding == .left) {
-            res.buf[0] = @intCast(len_bytes);
+            res.buf[0] = @intcast(len_bytes);
         }
         return res;
     }

@@ -47,12 +47,12 @@ pub const MultihashFunction = enum(u16) {
 
 pub const multihash_function: MultihashFunction = switch (Hash) {
     std.crypto.hash.sha2.Sha256 => .@"sha2-256",
-    else => @compileError("unreachable"),
+    else => @compileerror("unreachable"),
 };
 comptime {
     // We avoid unnecessary uleb128 code in hexDigest by asserting here the
     // values are small enough to be contained in the one-byte encoding.
-    assert(@intFromEnum(multihash_function) < 127);
+    assert(@intfromenum(multihash_function) < 127);
     assert(Hash.digest_length < 127);
 }
 
@@ -143,10 +143,10 @@ pub fn copyErrorsIntoBundle(
             .src_loc = try eb.addSourceLocation(.{
                 .src_path = src_path,
                 .span_start = token_starts[msg.tok],
-                .span_end = @intCast(token_starts[msg.tok] + ast.tokenSlice(msg.tok).len),
+                .span_end = @intcast(token_starts[msg.tok] + ast.tokenSlice(msg.tok).len),
                 .span_main = token_starts[msg.tok] + msg.off,
-                .line = @intCast(start_loc.line),
-                .column = @intCast(start_loc.column),
+                .line = @intcast(start_loc.line),
+                .column = @intcast(start_loc.column),
                 .source_line = try eb.addString(ast.source[start_loc.line_start..start_loc.line_end]),
             }),
         });
@@ -159,7 +159,7 @@ pub fn hex64(x: u64) [16]u8 {
     var result: [16]u8 = undefined;
     var i: usize = 0;
     while (i < 8) : (i += 1) {
-        const byte = @as(u8, @truncate(x >> @as(u6, @intCast(8 * i))));
+        const byte = @as(u8, @truncate(x >> @as(u6, @intcast(8 * i))));
         result[i * 2 + 0] = hex_charset[byte >> 4];
         result[i * 2 + 1] = hex_charset[byte & 15];
     }
@@ -174,8 +174,8 @@ test hex64 {
 pub fn hexDigest(digest: Digest) MultiHashHexDigest {
     var result: MultiHashHexDigest = undefined;
 
-    result[0] = hex_charset[@intFromEnum(multihash_function) >> 4];
-    result[1] = hex_charset[@intFromEnum(multihash_function) & 15];
+    result[0] = hex_charset[@intfromenum(multihash_function) >> 4];
+    result[1] = hex_charset[@intfromenum(multihash_function) & 15];
 
     result[2] = hex_charset[Hash.digest_length >> 4];
     result[3] = hex_charset[Hash.digest_length & 15];
@@ -238,14 +238,14 @@ const Parse = struct {
                 p.version_node = field_init;
                 const version_text = try parseString(p, field_init);
                 p.version = std.SemanticVersion.parse(version_text) catch |err| v: {
-                    try appendError(p, main_tokens[field_init], "unable to parse semantic version: {s}", .{@errorName(err)});
+                    try appendError(p, main_tokens[field_init], "unable to parse semantic version: {s}", .{@errorname(err)});
                     break :v undefined;
                 };
                 have_version = true;
             } else if (mem.eql(u8, field_name, "minimum_zig_version")) {
                 const version_text = try parseString(p, field_init);
                 p.minimum_zig_version = std.SemanticVersion.parse(version_text) catch |err| v: {
-                    try appendError(p, main_tokens[field_init], "unable to parse semantic version: {s}", .{@errorName(err)});
+                    try appendError(p, main_tokens[field_init], "unable to parse semantic version: {s}", .{@errorname(err)});
                     break :v null;
                 };
             } else {
@@ -426,10 +426,10 @@ const Parse = struct {
         if (h.len >= 2) {
             const their_multihash_func = std.fmt.parseInt(u8, h[0..2], 16) catch |err| {
                 return fail(p, tok, "invalid multihash value: unable to parse hash function: {s}", .{
-                    @errorName(err),
+                    @errorname(err),
                 });
             };
-            if (@as(MultihashFunction, @enumFromInt(their_multihash_func)) != multihash_function) {
+            if (@as(MultihashFunction, @enumfromint(their_multihash_func)) != multihash_function) {
                 return fail(p, tok, "unsupported hash function: only sha2-256 is supported", .{});
             }
         }
@@ -489,7 +489,7 @@ const Parse = struct {
             .invalid_escape_character => |bad_index| {
                 try p.appendErrorOff(
                     token,
-                    offset + @as(u32, @intCast(bad_index)),
+                    offset + @as(u32, @intcast(bad_index)),
                     "invalid escape character: '{c}'",
                     .{raw_string[bad_index]},
                 );
@@ -497,7 +497,7 @@ const Parse = struct {
             .expected_hex_digit => |bad_index| {
                 try p.appendErrorOff(
                     token,
-                    offset + @as(u32, @intCast(bad_index)),
+                    offset + @as(u32, @intcast(bad_index)),
                     "expected hex digit, found '{c}'",
                     .{raw_string[bad_index]},
                 );
@@ -505,7 +505,7 @@ const Parse = struct {
             .empty_unicode_escape_sequence => |bad_index| {
                 try p.appendErrorOff(
                     token,
-                    offset + @as(u32, @intCast(bad_index)),
+                    offset + @as(u32, @intcast(bad_index)),
                     "empty unicode escape sequence",
                     .{},
                 );
@@ -513,7 +513,7 @@ const Parse = struct {
             .expected_hex_digit_or_rbrace => |bad_index| {
                 try p.appendErrorOff(
                     token,
-                    offset + @as(u32, @intCast(bad_index)),
+                    offset + @as(u32, @intcast(bad_index)),
                     "expected hex digit or '}}', found '{c}'",
                     .{raw_string[bad_index]},
                 );
@@ -521,7 +521,7 @@ const Parse = struct {
             .invalid_unicode_codepoint => |bad_index| {
                 try p.appendErrorOff(
                     token,
-                    offset + @as(u32, @intCast(bad_index)),
+                    offset + @as(u32, @intcast(bad_index)),
                     "unicode escape does not correspond to a valid codepoint",
                     .{},
                 );
@@ -529,7 +529,7 @@ const Parse = struct {
             .expected_lbrace => |bad_index| {
                 try p.appendErrorOff(
                     token,
-                    offset + @as(u32, @intCast(bad_index)),
+                    offset + @as(u32, @intcast(bad_index)),
                     "expected '{{', found '{c}",
                     .{raw_string[bad_index]},
                 );
@@ -537,7 +537,7 @@ const Parse = struct {
             .expected_rbrace => |bad_index| {
                 try p.appendErrorOff(
                     token,
-                    offset + @as(u32, @intCast(bad_index)),
+                    offset + @as(u32, @intcast(bad_index)),
                     "expected '}}', found '{c}",
                     .{raw_string[bad_index]},
                 );
@@ -545,7 +545,7 @@ const Parse = struct {
             .expected_single_quote => |bad_index| {
                 try p.appendErrorOff(
                     token,
-                    offset + @as(u32, @intCast(bad_index)),
+                    offset + @as(u32, @intcast(bad_index)),
                     "expected single quote ('), found '{c}",
                     .{raw_string[bad_index]},
                 );
@@ -553,7 +553,7 @@ const Parse = struct {
             .invalid_character => |bad_index| {
                 try p.appendErrorOff(
                     token,
-                    offset + @as(u32, @intCast(bad_index)),
+                    offset + @as(u32, @intcast(bad_index)),
                     "invalid byte in string or character literal: '{c}'",
                     .{raw_string[bad_index]},
                 );

@@ -87,8 +87,8 @@ else if (std.Thread.use_pthreads)
 else
     UnsupportedImpl;
 
-/// We can't do @compileError() in the `Impl` switch statement above as its eagerly evaluated.
-/// So instead, we @compileError() on the methods themselves for platforms which don't support futex.
+/// We can't do @compileerror() in the `Impl` switch statement above as its eagerly evaluated.
+/// So instead, we @compileerror() on the methods themselves for platforms which don't support futex.
 const UnsupportedImpl = struct {
     fn wait(ptr: *const atomic.Value(u32), expect: u32, timeout: ?u64) error{Timeout}!void {
         return unsupported(.{ ptr, expect, timeout });
@@ -100,7 +100,7 @@ const UnsupportedImpl = struct {
 
     fn unsupported(unused: anytype) noreturn {
         _ = unused;
-        @compileError("Unsupported operating system " ++ @tagName(builtin.target.os.tag));
+        @compileerror("Unsupported operating system " ++ @tagname(builtin.target.os.tag));
     }
 };
 
@@ -137,7 +137,7 @@ const WindowsImpl = struct {
         // NTDLL functions work with time in units of 100 nanoseconds.
         // Positive values are absolute deadlines while negative values are relative durations.
         if (timeout) |delay| {
-            timeout_value = @as(windows.LARGE_INTEGER, @intCast(delay / 100));
+            timeout_value = @as(windows.LARGE_INTEGER, @intcast(delay / 100));
             timeout_value = -timeout_value;
             timeout_ptr = &timeout_value;
         }
@@ -145,7 +145,7 @@ const WindowsImpl = struct {
         const rc = windows.ntdll.RtlWaitOnAddress(
             ptr,
             &expect,
-            @sizeOf(@TypeOf(expect)),
+            @sizeof(@TypeOf(expect)),
             timeout_ptr,
         );
 
@@ -211,7 +211,7 @@ const DarwinImpl = struct {
         };
 
         if (status >= 0) return;
-        switch (@as(c.E, @enumFromInt(-status))) {
+        switch (@as(c.E, @enumfromint(-status))) {
             // Wait was interrupted by the OS or other spurious signalling.
             .INTR => {},
             // Address of the futex was paged out. This is unlikely, but possible in theory, and
@@ -238,7 +238,7 @@ const DarwinImpl = struct {
             const status = c.__ulock_wake(flags, addr, 0);
 
             if (status >= 0) return;
-            switch (@as(c.E, @enumFromInt(-status))) {
+            switch (@as(c.E, @enumfromint(-status))) {
                 .INTR => continue, // spurious wake()
                 .FAULT => unreachable, // __ulock_wake doesn't generate EFAULT according to darwin pthread_cond_t
                 .NOENT => return, // nothing was woken up
@@ -254,14 +254,14 @@ const LinuxImpl = struct {
     fn wait(ptr: *const atomic.Value(u32), expect: u32, timeout: ?u64) error{Timeout}!void {
         var ts: linux.timespec = undefined;
         if (timeout) |timeout_ns| {
-            ts.tv_sec = @as(@TypeOf(ts.tv_sec), @intCast(timeout_ns / std.time.ns_per_s));
-            ts.tv_nsec = @as(@TypeOf(ts.tv_nsec), @intCast(timeout_ns % std.time.ns_per_s));
+            ts.tv_sec = @as(@TypeOf(ts.tv_sec), @intcast(timeout_ns / std.time.ns_per_s));
+            ts.tv_nsec = @as(@TypeOf(ts.tv_nsec), @intcast(timeout_ns % std.time.ns_per_s));
         }
 
         const rc = linux.futex_wait(
-            @as(*const i32, @ptrCast(&ptr.raw)),
+            @as(*const i32, @ptrcast(&ptr.raw)),
             linux.FUTEX.PRIVATE_FLAG | linux.FUTEX.WAIT,
-            @as(i32, @bitCast(expect)),
+            @as(i32, @bitcast(expect)),
             if (timeout != null) &ts else null,
         );
 
@@ -281,7 +281,7 @@ const LinuxImpl = struct {
 
     fn wake(ptr: *const atomic.Value(u32), max_waiters: u32) void {
         const rc = linux.futex_wake(
-            @as(*const i32, @ptrCast(&ptr.raw)),
+            @as(*const i32, @ptrcast(&ptr.raw)),
             linux.FUTEX.PRIVATE_FLAG | linux.FUTEX.WAKE,
             std.math.cast(i32, max_waiters) orelse std.math.maxInt(i32),
         );
@@ -304,20 +304,20 @@ const FreebsdImpl = struct {
 
         if (timeout) |timeout_ns| {
             tm_ptr = &tm;
-            tm_size = @sizeOf(@TypeOf(tm));
+            tm_size = @sizeof(@TypeOf(tm));
 
             tm._flags = 0; // use relative time not UMTX_ABSTIME
             tm._clockid = c.CLOCK.MONOTONIC;
-            tm._timeout.tv_sec = @as(@TypeOf(tm._timeout.tv_sec), @intCast(timeout_ns / std.time.ns_per_s));
-            tm._timeout.tv_nsec = @as(@TypeOf(tm._timeout.tv_nsec), @intCast(timeout_ns % std.time.ns_per_s));
+            tm._timeout.tv_sec = @as(@TypeOf(tm._timeout.tv_sec), @intcast(timeout_ns / std.time.ns_per_s));
+            tm._timeout.tv_nsec = @as(@TypeOf(tm._timeout.tv_nsec), @intcast(timeout_ns % std.time.ns_per_s));
         }
 
         const rc = c._umtx_op(
-            @intFromPtr(&ptr.raw),
-            @intFromEnum(c.UMTX_OP.WAIT_UINT_PRIVATE),
+            @intfromptr(&ptr.raw),
+            @intfromenum(c.UMTX_OP.WAIT_UINT_PRIVATE),
             @as(c_ulong, expect),
             tm_size,
-            @intFromPtr(tm_ptr),
+            @intfromptr(tm_ptr),
         );
 
         switch (std.posix.errno(rc)) {
@@ -335,8 +335,8 @@ const FreebsdImpl = struct {
 
     fn wake(ptr: *const atomic.Value(u32), max_waiters: u32) void {
         const rc = c._umtx_op(
-            @intFromPtr(&ptr.raw),
-            @intFromEnum(c.UMTX_OP.WAKE_PRIVATE),
+            @intfromptr(&ptr.raw),
+            @intfromenum(c.UMTX_OP.WAKE_PRIVATE),
             @as(c_ulong, max_waiters),
             0, // there is no timeout struct
             0, // there is no timeout struct pointer
@@ -356,14 +356,14 @@ const OpenbsdImpl = struct {
     fn wait(ptr: *const atomic.Value(u32), expect: u32, timeout: ?u64) error{Timeout}!void {
         var ts: c.timespec = undefined;
         if (timeout) |timeout_ns| {
-            ts.tv_sec = @as(@TypeOf(ts.tv_sec), @intCast(timeout_ns / std.time.ns_per_s));
-            ts.tv_nsec = @as(@TypeOf(ts.tv_nsec), @intCast(timeout_ns % std.time.ns_per_s));
+            ts.tv_sec = @as(@TypeOf(ts.tv_sec), @intcast(timeout_ns / std.time.ns_per_s));
+            ts.tv_nsec = @as(@TypeOf(ts.tv_nsec), @intcast(timeout_ns % std.time.ns_per_s));
         }
 
         const rc = c.futex(
-            @as(*const volatile u32, @ptrCast(&ptr.raw)),
+            @as(*const volatile u32, @ptrcast(&ptr.raw)),
             c.FUTEX_WAIT | c.FUTEX_PRIVATE_FLAG,
-            @as(c_int, @bitCast(expect)),
+            @as(c_int, @bitcast(expect)),
             if (timeout != null) &ts else null,
             null, // FUTEX_WAIT takes no requeue address
         );
@@ -386,7 +386,7 @@ const OpenbsdImpl = struct {
 
     fn wake(ptr: *const atomic.Value(u32), max_waiters: u32) void {
         const rc = c.futex(
-            @as(*const volatile u32, @ptrCast(&ptr.raw)),
+            @as(*const volatile u32, @ptrcast(&ptr.raw)),
             c.FUTEX_WAKE | c.FUTEX_PRIVATE_FLAG,
             std.math.cast(c_int, max_waiters) orelse std.math.maxInt(c_int),
             null, // FUTEX_WAKE takes no timeout ptr
@@ -420,8 +420,8 @@ const DragonflyImpl = struct {
             }
         }
 
-        const value = @as(c_int, @bitCast(expect));
-        const addr = @as(*const volatile c_int, @ptrCast(&ptr.raw));
+        const value = @as(c_int, @bitcast(expect));
+        const addr = @as(*const volatile c_int, @ptrcast(&ptr.raw));
         const rc = c.umtx_sleep(addr, value, timeout_us);
 
         switch (std.posix.errno(rc)) {
@@ -450,7 +450,7 @@ const DragonflyImpl = struct {
         // https://man.dragonflybsd.org/?command=umtx&section=2
         // > umtx_wakeup() will generally return 0 unless the address is bad.
         // We are fine with the address being bad (e.g. for Semaphore.post() where Semaphore.wait() frees the Semaphore)
-        const addr = @as(*const volatile c_int, @ptrCast(&ptr.raw));
+        const addr = @as(*const volatile c_int, @ptrcast(&ptr.raw));
         _ = c.umtx_wakeup(addr, to_wake);
     }
 };
@@ -458,9 +458,9 @@ const DragonflyImpl = struct {
 const WasmImpl = struct {
     fn wait(ptr: *const atomic.Value(u32), expect: u32, timeout: ?u64) error{Timeout}!void {
         if (!comptime std.Target.wasm.featureSetHas(builtin.target.cpu.features, .atomics)) {
-            @compileError("WASI target missing cpu feature 'atomics'");
+            @compileerror("WASI target missing cpu feature 'atomics'");
         }
-        const to: i64 = if (timeout) |to| @intCast(to) else -1;
+        const to: i64 = if (timeout) |to| @intcast(to) else -1;
         const result = asm (
             \\local.get %[ptr]
             \\local.get %[expected]
@@ -469,7 +469,7 @@ const WasmImpl = struct {
             \\local.set %[ret]
             : [ret] "=r" (-> u32),
             : [ptr] "r" (&ptr.raw),
-              [expected] "r" (@as(i32, @bitCast(expect))),
+              [expected] "r" (@as(i32, @bitcast(expect))),
               [timeout] "r" (to),
         );
         switch (result) {
@@ -482,7 +482,7 @@ const WasmImpl = struct {
 
     fn wake(ptr: *const atomic.Value(u32), max_waiters: u32) void {
         if (!comptime std.Target.wasm.featureSetHas(builtin.target.cpu.features, .atomics)) {
-            @compileError("WASI target missing cpu feature 'atomics'");
+            @compileerror("WASI target missing cpu feature 'atomics'");
         }
         assert(max_waiters != 0);
         const woken_count = asm (
@@ -540,8 +540,8 @@ const PosixImpl = struct {
             var ts: c.timespec = undefined;
             if (timeout) |timeout_ns| {
                 std.posix.clock_gettime(c.CLOCK.REALTIME, &ts) catch unreachable;
-                ts.tv_sec +|= @as(@TypeOf(ts.tv_sec), @intCast(timeout_ns / std.time.ns_per_s));
-                ts.tv_nsec += @as(@TypeOf(ts.tv_nsec), @intCast(timeout_ns % std.time.ns_per_s));
+                ts.tv_sec +|= @as(@TypeOf(ts.tv_sec), @intcast(timeout_ns / std.time.ns_per_s));
+                ts.tv_nsec += @as(@TypeOf(ts.tv_nsec), @intcast(timeout_ns % std.time.ns_per_s));
 
                 if (ts.tv_nsec >= std.time.ns_per_s) {
                     ts.tv_sec +|= 1;
@@ -644,7 +644,7 @@ const PosixImpl = struct {
             };
 
             // There's a wait queue on the address; get the queue head and tail.
-            const head: *Waiter = @fieldParentPtr("node", entry_node);
+            const head: *Waiter = @fieldparentptr("node", entry_node);
             const tail = head.tail orelse unreachable;
 
             // Push the waiter to the tail by replacing it and linking to the previous tail.
@@ -656,7 +656,7 @@ const PosixImpl = struct {
         fn remove(treap: *Treap, address: usize, max_waiters: usize) WaitList {
             // Find the wait queue associated with this address and get the head/tail if any.
             var entry = treap.getEntryFor(address);
-            var queue_head: ?*Waiter = if (entry.node) |node| @fieldParentPtr("node", node) else null;
+            var queue_head: ?*Waiter = if (entry.node) |node| @fieldparentptr("node", node) else null;
             const queue_tail = if (queue_head) |head| head.tail else null;
 
             // Once we're done updating the head, fix it's tail pointer and update the treap's queue head as well.
@@ -699,7 +699,7 @@ const PosixImpl = struct {
                 };
 
                 // The queue head and tail must exist if we're removing a queued waiter.
-                const head: *Waiter = @fieldParentPtr("node", entry.node orelse unreachable);
+                const head: *Waiter = @fieldparentptr("node", entry.node orelse unreachable);
                 const tail = head.tail orelse unreachable;
 
                 // A waiter with a previous link is never the head of the queue.
@@ -745,14 +745,14 @@ const PosixImpl = struct {
 
         // Global array of buckets that addresses map to.
         // Bucket array size is pretty much arbitrary here, but it must be a power of two for fibonacci hashing.
-        var buckets = [_]Bucket{.{}} ** @bitSizeOf(usize);
+        var buckets = [_]Bucket{.{}} ** @bitsizeof(usize);
 
         // https://github.com/Amanieu/parking_lot/blob/1cf12744d097233316afa6c8b7d37389e4211756/core/src/parking_lot.rs#L343-L353
         fn from(address: usize) *Bucket {
-            // The upper `@bitSizeOf(usize)` bits of the fibonacci golden ratio.
+            // The upper `@bitsizeof(usize)` bits of the fibonacci golden ratio.
             // Hashing this via (h * k) >> (64 - b) where k=golden-ration and b=bitsize-of-array
             // evenly lays out h=hash values over the bit range even when the hash has poor entropy (identity-hash for pointers).
-            const max_multiplier_bits = @bitSizeOf(usize);
+            const max_multiplier_bits = @bitsizeof(usize);
             const fibonacci_multiplier = 0x9E3779B97F4A7C15 >> (64 - max_multiplier_bits);
 
             const max_bucket_bits = @ctz(buckets.len);
@@ -766,12 +766,12 @@ const PosixImpl = struct {
     const Address = struct {
         fn from(ptr: *const atomic.Value(u32)) usize {
             // Get the alignment of the pointer.
-            const alignment = @alignOf(atomic.Value(u32));
+            const alignment = @alignof(atomic.Value(u32));
             comptime assert(std.math.isPowerOfTwo(alignment));
 
             // Make sure the pointer is aligned,
             // then cut off the zero bits from the alignment to get the unique address.
-            const addr = @intFromPtr(ptr);
+            const addr = @intfromptr(ptr);
             assert(addr & (alignment - 1) == 0);
             return addr >> @ctz(@as(usize, alignment));
         }

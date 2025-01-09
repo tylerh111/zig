@@ -24,7 +24,7 @@ pub const MergeSection = struct {
 
     pub fn address(msec: MergeSection, elf_file: *Elf) i64 {
         const shdr = elf_file.shdrs.items[msec.output_section_index];
-        return @intCast(shdr.sh_addr);
+        return @intcast(shdr.sh_addr);
     }
 
     const InsertResult = struct {
@@ -41,9 +41,9 @@ pub const MergeSection = struct {
             IndexContext{ .bytes = msec.bytes.items },
         );
         if (!gop.found_existing) {
-            const index: u32 = @intCast(msec.bytes.items.len);
+            const index: u32 = @intcast(msec.bytes.items.len);
             try msec.bytes.appendSlice(allocator, string);
-            gop.key_ptr.* = .{ .pos = index, .len = @intCast(string.len) };
+            gop.key_ptr.* = .{ .pos = index, .len = @intcast(string.len) };
         }
         return .{ .found_existing = gop.found_existing, .key = gop.key_ptr.*, .sub = gop.value_ptr };
     }
@@ -123,7 +123,7 @@ pub const MergeSection = struct {
         _ = unused_fmt_string;
         _ = options;
         _ = writer;
-        @compileError("do not format MergeSection directly");
+        @compileerror("do not format MergeSection directly");
     }
 
     pub fn fmt(msec: MergeSection, elf_file: *Elf) std.fmt.Formatter(format2) {
@@ -194,7 +194,7 @@ pub const MergeSubsection = struct {
         _ = unused_fmt_string;
         _ = options;
         _ = writer;
-        @compileError("do not format MergeSubsection directly");
+        @compileerror("do not format MergeSubsection directly");
     }
 
     pub fn fmt(msub: MergeSubsection, elf_file: *Elf) std.fmt.Formatter(format2) {
@@ -266,9 +266,9 @@ pub const InputMergeSection = struct {
     }
 
     pub fn insert(imsec: *InputMergeSection, allocator: Allocator, string: []const u8) !void {
-        const index: u32 = @intCast(imsec.bytes.items.len);
+        const index: u32 = @intcast(imsec.bytes.items.len);
         try imsec.bytes.appendSlice(allocator, string);
-        try imsec.strings.append(allocator, .{ .pos = index, .len = @intCast(string.len) });
+        try imsec.strings.append(allocator, .{ .pos = index, .len = @intcast(string.len) });
     }
 
     pub const Index = u32;

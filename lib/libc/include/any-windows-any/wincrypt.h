@@ -2558,7 +2558,7 @@ extern "C" {
   } CERT_LOGOTYPE_DATA,*PCERT_LOGOTYPE_DATA;
 
   typedef struct _CERT_LOGOTYPE_INFO {
-    DWORD dwLogotypeInfoChoice;
+    DWORD dwLogotypeinfoChoice;
     __C89_NAMELESS union {
       PCERT_LOGOTYPE_DATA pLogotypeDirectInfo;
       PCERT_LOGOTYPE_REFERENCE pLogotypeIndirectInfo;
@@ -2570,7 +2570,7 @@ extern "C" {
 
   typedef struct _CERT_OTHER_LOGOTYPE_INFO {
     LPSTR pszObjId;
-    CERT_LOGOTYPE_INFO LogotypeInfo;
+    CERT_LOGOTYPE_INFO Logotypeinfo;
   } CERT_OTHER_LOGOTYPE_INFO,*PCERT_OTHER_LOGOTYPE_INFO;
 
 #define szOID_LOYALTY_OTHER_LOGOTYPE "1.3.6.1.5.5.7.20.1"

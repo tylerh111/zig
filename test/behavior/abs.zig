@@ -285,7 +285,7 @@ test "@abs float vectors" {
         builtin.os.tag == .macos and
         builtin.target.cpu.arch == .x86_64) return error.SkipZigTest;
 
-    @setEvalBranchQuota(2000);
+    @setevalbranchquota(2000);
     try comptime testAbsFloatVectors(f16, 1);
     try testAbsFloatVectors(f16, 1);
     try comptime testAbsFloatVectors(f16, 2);

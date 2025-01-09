@@ -22,13 +22,13 @@ test "comptime_int set" {
     var a = try Managed.initSet(testing.allocator, s);
     defer a.deinit();
 
-    const s_limb_count = 128 / @typeInfo(Limb).Int.bits;
+    const s_limb_count = 128 / @typeinfo(Limb).Int.bits;
 
     comptime var i: usize = 0;
     inline while (i < s_limb_count) : (i += 1) {
         const result = @as(Limb, s & maxInt(Limb));
-        s >>= @typeInfo(Limb).Int.bits / 2;
-        s >>= @typeInfo(Limb).Int.bits / 2;
+        s >>= @typeinfo(Limb).Int.bits / 2;
+        s >>= @typeinfo(Limb).Int.bits / 2;
         try testing.expect(a.limbs[i] == result);
     }
 }
@@ -299,7 +299,7 @@ test "twos complement limit set" {
 }
 
 fn testTwosComplementLimit(comptime T: type) !void {
-    const int_info = @typeInfo(T).Int;
+    const int_info = @typeinfo(T).Int;
 
     var a = try Managed.init(testing.allocator);
     defer a.deinit();
@@ -636,7 +636,7 @@ test "addWrap multi-multi, unsigned, limb aligned" {
     var b = try Managed.initSet(testing.allocator, maxInt(DoubleLimb));
     defer b.deinit();
 
-    const wrapped = try a.addWrap(&a, &b, .unsigned, @bitSizeOf(DoubleLimb));
+    const wrapped = try a.addWrap(&a, &b, .unsigned, @bitsizeof(DoubleLimb));
 
     try testing.expect(wrapped);
     try testing.expect((try a.to(DoubleLimb)) == maxInt(DoubleLimb) - 1);
@@ -649,7 +649,7 @@ test "subWrap single-multi, unsigned, limb aligned" {
     var b = try Managed.initSet(testing.allocator, maxInt(DoubleLimb) + 100);
     defer b.deinit();
 
-    const wrapped = try a.subWrap(&a, &b, .unsigned, @bitSizeOf(DoubleLimb));
+    const wrapped = try a.subWrap(&a, &b, .unsigned, @bitsizeof(DoubleLimb));
 
     try testing.expect(wrapped);
     try testing.expect((try a.to(DoubleLimb)) == maxInt(DoubleLimb) - 88);
@@ -662,7 +662,7 @@ test "addWrap single-single, signed" {
     var b = try Managed.initSet(testing.allocator, 1 + 1 + maxInt(u21));
     defer b.deinit();
 
-    const wrapped = try a.addWrap(&a, &b, .signed, @bitSizeOf(i21));
+    const wrapped = try a.addWrap(&a, &b, .signed, @bitsizeof(i21));
 
     try testing.expect(wrapped);
     try testing.expect((try a.to(i21)) == minInt(i21));
@@ -675,7 +675,7 @@ test "subWrap single-single, signed" {
     var b = try Managed.initSet(testing.allocator, 1);
     defer b.deinit();
 
-    const wrapped = try a.subWrap(&a, &b, .signed, @bitSizeOf(i21));
+    const wrapped = try a.subWrap(&a, &b, .signed, @bitsizeof(i21));
 
     try testing.expect(wrapped);
     try testing.expect((try a.to(i21)) == maxInt(i21));
@@ -688,7 +688,7 @@ test "addWrap multi-multi, signed, limb aligned" {
     var b = try Managed.initSet(testing.allocator, maxInt(SignedDoubleLimb));
     defer b.deinit();
 
-    const wrapped = try a.addWrap(&a, &b, .signed, @bitSizeOf(SignedDoubleLimb));
+    const wrapped = try a.addWrap(&a, &b, .signed, @bitsizeof(SignedDoubleLimb));
 
     try testing.expect(wrapped);
     try testing.expect((try a.to(SignedDoubleLimb)) == -2);
@@ -701,7 +701,7 @@ test "subWrap single-multi, signed, limb aligned" {
     var b = try Managed.initSet(testing.allocator, 1);
     defer b.deinit();
 
-    const wrapped = try a.subWrap(&a, &b, .signed, @bitSizeOf(SignedDoubleLimb));
+    const wrapped = try a.subWrap(&a, &b, .signed, @bitsizeof(SignedDoubleLimb));
 
     try testing.expect(wrapped);
     try testing.expect((try a.to(SignedDoubleLimb)) == maxInt(SignedDoubleLimb));
@@ -738,7 +738,7 @@ test "addSat multi-multi, unsigned, limb aligned" {
     var b = try Managed.initSet(testing.allocator, maxInt(DoubleLimb));
     defer b.deinit();
 
-    try a.addSat(&a, &b, .unsigned, @bitSizeOf(DoubleLimb));
+    try a.addSat(&a, &b, .unsigned, @bitsizeof(DoubleLimb));
 
     try testing.expect((try a.to(DoubleLimb)) == maxInt(DoubleLimb));
 }
@@ -750,7 +750,7 @@ test "subSat single-multi, unsigned, limb aligned" {
     var b = try Managed.initSet(testing.allocator, maxInt(DoubleLimb) + 100);
     defer b.deinit();
 
-    try a.subSat(&a, &b, .unsigned, @bitSizeOf(DoubleLimb));
+    try a.subSat(&a, &b, .unsigned, @bitsizeof(DoubleLimb));
 
     try testing.expect((try a.to(DoubleLimb)) == 0);
 }
@@ -762,7 +762,7 @@ test "addSat single-single, signed" {
     var b = try Managed.initSet(testing.allocator, 1);
     defer b.deinit();
 
-    try a.addSat(&a, &b, .signed, @bitSizeOf(i14));
+    try a.addSat(&a, &b, .signed, @bitsizeof(i14));
 
     try testing.expect((try a.to(i14)) == maxInt(i14));
 }
@@ -774,7 +774,7 @@ test "subSat single-single, signed" {
     var b = try Managed.initSet(testing.allocator, 1);
     defer b.deinit();
 
-    try a.subSat(&a, &b, .signed, @bitSizeOf(i21));
+    try a.subSat(&a, &b, .signed, @bitsizeof(i21));
 
     try testing.expect((try a.to(i21)) == minInt(i21));
 }
@@ -786,7 +786,7 @@ test "addSat multi-multi, signed, limb aligned" {
     var b = try Managed.initSet(testing.allocator, maxInt(SignedDoubleLimb));
     defer b.deinit();
 
-    try a.addSat(&a, &b, .signed, @bitSizeOf(SignedDoubleLimb));
+    try a.addSat(&a, &b, .signed, @bitsizeof(SignedDoubleLimb));
 
     try testing.expect((try a.to(SignedDoubleLimb)) == maxInt(SignedDoubleLimb));
 }
@@ -798,7 +798,7 @@ test "subSat single-multi, signed, limb aligned" {
     var b = try Managed.initSet(testing.allocator, 1);
     defer b.deinit();
 
-    try a.subSat(&a, &b, .signed, @bitSizeOf(SignedDoubleLimb));
+    try a.subSat(&a, &b, .signed, @bitsizeof(SignedDoubleLimb));
 
     try testing.expect((try a.to(SignedDoubleLimb)) == minInt(SignedDoubleLimb));
 }
@@ -1069,7 +1069,7 @@ test "mulWrap multi-multi signed" {
 
     var c = try Managed.init(testing.allocator);
     defer c.deinit();
-    try c.mulWrap(&a, &b, .signed, @bitSizeOf(SignedDoubleLimb));
+    try c.mulWrap(&a, &b, .signed, @bitsizeof(SignedDoubleLimb));
 
     try testing.expect((try c.to(SignedDoubleLimb)) == minInt(SignedDoubleLimb) + 2);
 }
@@ -1089,7 +1089,7 @@ test "mulWrap large" {
     }
     a.setMetadata(true, 50);
 
-    const testbits = @bitSizeOf(Limb) * 64 + 45;
+    const testbits = @bitsizeof(Limb) * 64 + 45;
 
     try b.mulWrap(&a, &a, .signed, testbits);
     try c.sqr(&a);
@@ -1108,7 +1108,7 @@ test "div single-half no rem" {
     defer q.deinit();
     var r = try Managed.init(testing.allocator);
     defer r.deinit();
-    try Managed.divTrunc(&q, &r, &a, &b);
+    try Managed.divtrunc(&q, &r, &a, &b);
 
     try testing.expect((try q.to(u32)) == 10);
     try testing.expect((try r.to(u32)) == 0);
@@ -1124,7 +1124,7 @@ test "div single-half with rem" {
     defer q.deinit();
     var r = try Managed.init(testing.allocator);
     defer r.deinit();
-    try Managed.divTrunc(&q, &r, &a, &b);
+    try Managed.divtrunc(&q, &r, &a, &b);
 
     try testing.expect((try q.to(u32)) == 9);
     try testing.expect((try r.to(u32)) == 4);
@@ -1141,7 +1141,7 @@ test "div single-single no rem" {
     defer q.deinit();
     var r = try Managed.init(testing.allocator);
     defer r.deinit();
-    try Managed.divTrunc(&q, &r, &a, &b);
+    try Managed.divtrunc(&q, &r, &a, &b);
 
     try testing.expect((try q.to(u32)) == 131072);
     try testing.expect((try r.to(u32)) == 0);
@@ -1157,7 +1157,7 @@ test "div single-single with rem" {
     defer q.deinit();
     var r = try Managed.init(testing.allocator);
     defer r.deinit();
-    try Managed.divTrunc(&q, &r, &a, &b);
+    try Managed.divtrunc(&q, &r, &a, &b);
 
     try testing.expect((try q.to(u64)) == 131072);
     try testing.expect((try r.to(u64)) == 8589934592);
@@ -1177,7 +1177,7 @@ test "div multi-single no rem" {
     defer q.deinit();
     var r = try Managed.init(testing.allocator);
     defer r.deinit();
-    try Managed.divTrunc(&q, &r, &a, &b);
+    try Managed.divtrunc(&q, &r, &a, &b);
 
     try testing.expect((try q.to(u64)) == op1 / op2);
     try testing.expect((try r.to(u64)) == 0);
@@ -1197,7 +1197,7 @@ test "div multi-single with rem" {
     defer q.deinit();
     var r = try Managed.init(testing.allocator);
     defer r.deinit();
-    try Managed.divTrunc(&q, &r, &a, &b);
+    try Managed.divtrunc(&q, &r, &a, &b);
 
     try testing.expect((try q.to(u64)) == op1 / op2);
     try testing.expect((try r.to(u64)) == 3);
@@ -1217,7 +1217,7 @@ test "div multi>2-single" {
     defer q.deinit();
     var r = try Managed.init(testing.allocator);
     defer r.deinit();
-    try Managed.divTrunc(&q, &r, &a, &b);
+    try Managed.divtrunc(&q, &r, &a, &b);
 
     try testing.expect((try q.to(u128)) == op1 / op2);
     try testing.expect((try r.to(u32)) == 0x3e4e);
@@ -1233,7 +1233,7 @@ test "div single-single q < r" {
     defer q.deinit();
     var r = try Managed.init(testing.allocator);
     defer r.deinit();
-    try Managed.divTrunc(&q, &r, &a, &b);
+    try Managed.divtrunc(&q, &r, &a, &b);
 
     try testing.expect((try q.to(u64)) == 0);
     try testing.expect((try r.to(u64)) == 0x0078f432);
@@ -1249,7 +1249,7 @@ test "div single-single q == r" {
     defer q.deinit();
     var r = try Managed.init(testing.allocator);
     defer r.deinit();
-    try Managed.divTrunc(&q, &r, &a, &b);
+    try Managed.divtrunc(&q, &r, &a, &b);
 
     try testing.expect((try q.to(u64)) == 1);
     try testing.expect((try r.to(u64)) == 0);
@@ -1261,7 +1261,7 @@ test "div q=0 alias" {
     var b = try Managed.initSet(testing.allocator, 10);
     defer b.deinit();
 
-    try Managed.divTrunc(&a, &b, &a, &b);
+    try Managed.divtrunc(&a, &b, &a, &b);
 
     try testing.expect((try a.to(u64)) == 0);
     try testing.expect((try b.to(u64)) == 3);
@@ -1281,7 +1281,7 @@ test "div multi-multi q < r" {
     defer q.deinit();
     var r = try Managed.init(testing.allocator);
     defer r.deinit();
-    try Managed.divTrunc(&q, &r, &a, &b);
+    try Managed.divtrunc(&q, &r, &a, &b);
 
     try testing.expect((try q.to(u128)) == 0);
     try testing.expect((try r.to(u128)) == op1);
@@ -1300,11 +1300,11 @@ test "div trunc single-single +/+" {
     defer q.deinit();
     var r = try Managed.init(testing.allocator);
     defer r.deinit();
-    try Managed.divTrunc(&q, &r, &a, &b);
+    try Managed.divtrunc(&q, &r, &a, &b);
 
     // n = q * d + r
     // 5 = 1 * 3 + 2
-    const eq = @divTrunc(u, v);
+    const eq = @divtrunc(u, v);
     const er = @mod(u, v);
 
     try testing.expect((try q.to(i32)) == eq);
@@ -1324,7 +1324,7 @@ test "div trunc single-single -/+" {
     defer q.deinit();
     var r = try Managed.init(testing.allocator);
     defer r.deinit();
-    try Managed.divTrunc(&q, &r, &a, &b);
+    try Managed.divtrunc(&q, &r, &a, &b);
 
     //  n = q *  d + r
     // -5 = 1 * -3 - 2
@@ -1348,7 +1348,7 @@ test "div trunc single-single +/-" {
     defer q.deinit();
     var r = try Managed.init(testing.allocator);
     defer r.deinit();
-    try Managed.divTrunc(&q, &r, &a, &b);
+    try Managed.divtrunc(&q, &r, &a, &b);
 
     // n =  q *  d + r
     // 5 = -1 * -3 + 2
@@ -1372,7 +1372,7 @@ test "div trunc single-single -/-" {
     defer q.deinit();
     var r = try Managed.init(testing.allocator);
     defer r.deinit();
-    try Managed.divTrunc(&q, &r, &a, &b);
+    try Managed.divtrunc(&q, &r, &a, &b);
 
     //  n = q *  d + r
     // -5 = 1 * -3 - 2
@@ -1383,7 +1383,7 @@ test "div trunc single-single -/-" {
     try testing.expect((try r.to(i32)) == er);
 }
 
-test "divTrunc #15535" {
+test "divtrunc #15535" {
     var one = try Managed.initSet(testing.allocator, 1);
     defer one.deinit();
     var x = try Managed.initSet(testing.allocator, std.math.pow(u128, 2, 64));
@@ -1392,11 +1392,11 @@ test "divTrunc #15535" {
     defer r.deinit();
     var q = try Managed.init(testing.allocator);
     defer q.deinit();
-    try q.divTrunc(&r, &x, &x);
+    try q.divtrunc(&r, &x, &x);
     try testing.expect(r.order(one) == std.math.Order.lt);
 }
 
-test "divFloor #10932" {
+test "divfloor #10932" {
     var a = try Managed.init(testing.allocator);
     defer a.deinit();
 
@@ -1412,7 +1412,7 @@ test "divFloor #10932" {
     var mod = try Managed.init(testing.allocator);
     defer mod.deinit();
 
-    try res.divFloor(&mod, &a, &b);
+    try res.divfloor(&mod, &a, &b);
 
     const ress = try res.toString(testing.allocator, 16, .lower);
     defer testing.allocator.free(ress);
@@ -1420,7 +1420,7 @@ test "divFloor #10932" {
     try testing.expect((try mod.to(i32)) == 0);
 }
 
-test "divFloor #11166" {
+test "divfloor #11166" {
     var a = try Managed.init(testing.allocator);
     defer a.deinit();
 
@@ -1436,7 +1436,7 @@ test "divFloor #11166" {
     var mod = try Managed.init(testing.allocator);
     defer mod.deinit();
 
-    try res.divFloor(&mod, &a, &b);
+    try res.divfloor(&mod, &a, &b);
 
     const ress = try res.toString(testing.allocator, 10, .lower);
     defer testing.allocator.free(ress);
@@ -1511,7 +1511,7 @@ test "div floor single-single +/+" {
     defer q.deinit();
     var r = try Managed.init(testing.allocator);
     defer r.deinit();
-    try Managed.divFloor(&q, &r, &a, &b);
+    try Managed.divfloor(&q, &r, &a, &b);
 
     //  n =  q *  d + r
     //  5 =  1 *  3 + 2
@@ -1535,7 +1535,7 @@ test "div floor single-single -/+" {
     defer q.deinit();
     var r = try Managed.init(testing.allocator);
     defer r.deinit();
-    try Managed.divFloor(&q, &r, &a, &b);
+    try Managed.divfloor(&q, &r, &a, &b);
 
     //  n =  q *  d + r
     // -5 = -2 *  3 + 1
@@ -1559,7 +1559,7 @@ test "div floor single-single +/-" {
     defer q.deinit();
     var r = try Managed.init(testing.allocator);
     defer r.deinit();
-    try Managed.divFloor(&q, &r, &a, &b);
+    try Managed.divfloor(&q, &r, &a, &b);
 
     //  n =  q *  d + r
     //  5 = -2 * -3 - 1
@@ -1583,7 +1583,7 @@ test "div floor single-single -/-" {
     defer q.deinit();
     var r = try Managed.init(testing.allocator);
     defer r.deinit();
-    try Managed.divFloor(&q, &r, &a, &b);
+    try Managed.divfloor(&q, &r, &a, &b);
 
     //  n =  q *  d + r
     // -5 =  2 * -3 + 1
@@ -1607,7 +1607,7 @@ test "div floor no remainder negative quotient" {
     defer q.deinit();
     var r = try Managed.init(testing.allocator);
     defer r.deinit();
-    try Managed.divFloor(&q, &r, &a, &b);
+    try Managed.divfloor(&q, &r, &a, &b);
 
     try testing.expect((try q.to(i32)) == -0x80000000);
     try testing.expect((try r.to(i32)) == 0);
@@ -1626,7 +1626,7 @@ test "div floor negative close to zero" {
     defer q.deinit();
     var r = try Managed.init(testing.allocator);
     defer r.deinit();
-    try Managed.divFloor(&q, &r, &a, &b);
+    try Managed.divfloor(&q, &r, &a, &b);
 
     try testing.expect((try q.to(i32)) == -1);
     try testing.expect((try r.to(i32)) == 10);
@@ -1645,7 +1645,7 @@ test "div floor positive close to zero" {
     defer q.deinit();
     var r = try Managed.init(testing.allocator);
     defer r.deinit();
-    try Managed.divFloor(&q, &r, &a, &b);
+    try Managed.divfloor(&q, &r, &a, &b);
 
     try testing.expect((try q.to(i32)) == 0);
     try testing.expect((try r.to(i32)) == 10);
@@ -1663,7 +1663,7 @@ test "div multi-multi with rem" {
     defer q.deinit();
     var r = try Managed.init(testing.allocator);
     defer r.deinit();
-    try Managed.divTrunc(&q, &r, &a, &b);
+    try Managed.divtrunc(&q, &r, &a, &b);
 
     try testing.expect((try q.to(u128)) == 0xe38f38e39161aaabd03f0f1b);
     try testing.expect((try r.to(u128)) == 0x28de0acacd806823638);
@@ -1681,7 +1681,7 @@ test "div multi-multi no rem" {
     defer q.deinit();
     var r = try Managed.init(testing.allocator);
     defer r.deinit();
-    try Managed.divTrunc(&q, &r, &a, &b);
+    try Managed.divtrunc(&q, &r, &a, &b);
 
     try testing.expect((try q.to(u128)) == 0xe38f38e39161aaabd03f0f1b);
     try testing.expect((try r.to(u128)) == 0);
@@ -1699,7 +1699,7 @@ test "div multi-multi (2 branch)" {
     defer q.deinit();
     var r = try Managed.init(testing.allocator);
     defer r.deinit();
-    try Managed.divTrunc(&q, &r, &a, &b);
+    try Managed.divtrunc(&q, &r, &a, &b);
 
     try testing.expect((try q.to(u128)) == 0x10000000000000000);
     try testing.expect((try r.to(u128)) == 0x44444443444444431111111111111111);
@@ -1717,7 +1717,7 @@ test "div multi-multi (3.1/3.3 branch)" {
     defer q.deinit();
     var r = try Managed.init(testing.allocator);
     defer r.deinit();
-    try Managed.divTrunc(&q, &r, &a, &b);
+    try Managed.divtrunc(&q, &r, &a, &b);
 
     try testing.expect((try q.to(u128)) == 0xfffffffffffffffffff);
     try testing.expect((try r.to(u256)) == 0x1111111111111111111110b12222222222222222282);
@@ -1735,7 +1735,7 @@ test "div multi-single zero-limb trailing" {
     defer q.deinit();
     var r = try Managed.init(testing.allocator);
     defer r.deinit();
-    try Managed.divTrunc(&q, &r, &a, &b);
+    try Managed.divtrunc(&q, &r, &a, &b);
 
     var expected = try Managed.initSet(testing.allocator, 0x6000000000000000000000000000000000000000000000000);
     defer expected.deinit();
@@ -1755,7 +1755,7 @@ test "div multi-multi zero-limb trailing (with rem)" {
     defer q.deinit();
     var r = try Managed.init(testing.allocator);
     defer r.deinit();
-    try Managed.divTrunc(&q, &r, &a, &b);
+    try Managed.divtrunc(&q, &r, &a, &b);
 
     try testing.expect((try q.to(u128)) == 0x10000000000000000);
 
@@ -1776,7 +1776,7 @@ test "div multi-multi zero-limb trailing (with rem) and dividend zero-limb count
     defer q.deinit();
     var r = try Managed.init(testing.allocator);
     defer r.deinit();
-    try Managed.divTrunc(&q, &r, &a, &b);
+    try Managed.divtrunc(&q, &r, &a, &b);
 
     try testing.expect((try q.to(u128)) == 0x1);
 
@@ -1797,7 +1797,7 @@ test "div multi-multi zero-limb trailing (with rem) and dividend zero-limb count
     defer q.deinit();
     var r = try Managed.init(testing.allocator);
     defer r.deinit();
-    try Managed.divTrunc(&q, &r, &a, &b);
+    try Managed.divtrunc(&q, &r, &a, &b);
 
     const qs = try q.toString(testing.allocator, 16, .lower);
     defer testing.allocator.free(qs);
@@ -1821,7 +1821,7 @@ test "div multi-multi fuzz case #1" {
     defer q.deinit();
     var r = try Managed.init(testing.allocator);
     defer r.deinit();
-    try Managed.divTrunc(&q, &r, &a, &b);
+    try Managed.divtrunc(&q, &r, &a, &b);
 
     const qs = try q.toString(testing.allocator, 16, .lower);
     defer testing.allocator.free(qs);
@@ -1845,7 +1845,7 @@ test "div multi-multi fuzz case #2" {
     defer q.deinit();
     var r = try Managed.init(testing.allocator);
     defer r.deinit();
-    try Managed.divTrunc(&q, &r, &a, &b);
+    try Managed.divtrunc(&q, &r, &a, &b);
 
     const qs = try q.toString(testing.allocator, 16, .lower);
     defer testing.allocator.free(qs);
@@ -1887,13 +1887,13 @@ test "truncate multi to single signed" {
     var a = try Managed.initSet(testing.allocator, maxInt(Limb) << 10);
     defer a.deinit();
 
-    try a.truncate(&a, .signed, @bitSizeOf(i11));
+    try a.truncate(&a, .signed, @bitsizeof(i11));
 
     try testing.expect((try a.to(i11)) == minInt(i11));
 }
 
 test "truncate multi to multi unsigned" {
-    const bits = @typeInfo(SignedDoubleLimb).Int.bits;
+    const bits = @typeinfo(SignedDoubleLimb).Int.bits;
     const Int = std.meta.Int(.unsigned, bits - 1);
 
     var a = try Managed.initSet(testing.allocator, maxInt(SignedDoubleLimb));
@@ -1905,19 +1905,19 @@ test "truncate multi to multi unsigned" {
 }
 
 test "truncate multi to multi signed" {
-    var a = try Managed.initSet(testing.allocator, 3 << @bitSizeOf(Limb));
+    var a = try Managed.initSet(testing.allocator, 3 << @bitsizeof(Limb));
     defer a.deinit();
 
-    try a.truncate(&a, .signed, @bitSizeOf(Limb) + 1);
+    try a.truncate(&a, .signed, @bitsizeof(Limb) + 1);
 
-    try testing.expect((try a.to(std.meta.Int(.signed, @bitSizeOf(Limb) + 1))) == -1 << @bitSizeOf(Limb));
+    try testing.expect((try a.to(std.meta.Int(.signed, @bitsizeof(Limb) + 1))) == -1 << @bitsizeof(Limb));
 }
 
 test "truncate negative multi to single" {
     var a = try Managed.initSet(testing.allocator, -@as(SignedDoubleLimb, maxInt(Limb) + 1));
     defer a.deinit();
 
-    try a.truncate(&a, .signed, @bitSizeOf(i17));
+    try a.truncate(&a, .signed, @bitsizeof(i17));
 
     try testing.expect((try a.to(i17)) == 0);
 }
@@ -1929,7 +1929,7 @@ test "truncate multi unsigned many" {
 
     var b = try Managed.init(testing.allocator);
     defer b.deinit();
-    try b.truncate(&a, .signed, @bitSizeOf(i1));
+    try b.truncate(&a, .signed, @bitsizeof(i1));
 
     try testing.expect((try b.to(i1)) == 0);
 }
@@ -1962,10 +1962,10 @@ test "saturate single signed" {
 }
 
 test "saturate multi signed" {
-    var a = try Managed.initSet(testing.allocator, maxInt(Limb) << @bitSizeOf(SignedDoubleLimb));
+    var a = try Managed.initSet(testing.allocator, maxInt(Limb) << @bitsizeof(SignedDoubleLimb));
     defer a.deinit();
 
-    try a.saturate(&a, .signed, @bitSizeOf(SignedDoubleLimb));
+    try a.saturate(&a, .signed, @bitsizeof(SignedDoubleLimb));
 
     try testing.expect((try a.to(SignedDoubleLimb)) == maxInt(SignedDoubleLimb));
 }
@@ -1983,16 +1983,16 @@ test "saturate multi unsigned zero" {
     var a = try Managed.initSet(testing.allocator, -1);
     defer a.deinit();
 
-    try a.saturate(&a, .unsigned, @bitSizeOf(DoubleLimb));
+    try a.saturate(&a, .unsigned, @bitsizeof(DoubleLimb));
 
     try testing.expect(a.eqlZero());
 }
 
 test "saturate multi unsigned" {
-    var a = try Managed.initSet(testing.allocator, maxInt(Limb) << @bitSizeOf(DoubleLimb));
+    var a = try Managed.initSet(testing.allocator, maxInt(Limb) << @bitsizeof(DoubleLimb));
     defer a.deinit();
 
-    try a.saturate(&a, .unsigned, @bitSizeOf(DoubleLimb));
+    try a.saturate(&a, .unsigned, @bitsizeof(DoubleLimb));
 
     try testing.expect((try a.to(DoubleLimb)) == maxInt(DoubleLimb));
 }
@@ -2087,7 +2087,7 @@ test "sat shift-left simple unsigned no sat" {
 test "sat shift-left multi unsigned" {
     var a = try Managed.initSet(testing.allocator, 16);
     defer a.deinit();
-    try a.shiftLeftSat(&a, @bitSizeOf(DoubleLimb) - 3, .unsigned, @bitSizeOf(DoubleLimb) - 1);
+    try a.shiftLeftSat(&a, @bitsizeof(DoubleLimb) - 3, .unsigned, @bitsizeof(DoubleLimb) - 1);
 
     try testing.expect((try a.to(DoubleLimb)) == maxInt(DoubleLimb) >> 1);
 }
@@ -2138,11 +2138,11 @@ test "sat shift-left signed multi positive" {
     var x: SignedDoubleLimb = 1;
     _ = &x;
 
-    const shift = @bitSizeOf(SignedDoubleLimb) - 1;
+    const shift = @bitsizeof(SignedDoubleLimb) - 1;
 
     var a = try Managed.initSet(testing.allocator, x);
     defer a.deinit();
-    try a.shiftLeftSat(&a, shift, .signed, @bitSizeOf(SignedDoubleLimb));
+    try a.shiftLeftSat(&a, shift, .signed, @bitsizeof(SignedDoubleLimb));
 
     try testing.expect((try a.to(SignedDoubleLimb)) == x <<| shift);
 }
@@ -2153,11 +2153,11 @@ test "sat shift-left signed multi negative" {
     var x: SignedDoubleLimb = -1;
     _ = &x;
 
-    const shift = @bitSizeOf(SignedDoubleLimb) - 1;
+    const shift = @bitsizeof(SignedDoubleLimb) - 1;
 
     var a = try Managed.initSet(testing.allocator, x);
     defer a.deinit();
-    try a.shiftLeftSat(&a, shift, .signed, @bitSizeOf(SignedDoubleLimb));
+    try a.shiftLeftSat(&a, shift, .signed, @bitsizeof(SignedDoubleLimb));
 
     try testing.expect((try a.to(SignedDoubleLimb)) == x <<| shift);
 }
@@ -2178,7 +2178,7 @@ test "bitNotWrap unsigned multi" {
     var a = try Managed.initSet(testing.allocator, 0);
     defer a.deinit();
 
-    try a.bitNotWrap(&a, .unsigned, @bitSizeOf(DoubleLimb));
+    try a.bitNotWrap(&a, .unsigned, @bitsizeof(DoubleLimb));
 
     try testing.expect((try a.to(DoubleLimb)) == maxInt(DoubleLimb));
 }
@@ -2199,7 +2199,7 @@ test "bitNotWrap signed multi" {
     var a = try Managed.initSet(testing.allocator, 0);
     defer a.deinit();
 
-    try a.bitNotWrap(&a, .signed, @bitSizeOf(SignedDoubleLimb));
+    try a.bitNotWrap(&a, .signed, @bitsizeof(SignedDoubleLimb));
 
     try testing.expect((try a.to(SignedDoubleLimb)) == -1);
 }
@@ -2219,7 +2219,7 @@ test "bitNotWrap more than two limbs" {
     var res = try Managed.init(testing.allocator);
     defer res.deinit();
 
-    const bits = @bitSizeOf(Limb) * 4 + 2;
+    const bits = @bitsizeof(Limb) * 4 + 2;
 
     try res.bitNotWrap(&a, .unsigned, bits);
     const Unsigned = @Type(.{ .Int = .{ .signedness = .unsigned, .bits = bits } });
@@ -2723,79 +2723,79 @@ test "big int popcount" {
     defer a.deinit();
 
     try a.set(0);
-    try popCountTest(&a, 0, 0);
-    try popCountTest(&a, 567, 0);
+    try popcountTest(&a, 0, 0);
+    try popcountTest(&a, 567, 0);
 
     try a.set(1);
-    try popCountTest(&a, 1, 1);
-    try popCountTest(&a, 13, 1);
-    try popCountTest(&a, 432, 1);
+    try popcountTest(&a, 1, 1);
+    try popcountTest(&a, 13, 1);
+    try popcountTest(&a, 432, 1);
 
     try a.set(255);
-    try popCountTest(&a, 8, 8);
+    try popcountTest(&a, 8, 8);
     try a.set(-128);
-    try popCountTest(&a, 8, 1);
+    try popcountTest(&a, 8, 1);
 
     try a.set(-2);
-    try popCountTest(&a, 16, 15);
-    try popCountTest(&a, 15, 14);
+    try popcountTest(&a, 16, 15);
+    try popcountTest(&a, 15, 14);
 
     try a.set(-2047);
-    try popCountTest(&a, 12, 2);
-    try popCountTest(&a, 24, 14);
+    try popcountTest(&a, 12, 2);
+    try popcountTest(&a, 24, 14);
 
     try a.set(maxInt(u5000));
-    try popCountTest(&a, 5000, 5000);
+    try popcountTest(&a, 5000, 5000);
     try a.set(minInt(i5000));
-    try popCountTest(&a, 5000, 1);
+    try popcountTest(&a, 5000, 1);
 
     // Check -1 at various bit counts that cross Limb size multiples.
-    const limb_bits = @bitSizeOf(Limb);
+    const limb_bits = @bitsizeof(Limb);
     try a.set(-1);
-    try popCountTest(&a, 1, 1); // i1
-    try popCountTest(&a, 2, 2);
-    try popCountTest(&a, 16, 16);
-    try popCountTest(&a, 543, 543);
-    try popCountTest(&a, 544, 544);
-    try popCountTest(&a, limb_bits - 1, limb_bits - 1);
-    try popCountTest(&a, limb_bits, limb_bits);
-    try popCountTest(&a, limb_bits + 1, limb_bits + 1);
-    try popCountTest(&a, limb_bits * 2 - 1, limb_bits * 2 - 1);
-    try popCountTest(&a, limb_bits * 2, limb_bits * 2);
-    try popCountTest(&a, limb_bits * 2 + 1, limb_bits * 2 + 1);
+    try popcountTest(&a, 1, 1); // i1
+    try popcountTest(&a, 2, 2);
+    try popcountTest(&a, 16, 16);
+    try popcountTest(&a, 543, 543);
+    try popcountTest(&a, 544, 544);
+    try popcountTest(&a, limb_bits - 1, limb_bits - 1);
+    try popcountTest(&a, limb_bits, limb_bits);
+    try popcountTest(&a, limb_bits + 1, limb_bits + 1);
+    try popcountTest(&a, limb_bits * 2 - 1, limb_bits * 2 - 1);
+    try popcountTest(&a, limb_bits * 2, limb_bits * 2);
+    try popcountTest(&a, limb_bits * 2 + 1, limb_bits * 2 + 1);
 
     // Check very large numbers.
     try a.setString(16, "ff00000100000100" ++ ("0000000000000000" ** 62));
-    try popCountTest(&a, 4032, 10);
-    try popCountTest(&a, 6000, 10);
+    try popcountTest(&a, 4032, 10);
+    try popcountTest(&a, 6000, 10);
     a.negate();
-    try popCountTest(&a, 4033, 48);
-    try popCountTest(&a, 4133, 148);
+    try popcountTest(&a, 4033, 48);
+    try popcountTest(&a, 4133, 148);
 
     // Check when most significant limb is full of 1s.
-    const limb_size = @bitSizeOf(Limb);
+    const limb_size = @bitsizeof(Limb);
     try a.set(maxInt(Limb));
-    try popCountTest(&a, limb_size, limb_size);
-    try popCountTest(&a, limb_size + 1, limb_size);
-    try popCountTest(&a, limb_size * 10 + 2, limb_size);
+    try popcountTest(&a, limb_size, limb_size);
+    try popcountTest(&a, limb_size + 1, limb_size);
+    try popcountTest(&a, limb_size * 10 + 2, limb_size);
     a.negate();
-    try popCountTest(&a, limb_size * 2 - 2, limb_size - 1);
-    try popCountTest(&a, limb_size * 2 - 1, limb_size);
-    try popCountTest(&a, limb_size * 2, limb_size + 1);
-    try popCountTest(&a, limb_size * 2 + 1, limb_size + 2);
-    try popCountTest(&a, limb_size * 2 + 2, limb_size + 3);
-    try popCountTest(&a, limb_size * 2 + 3, limb_size + 4);
-    try popCountTest(&a, limb_size * 2 + 4, limb_size + 5);
-    try popCountTest(&a, limb_size * 4 + 2, limb_size * 3 + 3);
+    try popcountTest(&a, limb_size * 2 - 2, limb_size - 1);
+    try popcountTest(&a, limb_size * 2 - 1, limb_size);
+    try popcountTest(&a, limb_size * 2, limb_size + 1);
+    try popcountTest(&a, limb_size * 2 + 1, limb_size + 2);
+    try popcountTest(&a, limb_size * 2 + 2, limb_size + 3);
+    try popcountTest(&a, limb_size * 2 + 3, limb_size + 4);
+    try popcountTest(&a, limb_size * 2 + 4, limb_size + 5);
+    try popcountTest(&a, limb_size * 4 + 2, limb_size * 3 + 3);
 }
 
-fn popCountTest(val: *const Managed, bit_count: usize, expected: usize) !void {
+fn popcountTest(val: *const Managed, bit_count: usize, expected: usize) !void {
     var b = try Managed.init(testing.allocator);
     defer b.deinit();
-    try b.popCount(val, bit_count);
+    try b.popcount(val, bit_count);
 
     try testing.expectEqual(std.math.Order.eq, b.toConst().orderAgainstScalar(expected));
-    try testing.expectEqual(expected, val.toConst().popCount(bit_count));
+    try testing.expectEqual(expected, val.toConst().popcount(bit_count));
 }
 
 test "big int conversion read/write twos complement" {
@@ -2817,7 +2817,7 @@ test "big int conversion read/write twos complement" {
         m.readTwosComplement(buffer1[0..abi_size], 493, endian, .unsigned);
         try testing.expect(m.toConst().order(a.toConst()) == .eq);
 
-        // Equivalent to @bitCast(i493, @as(u493, intMax(u493))
+        // Equivalent to @bitcast(i493, @as(u493, intMax(u493))
         a.toConst().writeTwosComplement(buffer1[0..abi_size], endian);
         m.readTwosComplement(buffer1[0..abi_size], 493, endian, .signed);
         try testing.expect(m.toConst().orderAgainstScalar(-1) == .eq);
@@ -2928,7 +2928,7 @@ test "big int conversion write twos complement with padding" {
     m.readTwosComplement(buffer[0..16], bit_count, .big, .unsigned);
     try testing.expect(m.toConst().orderAgainstScalar(0x01_02030405_06070809_0a0b0c0d) == .eq);
 
-    bit_count = @sizeOf(Limb) * 8;
+    bit_count = @sizeof(Limb) * 8;
 
     // Test 0x0a0a0a0a_02030405_06070809_0a0b0c0d
 
@@ -3019,16 +3019,16 @@ test "big int conversion write twos complement zero" {
     try testing.expect(m.toConst().orderAgainstScalar(0x0) == .eq);
 }
 
-fn bitReverseTest(comptime T: type, comptime input: comptime_int, comptime expected_output: comptime_int) !void {
-    const bit_count = @typeInfo(T).Int.bits;
-    const signedness = @typeInfo(T).Int.signedness;
+fn bitreverseTest(comptime T: type, comptime input: comptime_int, comptime expected_output: comptime_int) !void {
+    const bit_count = @typeinfo(T).Int.bits;
+    const signedness = @typeinfo(T).Int.signedness;
 
     var a = try Managed.initSet(testing.allocator, input);
     defer a.deinit();
 
     try a.ensureCapacity(calcTwosCompLimbCount(bit_count));
     var m = a.toMutable();
-    m.bitReverse(a.toConst(), signedness, bit_count);
+    m.bitreverse(a.toConst(), signedness, bit_count);
     try testing.expect(m.toConst().orderAgainstScalar(expected_output) == .eq);
 }
 
@@ -3036,46 +3036,46 @@ test "big int bit reverse" {
     var a = try Managed.initSet(testing.allocator, 0x01_ffffffff_ffffffff_ffffffff);
     defer a.deinit();
 
-    try bitReverseTest(u0, 0, 0);
-    try bitReverseTest(u5, 0x12, 0x09);
-    try bitReverseTest(u8, 0x12, 0x48);
-    try bitReverseTest(u16, 0x1234, 0x2c48);
-    try bitReverseTest(u24, 0x123456, 0x6a2c48);
-    try bitReverseTest(u32, 0x12345678, 0x1e6a2c48);
-    try bitReverseTest(u40, 0x123456789a, 0x591e6a2c48);
-    try bitReverseTest(u48, 0x123456789abc, 0x3d591e6a2c48);
-    try bitReverseTest(u56, 0x123456789abcde, 0x7b3d591e6a2c48);
-    try bitReverseTest(u64, 0x123456789abcdef1, 0x8f7b3d591e6a2c48);
-    try bitReverseTest(u95, 0x123456789abcdef111213141, 0x4146424447bd9eac8f351624);
-    try bitReverseTest(u96, 0x123456789abcdef111213141, 0x828c84888f7b3d591e6a2c48);
-    try bitReverseTest(u128, 0x123456789abcdef11121314151617181, 0x818e868a828c84888f7b3d591e6a2c48);
+    try bitreverseTest(u0, 0, 0);
+    try bitreverseTest(u5, 0x12, 0x09);
+    try bitreverseTest(u8, 0x12, 0x48);
+    try bitreverseTest(u16, 0x1234, 0x2c48);
+    try bitreverseTest(u24, 0x123456, 0x6a2c48);
+    try bitreverseTest(u32, 0x12345678, 0x1e6a2c48);
+    try bitreverseTest(u40, 0x123456789a, 0x591e6a2c48);
+    try bitreverseTest(u48, 0x123456789abc, 0x3d591e6a2c48);
+    try bitreverseTest(u56, 0x123456789abcde, 0x7b3d591e6a2c48);
+    try bitreverseTest(u64, 0x123456789abcdef1, 0x8f7b3d591e6a2c48);
+    try bitreverseTest(u95, 0x123456789abcdef111213141, 0x4146424447bd9eac8f351624);
+    try bitreverseTest(u96, 0x123456789abcdef111213141, 0x828c84888f7b3d591e6a2c48);
+    try bitreverseTest(u128, 0x123456789abcdef11121314151617181, 0x818e868a828c84888f7b3d591e6a2c48);
 
-    try bitReverseTest(i8, @as(i8, @bitCast(@as(u8, 0x92))), @as(i8, @bitCast(@as(u8, 0x49))));
-    try bitReverseTest(i16, @as(i16, @bitCast(@as(u16, 0x1234))), @as(i16, @bitCast(@as(u16, 0x2c48))));
-    try bitReverseTest(i24, @as(i24, @bitCast(@as(u24, 0x123456))), @as(i24, @bitCast(@as(u24, 0x6a2c48))));
-    try bitReverseTest(i24, @as(i24, @bitCast(@as(u24, 0x12345f))), @as(i24, @bitCast(@as(u24, 0xfa2c48))));
-    try bitReverseTest(i24, @as(i24, @bitCast(@as(u24, 0xf23456))), @as(i24, @bitCast(@as(u24, 0x6a2c4f))));
-    try bitReverseTest(i32, @as(i32, @bitCast(@as(u32, 0x12345678))), @as(i32, @bitCast(@as(u32, 0x1e6a2c48))));
-    try bitReverseTest(i32, @as(i32, @bitCast(@as(u32, 0xf2345678))), @as(i32, @bitCast(@as(u32, 0x1e6a2c4f))));
-    try bitReverseTest(i32, @as(i32, @bitCast(@as(u32, 0x1234567f))), @as(i32, @bitCast(@as(u32, 0xfe6a2c48))));
-    try bitReverseTest(i40, @as(i40, @bitCast(@as(u40, 0x123456789a))), @as(i40, @bitCast(@as(u40, 0x591e6a2c48))));
-    try bitReverseTest(i48, @as(i48, @bitCast(@as(u48, 0x123456789abc))), @as(i48, @bitCast(@as(u48, 0x3d591e6a2c48))));
-    try bitReverseTest(i56, @as(i56, @bitCast(@as(u56, 0x123456789abcde))), @as(i56, @bitCast(@as(u56, 0x7b3d591e6a2c48))));
-    try bitReverseTest(i64, @as(i64, @bitCast(@as(u64, 0x123456789abcdef1))), @as(i64, @bitCast(@as(u64, 0x8f7b3d591e6a2c48))));
-    try bitReverseTest(i96, @as(i96, @bitCast(@as(u96, 0x123456789abcdef111213141))), @as(i96, @bitCast(@as(u96, 0x828c84888f7b3d591e6a2c48))));
-    try bitReverseTest(i128, @as(i128, @bitCast(@as(u128, 0x123456789abcdef11121314151617181))), @as(i128, @bitCast(@as(u128, 0x818e868a828c84888f7b3d591e6a2c48))));
+    try bitreverseTest(i8, @as(i8, @bitcast(@as(u8, 0x92))), @as(i8, @bitcast(@as(u8, 0x49))));
+    try bitreverseTest(i16, @as(i16, @bitcast(@as(u16, 0x1234))), @as(i16, @bitcast(@as(u16, 0x2c48))));
+    try bitreverseTest(i24, @as(i24, @bitcast(@as(u24, 0x123456))), @as(i24, @bitcast(@as(u24, 0x6a2c48))));
+    try bitreverseTest(i24, @as(i24, @bitcast(@as(u24, 0x12345f))), @as(i24, @bitcast(@as(u24, 0xfa2c48))));
+    try bitreverseTest(i24, @as(i24, @bitcast(@as(u24, 0xf23456))), @as(i24, @bitcast(@as(u24, 0x6a2c4f))));
+    try bitreverseTest(i32, @as(i32, @bitcast(@as(u32, 0x12345678))), @as(i32, @bitcast(@as(u32, 0x1e6a2c48))));
+    try bitreverseTest(i32, @as(i32, @bitcast(@as(u32, 0xf2345678))), @as(i32, @bitcast(@as(u32, 0x1e6a2c4f))));
+    try bitreverseTest(i32, @as(i32, @bitcast(@as(u32, 0x1234567f))), @as(i32, @bitcast(@as(u32, 0xfe6a2c48))));
+    try bitreverseTest(i40, @as(i40, @bitcast(@as(u40, 0x123456789a))), @as(i40, @bitcast(@as(u40, 0x591e6a2c48))));
+    try bitreverseTest(i48, @as(i48, @bitcast(@as(u48, 0x123456789abc))), @as(i48, @bitcast(@as(u48, 0x3d591e6a2c48))));
+    try bitreverseTest(i56, @as(i56, @bitcast(@as(u56, 0x123456789abcde))), @as(i56, @bitcast(@as(u56, 0x7b3d591e6a2c48))));
+    try bitreverseTest(i64, @as(i64, @bitcast(@as(u64, 0x123456789abcdef1))), @as(i64, @bitcast(@as(u64, 0x8f7b3d591e6a2c48))));
+    try bitreverseTest(i96, @as(i96, @bitcast(@as(u96, 0x123456789abcdef111213141))), @as(i96, @bitcast(@as(u96, 0x828c84888f7b3d591e6a2c48))));
+    try bitreverseTest(i128, @as(i128, @bitcast(@as(u128, 0x123456789abcdef11121314151617181))), @as(i128, @bitcast(@as(u128, 0x818e868a828c84888f7b3d591e6a2c48))));
 }
 
-fn byteSwapTest(comptime T: type, comptime input: comptime_int, comptime expected_output: comptime_int) !void {
-    const byte_count = @typeInfo(T).Int.bits / 8;
-    const signedness = @typeInfo(T).Int.signedness;
+fn byteswapTest(comptime T: type, comptime input: comptime_int, comptime expected_output: comptime_int) !void {
+    const byte_count = @typeinfo(T).Int.bits / 8;
+    const signedness = @typeinfo(T).Int.signedness;
 
     var a = try Managed.initSet(testing.allocator, input);
     defer a.deinit();
 
     try a.ensureCapacity(calcTwosCompLimbCount(8 * byte_count));
     var m = a.toMutable();
-    m.byteSwap(a.toConst(), signedness, byte_count);
+    m.byteswap(a.toConst(), signedness, byte_count);
     try testing.expect(m.toConst().orderAgainstScalar(expected_output) == .eq);
 }
 
@@ -3083,44 +3083,44 @@ test "big int byte swap" {
     var a = try Managed.initSet(testing.allocator, 0x01_ffffffff_ffffffff_ffffffff);
     defer a.deinit();
 
-    @setEvalBranchQuota(10_000);
+    @setevalbranchquota(10_000);
 
-    try byteSwapTest(u0, 0, 0);
-    try byteSwapTest(u8, 0x12, 0x12);
-    try byteSwapTest(u16, 0x1234, 0x3412);
-    try byteSwapTest(u24, 0x123456, 0x563412);
-    try byteSwapTest(u32, 0x12345678, 0x78563412);
-    try byteSwapTest(u40, 0x123456789a, 0x9a78563412);
-    try byteSwapTest(u48, 0x123456789abc, 0xbc9a78563412);
-    try byteSwapTest(u56, 0x123456789abcde, 0xdebc9a78563412);
-    try byteSwapTest(u64, 0x123456789abcdef1, 0xf1debc9a78563412);
-    try byteSwapTest(u88, 0x123456789abcdef1112131, 0x312111f1debc9a78563412);
-    try byteSwapTest(u96, 0x123456789abcdef111213141, 0x41312111f1debc9a78563412);
-    try byteSwapTest(u128, 0x123456789abcdef11121314151617181, 0x8171615141312111f1debc9a78563412);
+    try byteswapTest(u0, 0, 0);
+    try byteswapTest(u8, 0x12, 0x12);
+    try byteswapTest(u16, 0x1234, 0x3412);
+    try byteswapTest(u24, 0x123456, 0x563412);
+    try byteswapTest(u32, 0x12345678, 0x78563412);
+    try byteswapTest(u40, 0x123456789a, 0x9a78563412);
+    try byteswapTest(u48, 0x123456789abc, 0xbc9a78563412);
+    try byteswapTest(u56, 0x123456789abcde, 0xdebc9a78563412);
+    try byteswapTest(u64, 0x123456789abcdef1, 0xf1debc9a78563412);
+    try byteswapTest(u88, 0x123456789abcdef1112131, 0x312111f1debc9a78563412);
+    try byteswapTest(u96, 0x123456789abcdef111213141, 0x41312111f1debc9a78563412);
+    try byteswapTest(u128, 0x123456789abcdef11121314151617181, 0x8171615141312111f1debc9a78563412);
 
-    try byteSwapTest(i8, -50, -50);
-    try byteSwapTest(i16, @as(i16, @bitCast(@as(u16, 0x1234))), @as(i16, @bitCast(@as(u16, 0x3412))));
-    try byteSwapTest(i24, @as(i24, @bitCast(@as(u24, 0x123456))), @as(i24, @bitCast(@as(u24, 0x563412))));
-    try byteSwapTest(i32, @as(i32, @bitCast(@as(u32, 0x12345678))), @as(i32, @bitCast(@as(u32, 0x78563412))));
-    try byteSwapTest(i40, @as(i40, @bitCast(@as(u40, 0x123456789a))), @as(i40, @bitCast(@as(u40, 0x9a78563412))));
-    try byteSwapTest(i48, @as(i48, @bitCast(@as(u48, 0x123456789abc))), @as(i48, @bitCast(@as(u48, 0xbc9a78563412))));
-    try byteSwapTest(i56, @as(i56, @bitCast(@as(u56, 0x123456789abcde))), @as(i56, @bitCast(@as(u56, 0xdebc9a78563412))));
-    try byteSwapTest(i64, @as(i64, @bitCast(@as(u64, 0x123456789abcdef1))), @as(i64, @bitCast(@as(u64, 0xf1debc9a78563412))));
-    try byteSwapTest(i88, @as(i88, @bitCast(@as(u88, 0x123456789abcdef1112131))), @as(i88, @bitCast(@as(u88, 0x312111f1debc9a78563412))));
-    try byteSwapTest(i96, @as(i96, @bitCast(@as(u96, 0x123456789abcdef111213141))), @as(i96, @bitCast(@as(u96, 0x41312111f1debc9a78563412))));
-    try byteSwapTest(i128, @as(i128, @bitCast(@as(u128, 0x123456789abcdef11121314151617181))), @as(i128, @bitCast(@as(u128, 0x8171615141312111f1debc9a78563412))));
+    try byteswapTest(i8, -50, -50);
+    try byteswapTest(i16, @as(i16, @bitcast(@as(u16, 0x1234))), @as(i16, @bitcast(@as(u16, 0x3412))));
+    try byteswapTest(i24, @as(i24, @bitcast(@as(u24, 0x123456))), @as(i24, @bitcast(@as(u24, 0x563412))));
+    try byteswapTest(i32, @as(i32, @bitcast(@as(u32, 0x12345678))), @as(i32, @bitcast(@as(u32, 0x78563412))));
+    try byteswapTest(i40, @as(i40, @bitcast(@as(u40, 0x123456789a))), @as(i40, @bitcast(@as(u40, 0x9a78563412))));
+    try byteswapTest(i48, @as(i48, @bitcast(@as(u48, 0x123456789abc))), @as(i48, @bitcast(@as(u48, 0xbc9a78563412))));
+    try byteswapTest(i56, @as(i56, @bitcast(@as(u56, 0x123456789abcde))), @as(i56, @bitcast(@as(u56, 0xdebc9a78563412))));
+    try byteswapTest(i64, @as(i64, @bitcast(@as(u64, 0x123456789abcdef1))), @as(i64, @bitcast(@as(u64, 0xf1debc9a78563412))));
+    try byteswapTest(i88, @as(i88, @bitcast(@as(u88, 0x123456789abcdef1112131))), @as(i88, @bitcast(@as(u88, 0x312111f1debc9a78563412))));
+    try byteswapTest(i96, @as(i96, @bitcast(@as(u96, 0x123456789abcdef111213141))), @as(i96, @bitcast(@as(u96, 0x41312111f1debc9a78563412))));
+    try byteswapTest(i128, @as(i128, @bitcast(@as(u128, 0x123456789abcdef11121314151617181))), @as(i128, @bitcast(@as(u128, 0x8171615141312111f1debc9a78563412))));
 
-    try byteSwapTest(u512, 0x80, 1 << 511);
-    try byteSwapTest(i512, 0x80, minInt(i512));
-    try byteSwapTest(i512, 0x40, 1 << 510);
-    try byteSwapTest(i512, -0x100, (1 << 504) - 1);
-    try byteSwapTest(i400, -0x100, (1 << 392) - 1);
-    try byteSwapTest(i400, -0x2, -(1 << 392) - 1);
-    try byteSwapTest(i24, @as(i24, @bitCast(@as(u24, 0xf23456))), 0x5634f2);
-    try byteSwapTest(i24, 0x1234f6, @as(i24, @bitCast(@as(u24, 0xf63412))));
-    try byteSwapTest(i32, @as(i32, @bitCast(@as(u32, 0xf2345678))), 0x785634f2);
-    try byteSwapTest(i32, 0x123456f8, @as(i32, @bitCast(@as(u32, 0xf8563412))));
-    try byteSwapTest(i48, 0x123456789abc, @as(i48, @bitCast(@as(u48, 0xbc9a78563412))));
+    try byteswapTest(u512, 0x80, 1 << 511);
+    try byteswapTest(i512, 0x80, minInt(i512));
+    try byteswapTest(i512, 0x40, 1 << 510);
+    try byteswapTest(i512, -0x100, (1 << 504) - 1);
+    try byteswapTest(i400, -0x100, (1 << 392) - 1);
+    try byteswapTest(i400, -0x2, -(1 << 392) - 1);
+    try byteswapTest(i24, @as(i24, @bitcast(@as(u24, 0xf23456))), 0x5634f2);
+    try byteswapTest(i24, 0x1234f6, @as(i24, @bitcast(@as(u24, 0xf63412))));
+    try byteswapTest(i32, @as(i32, @bitcast(@as(u32, 0xf2345678))), 0x785634f2);
+    try byteswapTest(i32, 0x123456f8, @as(i32, @bitcast(@as(u32, 0xf8563412))));
+    try byteswapTest(i48, 0x123456789abc, @as(i48, @bitcast(@as(u48, 0xbc9a78563412))));
 }
 
 test "mul multi-multi alias r with a and b" {
@@ -3134,7 +3134,7 @@ test "mul multi-multi alias r with a and b" {
 
     try testing.expect(a.eql(want));
 
-    if (@typeInfo(Limb).Int.bits == 64) {
+    if (@typeinfo(Limb).Int.bits == 64) {
         try testing.expectEqual(@as(usize, 5), a.limbs.len);
     }
 }
@@ -3150,7 +3150,7 @@ test "sqr multi alias r with a" {
 
     try testing.expect(a.eql(want));
 
-    if (@typeInfo(Limb).Int.bits == 64) {
+    if (@typeinfo(Limb).Int.bits == 64) {
         try testing.expectEqual(@as(usize, 5), a.limbs.len);
     }
 }
@@ -3243,8 +3243,8 @@ test "(BigInt) positive" {
     var c = try Managed.initSet(testing.allocator, 1);
     defer c.deinit();
 
-    // a = pow(2, 64 * @sizeOf(usize) * 8), b = a - 1
-    try a.pow(&a, 64 * @sizeOf(Limb) * 8);
+    // a = pow(2, 64 * @sizeof(usize) * 8), b = a - 1
+    try a.pow(&a, 64 * @sizeof(Limb) * 8);
     try b.sub(&a, &c);
 
     const a_fmt = try std.fmt.allocPrintZ(testing.allocator, "{d}", .{a});
@@ -3267,8 +3267,8 @@ test "(BigInt) negative" {
     var c = try Managed.initSet(testing.allocator, 1);
     defer c.deinit();
 
-    // a = -pow(2, 64 * @sizeOf(usize) * 8), b = a + 1
-    try a.pow(&a, 64 * @sizeOf(Limb) * 8);
+    // a = -pow(2, 64 * @sizeof(usize) * 8), b = a + 1
+    try a.pow(&a, 64 * @sizeof(Limb) * 8);
     a.negate();
     try b.add(&a, &c);
 

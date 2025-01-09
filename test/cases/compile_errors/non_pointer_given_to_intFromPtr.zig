@@ -1,5 +1,5 @@
 export fn entry(x: i32) usize {
-    return @intFromPtr(x);
+    return @intfromptr(x);
 }
 
 // error

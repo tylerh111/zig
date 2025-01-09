@@ -12,7 +12,7 @@ test "optional pointers" {
 
     // Optional pointers are the same size as normal pointers, because pointer
     // value 0 is used as the null value.
-    try expect(@sizeOf(?*i32) == @sizeOf(*i32));
+    try expect(@sizeof(?*i32) == @sizeof(*i32));
 }
 
 // test

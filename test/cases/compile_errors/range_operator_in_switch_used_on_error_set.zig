@@ -16,5 +16,5 @@ fn foo(x: i32) !void {
 // backend=llvm
 // target=native
 //
-// :2:34: error: ranges not allowed when switching on type '@typeInfo(@typeInfo(@TypeOf(tmp.foo)).Fn.return_type.?).ErrorUnion.error_set'
+// :2:34: error: ranges not allowed when switching on type '@typeinfo(@typeinfo(@TypeOf(tmp.foo)).Fn.return_type.?).ErrorUnion.error_set'
 // :3:18: note: range here

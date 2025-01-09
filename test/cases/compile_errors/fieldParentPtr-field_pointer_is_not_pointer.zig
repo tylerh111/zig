@@ -2,7 +2,7 @@ const Foo = extern struct {
     a: i32,
 };
 export fn foo(a: i32) *const Foo {
-    return @fieldParentPtr("a", a);
+    return @fieldparentptr("a", a);
 }
 
 // error

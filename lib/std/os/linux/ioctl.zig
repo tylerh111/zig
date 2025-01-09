@@ -28,11 +28,11 @@ pub const Request = packed struct {
 fn io_impl(dir: Direction, io_type: u8, nr: u8, comptime T: type) u32 {
     const request = Request{
         .dir = dir,
-        .size = @sizeOf(T),
+        .size = @sizeof(T),
         .io_type = io_type,
         .nr = nr,
     };
-    return @as(u32, @bitCast(request));
+    return @as(u32, @bitcast(request));
 }
 
 pub fn IO(io_type: u8, nr: u8) u32 {
@@ -52,5 +52,5 @@ pub fn IOWR(io_type: u8, nr: u8, comptime T: type) u32 {
 }
 
 comptime {
-    std.debug.assert(@bitSizeOf(Request) == 32);
+    std.debug.assert(@bitsizeof(Request) == 32);
 }

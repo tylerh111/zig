@@ -21,7 +21,7 @@ pub fn sinh(x: anytype) @TypeOf(x) {
     return switch (T) {
         f32 => sinh32(x),
         f64 => sinh64(x),
-        else => @compileError("sinh not implemented for " ++ @typeName(T)),
+        else => @compileerror("sinh not implemented for " ++ @typename(T)),
     };
 }
 
@@ -29,9 +29,9 @@ pub fn sinh(x: anytype) @TypeOf(x) {
 //         = (exp(x) - 1 + (exp(x) - 1) / exp(x)) / 2
 //         = x + x^3 / 6 + o(x^5)
 fn sinh32(x: f32) f32 {
-    const u = @as(u32, @bitCast(x));
+    const u = @as(u32, @bitcast(x));
     const ux = u & 0x7FFFFFFF;
-    const ax = @as(f32, @bitCast(ux));
+    const ax = @as(f32, @bitcast(ux));
 
     if (x == 0.0 or math.isNan(x)) {
         return x;
@@ -60,9 +60,9 @@ fn sinh32(x: f32) f32 {
 }
 
 fn sinh64(x: f64) f64 {
-    const u = @as(u64, @bitCast(x));
-    const w = @as(u32, @intCast(u >> 32)) & (maxInt(u32) >> 1);
-    const ax = @as(f64, @bitCast(u & (maxInt(u64) >> 1)));
+    const u = @as(u64, @bitcast(x));
+    const w = @as(u32, @intcast(u >> 32)) & (maxInt(u32) >> 1);
+    const ax = @as(f64, @bitcast(u & (maxInt(u64) >> 1)));
 
     if (x == 0.0 or math.isNan(x)) {
         return x;

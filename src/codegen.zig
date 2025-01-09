@@ -96,10 +96,10 @@ pub fn generateLazyFunction(
 
 fn writeFloat(comptime F: type, f: F, target: Target, endian: std.builtin.Endian, code: []u8) void {
     _ = target;
-    const bits = @typeInfo(F).Float.bits;
+    const bits = @typeinfo(F).Float.bits;
     const Int = @Type(.{ .Int = .{ .signedness = .unsigned, .bits = bits } });
-    const int: Int = @bitCast(f);
-    mem.writeInt(Int, code[0..@divExact(bits, 8)], int, endian);
+    const int: Int = @bitcast(f);
+    mem.writeInt(Int, code[0..@divexact(bits, 8)], int, endian);
 }
 
 pub fn generateLazySymbol(
@@ -125,7 +125,7 @@ pub fn generateLazySymbol(
     const gpa = comp.gpa;
 
     log.debug("generateLazySymbol: kind = {s}, ty = {}", .{
-        @tagName(lazy_sym.kind),
+        @tagname(lazy_sym.kind),
         lazy_sym.ty.fmt(zcu),
     });
 
@@ -137,18 +137,18 @@ pub fn generateLazySymbol(
     if (lazy_sym.ty.isAnyError(zcu)) {
         alignment.* = .@"4";
         const err_names = zcu.global_error_set.keys();
-        mem.writeInt(u32, try code.addManyAsArray(4), @intCast(err_names.len), endian);
+        mem.writeInt(u32, try code.addManyAsArray(4), @intcast(err_names.len), endian);
         var offset = code.items.len;
         try code.resize((1 + err_names.len + 1) * 4);
         for (err_names) |err_name_nts| {
             const err_name = err_name_nts.toSlice(ip);
-            mem.writeInt(u32, code.items[offset..][0..4], @intCast(code.items.len), endian);
+            mem.writeInt(u32, code.items[offset..][0..4], @intcast(code.items.len), endian);
             offset += 4;
             try code.ensureUnusedCapacity(err_name.len + 1);
             code.appendSliceAssumeCapacity(err_name);
             code.appendAssumeCapacity(0);
         }
-        mem.writeInt(u32, code.items[offset..][0..4], @intCast(code.items.len), endian);
+        mem.writeInt(u32, code.items[offset..][0..4], @intcast(code.items.len), endian);
         return Result.ok;
     } else if (lazy_sym.ty.zigTypeTag(zcu) == .Enum) {
         alignment.* = .@"1";
@@ -164,7 +164,7 @@ pub fn generateLazySymbol(
         gpa,
         src_loc,
         "TODO implement generateLazySymbol for {s} {}",
-        .{ @tagName(lazy_sym.kind), lazy_sym.ty.fmt(zcu) },
+        .{ @tagname(lazy_sym.kind), lazy_sym.ty.fmt(zcu) },
     ) };
 }
 
@@ -242,12 +242,12 @@ pub fn generateSymbol(
         },
         .err => |err| {
             const int = try mod.getErrorValue(err.name);
-            try code.writer().writeInt(u16, @intCast(int), endian);
+            try code.writer().writeInt(u16, @intcast(int), endian);
         },
         .error_union => |error_union| {
             const payload_ty = ty.errorUnionPayload(mod);
             const err_val: u16 = switch (error_union.val) {
-                .err_name => |err_name| @intCast(try mod.getErrorValue(err_name)),
+                .err_name => |err_name| @intcast(try mod.getErrorValue(err_name)),
                 .payload => 0,
             };
 
@@ -352,7 +352,7 @@ pub fn generateSymbol(
                         .fail => |em| return Result{ .fail = em },
                     }
                 }
-                try code.writer().writeByte(@intFromBool(payload_val != null));
+                try code.writer().writeByte(@intfrombool(payload_val != null));
                 try code.appendNTimes(0, padding);
             }
         },
@@ -364,7 +364,7 @@ pub fn generateSymbol(
                     while (index < array_type.lenIncludingSentinel()) : (index += 1) {
                         switch (try generateSymbol(bin_file, src_loc, Value.fromInterned(switch (aggregate.storage) {
                             .bytes => unreachable,
-                            .elems => |elems| elems[@intCast(index)],
+                            .elems => |elems| elems[@intcast(index)],
                             .repeated_elem => |elem| if (index < array_type.len)
                                 elem
                             else
@@ -512,7 +512,7 @@ pub fn generateSymbol(
                             } else {
                                 Value.fromInterned(field_val).writeToPackedMemory(Type.fromInterned(field_ty), mod, code.items[current_pos..], bits) catch unreachable;
                             }
-                            bits += @intCast(Type.fromInterned(field_ty).bitSize(mod));
+                            bits += @intcast(Type.fromInterned(field_ty).bitSize(mod));
                         }
                     },
                     .auto, .@"extern" => {
@@ -660,12 +660,12 @@ fn lowerPtr(
                     assert(base_ty.isSlice(zcu));
                     break :off switch (field.index) {
                         Value.slice_ptr_index => 0,
-                        Value.slice_len_index => @divExact(zcu.getTarget().ptrBitWidth(), 8),
+                        Value.slice_len_index => @divexact(zcu.getTarget().ptrBitWidth(), 8),
                         else => unreachable,
                     };
                 },
                 .Struct, .Union => switch (base_ty.containerLayout(zcu)) {
-                    .auto => base_ty.structFieldOffset(@intCast(field.index), zcu),
+                    .auto => base_ty.structFieldOffset(@intcast(field.index), zcu),
                     .@"extern", .@"packed" => unreachable,
                 },
                 else => unreachable,
@@ -694,7 +694,7 @@ fn lowerAnonDeclRef(
     const ip = &zcu.intern_pool;
     const target = lf.comp.root_mod.resolved_target.result;
 
-    const ptr_width_bytes = @divExact(target.ptrBitWidth(), 8);
+    const ptr_width_bytes = @divexact(target.ptrBitWidth(), 8);
     const decl_val = anon_decl.val;
     const decl_ty = Type.fromInterned(ip.typeOf(decl_val));
     log.debug("lowerAnonDecl: ty = {}", .{decl_ty.fmt(zcu)});
@@ -714,12 +714,12 @@ fn lowerAnonDeclRef(
     const vaddr = try lf.getAnonDeclVAddr(decl_val, .{
         .parent_atom_index = reloc_info.parent_atom_index,
         .offset = code.items.len,
-        .addend = @intCast(offset),
+        .addend = @intcast(offset),
     });
     const endian = target.cpu.arch.endian();
     switch (ptr_width_bytes) {
-        2 => mem.writeInt(u16, try code.addManyAsArray(2), @intCast(vaddr), endian),
-        4 => mem.writeInt(u32, try code.addManyAsArray(4), @intCast(vaddr), endian),
+        2 => mem.writeInt(u16, try code.addManyAsArray(2), @intcast(vaddr), endian),
+        4 => mem.writeInt(u32, try code.addManyAsArray(4), @intcast(vaddr), endian),
         8 => mem.writeInt(u64, try code.addManyAsArray(8), vaddr, endian),
         else => unreachable,
     }
@@ -746,19 +746,19 @@ fn lowerDeclRef(
     const ptr_width = target.ptrBitWidth();
     const is_fn_body = decl.typeOf(zcu).zigTypeTag(zcu) == .Fn;
     if (!is_fn_body and !decl.typeOf(zcu).hasRuntimeBits(zcu)) {
-        try code.appendNTimes(0xaa, @divExact(ptr_width, 8));
+        try code.appendNTimes(0xaa, @divexact(ptr_width, 8));
         return Result.ok;
     }
 
     const vaddr = try lf.getDeclVAddr(decl_index, .{
         .parent_atom_index = reloc_info.parent_atom_index,
         .offset = code.items.len,
-        .addend = @intCast(offset),
+        .addend = @intcast(offset),
     });
     const endian = target.cpu.arch.endian();
     switch (ptr_width) {
-        16 => mem.writeInt(u16, try code.addManyAsArray(2), @intCast(vaddr), endian),
-        32 => mem.writeInt(u32, try code.addManyAsArray(4), @intCast(vaddr), endian),
+        16 => mem.writeInt(u16, try code.addManyAsArray(2), @intcast(vaddr), endian),
+        32 => mem.writeInt(u32, try code.addManyAsArray(4), @intcast(vaddr), endian),
         64 => mem.writeInt(u64, try code.addManyAsArray(8), vaddr, endian),
         else => unreachable,
     }
@@ -838,7 +838,7 @@ fn genDeclRef(
     const target = namespace.file_scope.mod.resolved_target.result;
 
     const ptr_bits = target.ptrBitWidth();
-    const ptr_bytes: u64 = @divExact(ptr_bits, 8);
+    const ptr_bytes: u64 = @divexact(ptr_bits, 8);
 
     const decl_index = switch (ip.indexToKey(ptr_decl.val.toIntern())) {
         .func => |func| func.owner_decl,
@@ -939,7 +939,7 @@ fn genUnnamedConst(
     log.debug("genUnnamedConst: val = {}", .{val.fmtValue(zcu, null)});
 
     const local_sym_index = lf.lowerUnnamedConst(val, owner_decl_index) catch |err| {
-        return GenResult.fail(gpa, src_loc, "lowering unnamed constant failed: {s}", .{@errorName(err)});
+        return GenResult.fail(gpa, src_loc, "lowering unnamed constant failed: {s}", .{@errorname(err)});
     };
     switch (lf.tag) {
         .elf => {
@@ -1016,14 +1016,14 @@ pub fn genTypedValue(
             const info = ty.intInfo(zcu);
             if (info.bits <= ptr_bits) {
                 const unsigned: u64 = switch (info.signedness) {
-                    .signed => @bitCast(val.toSignedInt(zcu)),
+                    .signed => @bitcast(val.toSignedInt(zcu)),
                     .unsigned => val.toUnsignedInt(zcu),
                 };
                 return GenResult.mcv(.{ .immediate = unsigned });
             }
         },
         .Bool => {
-            return GenResult.mcv(.{ .immediate = @intFromBool(val.toBool()) });
+            return GenResult.mcv(.{ .immediate = @intfrombool(val.toBool()) });
         },
         .Optional => {
             if (ty.isPtrLikeOptional(zcu)) {
@@ -1034,7 +1034,7 @@ pub fn genTypedValue(
                     owner_decl_index,
                 );
             } else if (ty.abiSize(zcu) == 1) {
-                return GenResult.mcv(.{ .immediate = @intFromBool(!val.isNull(zcu)) });
+                return GenResult.mcv(.{ .immediate = @intfrombool(!val.isNull(zcu)) });
             }
         },
         .Enum => {

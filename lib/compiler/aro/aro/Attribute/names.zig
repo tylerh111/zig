@@ -17,29 +17,29 @@ const Self = @This();
 
 pub fn fromName(name: []const u8) ?@This() {
     const data_index = tagFromName(name) orelse return null;
-    return data[@intFromEnum(data_index)];
+    return data[@intfromenum(data_index)];
 }
 
 pub fn tagFromName(name: []const u8) ?Tag {
     const unique_index = uniqueIndex(name) orelse return null;
-    return @enumFromInt(unique_index - 1);
+    return @enumfromint(unique_index - 1);
 }
 
 pub fn fromTag(tag: Tag) @This() {
-    return data[@intFromEnum(tag)];
+    return data[@intfromenum(tag)];
 }
 
 pub fn nameFromTagIntoBuf(tag: Tag, name_buf: []u8) []u8 {
     std.debug.assert(name_buf.len >= longest_name);
-    const unique_index = @intFromEnum(tag) + 1;
+    const unique_index = @intfromenum(tag) + 1;
     return nameFromUniqueIndex(unique_index, name_buf);
 }
 
 pub fn nameFromTag(tag: Tag) NameBuf {
     var name_buf: NameBuf = undefined;
-    const unique_index = @intFromEnum(tag) + 1;
+    const unique_index = @intfromenum(tag) + 1;
     const name = nameFromUniqueIndex(unique_index, &name_buf.buf);
-    name_buf.len = @intCast(name.len);
+    name_buf.len = @intcast(name.len);
     return name_buf;
 }
 
@@ -787,214 +787,214 @@ const dafsa = [_]Node{
     .{ .char = 'i', .end_of_word = false, .end_of_list = true, .number = 1, .child_index = 215 },
 };
 pub const data = blk: {
-    @setEvalBranchQuota(103);
+    @setevalbranchquota(103);
     break :blk [_]@This(){
         // access
-        .{ .tag = @enumFromInt(0), .properties = .{ .tag = .access, .gnu = true } },
+        .{ .tag = @enumfromint(0), .properties = .{ .tag = .access, .gnu = true } },
         // alias
-        .{ .tag = @enumFromInt(1), .properties = .{ .tag = .alias, .gnu = true } },
+        .{ .tag = @enumfromint(1), .properties = .{ .tag = .alias, .gnu = true } },
         // align
-        .{ .tag = @enumFromInt(2), .properties = .{ .tag = .aligned, .declspec = true } },
+        .{ .tag = @enumfromint(2), .properties = .{ .tag = .aligned, .declspec = true } },
         // aligned
-        .{ .tag = @enumFromInt(3), .properties = .{ .tag = .aligned, .gnu = true } },
+        .{ .tag = @enumfromint(3), .properties = .{ .tag = .aligned, .gnu = true } },
         // alloc_align
-        .{ .tag = @enumFromInt(4), .properties = .{ .tag = .alloc_align, .gnu = true } },
+        .{ .tag = @enumfromint(4), .properties = .{ .tag = .alloc_align, .gnu = true } },
         // alloc_size
-        .{ .tag = @enumFromInt(5), .properties = .{ .tag = .alloc_size, .gnu = true } },
+        .{ .tag = @enumfromint(5), .properties = .{ .tag = .alloc_size, .gnu = true } },
         // allocate
-        .{ .tag = @enumFromInt(6), .properties = .{ .tag = .allocate, .declspec = true } },
+        .{ .tag = @enumfromint(6), .properties = .{ .tag = .allocate, .declspec = true } },
         // allocator
-        .{ .tag = @enumFromInt(7), .properties = .{ .tag = .allocator, .declspec = true } },
+        .{ .tag = @enumfromint(7), .properties = .{ .tag = .allocator, .declspec = true } },
         // always_inline
-        .{ .tag = @enumFromInt(8), .properties = .{ .tag = .always_inline, .gnu = true } },
+        .{ .tag = @enumfromint(8), .properties = .{ .tag = .always_inline, .gnu = true } },
         // appdomain
-        .{ .tag = @enumFromInt(9), .properties = .{ .tag = .appdomain, .declspec = true } },
+        .{ .tag = @enumfromint(9), .properties = .{ .tag = .appdomain, .declspec = true } },
         // artificial
-        .{ .tag = @enumFromInt(10), .properties = .{ .tag = .artificial, .gnu = true } },
+        .{ .tag = @enumfromint(10), .properties = .{ .tag = .artificial, .gnu = true } },
         // assume_aligned
-        .{ .tag = @enumFromInt(11), .properties = .{ .tag = .assume_aligned, .gnu = true } },
+        .{ .tag = @enumfromint(11), .properties = .{ .tag = .assume_aligned, .gnu = true } },
         // cleanup
-        .{ .tag = @enumFromInt(12), .properties = .{ .tag = .cleanup, .gnu = true } },
+        .{ .tag = @enumfromint(12), .properties = .{ .tag = .cleanup, .gnu = true } },
         // code_seg
-        .{ .tag = @enumFromInt(13), .properties = .{ .tag = .code_seg, .declspec = true } },
+        .{ .tag = @enumfromint(13), .properties = .{ .tag = .code_seg, .declspec = true } },
         // cold
-        .{ .tag = @enumFromInt(14), .properties = .{ .tag = .cold, .gnu = true } },
+        .{ .tag = @enumfromint(14), .properties = .{ .tag = .cold, .gnu = true } },
         // common
-        .{ .tag = @enumFromInt(15), .properties = .{ .tag = .common, .gnu = true } },
+        .{ .tag = @enumfromint(15), .properties = .{ .tag = .common, .gnu = true } },
         // const
-        .{ .tag = @enumFromInt(16), .properties = .{ .tag = .@"const", .gnu = true } },
+        .{ .tag = @enumfromint(16), .properties = .{ .tag = .@"const", .gnu = true } },
         // constructor
-        .{ .tag = @enumFromInt(17), .properties = .{ .tag = .constructor, .gnu = true } },
+        .{ .tag = @enumfromint(17), .properties = .{ .tag = .constructor, .gnu = true } },
         // copy
-        .{ .tag = @enumFromInt(18), .properties = .{ .tag = .copy, .gnu = true } },
+        .{ .tag = @enumfromint(18), .properties = .{ .tag = .copy, .gnu = true } },
         // deprecated
-        .{ .tag = @enumFromInt(19), .properties = .{ .tag = .deprecated, .c23 = true, .gnu = true, .declspec = true } },
+        .{ .tag = @enumfromint(19), .properties = .{ .tag = .deprecated, .c23 = true, .gnu = true, .declspec = true } },
         // designated_init
-        .{ .tag = @enumFromInt(20), .properties = .{ .tag = .designated_init, .gnu = true } },
+        .{ .tag = @enumfromint(20), .properties = .{ .tag = .designated_init, .gnu = true } },
         // destructor
-        .{ .tag = @enumFromInt(21), .properties = .{ .tag = .destructor, .gnu = true } },
+        .{ .tag = @enumfromint(21), .properties = .{ .tag = .destructor, .gnu = true } },
         // dllexport
-        .{ .tag = @enumFromInt(22), .properties = .{ .tag = .dllexport, .declspec = true } },
+        .{ .tag = @enumfromint(22), .properties = .{ .tag = .dllexport, .declspec = true } },
         // dllimport
-        .{ .tag = @enumFromInt(23), .properties = .{ .tag = .dllimport, .declspec = true } },
+        .{ .tag = @enumfromint(23), .properties = .{ .tag = .dllimport, .declspec = true } },
         // error
-        .{ .tag = @enumFromInt(24), .properties = .{ .tag = .@"error", .gnu = true } },
+        .{ .tag = @enumfromint(24), .properties = .{ .tag = .@"error", .gnu = true } },
         // externally_visible
-        .{ .tag = @enumFromInt(25), .properties = .{ .tag = .externally_visible, .gnu = true } },
+        .{ .tag = @enumfromint(25), .properties = .{ .tag = .externally_visible, .gnu = true } },
         // fallthrough
-        .{ .tag = @enumFromInt(26), .properties = .{ .tag = .fallthrough, .c23 = true, .gnu = true } },
+        .{ .tag = @enumfromint(26), .properties = .{ .tag = .fallthrough, .c23 = true, .gnu = true } },
         // flatten
-        .{ .tag = @enumFromInt(27), .properties = .{ .tag = .flatten, .gnu = true } },
+        .{ .tag = @enumfromint(27), .properties = .{ .tag = .flatten, .gnu = true } },
         // format
-        .{ .tag = @enumFromInt(28), .properties = .{ .tag = .format, .gnu = true } },
+        .{ .tag = @enumfromint(28), .properties = .{ .tag = .format, .gnu = true } },
         // format_arg
-        .{ .tag = @enumFromInt(29), .properties = .{ .tag = .format_arg, .gnu = true } },
+        .{ .tag = @enumfromint(29), .properties = .{ .tag = .format_arg, .gnu = true } },
         // gnu_inline
-        .{ .tag = @enumFromInt(30), .properties = .{ .tag = .gnu_inline, .gnu = true } },
+        .{ .tag = @enumfromint(30), .properties = .{ .tag = .gnu_inline, .gnu = true } },
         // hot
-        .{ .tag = @enumFromInt(31), .properties = .{ .tag = .hot, .gnu = true } },
+        .{ .tag = @enumfromint(31), .properties = .{ .tag = .hot, .gnu = true } },
         // ifunc
-        .{ .tag = @enumFromInt(32), .properties = .{ .tag = .ifunc, .gnu = true } },
+        .{ .tag = @enumfromint(32), .properties = .{ .tag = .ifunc, .gnu = true } },
         // interrupt
-        .{ .tag = @enumFromInt(33), .properties = .{ .tag = .interrupt, .gnu = true } },
+        .{ .tag = @enumfromint(33), .properties = .{ .tag = .interrupt, .gnu = true } },
         // interrupt_handler
-        .{ .tag = @enumFromInt(34), .properties = .{ .tag = .interrupt_handler, .gnu = true } },
+        .{ .tag = @enumfromint(34), .properties = .{ .tag = .interrupt_handler, .gnu = true } },
         // jitintrinsic
-        .{ .tag = @enumFromInt(35), .properties = .{ .tag = .jitintrinsic, .declspec = true } },
+        .{ .tag = @enumfromint(35), .properties = .{ .tag = .jitintrinsic, .declspec = true } },
         // leaf
-        .{ .tag = @enumFromInt(36), .properties = .{ .tag = .leaf, .gnu = true } },
+        .{ .tag = @enumfromint(36), .properties = .{ .tag = .leaf, .gnu = true } },
         // malloc
-        .{ .tag = @enumFromInt(37), .properties = .{ .tag = .malloc, .gnu = true } },
+        .{ .tag = @enumfromint(37), .properties = .{ .tag = .malloc, .gnu = true } },
         // may_alias
-        .{ .tag = @enumFromInt(38), .properties = .{ .tag = .may_alias, .gnu = true } },
+        .{ .tag = @enumfromint(38), .properties = .{ .tag = .may_alias, .gnu = true } },
         // maybe_unused
-        .{ .tag = @enumFromInt(39), .properties = .{ .tag = .unused, .c23 = true } },
+        .{ .tag = @enumfromint(39), .properties = .{ .tag = .unused, .c23 = true } },
         // mode
-        .{ .tag = @enumFromInt(40), .properties = .{ .tag = .mode, .gnu = true } },
+        .{ .tag = @enumfromint(40), .properties = .{ .tag = .mode, .gnu = true } },
         // naked
-        .{ .tag = @enumFromInt(41), .properties = .{ .tag = .naked, .declspec = true } },
+        .{ .tag = @enumfromint(41), .properties = .{ .tag = .naked, .declspec = true } },
         // no_address_safety_analysis
-        .{ .tag = @enumFromInt(42), .properties = .{ .tag = .no_address_safety_analysis, .gnu = true } },
+        .{ .tag = @enumfromint(42), .properties = .{ .tag = .no_address_safety_analysis, .gnu = true } },
         // no_icf
-        .{ .tag = @enumFromInt(43), .properties = .{ .tag = .no_icf, .gnu = true } },
+        .{ .tag = @enumfromint(43), .properties = .{ .tag = .no_icf, .gnu = true } },
         // no_instrument_function
-        .{ .tag = @enumFromInt(44), .properties = .{ .tag = .no_instrument_function, .gnu = true } },
+        .{ .tag = @enumfromint(44), .properties = .{ .tag = .no_instrument_function, .gnu = true } },
         // no_profile_instrument_function
-        .{ .tag = @enumFromInt(45), .properties = .{ .tag = .no_profile_instrument_function, .gnu = true } },
+        .{ .tag = @enumfromint(45), .properties = .{ .tag = .no_profile_instrument_function, .gnu = true } },
         // no_reorder
-        .{ .tag = @enumFromInt(46), .properties = .{ .tag = .no_reorder, .gnu = true } },
+        .{ .tag = @enumfromint(46), .properties = .{ .tag = .no_reorder, .gnu = true } },
         // no_sanitize
-        .{ .tag = @enumFromInt(47), .properties = .{ .tag = .no_sanitize, .gnu = true } },
+        .{ .tag = @enumfromint(47), .properties = .{ .tag = .no_sanitize, .gnu = true } },
         // no_sanitize_address
-        .{ .tag = @enumFromInt(48), .properties = .{ .tag = .no_sanitize_address, .gnu = true, .declspec = true } },
+        .{ .tag = @enumfromint(48), .properties = .{ .tag = .no_sanitize_address, .gnu = true, .declspec = true } },
         // no_sanitize_coverage
-        .{ .tag = @enumFromInt(49), .properties = .{ .tag = .no_sanitize_coverage, .gnu = true } },
+        .{ .tag = @enumfromint(49), .properties = .{ .tag = .no_sanitize_coverage, .gnu = true } },
         // no_sanitize_thread
-        .{ .tag = @enumFromInt(50), .properties = .{ .tag = .no_sanitize_thread, .gnu = true } },
+        .{ .tag = @enumfromint(50), .properties = .{ .tag = .no_sanitize_thread, .gnu = true } },
         // no_sanitize_undefined
-        .{ .tag = @enumFromInt(51), .properties = .{ .tag = .no_sanitize_undefined, .gnu = true } },
+        .{ .tag = @enumfromint(51), .properties = .{ .tag = .no_sanitize_undefined, .gnu = true } },
         // no_split_stack
-        .{ .tag = @enumFromInt(52), .properties = .{ .tag = .no_split_stack, .gnu = true } },
+        .{ .tag = @enumfromint(52), .properties = .{ .tag = .no_split_stack, .gnu = true } },
         // no_stack_limit
-        .{ .tag = @enumFromInt(53), .properties = .{ .tag = .no_stack_limit, .gnu = true } },
+        .{ .tag = @enumfromint(53), .properties = .{ .tag = .no_stack_limit, .gnu = true } },
         // no_stack_protector
-        .{ .tag = @enumFromInt(54), .properties = .{ .tag = .no_stack_protector, .gnu = true } },
+        .{ .tag = @enumfromint(54), .properties = .{ .tag = .no_stack_protector, .gnu = true } },
         // noalias
-        .{ .tag = @enumFromInt(55), .properties = .{ .tag = .@"noalias", .declspec = true } },
+        .{ .tag = @enumfromint(55), .properties = .{ .tag = .@"noalias", .declspec = true } },
         // noclone
-        .{ .tag = @enumFromInt(56), .properties = .{ .tag = .noclone, .gnu = true } },
+        .{ .tag = @enumfromint(56), .properties = .{ .tag = .noclone, .gnu = true } },
         // nocommon
-        .{ .tag = @enumFromInt(57), .properties = .{ .tag = .nocommon, .gnu = true } },
+        .{ .tag = @enumfromint(57), .properties = .{ .tag = .nocommon, .gnu = true } },
         // nodiscard
-        .{ .tag = @enumFromInt(58), .properties = .{ .tag = .nodiscard, .c23 = true } },
+        .{ .tag = @enumfromint(58), .properties = .{ .tag = .nodiscard, .c23 = true } },
         // noinit
-        .{ .tag = @enumFromInt(59), .properties = .{ .tag = .noinit, .gnu = true } },
+        .{ .tag = @enumfromint(59), .properties = .{ .tag = .noinit, .gnu = true } },
         // noinline
-        .{ .tag = @enumFromInt(60), .properties = .{ .tag = .@"noinline", .gnu = true, .declspec = true } },
+        .{ .tag = @enumfromint(60), .properties = .{ .tag = .@"noinline", .gnu = true, .declspec = true } },
         // noipa
-        .{ .tag = @enumFromInt(61), .properties = .{ .tag = .noipa, .gnu = true } },
+        .{ .tag = @enumfromint(61), .properties = .{ .tag = .noipa, .gnu = true } },
         // nonstring
-        .{ .tag = @enumFromInt(62), .properties = .{ .tag = .nonstring, .gnu = true } },
+        .{ .tag = @enumfromint(62), .properties = .{ .tag = .nonstring, .gnu = true } },
         // noplt
-        .{ .tag = @enumFromInt(63), .properties = .{ .tag = .noplt, .gnu = true } },
+        .{ .tag = @enumfromint(63), .properties = .{ .tag = .noplt, .gnu = true } },
         // noreturn
-        .{ .tag = @enumFromInt(64), .properties = .{ .tag = .@"noreturn", .c23 = true, .gnu = true, .declspec = true } },
+        .{ .tag = @enumfromint(64), .properties = .{ .tag = .@"noreturn", .c23 = true, .gnu = true, .declspec = true } },
         // packed
-        .{ .tag = @enumFromInt(65), .properties = .{ .tag = .@"packed", .gnu = true } },
+        .{ .tag = @enumfromint(65), .properties = .{ .tag = .@"packed", .gnu = true } },
         // patchable_function_entry
-        .{ .tag = @enumFromInt(66), .properties = .{ .tag = .patchable_function_entry, .gnu = true } },
+        .{ .tag = @enumfromint(66), .properties = .{ .tag = .patchable_function_entry, .gnu = true } },
         // persistent
-        .{ .tag = @enumFromInt(67), .properties = .{ .tag = .persistent, .gnu = true } },
+        .{ .tag = @enumfromint(67), .properties = .{ .tag = .persistent, .gnu = true } },
         // process
-        .{ .tag = @enumFromInt(68), .properties = .{ .tag = .process, .declspec = true } },
+        .{ .tag = @enumfromint(68), .properties = .{ .tag = .process, .declspec = true } },
         // pure
-        .{ .tag = @enumFromInt(69), .properties = .{ .tag = .pure, .gnu = true } },
+        .{ .tag = @enumfromint(69), .properties = .{ .tag = .pure, .gnu = true } },
         // reproducible
-        .{ .tag = @enumFromInt(70), .properties = .{ .tag = .reproducible, .c23 = true } },
+        .{ .tag = @enumfromint(70), .properties = .{ .tag = .reproducible, .c23 = true } },
         // restrict
-        .{ .tag = @enumFromInt(71), .properties = .{ .tag = .restrict, .declspec = true } },
+        .{ .tag = @enumfromint(71), .properties = .{ .tag = .restrict, .declspec = true } },
         // retain
-        .{ .tag = @enumFromInt(72), .properties = .{ .tag = .retain, .gnu = true } },
+        .{ .tag = @enumfromint(72), .properties = .{ .tag = .retain, .gnu = true } },
         // returns_nonnull
-        .{ .tag = @enumFromInt(73), .properties = .{ .tag = .returns_nonnull, .gnu = true } },
+        .{ .tag = @enumfromint(73), .properties = .{ .tag = .returns_nonnull, .gnu = true } },
         // returns_twice
-        .{ .tag = @enumFromInt(74), .properties = .{ .tag = .returns_twice, .gnu = true } },
+        .{ .tag = @enumfromint(74), .properties = .{ .tag = .returns_twice, .gnu = true } },
         // safebuffers
-        .{ .tag = @enumFromInt(75), .properties = .{ .tag = .safebuffers, .declspec = true } },
+        .{ .tag = @enumfromint(75), .properties = .{ .tag = .safebuffers, .declspec = true } },
         // scalar_storage_order
-        .{ .tag = @enumFromInt(76), .properties = .{ .tag = .scalar_storage_order, .gnu = true } },
+        .{ .tag = @enumfromint(76), .properties = .{ .tag = .scalar_storage_order, .gnu = true } },
         // section
-        .{ .tag = @enumFromInt(77), .properties = .{ .tag = .section, .gnu = true } },
+        .{ .tag = @enumfromint(77), .properties = .{ .tag = .section, .gnu = true } },
         // selectany
-        .{ .tag = @enumFromInt(78), .properties = .{ .tag = .selectany, .declspec = true } },
+        .{ .tag = @enumfromint(78), .properties = .{ .tag = .selectany, .declspec = true } },
         // sentinel
-        .{ .tag = @enumFromInt(79), .properties = .{ .tag = .sentinel, .gnu = true } },
+        .{ .tag = @enumfromint(79), .properties = .{ .tag = .sentinel, .gnu = true } },
         // simd
-        .{ .tag = @enumFromInt(80), .properties = .{ .tag = .simd, .gnu = true } },
+        .{ .tag = @enumfromint(80), .properties = .{ .tag = .simd, .gnu = true } },
         // spectre
-        .{ .tag = @enumFromInt(81), .properties = .{ .tag = .spectre, .declspec = true } },
+        .{ .tag = @enumfromint(81), .properties = .{ .tag = .spectre, .declspec = true } },
         // stack_protect
-        .{ .tag = @enumFromInt(82), .properties = .{ .tag = .stack_protect, .gnu = true } },
+        .{ .tag = @enumfromint(82), .properties = .{ .tag = .stack_protect, .gnu = true } },
         // symver
-        .{ .tag = @enumFromInt(83), .properties = .{ .tag = .symver, .gnu = true } },
+        .{ .tag = @enumfromint(83), .properties = .{ .tag = .symver, .gnu = true } },
         // target
-        .{ .tag = @enumFromInt(84), .properties = .{ .tag = .target, .gnu = true } },
+        .{ .tag = @enumfromint(84), .properties = .{ .tag = .target, .gnu = true } },
         // target_clones
-        .{ .tag = @enumFromInt(85), .properties = .{ .tag = .target_clones, .gnu = true } },
+        .{ .tag = @enumfromint(85), .properties = .{ .tag = .target_clones, .gnu = true } },
         // thread
-        .{ .tag = @enumFromInt(86), .properties = .{ .tag = .thread, .declspec = true } },
+        .{ .tag = @enumfromint(86), .properties = .{ .tag = .thread, .declspec = true } },
         // tls_model
-        .{ .tag = @enumFromInt(87), .properties = .{ .tag = .tls_model, .gnu = true } },
+        .{ .tag = @enumfromint(87), .properties = .{ .tag = .tls_model, .gnu = true } },
         // transparent_union
-        .{ .tag = @enumFromInt(88), .properties = .{ .tag = .transparent_union, .gnu = true } },
+        .{ .tag = @enumfromint(88), .properties = .{ .tag = .transparent_union, .gnu = true } },
         // unavailable
-        .{ .tag = @enumFromInt(89), .properties = .{ .tag = .unavailable, .gnu = true } },
+        .{ .tag = @enumfromint(89), .properties = .{ .tag = .unavailable, .gnu = true } },
         // uninitialized
-        .{ .tag = @enumFromInt(90), .properties = .{ .tag = .uninitialized, .gnu = true } },
+        .{ .tag = @enumfromint(90), .properties = .{ .tag = .uninitialized, .gnu = true } },
         // unsequenced
-        .{ .tag = @enumFromInt(91), .properties = .{ .tag = .unsequenced, .c23 = true } },
+        .{ .tag = @enumfromint(91), .properties = .{ .tag = .unsequenced, .c23 = true } },
         // unused
-        .{ .tag = @enumFromInt(92), .properties = .{ .tag = .unused, .gnu = true } },
+        .{ .tag = @enumfromint(92), .properties = .{ .tag = .unused, .gnu = true } },
         // used
-        .{ .tag = @enumFromInt(93), .properties = .{ .tag = .used, .gnu = true } },
+        .{ .tag = @enumfromint(93), .properties = .{ .tag = .used, .gnu = true } },
         // uuid
-        .{ .tag = @enumFromInt(94), .properties = .{ .tag = .uuid, .declspec = true } },
+        .{ .tag = @enumfromint(94), .properties = .{ .tag = .uuid, .declspec = true } },
         // vector_size
-        .{ .tag = @enumFromInt(95), .properties = .{ .tag = .vector_size, .gnu = true } },
+        .{ .tag = @enumfromint(95), .properties = .{ .tag = .vector_size, .gnu = true } },
         // visibility
-        .{ .tag = @enumFromInt(96), .properties = .{ .tag = .visibility, .gnu = true } },
+        .{ .tag = @enumfromint(96), .properties = .{ .tag = .visibility, .gnu = true } },
         // warn_if_not_aligned
-        .{ .tag = @enumFromInt(97), .properties = .{ .tag = .warn_if_not_aligned, .gnu = true } },
+        .{ .tag = @enumfromint(97), .properties = .{ .tag = .warn_if_not_aligned, .gnu = true } },
         // warn_unused_result
-        .{ .tag = @enumFromInt(98), .properties = .{ .tag = .warn_unused_result, .gnu = true } },
+        .{ .tag = @enumfromint(98), .properties = .{ .tag = .warn_unused_result, .gnu = true } },
         // warning
-        .{ .tag = @enumFromInt(99), .properties = .{ .tag = .warning, .gnu = true } },
+        .{ .tag = @enumfromint(99), .properties = .{ .tag = .warning, .gnu = true } },
         // weak
-        .{ .tag = @enumFromInt(100), .properties = .{ .tag = .weak, .gnu = true } },
+        .{ .tag = @enumfromint(100), .properties = .{ .tag = .weak, .gnu = true } },
         // weakref
-        .{ .tag = @enumFromInt(101), .properties = .{ .tag = .weakref, .gnu = true } },
+        .{ .tag = @enumfromint(101), .properties = .{ .tag = .weakref, .gnu = true } },
         // zero_call_used_regs
-        .{ .tag = @enumFromInt(102), .properties = .{ .tag = .zero_call_used_regs, .gnu = true } },
+        .{ .tag = @enumfromint(102), .properties = .{ .tag = .zero_call_used_regs, .gnu = true } },
     };
 };
 };

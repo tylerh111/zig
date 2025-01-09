@@ -104,7 +104,7 @@ pub fn fragmentOrigin(comptime entry_point: anytype, comptime origin: Origin) vo
         .upper_left => .OriginUpperLeft,
         .lower_left => .OriginLowerLeft,
     };
-    asm volatile ("OpExecutionMode %entry_point " ++ @tagName(origin_enum)
+    asm volatile ("OpExecutionMode %entry_point " ++ @tagname(origin_enum)
         :
         : [entry_point] "" (entry_point),
     );
@@ -130,7 +130,7 @@ pub const DepthMode = enum(u32) {
 
 /// Only valid with the `Fragment` calling convention.
 pub fn depthMode(comptime entry_point: anytype, comptime mode: DepthMode) void {
-    const code = comptimePrint("OpExecutionMode %entry_point {}", .{@intFromEnum(mode)});
+    const code = comptimePrint("OpExecutionMode %entry_point {}", .{@intfromenum(mode)});
     asm volatile (code
         :
         : [entry_point] "" (entry_point),

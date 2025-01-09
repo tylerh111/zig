@@ -25,8 +25,8 @@ pub fn loadComptimePtr(sema: *Sema, block: *Block, src: LazySrcLoc, ptr: Value) 
             .none => 0,
             .runtime => return .runtime_load,
             else => |idx| switch (zcu.getTarget().cpu.arch.endian()) {
-                .little => child_bits * @intFromEnum(idx),
-                .big => host_bits - child_bits * (@intFromEnum(idx) + 1), // element order reversed on big endian
+                .little => child_bits * @intfromenum(idx),
+                .big => host_bits - child_bits * (@intfromenum(idx) + 1), // element order reversed on big endian
             },
         };
         if (child_bits + bit_offset > host_bits) {
@@ -72,8 +72,8 @@ pub fn storeComptimePtr(
         .none => 0,
         .runtime => return .runtime_store,
         else => |idx| switch (zcu.getTarget().cpu.arch.endian()) {
-            .little => Type.fromInterned(ptr_info.child).bitSize(zcu) * @intFromEnum(idx),
-            .big => host_bits - Type.fromInterned(ptr_info.child).bitSize(zcu) * (@intFromEnum(idx) + 1), // element order reversed on big endian
+            .little => Type.fromInterned(ptr_info.child).bitSize(zcu) * @intfromenum(idx),
+            .big => host_bits - Type.fromInterned(ptr_info.child).bitSize(zcu) * (@intfromenum(idx) + 1), // element order reversed on big endian
         },
     };
     const pseudo_store_ty = if (host_bits > 0) t: {
@@ -81,7 +81,7 @@ pub fn storeComptimePtr(
         if (need_bits + bit_offset > host_bits) {
             return .exceeds_host_size;
         }
-        break :t try zcu.intType(.unsigned, @intCast(host_bits));
+        break :t try zcu.intType(.unsigned, @intcast(host_bits));
     } else Type.fromInterned(ptr_info.child);
 
     const strat = try prepareComptimePtrStore(sema, block, src, ptr, pseudo_store_ty, 0);
@@ -133,12 +133,12 @@ pub fn storeComptimePtr(
             .index => |index| {
                 const want_ty = index.val.typeOf(zcu).childType(zcu);
                 const coerced_store_val = try zcu.getCoerced(store_val, want_ty);
-                try index.val.setElem(zcu, sema.arena, @intCast(index.elem_index), .{ .interned = coerced_store_val.toIntern() });
+                try index.val.setElem(zcu, sema.arena, @intcast(index.elem_index), .{ .interned = coerced_store_val.toIntern() });
                 return .success;
             },
             .flat_index => |flat| {
                 const store_elems = store_val.typeOf(zcu).arrayBase(zcu)[1];
-                const flat_elems = try sema.arena.alloc(InternPool.Index, @intCast(store_elems));
+                const flat_elems = try sema.arena.alloc(InternPool.Index, @intcast(store_elems));
                 {
                     var next_idx: u64 = 0;
                     var skip: u64 = 0;
@@ -149,7 +149,7 @@ pub fn storeComptimePtr(
                     // Better would be to gather all the store targets into an array.
                     var index: u64 = flat.flat_elem_index + idx;
                     const val_ptr, const final_idx = (try recursiveIndex(sema, flat.val, &index)).?;
-                    try val_ptr.setElem(zcu, sema.arena, @intCast(final_idx), .{ .interned = elem });
+                    try val_ptr.setElem(zcu, sema.arena, @intcast(final_idx), .{ .interned = elem });
                 }
                 return .success;
             },
@@ -180,7 +180,7 @@ pub fn storeComptimePtr(
         return .{ .needed_well_defined = store_val.typeOf(zcu) };
     }
 
-    const new_val = try sema.bitCastSpliceVal(
+    const new_val = try sema.bitcastSpliceVal(
         try val_ptr.intern(zcu, sema.arena),
         store_val,
         byte_offset,
@@ -285,7 +285,7 @@ fn loadComptimePtrInner(
 
             const agg_ty = agg_val.typeOf(zcu);
             switch (agg_ty.zigTypeTag(zcu)) {
-                .Struct, .Pointer => break :val try agg_val.getElem(zcu, @intCast(base_index.index)),
+                .Struct, .Pointer => break :val try agg_val.getElem(zcu, @intcast(base_index.index)),
                 .Union => {
                     const tag_val: Value, const payload_mv: MutableValue = switch (agg_val) {
                         .un => |un| .{ Value.fromInterned(un.tag), un.payload.* },
@@ -339,7 +339,7 @@ fn loadComptimePtrInner(
             if (try sema.typeRequiresComptime(load_one_ty)) break :restructure_array;
             const elem_len = try sema.typeAbiSize(load_one_ty);
             if (ptr.byte_offset % elem_len != 0) break :restructure_array;
-            break :idx @divExact(ptr.byte_offset, elem_len);
+            break :idx @divexact(ptr.byte_offset, elem_len);
         };
 
         const val_one_ty, const val_count = base_val.typeOf(zcu).arrayBase(zcu);
@@ -357,7 +357,7 @@ fn loadComptimePtrInner(
                 break :skip load_ty.childType(zcu).arrayBase(zcu)[1] * array_offset;
             } else 0;
             if (skip_base + load_count > val_count) return .{ .out_of_bounds = base_val.typeOf(zcu) };
-            const elems = try sema.arena.alloc(InternPool.Index, @intCast(load_count));
+            const elems = try sema.arena.alloc(InternPool.Index, @intcast(load_count));
             var skip: u64 = skip_base;
             var next_idx: u64 = 0;
             try flattenArray(sema, base_val, &skip, &next_idx, elems);
@@ -427,7 +427,7 @@ fn loadComptimePtrInner(
                 const next_elem_off = elem_size * (elem_idx + 1);
                 if (cur_offset + need_bytes <= next_elem_off) {
                     // We can look at a single array element.
-                    cur_val = try cur_val.getElem(zcu, @intCast(elem_idx));
+                    cur_val = try cur_val.getElem(zcu, @intcast(elem_idx));
                     cur_offset -= elem_idx * elem_size;
                 } else {
                     break;
@@ -481,7 +481,7 @@ fn loadComptimePtrInner(
         return .{ .success = cur_val };
     }
 
-    const result_val = try sema.bitCastVal(
+    const result_val = try sema.bitcastVal(
         try cur_val.intern(zcu, sema.arena),
         load_ty,
         cur_offset,
@@ -587,7 +587,7 @@ fn prepareComptimePtrStore(
             const eu_val_ptr, const alloc = switch (try prepareComptimePtrStore(sema, block, src, base_ptr, base_ty, undefined)) {
                 .direct => |direct| .{ direct.val, direct.alloc },
                 .index => |index| .{
-                    try index.val.elem(zcu, sema.arena, @intCast(index.elem_index)),
+                    try index.val.elem(zcu, sema.arena, @intcast(index.elem_index)),
                     index.alloc,
                 },
                 .flat_index => unreachable, // base_ty is not an array
@@ -614,7 +614,7 @@ fn prepareComptimePtrStore(
             const opt_val_ptr, const alloc = switch (try prepareComptimePtrStore(sema, block, src, base_ptr, base_ty, undefined)) {
                 .direct => |direct| .{ direct.val, direct.alloc },
                 .index => |index| .{
-                    try index.val.elem(zcu, sema.arena, @intCast(index.elem_index)),
+                    try index.val.elem(zcu, sema.arena, @intcast(index.elem_index)),
                     index.alloc,
                 },
                 .flat_index => unreachable, // base_ty is not an array
@@ -668,7 +668,7 @@ fn prepareComptimePtrStore(
             const agg_val, const alloc = switch (try prepareComptimePtrStore(sema, block, src, base_ptr, base_ty, undefined)) {
                 .direct => |direct| .{ direct.val, direct.alloc },
                 .index => |index| .{
-                    try index.val.elem(zcu, sema.arena, @intCast(index.elem_index)),
+                    try index.val.elem(zcu, sema.arena, @intcast(index.elem_index)),
                     index.alloc,
                 },
                 .flat_index => unreachable, // base_ty is not an array
@@ -679,7 +679,7 @@ fn prepareComptimePtrStore(
             const agg_ty = agg_val.typeOf(zcu);
             switch (agg_ty.zigTypeTag(zcu)) {
                 .Struct, .Pointer => break :strat .{ .direct = .{
-                    .val = try agg_val.elem(zcu, sema.arena, @intCast(base_index.index)),
+                    .val = try agg_val.elem(zcu, sema.arena, @intcast(base_index.index)),
                     .alloc = alloc,
                 } },
                 .Union => {
@@ -735,7 +735,7 @@ fn prepareComptimePtrStore(
             if (try sema.typeRequiresComptime(store_one_ty)) break :restructure_array;
             const elem_len = try sema.typeAbiSize(store_one_ty);
             if (ptr.byte_offset % elem_len != 0) break :restructure_array;
-            break :idx @divExact(ptr.byte_offset, elem_len);
+            break :idx @divexact(ptr.byte_offset, elem_len);
         };
 
         const base_val, const base_elem_offset, const oob_ty = switch (base_strat) {
@@ -847,7 +847,7 @@ fn prepareComptimePtrStore(
                 const next_elem_off = elem_size * (elem_idx + 1);
                 if (cur_offset + need_bytes <= next_elem_off) {
                     // We can look at a single array element.
-                    cur_val = try cur_val.elem(zcu, sema.arena, @intCast(elem_idx));
+                    cur_val = try cur_val.elem(zcu, sema.arena, @intcast(elem_idx));
                     cur_offset -= elem_idx * elem_size;
                 } else {
                     break;
@@ -928,13 +928,13 @@ fn flattenArray(
     }
 
     if (ty.zigTypeTag(zcu) != .Array) {
-        out[@intCast(next_idx.*)] = (try val.intern(zcu, sema.arena)).toIntern();
+        out[@intcast(next_idx.*)] = (try val.intern(zcu, sema.arena)).toIntern();
         next_idx.* += 1;
         return;
     }
 
     const arr_base_elem_count = ty.childType(zcu).arrayBase(zcu)[1];
-    for (0..@intCast(ty.arrayLen(zcu))) |elem_idx| {
+    for (0..@intcast(ty.arrayLen(zcu))) |elem_idx| {
         // Optimization: the `getElem` here may be expensive since we might intern an
         // element of the `bytes` representation, so avoid doing it unnecessarily.
         if (next_idx.* == out.len) return;
@@ -961,13 +961,13 @@ fn unflattenArray(
     const arena = sema.arena;
 
     if (ty.zigTypeTag(zcu) != .Array) {
-        const val = Value.fromInterned(elems[@intCast(next_idx.*)]);
+        const val = Value.fromInterned(elems[@intcast(next_idx.*)]);
         next_idx.* += 1;
         return zcu.getCoerced(val, ty);
     }
 
     const elem_ty = ty.childType(zcu);
-    const buf = try arena.alloc(InternPool.Index, @intCast(ty.arrayLen(zcu)));
+    const buf = try arena.alloc(InternPool.Index, @intcast(ty.arrayLen(zcu)));
     for (buf) |*elem| {
         elem.* = (try unflattenArray(sema, elem_ty, elems, next_idx)).toIntern();
     }
@@ -1007,7 +1007,7 @@ fn recursiveIndex(
         return .{ mv, index.* };
     }
 
-    for (0..@intCast(ty.arrayLenIncludingSentinel(zcu))) |elem_index| {
+    for (0..@intcast(ty.arrayLenIncludingSentinel(zcu))) |elem_index| {
         if (try recursiveIndex(sema, try mv.elem(zcu, sema.arena, elem_index), index)) |result| {
             return result;
         }
@@ -1022,7 +1022,7 @@ fn checkComptimeVarStore(
     alloc_index: ComptimeAllocIndex,
 ) !void {
     const runtime_index = sema.getComptimeAlloc(alloc_index).runtime_index;
-    if (@intFromEnum(runtime_index) < @intFromEnum(block.runtime_index)) {
+    if (@intfromenum(runtime_index) < @intfromenum(block.runtime_index)) {
         if (block.runtime_cond) |cond_src| {
             const msg = msg: {
                 const msg = try sema.errMsg(block, src, "store to comptime variable depends on runtime condition", .{});

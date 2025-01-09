@@ -3,13 +3,13 @@ const parity = @import("parity.zig");
 const testing = std.testing;
 
 fn paritysi2Naive(a: i32) i32 {
-    var x: u32 = @bitCast(a);
+    var x: u32 = @bitcast(a);
     var has_parity: bool = false;
     while (x > 0) {
         has_parity = !has_parity;
         x = x & (x - 1);
     }
-    return @intCast(@intFromBool(has_parity));
+    return @intcast(@intfrombool(has_parity));
 }
 
 fn test__paritysi2(a: i32) !void {
@@ -22,9 +22,9 @@ test "paritysi2" {
     try test__paritysi2(0);
     try test__paritysi2(1);
     try test__paritysi2(2);
-    try test__paritysi2(@bitCast(@as(u32, 0xfffffffd)));
-    try test__paritysi2(@bitCast(@as(u32, 0xfffffffe)));
-    try test__paritysi2(@bitCast(@as(u32, 0xffffffff)));
+    try test__paritysi2(@bitcast(@as(u32, 0xfffffffd)));
+    try test__paritysi2(@bitcast(@as(u32, 0xfffffffe)));
+    try test__paritysi2(@bitcast(@as(u32, 0xffffffff)));
 
     const RndGen = std.Random.DefaultPrng;
     var rnd = RndGen.init(42);

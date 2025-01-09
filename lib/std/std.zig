@@ -107,7 +107,7 @@ pub const start = @import("start.zig");
 const root = @import("root");
 
 /// Stdlib-wide options that can be overridden by the root file.
-pub const options: Options = if (@hasDecl(root, "std_options")) root.std_options else .{};
+pub const options: Options = if (@hasdecl(root, "std_options")) root.std_options else .{};
 
 pub const Options = struct {
     enable_segfault_handler: bool = debug.default_enable_segfault_handler,

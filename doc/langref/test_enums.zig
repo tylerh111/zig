@@ -20,9 +20,9 @@ const Value = enum(u2) {
 // Now you can cast between u2 and Value.
 // The ordinal value starts from 0, counting up by 1 from the previous member.
 test "enum ordinal value" {
-    try expect(@intFromEnum(Value.zero) == 0);
-    try expect(@intFromEnum(Value.one) == 1);
-    try expect(@intFromEnum(Value.two) == 2);
+    try expect(@intfromenum(Value.zero) == 0);
+    try expect(@intfromenum(Value.one) == 1);
+    try expect(@intfromenum(Value.two) == 2);
 }
 
 // You can override the ordinal value for an enum.
@@ -32,9 +32,9 @@ const Value2 = enum(u32) {
     million = 1000000,
 };
 test "set enum ordinal value" {
-    try expect(@intFromEnum(Value2.hundred) == 100);
-    try expect(@intFromEnum(Value2.thousand) == 1000);
-    try expect(@intFromEnum(Value2.million) == 1000000);
+    try expect(@intfromenum(Value2.hundred) == 100);
+    try expect(@intfromenum(Value2.thousand) == 1000);
+    try expect(@intfromenum(Value2.million) == 1000000);
 }
 
 // You can also override only some values.
@@ -46,11 +46,11 @@ const Value3 = enum(u4) {
     e,
 };
 test "enum implicit ordinal values and overridden values" {
-    try expect(@intFromEnum(Value3.a) == 0);
-    try expect(@intFromEnum(Value3.b) == 8);
-    try expect(@intFromEnum(Value3.c) == 9);
-    try expect(@intFromEnum(Value3.d) == 4);
-    try expect(@intFromEnum(Value3.e) == 5);
+    try expect(@intfromenum(Value3.a) == 0);
+    try expect(@intfromenum(Value3.b) == 8);
+    try expect(@intfromenum(Value3.c) == 9);
+    try expect(@intfromenum(Value3.d) == 4);
+    try expect(@intfromenum(Value3.e) == 5);
 }
 
 // Enums can have methods, the same as structs and unions.
@@ -87,7 +87,7 @@ test "enum switch" {
     try expect(mem.eql(u8, what_is_it, "this is a number"));
 }
 
-// @typeInfo can be used to access the integer tag type of an enum.
+// @typeinfo can be used to access the integer tag type of an enum.
 const Small = enum {
     one,
     two,
@@ -95,18 +95,18 @@ const Small = enum {
     four,
 };
 test "std.meta.Tag" {
-    try expect(@typeInfo(Small).Enum.tag_type == u2);
+    try expect(@typeinfo(Small).Enum.tag_type == u2);
 }
 
-// @typeInfo tells us the field count and the fields names:
-test "@typeInfo" {
-    try expect(@typeInfo(Small).Enum.fields.len == 4);
-    try expect(mem.eql(u8, @typeInfo(Small).Enum.fields[1].name, "two"));
+// @typeinfo tells us the field count and the fields names:
+test "@typeinfo" {
+    try expect(@typeinfo(Small).Enum.fields.len == 4);
+    try expect(mem.eql(u8, @typeinfo(Small).Enum.fields[1].name, "two"));
 }
 
-// @tagName gives a [:0]const u8 representation of an enum value:
-test "@tagName" {
-    try expect(mem.eql(u8, @tagName(Small.three), "three"));
+// @tagname gives a [:0]const u8 representation of an enum value:
+test "@tagname" {
+    try expect(mem.eql(u8, @tagname(Small.three), "three"));
 }
 
 // test

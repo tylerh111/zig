@@ -1,4 +1,4 @@
-//! We do this instead of @cImport because the self-hosted compiler is easier
+//! We do this instead of @cimport because the self-hosted compiler is easier
 //! to bootstrap if it does not depend on translate-c.
 
 /// Do not compare directly to .True, use toBool() instead.
@@ -8,7 +8,7 @@ pub const Bool = enum(c_int) {
     _,
 
     pub fn fromBool(b: bool) Bool {
-        return @as(Bool, @enumFromInt(@intFromBool(b)));
+        return @as(Bool, @enumfromint(@intfrombool(b)));
     }
 
     pub fn toBool(b: Bool) bool {

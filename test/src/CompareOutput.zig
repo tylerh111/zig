@@ -111,7 +111,7 @@ pub fn addCase(self: *CompareOutput, case: TestCase) void {
         Special.None => {
             for (self.optimize_modes) |optimize| {
                 const annotated_case_name = fmt.allocPrint(self.b.allocator, "run compare-output {s} ({s})", .{
-                    case.name, @tagName(optimize),
+                    case.name, @tagname(optimize),
                 }) catch @panic("OOM");
                 for (self.test_filters) |test_filter| {
                     if (mem.indexOf(u8, annotated_case_name, test_filter)) |_| break;

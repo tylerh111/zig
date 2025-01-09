@@ -313,10 +313,10 @@ pub const pthread_attr_t = extern struct {
 
 pub const pthread_key_t = c_uint;
 pub const sem_t = extern struct {
-    __size: [__SIZEOF_SEM_T]u8 align(@alignOf(usize)),
+    __size: [__SIZEOF_SEM_T]u8 align(@alignof(usize)),
 };
 
-const __SIZEOF_SEM_T = 4 * @sizeOf(usize);
+const __SIZEOF_SEM_T = 4 * @sizeof(usize);
 
 pub extern "c" fn pthread_setname_np(thread: std.c.pthread_t, name: [*:0]const u8) E;
 pub extern "c" fn pthread_getname_np(thread: std.c.pthread_t, name: [*:0]u8, len: usize) E;

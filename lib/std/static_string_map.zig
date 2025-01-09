@@ -77,7 +77,7 @@ pub fn StaticStringMapWithEql(
                 // Since the KVs are sorted, a linearly-growing bound will never
                 // be sufficient for extreme cases. So we grow proportional to
                 // N*log2(N).
-                @setEvalBranchQuota(10 * kvs_list.len * std.math.log2_int_ceil(usize, kvs_list.len));
+                @setevalbranchquota(10 * kvs_list.len * std.math.log2_int_ceil(usize, kvs_list.len));
 
                 var sorted_keys: [kvs_list.len][]const u8 = undefined;
                 var sorted_vals: [kvs_list.len]V = undefined;
@@ -88,14 +88,14 @@ pub fn StaticStringMapWithEql(
                 self.kvs = &.{
                     .keys = &final_keys,
                     .values = &final_vals,
-                    .len = @intCast(kvs_list.len),
+                    .len = @intcast(kvs_list.len),
                 };
 
                 var len_indexes: [self.max_len + 1]u32 = undefined;
                 self.initLenIndexes(&len_indexes);
                 const final_len_indexes = len_indexes;
                 self.len_indexes = &final_len_indexes;
-                self.len_indexes_len = @intCast(len_indexes.len);
+                self.len_indexes_len = @intcast(len_indexes.len);
                 return self;
             }
         }
@@ -126,7 +126,7 @@ pub fn StaticStringMapWithEql(
             const len_indexes = try allocator.alloc(u32, self.max_len + 1);
             self.initLenIndexes(len_indexes);
             self.len_indexes = len_indexes.ptr;
-            self.len_indexes_len = @intCast(len_indexes.len);
+            self.len_indexes_len = @intcast(len_indexes.len);
             return self;
         }
 
@@ -161,8 +161,8 @@ pub fn StaticStringMapWithEql(
             for (kvs_list, 0..) |kv, i| {
                 sorted_keys[i] = kv.@"0";
                 sorted_vals[i] = if (V == void) {} else kv.@"1";
-                self.min_len = @intCast(@min(self.min_len, kv.@"0".len));
-                self.max_len = @intCast(@max(self.max_len, kv.@"0".len));
+                self.min_len = @intcast(@min(self.min_len, kv.@"0".len));
+                self.max_len = @intcast(@max(self.max_len, kv.@"0".len));
             }
             mem.sortUnstableContext(0, sorted_keys.len, SortContext{
                 .keys = sorted_keys,

@@ -290,7 +290,7 @@ pub extern "kernel32" fn PostQueuedCompletionStatus(CompletionPort: HANDLE, dwNu
 
 pub extern "kernel32" fn ReadDirectoryChangesW(
     hDirectory: HANDLE,
-    lpBuffer: [*]align(@alignOf(FILE_NOTIFY_INFORMATION)) u8,
+    lpBuffer: [*]align(@alignof(FILE_NOTIFY_INFORMATION)) u8,
     nBufferLength: DWORD,
     bWatchSubtree: BOOL,
     dwNotifyFilter: DWORD,

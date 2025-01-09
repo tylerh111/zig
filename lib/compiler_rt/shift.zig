@@ -36,13 +36,13 @@ inline fn ashlXi3(comptime T: type, a: T, b: i32) T {
 
     if (b >= word_t.bits) {
         output.s.low = 0;
-        output.s.high = input.s.low << @intCast(b - word_t.bits);
+        output.s.high = input.s.low << @intcast(b - word_t.bits);
     } else if (b == 0) {
         return a;
     } else {
-        output.s.low = input.s.low << @intCast(b);
-        output.s.high = input.s.high << @intCast(b);
-        output.s.high |= input.s.low >> @intCast(word_t.bits - b);
+        output.s.low = input.s.low << @intcast(b);
+        output.s.high = input.s.high << @intcast(b);
+        output.s.high |= input.s.low >> @intcast(word_t.bits - b);
     }
 
     return output.all;
@@ -58,14 +58,14 @@ inline fn ashrXi3(comptime T: type, a: T, b: i32) T {
 
     if (b >= word_t.bits) {
         output.s.high = input.s.high >> (word_t.bits - 1);
-        output.s.low = input.s.high >> @intCast(b - word_t.bits);
+        output.s.low = input.s.high >> @intcast(b - word_t.bits);
     } else if (b == 0) {
         return a;
     } else {
-        output.s.high = input.s.high >> @intCast(b);
-        output.s.low = input.s.high << @intCast(word_t.bits - b);
+        output.s.high = input.s.high >> @intcast(b);
+        output.s.low = input.s.high << @intcast(word_t.bits - b);
         // Avoid sign-extension here
-        output.s.low |= @bitCast(@as(word_t.HalfTU, @bitCast(input.s.low)) >> @intCast(b));
+        output.s.low |= @bitcast(@as(word_t.HalfTU, @bitcast(input.s.low)) >> @intcast(b));
     }
 
     return output.all;
@@ -81,13 +81,13 @@ inline fn lshrXi3(comptime T: type, a: T, b: i32) T {
 
     if (b >= word_t.bits) {
         output.s.high = 0;
-        output.s.low = input.s.high >> @intCast(b - word_t.bits);
+        output.s.low = input.s.high >> @intcast(b - word_t.bits);
     } else if (b == 0) {
         return a;
     } else {
-        output.s.high = input.s.high >> @intCast(b);
-        output.s.low = input.s.high << @intCast(word_t.bits - b);
-        output.s.low |= input.s.low >> @intCast(b);
+        output.s.high = input.s.high >> @intcast(b);
+        output.s.low = input.s.high << @intcast(word_t.bits - b);
+        output.s.low |= input.s.low >> @intcast(b);
     }
 
     return output.all;

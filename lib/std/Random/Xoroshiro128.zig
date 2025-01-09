@@ -44,7 +44,7 @@ pub fn jump(self: *Xoroshiro128) void {
     inline for (table) |entry| {
         var b: usize = 0;
         while (b < 64) : (b += 1) {
-            if ((entry & (@as(u64, 1) << @as(u6, @intCast(b)))) != 0) {
+            if ((entry & (@as(u64, 1) << @as(u6, @intcast(b)))) != 0) {
                 s0 ^= self.s[0];
                 s1 ^= self.s[1];
             }

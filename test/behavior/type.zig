@@ -6,7 +6,7 @@ const assert = std.debug.assert;
 
 fn testTypes(comptime types: []const type) !void {
     inline for (types) |testType| {
-        try testing.expect(testType == @Type(@typeInfo(testType)));
+        try testing.expect(testType == @Type(@typeinfo(testType)));
     }
 }
 
@@ -214,7 +214,7 @@ test "Type.Opaque" {
     try testing.expectEqualSlices(
         Type.Declaration,
         &.{},
-        @typeInfo(Opaque).Opaque.decls,
+        @typeinfo(Opaque).Opaque.decls,
     );
 }
 
@@ -251,7 +251,7 @@ test "Type.ErrorSet" {
 
     // error sets don't compare equal so just check if they compile
     inline for (.{ error{}, error{A}, error{ A, B, C } }) |T| {
-        const info = @typeInfo(T);
+        const info = @typeinfo(T);
         const T2 = @Type(info);
         try testing.expect(T == T2);
     }
@@ -263,8 +263,8 @@ test "Type.Struct" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    const A = @Type(@typeInfo(struct { x: u8, y: u32 }));
-    const infoA = @typeInfo(A).Struct;
+    const A = @Type(@typeinfo(struct { x: u8, y: u32 }));
+    const infoA = @typeinfo(A).Struct;
     try testing.expectEqual(Type.ContainerLayout.auto, infoA.layout);
     try testing.expectEqualSlices(u8, "x", infoA.fields[0].name);
     try testing.expectEqual(u8, infoA.fields[0].type);
@@ -281,66 +281,66 @@ test "Type.Struct" {
     a.y += 1;
     try testing.expectEqual(@as(u32, 2), a.y);
 
-    const B = @Type(@typeInfo(extern struct { x: u8, y: u32 = 5 }));
-    const infoB = @typeInfo(B).Struct;
+    const B = @Type(@typeinfo(extern struct { x: u8, y: u32 = 5 }));
+    const infoB = @typeinfo(B).Struct;
     try testing.expectEqual(Type.ContainerLayout.@"extern", infoB.layout);
     try testing.expectEqualSlices(u8, "x", infoB.fields[0].name);
     try testing.expectEqual(u8, infoB.fields[0].type);
     try testing.expectEqual(@as(?*const anyopaque, null), infoB.fields[0].default_value);
     try testing.expectEqualSlices(u8, "y", infoB.fields[1].name);
     try testing.expectEqual(u32, infoB.fields[1].type);
-    try testing.expectEqual(@as(u32, 5), @as(*align(1) const u32, @ptrCast(infoB.fields[1].default_value.?)).*);
+    try testing.expectEqual(@as(u32, 5), @as(*align(1) const u32, @ptrcast(infoB.fields[1].default_value.?)).*);
     try testing.expectEqual(@as(usize, 0), infoB.decls.len);
     try testing.expectEqual(@as(bool, false), infoB.is_tuple);
 
-    const C = @Type(@typeInfo(packed struct { x: u8 = 3, y: u32 = 5 }));
-    const infoC = @typeInfo(C).Struct;
+    const C = @Type(@typeinfo(packed struct { x: u8 = 3, y: u32 = 5 }));
+    const infoC = @typeinfo(C).Struct;
     try testing.expectEqual(Type.ContainerLayout.@"packed", infoC.layout);
     try testing.expectEqualSlices(u8, "x", infoC.fields[0].name);
     try testing.expectEqual(u8, infoC.fields[0].type);
-    try testing.expectEqual(@as(u8, 3), @as(*const u8, @ptrCast(infoC.fields[0].default_value.?)).*);
+    try testing.expectEqual(@as(u8, 3), @as(*const u8, @ptrcast(infoC.fields[0].default_value.?)).*);
     try testing.expectEqualSlices(u8, "y", infoC.fields[1].name);
     try testing.expectEqual(u32, infoC.fields[1].type);
-    try testing.expectEqual(@as(u32, 5), @as(*align(1) const u32, @ptrCast(infoC.fields[1].default_value.?)).*);
+    try testing.expectEqual(@as(u32, 5), @as(*align(1) const u32, @ptrcast(infoC.fields[1].default_value.?)).*);
     try testing.expectEqual(@as(usize, 0), infoC.decls.len);
     try testing.expectEqual(@as(bool, false), infoC.is_tuple);
 
     // anon structs
-    const D = @Type(@typeInfo(@TypeOf(.{ .x = 3, .y = 5 })));
-    const infoD = @typeInfo(D).Struct;
+    const D = @Type(@typeinfo(@TypeOf(.{ .x = 3, .y = 5 })));
+    const infoD = @typeinfo(D).Struct;
     try testing.expectEqual(Type.ContainerLayout.auto, infoD.layout);
     try testing.expectEqualSlices(u8, "x", infoD.fields[0].name);
     try testing.expectEqual(comptime_int, infoD.fields[0].type);
-    try testing.expectEqual(@as(comptime_int, 3), @as(*const comptime_int, @ptrCast(infoD.fields[0].default_value.?)).*);
+    try testing.expectEqual(@as(comptime_int, 3), @as(*const comptime_int, @ptrcast(infoD.fields[0].default_value.?)).*);
     try testing.expectEqualSlices(u8, "y", infoD.fields[1].name);
     try testing.expectEqual(comptime_int, infoD.fields[1].type);
-    try testing.expectEqual(@as(comptime_int, 5), @as(*const comptime_int, @ptrCast(infoD.fields[1].default_value.?)).*);
+    try testing.expectEqual(@as(comptime_int, 5), @as(*const comptime_int, @ptrcast(infoD.fields[1].default_value.?)).*);
     try testing.expectEqual(@as(usize, 0), infoD.decls.len);
     try testing.expectEqual(@as(bool, false), infoD.is_tuple);
 
     // tuples
-    const E = @Type(@typeInfo(@TypeOf(.{ 1, 2 })));
-    const infoE = @typeInfo(E).Struct;
+    const E = @Type(@typeinfo(@TypeOf(.{ 1, 2 })));
+    const infoE = @typeinfo(E).Struct;
     try testing.expectEqual(Type.ContainerLayout.auto, infoE.layout);
     try testing.expectEqualSlices(u8, "0", infoE.fields[0].name);
     try testing.expectEqual(comptime_int, infoE.fields[0].type);
-    try testing.expectEqual(@as(comptime_int, 1), @as(*const comptime_int, @ptrCast(infoE.fields[0].default_value.?)).*);
+    try testing.expectEqual(@as(comptime_int, 1), @as(*const comptime_int, @ptrcast(infoE.fields[0].default_value.?)).*);
     try testing.expectEqualSlices(u8, "1", infoE.fields[1].name);
     try testing.expectEqual(comptime_int, infoE.fields[1].type);
-    try testing.expectEqual(@as(comptime_int, 2), @as(*const comptime_int, @ptrCast(infoE.fields[1].default_value.?)).*);
+    try testing.expectEqual(@as(comptime_int, 2), @as(*const comptime_int, @ptrcast(infoE.fields[1].default_value.?)).*);
     try testing.expectEqual(@as(usize, 0), infoE.decls.len);
     try testing.expectEqual(@as(bool, true), infoE.is_tuple);
 
     // empty struct
-    const F = @Type(@typeInfo(struct {}));
-    const infoF = @typeInfo(F).Struct;
+    const F = @Type(@typeinfo(struct {}));
+    const infoF = @typeinfo(F).Struct;
     try testing.expectEqual(Type.ContainerLayout.auto, infoF.layout);
     try testing.expect(infoF.fields.len == 0);
     try testing.expectEqual(@as(bool, false), infoF.is_tuple);
 
     // empty tuple
-    const G = @Type(@typeInfo(@TypeOf(.{})));
-    const infoG = @typeInfo(G).Struct;
+    const G = @Type(@typeinfo(@TypeOf(.{})));
+    const infoG = @typeinfo(G).Struct;
     try testing.expectEqual(Type.ContainerLayout.auto, infoG.layout);
     try testing.expect(infoG.fields.len == 0);
     try testing.expectEqual(@as(bool, true), infoG.is_tuple);
@@ -361,9 +361,9 @@ test "Type.Enum" {
             .is_exhaustive = true,
         },
     });
-    try testing.expectEqual(true, @typeInfo(Foo).Enum.is_exhaustive);
-    try testing.expectEqual(@as(u8, 1), @intFromEnum(Foo.a));
-    try testing.expectEqual(@as(u8, 5), @intFromEnum(Foo.b));
+    try testing.expectEqual(true, @typeinfo(Foo).Enum.is_exhaustive);
+    try testing.expectEqual(@as(u8, 1), @intfromenum(Foo.a));
+    try testing.expectEqual(@as(u8, 5), @intfromenum(Foo.b));
     const Bar = @Type(.{
         .Enum = .{
             .tag_type = u32,
@@ -375,10 +375,10 @@ test "Type.Enum" {
             .is_exhaustive = false,
         },
     });
-    try testing.expectEqual(false, @typeInfo(Bar).Enum.is_exhaustive);
-    try testing.expectEqual(@as(u32, 1), @intFromEnum(Bar.a));
-    try testing.expectEqual(@as(u32, 5), @intFromEnum(Bar.b));
-    try testing.expectEqual(@as(u32, 6), @intFromEnum(@as(Bar, @enumFromInt(6))));
+    try testing.expectEqual(false, @typeinfo(Bar).Enum.is_exhaustive);
+    try testing.expectEqual(@as(u32, 1), @intfromenum(Bar.a));
+    try testing.expectEqual(@as(u32, 5), @intfromenum(Bar.b));
+    try testing.expectEqual(@as(u32, 6), @intfromenum(@as(Bar, @enumfromint(6))));
 }
 
 test "Type.Union" {
@@ -392,8 +392,8 @@ test "Type.Union" {
             .layout = .@"extern",
             .tag_type = null,
             .fields = &.{
-                .{ .name = "int", .type = i32, .alignment = @alignOf(f32) },
-                .{ .name = "float", .type = f32, .alignment = @alignOf(f32) },
+                .{ .name = "int", .type = i32, .alignment = @alignof(f32) },
+                .{ .name = "float", .type = f32, .alignment = @alignof(f32) },
             },
             .decls = &.{},
         },
@@ -408,8 +408,8 @@ test "Type.Union" {
             .layout = .@"packed",
             .tag_type = null,
             .fields = &.{
-                .{ .name = "signed", .type = i32, .alignment = @alignOf(i32) },
-                .{ .name = "unsigned", .type = u32, .alignment = @alignOf(u32) },
+                .{ .name = "signed", .type = i32, .alignment = @alignof(i32) },
+                .{ .name = "unsigned", .type = u32, .alignment = @alignof(u32) },
             },
             .decls = &.{},
         },
@@ -435,8 +435,8 @@ test "Type.Union" {
             .layout = .auto,
             .tag_type = Tag,
             .fields = &.{
-                .{ .name = "signed", .type = i32, .alignment = @alignOf(i32) },
-                .{ .name = "unsigned", .type = u32, .alignment = @alignOf(u32) },
+                .{ .name = "signed", .type = i32, .alignment = @alignof(i32) },
+                .{ .name = "unsigned", .type = u32, .alignment = @alignof(u32) },
             },
             .decls = &.{},
         },
@@ -463,12 +463,12 @@ test "Type.Union from Type.Enum" {
             .layout = .auto,
             .tag_type = Tag,
             .fields = &.{
-                .{ .name = "working_as_expected", .type = u32, .alignment = @alignOf(u32) },
+                .{ .name = "working_as_expected", .type = u32, .alignment = @alignof(u32) },
             },
             .decls = &.{},
         },
     });
-    _ = @typeInfo(T).Union;
+    _ = @typeinfo(T).Union;
 }
 
 test "Type.Union from regular enum" {
@@ -478,12 +478,12 @@ test "Type.Union from regular enum" {
             .layout = .auto,
             .tag_type = E,
             .fields = &.{
-                .{ .name = "working_as_expected", .type = u32, .alignment = @alignOf(u32) },
+                .{ .name = "working_as_expected", .type = u32, .alignment = @alignof(u32) },
             },
             .decls = &.{},
         },
     });
-    _ = @typeInfo(T).Union;
+    _ = @typeinfo(T).Union;
 }
 
 test "Type.Union from empty regular enum" {
@@ -496,7 +496,7 @@ test "Type.Union from empty regular enum" {
             .decls = &.{},
         },
     });
-    try testing.expectEqual(@sizeOf(U), 0);
+    try testing.expectEqual(@sizeof(U), 0);
 }
 
 test "Type.Union from empty Type.Enum" {
@@ -516,7 +516,7 @@ test "Type.Union from empty Type.Enum" {
             .decls = &.{},
         },
     });
-    try testing.expectEqual(@sizeOf(U), 0);
+    try testing.expectEqual(@sizeof(U), 0);
 }
 
 test "Type.Fn" {
@@ -544,7 +544,7 @@ test "Type.Fn" {
     }
 
     {
-        const fn_info = @typeInfo(T);
+        const fn_info = @typeinfo(T);
         const fn_type = @Type(fn_info);
         try std.testing.expectEqual(T, fn_type);
     }
@@ -572,7 +572,7 @@ test "reified struct field name from optional payload" {
     }
 }
 
-test "reified union uses @alignOf" {
+test "reified union uses @alignof" {
     const S = struct {
         fn CreateUnion(comptime T: type) type {
             return @Type(.{
@@ -583,7 +583,7 @@ test "reified union uses @alignOf" {
                         .{
                             .name = "field",
                             .type = T,
-                            .alignment = @alignOf(T),
+                            .alignment = @alignof(T),
                         },
                     },
                     .decls = &.{},
@@ -594,7 +594,7 @@ test "reified union uses @alignOf" {
     _ = S.CreateUnion(struct {});
 }
 
-test "reified struct uses @alignOf" {
+test "reified struct uses @alignof" {
     const S = struct {
         fn NamespacedGlobals(comptime modules: anytype) type {
             return @Type(.{
@@ -607,7 +607,7 @@ test "reified struct uses @alignOf" {
                             .type = modules.mach.globals,
                             .default_value = null,
                             .is_comptime = false,
-                            .alignment = @alignOf(modules.mach.globals),
+                            .alignment = @alignof(modules.mach.globals),
                         },
                     },
                     .decls = &.{},
@@ -652,7 +652,7 @@ test "reified function type params initialized with field pointer" {
             },
         });
     };
-    try testing.expect(@typeInfo(S.Bar) == .Fn);
+    try testing.expect(@typeinfo(S.Bar) == .Fn);
 }
 
 test "empty struct assigned to reified struct field" {
@@ -667,7 +667,7 @@ test "empty struct assigned to reified struct field" {
                         .type = @TypeOf(modules.components),
                         .default_value = null,
                         .is_comptime = false,
-                        .alignment = @alignOf(@TypeOf(modules.components)),
+                        .alignment = @alignof(@TypeOf(modules.components)),
                     }},
                     .decls = &.{},
                 },
@@ -691,7 +691,7 @@ test "@Type should resolve its children types" {
     const sparse = enum(u2) { a, b, c };
     const dense = enum(u2) { a, b, c, d };
 
-    comptime var sparse_info = @typeInfo(anyerror!sparse);
+    comptime var sparse_info = @typeinfo(anyerror!sparse);
     sparse_info.ErrorUnion.payload = dense;
     const B = @Type(sparse_info);
     try testing.expectEqual(anyerror!dense, B);
@@ -729,7 +729,7 @@ test "struct field names sliced at comptime from larger string" {
             },
         });
 
-        const gen_fields = @typeInfo(T).Struct.fields;
+        const gen_fields = @typeinfo(T).Struct.fields;
         try testing.expectEqual(3, gen_fields.len);
         try testing.expectEqualStrings("f1", gen_fields[0].name);
         try testing.expectEqualStrings("f2", gen_fields[1].name);
@@ -742,7 +742,7 @@ test "matching captures causes opaque equivalence" {
         fn UnsignedId(comptime I: type) type {
             const U = @Type(.{ .Int = .{
                 .signedness = .unsigned,
-                .bits = @typeInfo(I).Int.bits,
+                .bits = @typeinfo(I).Int.bits,
             } });
             return opaque {
                 fn id(x: U) U {

@@ -3,8 +3,8 @@ pub fn writeSetSub6(comptime op: enum { set, sub }, code: *[1]u8, addend: anytyp
     const actual: i8 = @truncate(addend);
     var value: u8 = mem.readInt(u8, code, .little);
     switch (op) {
-        .set => value = (value & mask) | @as(u8, @bitCast(actual & ~mask)),
-        .sub => value = (value & mask) | (@as(u8, @bitCast(@as(i8, @bitCast(value)) -| actual)) & ~mask),
+        .set => value = (value & mask) | @as(u8, @bitcast(actual & ~mask)),
+        .sub => value = (value & mask) | (@as(u8, @bitcast(@as(i8, @bitcast(value)) -| actual)) & ~mask),
     }
     mem.writeInt(u8, code, value, .little);
 }
@@ -12,7 +12,7 @@ pub fn writeSetSub6(comptime op: enum { set, sub }, code: *[1]u8, addend: anytyp
 pub fn writeAddend(
     comptime Int: type,
     comptime op: enum { add, sub },
-    code: *[@typeInfo(Int).Int.bits / 8]u8,
+    code: *[@typeinfo(Int).Int.bits / 8]u8,
     value: anytype,
 ) void {
     var V: Int = mem.readInt(Int, code, .little);
@@ -31,7 +31,7 @@ pub fn writeInstU(code: *[4]u8, value: u32) void {
             Encoding.Data.U,
         ), code),
     };
-    const compensated: u32 = @bitCast(@as(i32, @bitCast(value)) + 0x800);
+    const compensated: u32 = @bitcast(@as(i32, @bitcast(value)) + 0x800);
     data.U.imm12_31 = bitSlice(compensated, 31, 12);
     mem.writeInt(u32, code, data.toU32(), .little);
 }

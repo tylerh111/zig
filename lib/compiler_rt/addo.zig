@@ -16,7 +16,7 @@ comptime {
 // - addoXi4_generic as default
 
 inline fn addoXi4_generic(comptime ST: type, a: ST, b: ST, overflow: *c_int) ST {
-    @setRuntimeSafety(builtin.is_test);
+    @setruntimesafety(builtin.is_test);
     overflow.* = 0;
     const sum: ST = a +% b;
     // Hackers Delight: section Overflow Detection, subsection Signed Add/Subtract

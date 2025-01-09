@@ -20,7 +20,7 @@ SPEnumSubtypes
 SPEnumTypes
 SPGetProvInfo
 SPGetProvParam
-SPGetSubtypeInfo
+SPGetSubtypeinfo
 SPGetTypeInfo
 SPProviderInitialize
 SPReadItem

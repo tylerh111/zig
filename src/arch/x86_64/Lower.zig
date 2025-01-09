@@ -190,7 +190,7 @@ pub fn lowerMir(lower: *Lower, index: Mir.Inst.Index) Error!struct {
             .pseudo_probe_align_ri_s => {
                 try lower.emit(.none, .@"test", &.{
                     .{ .reg = inst.data.ri.r1 },
-                    .{ .imm = Immediate.s(@bitCast(inst.data.ri.i)) },
+                    .{ .imm = Immediate.s(@bitcast(inst.data.ri.i)) },
                 });
                 try lower.emit(.none, .jz, &.{
                     .{ .imm = lower.reloc(.{ .inst = index + 1 }) },
@@ -215,7 +215,7 @@ pub fn lowerMir(lower: *Lower, index: Mir.Inst.Index) Error!struct {
             },
             .pseudo_probe_adjust_unrolled_ri_s => {
                 var offset = page_size;
-                while (offset < @as(i32, @bitCast(inst.data.ri.i))) : (offset += page_size) {
+                while (offset < @as(i32, @bitcast(inst.data.ri.i))) : (offset += page_size) {
                     try lower.emit(.none, .@"test", &.{
                         .{ .mem = Memory.sib(.dword, .{
                             .base = .{ .reg = inst.data.ri.r1 },
@@ -226,14 +226,14 @@ pub fn lowerMir(lower: *Lower, index: Mir.Inst.Index) Error!struct {
                 }
                 try lower.emit(.none, .sub, &.{
                     .{ .reg = inst.data.ri.r1 },
-                    .{ .imm = Immediate.s(@bitCast(inst.data.ri.i)) },
+                    .{ .imm = Immediate.s(@bitcast(inst.data.ri.i)) },
                 });
                 assert(lower.result_insts_len <= pseudo_probe_adjust_unrolled_max_insts);
             },
             .pseudo_probe_adjust_setup_rri_s => {
                 try lower.emit(.none, .mov, &.{
                     .{ .reg = inst.data.rri.r2.to32() },
-                    .{ .imm = Immediate.s(@bitCast(inst.data.rri.i)) },
+                    .{ .imm = Immediate.s(@bitcast(inst.data.rri.i)) },
                 });
                 try lower.emit(.none, .sub, &.{
                     .{ .reg = inst.data.rri.r1 },
@@ -292,7 +292,7 @@ fn imm(lower: Lower, ops: Mir.Inst.Ops, i: u32) Immediate {
         .i_s,
         .mi_s,
         .rmi_s,
-        => Immediate.s(@bitCast(i)),
+        => Immediate.s(@bitcast(i)),
 
         .rrri,
         .rri_u,
@@ -484,24 +484,24 @@ fn generic(lower: *Lower, inst: Mir.Inst) Error!void {
         .mi_u, .mi_s => inst.data.x.fixes,
         .m => inst.data.x.fixes,
         .extern_fn_reloc, .got_reloc, .direct_reloc, .import_reloc, .tlv_reloc => ._,
-        else => return lower.fail("TODO lower .{s}", .{@tagName(inst.ops)}),
+        else => return lower.fail("TODO lower .{s}", .{@tagname(inst.ops)}),
     };
     try lower.emit(switch (fixes) {
-        inline else => |tag| comptime if (std.mem.indexOfScalar(u8, @tagName(tag), ' ')) |space|
-            @field(Prefix, @tagName(tag)[0..space])
+        inline else => |tag| comptime if (std.mem.indexOfScalar(u8, @tagname(tag), ' ')) |space|
+            @field(Prefix, @tagname(tag)[0..space])
         else
             .none,
     }, mnemonic: {
-        @setEvalBranchQuota(2_000);
+        @setevalbranchquota(2_000);
 
         comptime var max_len = 0;
-        inline for (@typeInfo(Mnemonic).Enum.fields) |field| max_len = @max(field.name.len, max_len);
+        inline for (@typeinfo(Mnemonic).Enum.fields) |field| max_len = @max(field.name.len, max_len);
         var buf: [max_len]u8 = undefined;
 
-        const fixes_name = @tagName(fixes);
+        const fixes_name = @tagname(fixes);
         const pattern = fixes_name[if (std.mem.indexOfScalar(u8, fixes_name, ' ')) |i| i + 1 else 0..];
         const wildcard_i = std.mem.indexOfScalar(u8, pattern, '_').?;
-        const parts = .{ pattern[0..wildcard_i], @tagName(inst.tag), pattern[wildcard_i + 1 ..] };
+        const parts = .{ pattern[0..wildcard_i], @tagname(inst.tag), pattern[wildcard_i + 1 ..] };
         const err_msg = "unsupported mnemonic: ";
         const mnemonic = std.fmt.bufPrint(&buf, "{s}{s}{s}", parts) catch
             return lower.fail(err_msg ++ "'{s}{s}{s}'", parts);
@@ -632,7 +632,7 @@ fn generic(lower: *Lower, inst: Mir.Inst) Error!void {
                 .{ .mem = Memory.rip(Memory.PtrSize.fromBitSize(reg.bitSize()), 0) },
             };
         },
-        else => return lower.fail("TODO lower {s} {s}", .{ @tagName(inst.tag), @tagName(inst.ops) }),
+        else => return lower.fail("TODO lower {s} {s}", .{ @tagname(inst.tag), @tagname(inst.ops) }),
     });
 }
 

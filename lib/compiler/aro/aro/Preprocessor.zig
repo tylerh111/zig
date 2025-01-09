@@ -420,7 +420,7 @@ fn preprocessExtra(pp: *Preprocessor, source: Source) MacroError!TokenWithExpans
                         }, &.{});
                     },
                     .keyword_if => {
-                        const sum, const overflowed = @addWithOverflow(if_level, 1);
+                        const sum, const overflowed = @addwithoverflow(if_level, 1);
                         if (overflowed != 0)
                             return pp.fatal(directive, "too many #if nestings", .{});
                         if_level = sum;
@@ -439,7 +439,7 @@ fn preprocessExtra(pp: *Preprocessor, source: Source) MacroError!TokenWithExpans
                         }
                     },
                     .keyword_ifdef => {
-                        const sum, const overflowed = @addWithOverflow(if_level, 1);
+                        const sum, const overflowed = @addwithoverflow(if_level, 1);
                         if (overflowed != 0)
                             return pp.fatal(directive, "too many #if nestings", .{});
                         if_level = sum;
@@ -460,7 +460,7 @@ fn preprocessExtra(pp: *Preprocessor, source: Source) MacroError!TokenWithExpans
                         }
                     },
                     .keyword_ifndef => {
-                        const sum, const overflowed = @addWithOverflow(if_level, 1);
+                        const sum, const overflowed = @addwithoverflow(if_level, 1);
                         if (overflowed != 0)
                             return pp.fatal(directive, "too many #if nestings", .{});
                         if_level = sum;
@@ -973,7 +973,7 @@ fn expr(pp: *Preprocessor, tokenizer: *Tokenizer) MacroError!bool {
         .comp = pp.comp,
         .gpa = pp.gpa,
         .tok_ids = pp.tokens.items(.id),
-        .tok_i = @intCast(token_state.tokens_len),
+        .tok_i = @intcast(token_state.tokens_len),
         .arena = pp.arena.allocator(),
         .in_macro = true,
         .strings = std.ArrayList(u8).init(pp.comp.gpa),
@@ -1256,7 +1256,7 @@ fn pragmaOperator(pp: *Preprocessor, arg_tok: TokenWithExpansionLocs, operator_l
     var tmp_tokenizer = Tokenizer{
         .buf = pp.comp.generated_buf.items,
         .langopts = pp.comp.langopts,
-        .index = @intCast(start),
+        .index = @intcast(start),
         .source = .generated,
         .line = pp.generated_line,
     };
@@ -1402,7 +1402,7 @@ fn reconstructIncludeString(pp: *Preprocessor, param_toks: []const TokenWithExpa
                 const start = params[0].loc;
                 try pp.comp.addDiagnostic(.{
                     .tag = .header_str_closing,
-                    .loc = .{ .id = start.id, .byte_offset = start.byte_offset + @as(u32, @intCast(include_str.len)) + 1, .line = start.line },
+                    .loc = .{ .id = start.id, .byte_offset = start.byte_offset + @as(u32, @intcast(include_str.len)) + 1, .line = start.line },
                 }, params[0].expansionSlice());
                 try pp.comp.addDiagnostic(.{
                     .tag = .header_str_match,
@@ -1648,7 +1648,7 @@ fn expandFuncMacro(
                 } else try pp.handleBuiltinMacro(raw.id, arg, loc);
                 const start = pp.comp.generated_buf.items.len;
                 const w = pp.comp.generated_buf.writer(pp.gpa);
-                try w.print("{}\n", .{@intFromBool(result)});
+                try w.print("{}\n", .{@intfrombool(result)});
                 try buf.append(try pp.makeGeneratedToken(start, .pp_num, tokFromRaw(raw)));
             },
             .macro_param_has_c_attribute => {
@@ -2218,7 +2218,7 @@ fn expandMacroExhaustive(
                     var hs = try pp.hideset.intersection(macro_hidelist, r_paren_hidelist);
                     hs = try pp.hideset.prepend(macro_tok.loc, hs);
 
-                    var args_count: u32 = @intCast(args.items.len);
+                    var args_count: u32 = @intcast(args.items.len);
                     // if the macro has zero arguments g() args_count is still 1
                     // an empty token list g() and a whitespace-only token list g(    )
                     // counts as zero arguments for the purposes of argument-count validation
@@ -2232,7 +2232,7 @@ fn expandMacroExhaustive(
 
                     // Validate argument count.
                     const extra = Diagnostics.Message.Extra{
-                        .arguments = .{ .expected = @intCast(macro.params.len), .actual = args_count },
+                        .arguments = .{ .expected = @intcast(macro.params.len), .actual = args_count },
                     };
                     if (macro.var_args and args_count < macro.params.len) {
                         try pp.comp.addDiagnostic(
@@ -2441,7 +2441,7 @@ fn pasteTokens(pp: *Preprocessor, lhs_toks: *ExpandBuf, rhs_toks: []const TokenW
     var tmp_tokenizer = Tokenizer{
         .buf = pp.comp.generated_buf.items,
         .langopts = pp.comp.langopts,
-        .index = @intCast(start),
+        .index = @intcast(start),
         .source = .generated,
     };
     const pasted_token = tmp_tokenizer.nextNoWSComments();
@@ -2467,7 +2467,7 @@ fn pasteTokens(pp: *Preprocessor, lhs_toks: *ExpandBuf, rhs_toks: []const TokenW
 fn makeGeneratedToken(pp: *Preprocessor, start: usize, id: Token.Id, source: TokenWithExpansionLocs) !TokenWithExpansionLocs {
     var pasted_token = TokenWithExpansionLocs{ .id = id, .loc = .{
         .id = .generated,
-        .byte_offset = @intCast(start),
+        .byte_offset = @intcast(start),
         .line = pp.generated_line,
     } };
     pp.generated_line += 1;
@@ -2687,7 +2687,7 @@ fn defineFn(pp: *Preprocessor, tokenizer: *Tokenizer, macro_name: RawToken, l_pa
                     for (params.items, 0..) |p, i| {
                         if (mem.eql(u8, p, s)) {
                             tok.id = .stringify_param;
-                            tok.end = @intCast(i);
+                            tok.end = @intcast(i);
                             try pp.token_buf.append(tok);
                             continue :tok_loop;
                         }
@@ -2767,7 +2767,7 @@ fn defineFn(pp: *Preprocessor, tokenizer: *Tokenizer, macro_name: RawToken, l_pa
                             // here in case a ## was the previous token, because
                             // ## processing will eat this token with the same semantics
                             tok.id = .macro_param;
-                            tok.end = @intCast(i);
+                            tok.end = @intcast(i);
                             break;
                         }
                     }
@@ -2871,7 +2871,7 @@ fn embed(pp: *Preprocessor, tokenizer: *Tokenizer) MacroError!void {
             },
         };
 
-        const start: u32 = @intCast(pp.token_buf.items.len);
+        const start: u32 = @intcast(pp.token_buf.items.len);
         while (true) {
             const next = tokenizer.nextNoWS();
             if (next.id == .r_paren) break;
@@ -2881,7 +2881,7 @@ fn embed(pp: *Preprocessor, tokenizer: *Tokenizer) MacroError!void {
             }
             try pp.token_buf.append(next);
         }
-        const end: u32 = @intCast(pp.token_buf.items.len);
+        const end: u32 = @intcast(pp.token_buf.items.len);
 
         if (std.mem.eql(u8, param, "limit")) {
             if (limit != null) {
@@ -2959,7 +2959,7 @@ fn embed(pp: *Preprocessor, tokenizer: *Tokenizer) MacroError!void {
     for (embed_bytes[1..]) |byte| {
         const start = pp.comp.generated_buf.items.len;
         try writer.print(",{d}", .{byte});
-        pp.addTokenAssumeCapacity(.{ .id = .comma, .loc = .{ .id = .generated, .byte_offset = @intCast(start) } });
+        pp.addTokenAssumeCapacity(.{ .id = .comma, .loc = .{ .id = .generated, .byte_offset = @intcast(start) } });
         pp.addTokenAssumeCapacity(try pp.makeGeneratedToken(start + 1, .embed_byte, filename_tok));
     }
     try pp.comp.generated_buf.append(pp.gpa, '\n');
@@ -3039,14 +3039,14 @@ fn makePragmaToken(pp: *Preprocessor, raw: RawToken, operator_loc: ?Source.Locat
 
 pub fn addToken(pp: *Preprocessor, tok: TokenWithExpansionLocs) !void {
     if (tok.expansion_locs) |expansion_locs| {
-        try pp.expansion_entries.append(pp.gpa, .{ .idx = @intCast(pp.tokens.len), .locs = expansion_locs });
+        try pp.expansion_entries.append(pp.gpa, .{ .idx = @intcast(pp.tokens.len), .locs = expansion_locs });
     }
     try pp.tokens.append(pp.gpa, .{ .id = tok.id, .loc = tok.loc });
 }
 
 pub fn addTokenAssumeCapacity(pp: *Preprocessor, tok: TokenWithExpansionLocs) void {
     if (tok.expansion_locs) |expansion_locs| {
-        pp.expansion_entries.appendAssumeCapacity(.{ .idx = @intCast(pp.tokens.len), .locs = expansion_locs });
+        pp.expansion_entries.appendAssumeCapacity(.{ .idx = @intcast(pp.tokens.len), .locs = expansion_locs });
     }
     pp.tokens.appendAssumeCapacity(.{ .id = tok.id, .loc = tok.loc });
 }
@@ -3068,7 +3068,7 @@ fn pragma(pp: *Preprocessor, tokenizer: *Tokenizer, pragma_tok: RawToken, operat
 
     const name = pp.tokSlice(name_tok);
     try pp.addToken(try pp.makePragmaToken(pragma_tok, operator_loc, arg_locs));
-    const pragma_start: u32 = @intCast(pp.tokens.len);
+    const pragma_start: u32 = @intcast(pp.tokens.len);
 
     const pragma_name_tok = try pp.makePragmaToken(name_tok, operator_loc, arg_locs);
     try pp.addToken(pragma_name_tok);
@@ -3270,7 +3270,7 @@ pub fn prettyPrintTokens(pp: *Preprocessor, w: anytype) !void {
                             break;
                         }
 
-                        i = @intCast((j - 1) - @intFromBool(tok_ids[j - 1] == .whitespace));
+                        i = @intcast((j - 1) - @intfrombool(tok_ids[j - 1] == .whitespace));
                         if (!last_nl) try w.writeAll("\n");
                         if (pp.linemarkers != .none) {
                             const next = pp.tokens.get(i);
@@ -3288,7 +3288,7 @@ pub fn prettyPrintTokens(pp: *Preprocessor, w: anytype) !void {
             .keyword_pragma => {
                 const pragma_name = pp.expandedSlice(pp.tokens.get(i + 1));
                 const end_idx = mem.indexOfScalarPos(Token.Id, tok_ids, i, .nl) orelse i + 1;
-                const pragma_len = @as(u32, @intCast(end_idx)) - i;
+                const pragma_len = @as(u32, @intcast(end_idx)) - i;
 
                 if (pp.comp.getPragma(pragma_name)) |prag| {
                     if (!prag.shouldPreserveTokens(pp, i + 1)) {

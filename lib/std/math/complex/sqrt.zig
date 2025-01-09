@@ -18,7 +18,7 @@ pub fn sqrt(z: anytype) Complex(@TypeOf(z.re, z.im)) {
     return switch (T) {
         f32 => sqrt32(z),
         f64 => sqrt64(z),
-        else => @compileError("sqrt not implemented for " ++ @typeName(T)),
+        else => @compileerror("sqrt not implemented for " ++ @typename(T)),
     };
 }
 
@@ -58,14 +58,14 @@ fn sqrt32(z: Complex(f32)) Complex(f32) {
     if (dx >= 0) {
         const t = @sqrt((dx + math.hypot(dx, dy)) * 0.5);
         return Complex(f32).init(
-            @as(f32, @floatCast(t)),
-            @as(f32, @floatCast(dy / (2.0 * t))),
+            @as(f32, @floatcast(t)),
+            @as(f32, @floatcast(dy / (2.0 * t))),
         );
     } else {
         const t = @sqrt((-dx + math.hypot(dx, dy)) * 0.5);
         return Complex(f32).init(
-            @as(f32, @floatCast(@abs(y) / (2.0 * t))),
-            @as(f32, @floatCast(math.copysign(t, y))),
+            @as(f32, @floatcast(@abs(y) / (2.0 * t))),
+            @as(f32, @floatcast(math.copysign(t, y))),
         );
     }
 }

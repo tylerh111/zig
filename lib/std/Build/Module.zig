@@ -640,7 +640,7 @@ pub fn appendZigProcessFlags(
 
     if (m.code_model != .default) {
         try zig_args.append("-mcmodel");
-        try zig_args.append(@tagName(m.code_model));
+        try zig_args.append(@tagname(m.code_model));
     }
 
     if (m.resolved_target) |*target| {

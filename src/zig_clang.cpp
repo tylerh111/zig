@@ -164,7 +164,7 @@ void ZigClang_detect_enum_CK(clang::CastKind x) {
         case clang::CK_DerivedToBase:
         case clang::CK_DerivedToBaseMemberPointer:
         case clang::CK_Dynamic:
-        case clang::CK_FixedPointCast:
+        case clang::CK_FixedPointcast:
         case clang::CK_FixedPointToBoolean:
         case clang::CK_FixedPointToFloating:
         case clang::CK_FixedPointToIntegral:
@@ -244,7 +244,7 @@ static_assert((clang::CastKind)ZigClangCK_IntegralToBoolean == clang::CK_Integra
 static_assert((clang::CastKind)ZigClangCK_IntegralToFloating == clang::CK_IntegralToFloating, "");
 static_assert((clang::CastKind)ZigClangCK_FloatingToFixedPoint == clang::CK_FloatingToFixedPoint, "");
 static_assert((clang::CastKind)ZigClangCK_FixedPointToFloating == clang::CK_FixedPointToFloating, "");
-static_assert((clang::CastKind)ZigClangCK_FixedPointCast == clang::CK_FixedPointCast, "");
+static_assert((clang::CastKind)ZigClangCK_FixedPointcast == clang::CK_FixedPointcast, "");
 static_assert((clang::CastKind)ZigClangCK_FixedPointToIntegral == clang::CK_FixedPointToIntegral, "");
 static_assert((clang::CastKind)ZigClangCK_IntegralToFixedPoint == clang::CK_IntegralToFixedPoint, "");
 static_assert((clang::CastKind)ZigClangCK_FixedPointToBoolean == clang::CK_FixedPointToBoolean, "");

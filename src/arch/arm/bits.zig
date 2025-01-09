@@ -159,7 +159,7 @@ pub const Register = enum(u5) {
     /// Returns the unique 4-bit ID of this register which is used in
     /// the machine code
     pub fn id(self: Register) u4 {
-        return @as(u4, @truncate(@intFromEnum(self)));
+        return @as(u4, @truncate(@intfromenum(self)));
     }
 
     pub fn dwarfLocOp(self: Register) u8 {
@@ -399,8 +399,8 @@ pub const Instruction = union(enum) {
 
             pub fn toU8(self: Shift) u8 {
                 return switch (self) {
-                    .register => |v| @as(u8, @bitCast(v)),
-                    .immediate => |v| @as(u8, @bitCast(v)),
+                    .register => |v| @as(u8, @bitcast(v)),
+                    .immediate => |v| @as(u8, @bitcast(v)),
                 };
             }
 
@@ -408,7 +408,7 @@ pub const Instruction = union(enum) {
                 return Shift{
                     .register = .{
                         .rs = rs.id(),
-                        .typ = @intFromEnum(typ),
+                        .typ = @intfromenum(typ),
                     },
                 };
             }
@@ -417,7 +417,7 @@ pub const Instruction = union(enum) {
                 return Shift{
                     .immediate = .{
                         .amount = amount,
-                        .typ = @intFromEnum(typ),
+                        .typ = @intfromenum(typ),
                     },
                 };
             }
@@ -425,8 +425,8 @@ pub const Instruction = union(enum) {
 
         pub fn toU12(self: Operand) u12 {
             return switch (self) {
-                .register => |v| @as(u12, @bitCast(v)),
-                .immediate => |v| @as(u12, @bitCast(v)),
+                .register => |v| @as(u12, @bitcast(v)),
+                .immediate => |v| @as(u12, @bitcast(v)),
             };
         }
 
@@ -463,8 +463,8 @@ pub const Instruction = union(enum) {
                 if (x & mask == x) {
                     break Operand{
                         .immediate = .{
-                            .imm = @as(u8, @intCast(std.math.rotl(u32, x, 2 * i))),
-                            .rotate = @as(u4, @intCast(i)),
+                            .imm = @as(u8, @intcast(std.math.rotl(u32, x, 2 * i))),
+                            .rotate = @as(u4, @intcast(i)),
                         },
                     };
                 }
@@ -522,7 +522,7 @@ pub const Instruction = union(enum) {
 
         pub fn toU12(self: Offset) u12 {
             return switch (self) {
-                .register => |v| @as(u12, @bitCast(v)),
+                .register => |v| @as(u12, @bitcast(v)),
                 .immediate => |v| v,
             };
         }
@@ -604,20 +604,20 @@ pub const Instruction = union(enum) {
 
     pub fn toU32(self: Instruction) u32 {
         return switch (self) {
-            .data_processing => |v| @as(u32, @bitCast(v)),
-            .multiply => |v| @as(u32, @bitCast(v)),
-            .multiply_long => |v| @as(u32, @bitCast(v)),
-            .signed_multiply_halfwords => |v| @as(u32, @bitCast(v)),
-            .integer_saturating_arithmetic => |v| @as(u32, @bitCast(v)),
-            .bit_field_extract => |v| @as(u32, @bitCast(v)),
-            .single_data_transfer => |v| @as(u32, @bitCast(v)),
-            .extra_load_store => |v| @as(u32, @bitCast(v)),
-            .block_data_transfer => |v| @as(u32, @bitCast(v)),
-            .branch => |v| @as(u32, @bitCast(v)),
-            .branch_exchange => |v| @as(u32, @bitCast(v)),
-            .supervisor_call => |v| @as(u32, @bitCast(v)),
+            .data_processing => |v| @as(u32, @bitcast(v)),
+            .multiply => |v| @as(u32, @bitcast(v)),
+            .multiply_long => |v| @as(u32, @bitcast(v)),
+            .signed_multiply_halfwords => |v| @as(u32, @bitcast(v)),
+            .integer_saturating_arithmetic => |v| @as(u32, @bitcast(v)),
+            .bit_field_extract => |v| @as(u32, @bitcast(v)),
+            .single_data_transfer => |v| @as(u32, @bitcast(v)),
+            .extra_load_store => |v| @as(u32, @bitcast(v)),
+            .block_data_transfer => |v| @as(u32, @bitcast(v)),
+            .branch => |v| @as(u32, @bitcast(v)),
+            .branch_exchange => |v| @as(u32, @bitcast(v)),
+            .supervisor_call => |v| @as(u32, @bitcast(v)),
             .undefined_instruction => |v| v.imm32,
-            .breakpoint => |v| @as(u32, @intCast(v.imm4)) | (@as(u32, @intCast(v.fixed_1)) << 4) | (@as(u32, @intCast(v.imm12)) << 8) | (@as(u32, @intCast(v.fixed_2_and_cond)) << 20),
+            .breakpoint => |v| @as(u32, @intcast(v.imm4)) | (@as(u32, @intcast(v.fixed_1)) << 4) | (@as(u32, @intcast(v.imm12)) << 8) | (@as(u32, @intcast(v.fixed_2_and_cond)) << 20),
         };
     }
 
@@ -633,9 +633,9 @@ pub const Instruction = union(enum) {
     ) Instruction {
         return Instruction{
             .data_processing = .{
-                .cond = @intFromEnum(cond),
-                .i = @intFromBool(op2 == .immediate),
-                .opcode = @intFromEnum(opcode),
+                .cond = @intfromenum(cond),
+                .i = @intfrombool(op2 == .immediate),
+                .opcode = @intfromenum(opcode),
                 .s = s,
                 .rn = rn.id(),
                 .rd = rd.id(),
@@ -652,7 +652,7 @@ pub const Instruction = union(enum) {
     ) Instruction {
         return Instruction{
             .data_processing = .{
-                .cond = @intFromEnum(cond),
+                .cond = @intfromenum(cond),
                 .i = 1,
                 .opcode = if (top) 0b1010 else 0b1000,
                 .s = 0,
@@ -673,8 +673,8 @@ pub const Instruction = union(enum) {
     ) Instruction {
         return Instruction{
             .multiply = .{
-                .cond = @intFromEnum(cond),
-                .accumulate = @intFromBool(ra != null),
+                .cond = @intfromenum(cond),
+                .accumulate = @intfrombool(ra != null),
                 .set_cond = set_cond,
                 .rd = rd.id(),
                 .rn = rn.id(),
@@ -696,7 +696,7 @@ pub const Instruction = union(enum) {
     ) Instruction {
         return Instruction{
             .multiply_long = .{
-                .cond = @intFromEnum(cond),
+                .cond = @intfromenum(cond),
                 .unsigned = signed,
                 .accumulate = accumulate,
                 .set_cond = set_cond,
@@ -723,7 +723,7 @@ pub const Instruction = union(enum) {
                 .m = m,
                 .rm = rm.id(),
                 .rd = rd.id(),
-                .cond = @intFromEnum(cond),
+                .cond = @intfromenum(cond),
             },
         };
     }
@@ -741,7 +741,7 @@ pub const Instruction = union(enum) {
                 .rd = rd.id(),
                 .rn = rn.id(),
                 .opc = opc,
-                .cond = @intFromEnum(cond),
+                .cond = @intfromenum(cond),
             },
         };
     }
@@ -760,9 +760,9 @@ pub const Instruction = union(enum) {
                 .rn = rn.id(),
                 .lsb = lsb,
                 .rd = rd.id(),
-                .widthm1 = @as(u5, @intCast(width - 1)),
+                .widthm1 = @as(u5, @intcast(width - 1)),
                 .unsigned = unsigned,
-                .cond = @intFromEnum(cond),
+                .cond = @intfromenum(cond),
             },
         };
     }
@@ -779,7 +779,7 @@ pub const Instruction = union(enum) {
     ) Instruction {
         return Instruction{
             .single_data_transfer = .{
-                .cond = @intFromEnum(cond),
+                .cond = @intfromenum(cond),
                 .rn = rn.id(),
                 .rd = rd.id(),
                 .offset = offset.toU12(),
@@ -789,12 +789,12 @@ pub const Instruction = union(enum) {
                     .pre_index, .post_index => 0b1,
                 },
                 .byte_word = byte_word,
-                .up_down = @intFromBool(positive),
+                .up_down = @intfrombool(positive),
                 .pre_post = switch (mode) {
                     .offset, .pre_index => 0b1,
                     .post_index => 0b0,
                 },
-                .imm = @intFromBool(offset != .immediate),
+                .imm = @intfrombool(offset != .immediate),
             },
         };
     }
@@ -830,13 +830,13 @@ pub const Instruction = union(enum) {
                     .offset => 0b0,
                     .pre_index, .post_index => 0b1,
                 },
-                .imm = @intFromBool(offset == .immediate),
-                .up_down = @intFromBool(positive),
+                .imm = @intfrombool(offset == .immediate),
+                .up_down = @intfrombool(positive),
                 .pre_index = switch (mode) {
                     .offset, .pre_index => 0b1,
                     .post_index => 0b0,
                 },
-                .cond = @intFromEnum(cond),
+                .cond = @intfromenum(cond),
             },
         };
     }
@@ -853,14 +853,14 @@ pub const Instruction = union(enum) {
     ) Instruction {
         return Instruction{
             .block_data_transfer = .{
-                .register_list = @as(u16, @bitCast(reg_list)),
+                .register_list = @as(u16, @bitcast(reg_list)),
                 .rn = rn.id(),
                 .load_store = load_store,
-                .write_back = @intFromBool(write_back),
+                .write_back = @intfrombool(write_back),
                 .psr_or_user = psr_or_user,
                 .up_down = up_down,
                 .pre_post = pre_post,
-                .cond = @intFromEnum(cond),
+                .cond = @intfromenum(cond),
             },
         };
     }
@@ -868,9 +868,9 @@ pub const Instruction = union(enum) {
     fn branch(cond: Condition, offset: i26, link: u1) Instruction {
         return Instruction{
             .branch = .{
-                .cond = @intFromEnum(cond),
+                .cond = @intfromenum(cond),
                 .link = link,
-                .offset = @as(u24, @bitCast(@as(i24, @intCast(offset >> 2)))),
+                .offset = @as(u24, @bitcast(@as(i24, @intcast(offset >> 2)))),
             },
         };
     }
@@ -878,7 +878,7 @@ pub const Instruction = union(enum) {
     fn branchExchange(cond: Condition, rn: Register, link: u1) Instruction {
         return Instruction{
             .branch_exchange = .{
-                .cond = @intFromEnum(cond),
+                .cond = @intfromenum(cond),
                 .link = link,
                 .rn = rn.id(),
             },
@@ -888,7 +888,7 @@ pub const Instruction = union(enum) {
     fn supervisorCall(cond: Condition, comment: u24) Instruction {
         return Instruction{
             .supervisor_call = .{
-                .cond = @intFromEnum(cond),
+                .cond = @intfromenum(cond),
                 .comment = comment,
             },
         };
@@ -1060,7 +1060,7 @@ pub const Instruction = union(enum) {
     pub fn mrs(cond: Condition, rd: Register, psr: Psr) Instruction {
         return Instruction{
             .data_processing = .{
-                .cond = @intFromEnum(cond),
+                .cond = @intfromenum(cond),
                 .i = 0,
                 .opcode = if (psr == .spsr) 0b1010 else 0b1000,
                 .s = 0,
@@ -1074,7 +1074,7 @@ pub const Instruction = union(enum) {
     pub fn msr(cond: Condition, psr: Psr, op: Operand) Instruction {
         return Instruction{
             .data_processing = .{
-                .cond = @intFromEnum(cond),
+                .cond = @intfromenum(cond),
                 .i = 0,
                 .opcode = if (psr == .spsr) 0b1011 else 0b1001,
                 .s = 0,
@@ -1300,12 +1300,12 @@ pub const Instruction = union(enum) {
     }
 
     pub fn pop(cond: Condition, args: anytype) Instruction {
-        if (@typeInfo(@TypeOf(args)) != .Struct) {
-            @compileError("Expected tuple or struct argument, found " ++ @typeName(@TypeOf(args)));
+        if (@typeinfo(@TypeOf(args)) != .Struct) {
+            @compileerror("Expected tuple or struct argument, found " ++ @typename(@TypeOf(args)));
         }
 
         if (args.len < 1) {
-            @compileError("Expected at least one register");
+            @compileerror("Expected at least one register");
         } else if (args.len == 1) {
             const reg = args[0];
             return ldr(cond, reg, .sp, .{
@@ -1319,17 +1319,17 @@ pub const Instruction = union(enum) {
                 const reg = @as(Register, arg);
                 register_list |= @as(u16, 1) << reg.id();
             }
-            return ldm(cond, .sp, true, @as(RegisterList, @bitCast(register_list)));
+            return ldm(cond, .sp, true, @as(RegisterList, @bitcast(register_list)));
         }
     }
 
     pub fn push(cond: Condition, args: anytype) Instruction {
-        if (@typeInfo(@TypeOf(args)) != .Struct) {
-            @compileError("Expected tuple or struct argument, found " ++ @typeName(@TypeOf(args)));
+        if (@typeinfo(@TypeOf(args)) != .Struct) {
+            @compileerror("Expected tuple or struct argument, found " ++ @typename(@TypeOf(args)));
         }
 
         if (args.len < 1) {
-            @compileError("Expected at least one register");
+            @compileerror("Expected at least one register");
         } else if (args.len == 1) {
             const reg = args[0];
             return str(cond, reg, .sp, .{
@@ -1343,7 +1343,7 @@ pub const Instruction = union(enum) {
                 const reg = @as(Register, arg);
                 register_list |= @as(u16, 1) << reg.id();
             }
-            return stmdb(cond, .sp, true, @as(RegisterList, @bitCast(register_list)));
+            return stmdb(cond, .sp, true, @as(RegisterList, @bitcast(register_list)));
         }
     }
 

@@ -172,7 +172,7 @@ pub const Request = struct {
             if (method_end > 24) return error.HttpHeadersInvalid;
 
             const method_str = first_line[0..method_end];
-            const method: http.Method = @enumFromInt(http.Method.parse(method_str));
+            const method: http.Method = @enumfromint(http.Method.parse(method_str));
 
             const version_start = mem.lastIndexOfScalar(u8, first_line, ' ') orelse
                 return error.HttpHeadersInvalid;
@@ -295,7 +295,7 @@ pub const Request = struct {
         }
 
         inline fn int64(array: *const [8]u8) u64 {
-            return @bitCast(array.*);
+            return @bitcast(array.*);
         }
     };
 
@@ -422,7 +422,7 @@ pub const Request = struct {
             return;
         }
         h.fixedWriter().print("{s} {d} {s}\r\n", .{
-            @tagName(options.version), @intFromEnum(options.status), phrase,
+            @tagname(options.version), @intfromenum(options.status), phrase,
         }) catch unreachable;
 
         switch (options.version) {
@@ -574,7 +574,7 @@ pub const Request = struct {
             break :eb true;
         } else eb: {
             h.fixedWriter().print("{s} {d} {s}\r\n", .{
-                @tagName(o.version), @intFromEnum(o.status), phrase,
+                @tagname(o.version), @intfromenum(o.status), phrase,
             }) catch unreachable;
 
             switch (o.version) {
@@ -625,7 +625,7 @@ pub const Request = struct {
     };
 
     fn read_cl(context: *const anyopaque, buffer: []u8) ReadError!usize {
-        const request: *Request = @constCast(@alignCast(@ptrCast(context)));
+        const request: *Request = @constcast(@aligncast(@ptrcast(context)));
         const s = request.server;
 
         const remaining_content_length = &request.reader_state.remaining_content_length;
@@ -653,7 +653,7 @@ pub const Request = struct {
     }
 
     fn read_chunked(context: *const anyopaque, buffer: []u8) ReadError!usize {
-        const request: *Request = @constCast(@alignCast(@ptrCast(context)));
+        const request: *Request = @constcast(@aligncast(@ptrcast(context)));
         const s = request.server;
 
         const cp = &request.reader_state.chunk_parser;
@@ -895,7 +895,7 @@ pub const Response = struct {
     }
 
     fn write_cl(context: *const anyopaque, bytes: []const u8) WriteError!usize {
-        const r: *Response = @constCast(@alignCast(@ptrCast(context)));
+        const r: *Response = @constcast(@aligncast(@ptrcast(context)));
 
         var trash: u64 = std.math.maxInt(u64);
         const len = switch (r.transfer_encoding) {
@@ -945,7 +945,7 @@ pub const Response = struct {
     }
 
     fn write_chunked(context: *const anyopaque, bytes: []const u8) WriteError!usize {
-        const r: *Response = @constCast(@alignCast(@ptrCast(context)));
+        const r: *Response = @constcast(@aligncast(@ptrcast(context)));
         assert(r.transfer_encoding == .chunked);
 
         if (r.elide_body)

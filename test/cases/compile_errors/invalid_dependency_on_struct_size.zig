@@ -4,11 +4,11 @@ comptime {
             y: Bar,
         };
         const Bar = struct {
-            y: if (@sizeOf(Foo) == 0) u64 else void,
+            y: if (@sizeof(Foo) == 0) u64 else void,
         };
     };
 
-    _ = @sizeOf(S.Foo) + 1;
+    _ = @sizeof(S.Foo) + 1;
 }
 
 // error

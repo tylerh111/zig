@@ -1,5 +1,5 @@
 export fn entry() void {
-    _ = @Type(@typeInfo(enum {
+    _ = @Type(@typeinfo(enum {
         foo,
         pub const bar = 1;
     }));

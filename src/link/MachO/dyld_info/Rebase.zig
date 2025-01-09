@@ -31,7 +31,7 @@ pub fn deinit(rebase: *Rebase, gpa: Allocator) void {
 }
 
 pub fn size(rebase: Rebase) u64 {
-    return @as(u64, @intCast(rebase.buffer.items.len));
+    return @as(u64, @intcast(rebase.buffer.items.len));
 }
 
 pub fn finalize(rebase: *Rebase, gpa: Allocator) !void {
@@ -75,7 +75,7 @@ fn finalizeSegment(entries: []const Entry, writer: anytype) !void {
 
     var i: usize = 0;
     while (i < entries.len) : (i += 1) {
-        log.debug("{x}, {d}, {x}, {s}", .{ offset, count, skip, @tagName(state) });
+        log.debug("{x}, {d}, {x}, {s}", .{ offset, count, skip, @tagname(state) });
         const current_offset = entries[i].offset;
         log.debug("  => {x}", .{current_offset});
         switch (state) {
@@ -86,14 +86,14 @@ fn finalizeSegment(entries: []const Entry, writer: anytype) !void {
                     offset += delta;
                 }
                 state = .times;
-                offset += @sizeOf(u64);
+                offset += @sizeof(u64);
                 count = 1;
             },
             .times => {
                 const delta = current_offset - offset;
                 if (delta == 0) {
                     count += 1;
-                    offset += @sizeOf(u64);
+                    offset += @sizeof(u64);
                     continue;
                 }
                 if (count == 1) {
@@ -116,7 +116,7 @@ fn finalizeSegment(entries: []const Entry, writer: anytype) !void {
                         try rebaseTimesSkip(count, skip, writer);
                     }
                     state = .start;
-                    offset = offset - (@sizeOf(u64) + skip);
+                    offset = offset - (@sizeof(u64) + skip);
                     i -= 2;
                     continue;
                 }
@@ -124,7 +124,7 @@ fn finalizeSegment(entries: []const Entry, writer: anytype) !void {
                 const delta = current_offset - offset;
                 if (delta == 0) {
                     count += 1;
-                    offset += @sizeOf(u64) + skip;
+                    offset += @sizeof(u64) + skip;
                 } else {
                     try rebaseTimesSkip(count, skip, writer);
                     state = .start;
@@ -181,8 +181,8 @@ fn rebaseTimesSkip(count: usize, skip: u64, writer: anytype) !void {
 
 fn addAddr(addr: u64, writer: anytype) !void {
     log.debug(">>> add: {x}", .{addr});
-    if (std.mem.isAlignedGeneric(u64, addr, @sizeOf(u64))) {
-        const imm = @divExact(addr, @sizeOf(u64));
+    if (std.mem.isAlignedGeneric(u64, addr, @sizeof(u64))) {
+        const imm = @divexact(addr, @sizeof(u64));
         if (imm <= 0xf) {
             try writer.writeByte(macho.REBASE_OPCODE_ADD_ADDR_IMM_SCALED | @as(u4, @truncate(imm)));
             return;
@@ -241,7 +241,7 @@ test "rebase - emitTimes - IMM" {
     while (i < 10) : (i += 1) {
         try rebase.entries.append(gpa, .{
             .segment_id = 1,
-            .offset = i * @sizeOf(u64),
+            .offset = i * @sizeof(u64),
         });
     }
 
@@ -266,7 +266,7 @@ test "rebase - emitTimes - ULEB" {
     while (i < 100) : (i += 1) {
         try rebase.entries.append(gpa, .{
             .segment_id = 1,
-            .offset = i * @sizeOf(u64),
+            .offset = i * @sizeof(u64),
         });
     }
 
@@ -295,10 +295,10 @@ test "rebase - emitTimes followed by addAddr followed by emitTimes" {
             .segment_id = 1,
             .offset = offset,
         });
-        offset += @sizeOf(u64);
+        offset += @sizeof(u64);
     }
 
-    offset += @sizeOf(u64);
+    offset += @sizeof(u64);
 
     try rebase.entries.append(gpa, .{
         .segment_id = 1,
@@ -331,7 +331,7 @@ test "rebase - emitTimesSkip" {
             .segment_id = 1,
             .offset = offset,
         });
-        offset += 2 * @sizeOf(u64);
+        offset += 2 * @sizeof(u64);
     }
 
     try rebase.finalize(gpa);

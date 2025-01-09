@@ -296,7 +296,7 @@ IVssExamineWriterMetadata : public IUnknown
         VSS_SOURCE_TYPE *pSource) = 0;
 
     virtual HRESULT STDMETHODCALLTYPE GetFileCounts(
-        UINT *pcIncludeFiles,
+        UINT *pcincludeFiles,
         UINT *pcExcludeFiles,
         UINT *pcComponents) = 0;
 
@@ -367,7 +367,7 @@ typedef struct IVssExamineWriterMetadataVtbl {
 
     HRESULT (STDMETHODCALLTYPE *GetFileCounts)(
         IVssExamineWriterMetadata *This,
-        UINT *pcIncludeFiles,
+        UINT *pcincludeFiles,
         UINT *pcExcludeFiles,
         UINT *pcComponents);
 
@@ -431,7 +431,7 @@ interface IVssExamineWriterMetadata {
 #define IVssExamineWriterMetadata_Release(This) (This)->lpVtbl->Release(This)
 /*** IVssExamineWriterMetadata methods ***/
 #define IVssExamineWriterMetadata_GetIdentity(This,pidInstance,pidWriter,pbstrWriterName,pUsage,pSource) (This)->lpVtbl->GetIdentity(This,pidInstance,pidWriter,pbstrWriterName,pUsage,pSource)
-#define IVssExamineWriterMetadata_GetFileCounts(This,pcIncludeFiles,pcExcludeFiles,pcComponents) (This)->lpVtbl->GetFileCounts(This,pcIncludeFiles,pcExcludeFiles,pcComponents)
+#define IVssExamineWriterMetadata_GetFileCounts(This,pcincludeFiles,pcExcludeFiles,pcComponents) (This)->lpVtbl->GetFileCounts(This,pcincludeFiles,pcExcludeFiles,pcComponents)
 #define IVssExamineWriterMetadata_GetIncludeFile(This,iFile,ppFiledesc) (This)->lpVtbl->GetIncludeFile(This,iFile,ppFiledesc)
 #define IVssExamineWriterMetadata_GetExcludeFile(This,iFile,ppFiledesc) (This)->lpVtbl->GetExcludeFile(This,iFile,ppFiledesc)
 #define IVssExamineWriterMetadata_GetComponent(This,iComponent,ppComponent) (This)->lpVtbl->GetComponent(This,iComponent,ppComponent)
@@ -456,8 +456,8 @@ static __WIDL_INLINE ULONG IVssExamineWriterMetadata_Release(IVssExamineWriterMe
 static __WIDL_INLINE HRESULT IVssExamineWriterMetadata_GetIdentity(IVssExamineWriterMetadata* This,VSS_ID *pidInstance,VSS_ID *pidWriter,BSTR *pbstrWriterName,VSS_USAGE_TYPE *pUsage,VSS_SOURCE_TYPE *pSource) {
     return This->lpVtbl->GetIdentity(This,pidInstance,pidWriter,pbstrWriterName,pUsage,pSource);
 }
-static __WIDL_INLINE HRESULT IVssExamineWriterMetadata_GetFileCounts(IVssExamineWriterMetadata* This,UINT *pcIncludeFiles,UINT *pcExcludeFiles,UINT *pcComponents) {
-    return This->lpVtbl->GetFileCounts(This,pcIncludeFiles,pcExcludeFiles,pcComponents);
+static __WIDL_INLINE HRESULT IVssExamineWriterMetadata_GetFileCounts(IVssExamineWriterMetadata* This,UINT *pcincludeFiles,UINT *pcExcludeFiles,UINT *pcComponents) {
+    return This->lpVtbl->GetFileCounts(This,pcincludeFiles,pcExcludeFiles,pcComponents);
 }
 static __WIDL_INLINE HRESULT IVssExamineWriterMetadata_GetIncludeFile(IVssExamineWriterMetadata* This,UINT iFile,IVssWMFiledesc **ppFiledesc) {
     return This->lpVtbl->GetIncludeFile(This,iFile,ppFiledesc);
@@ -544,7 +544,7 @@ typedef struct IVssExamineWriterMetadataExVtbl {
 
     HRESULT (STDMETHODCALLTYPE *GetFileCounts)(
         IVssExamineWriterMetadataEx *This,
-        UINT *pcIncludeFiles,
+        UINT *pcincludeFiles,
         UINT *pcExcludeFiles,
         UINT *pcComponents);
 
@@ -618,7 +618,7 @@ interface IVssExamineWriterMetadataEx {
 #define IVssExamineWriterMetadataEx_Release(This) (This)->lpVtbl->Release(This)
 /*** IVssExamineWriterMetadata methods ***/
 #define IVssExamineWriterMetadataEx_GetIdentity(This,pidInstance,pidWriter,pbstrWriterName,pUsage,pSource) (This)->lpVtbl->GetIdentity(This,pidInstance,pidWriter,pbstrWriterName,pUsage,pSource)
-#define IVssExamineWriterMetadataEx_GetFileCounts(This,pcIncludeFiles,pcExcludeFiles,pcComponents) (This)->lpVtbl->GetFileCounts(This,pcIncludeFiles,pcExcludeFiles,pcComponents)
+#define IVssExamineWriterMetadataEx_GetFileCounts(This,pcincludeFiles,pcExcludeFiles,pcComponents) (This)->lpVtbl->GetFileCounts(This,pcincludeFiles,pcExcludeFiles,pcComponents)
 #define IVssExamineWriterMetadataEx_GetIncludeFile(This,iFile,ppFiledesc) (This)->lpVtbl->GetIncludeFile(This,iFile,ppFiledesc)
 #define IVssExamineWriterMetadataEx_GetExcludeFile(This,iFile,ppFiledesc) (This)->lpVtbl->GetExcludeFile(This,iFile,ppFiledesc)
 #define IVssExamineWriterMetadataEx_GetComponent(This,iComponent,ppComponent) (This)->lpVtbl->GetComponent(This,iComponent,ppComponent)
@@ -645,8 +645,8 @@ static __WIDL_INLINE ULONG IVssExamineWriterMetadataEx_Release(IVssExamineWriter
 static __WIDL_INLINE HRESULT IVssExamineWriterMetadataEx_GetIdentity(IVssExamineWriterMetadataEx* This,VSS_ID *pidInstance,VSS_ID *pidWriter,BSTR *pbstrWriterName,VSS_USAGE_TYPE *pUsage,VSS_SOURCE_TYPE *pSource) {
     return This->lpVtbl->GetIdentity(This,pidInstance,pidWriter,pbstrWriterName,pUsage,pSource);
 }
-static __WIDL_INLINE HRESULT IVssExamineWriterMetadataEx_GetFileCounts(IVssExamineWriterMetadataEx* This,UINT *pcIncludeFiles,UINT *pcExcludeFiles,UINT *pcComponents) {
-    return This->lpVtbl->GetFileCounts(This,pcIncludeFiles,pcExcludeFiles,pcComponents);
+static __WIDL_INLINE HRESULT IVssExamineWriterMetadataEx_GetFileCounts(IVssExamineWriterMetadataEx* This,UINT *pcincludeFiles,UINT *pcExcludeFiles,UINT *pcComponents) {
+    return This->lpVtbl->GetFileCounts(This,pcincludeFiles,pcExcludeFiles,pcComponents);
 }
 static __WIDL_INLINE HRESULT IVssExamineWriterMetadataEx_GetIncludeFile(IVssExamineWriterMetadataEx* This,UINT iFile,IVssWMFiledesc **ppFiledesc) {
     return This->lpVtbl->GetIncludeFile(This,iFile,ppFiledesc);
@@ -740,7 +740,7 @@ typedef struct IVssExamineWriterMetadataEx2Vtbl {
 
     HRESULT (STDMETHODCALLTYPE *GetFileCounts)(
         IVssExamineWriterMetadataEx2 *This,
-        UINT *pcIncludeFiles,
+        UINT *pcincludeFiles,
         UINT *pcExcludeFiles,
         UINT *pcComponents);
 
@@ -829,7 +829,7 @@ interface IVssExamineWriterMetadataEx2 {
 #define IVssExamineWriterMetadataEx2_Release(This) (This)->lpVtbl->Release(This)
 /*** IVssExamineWriterMetadata methods ***/
 #define IVssExamineWriterMetadataEx2_GetIdentity(This,pidInstance,pidWriter,pbstrWriterName,pUsage,pSource) (This)->lpVtbl->GetIdentity(This,pidInstance,pidWriter,pbstrWriterName,pUsage,pSource)
-#define IVssExamineWriterMetadataEx2_GetFileCounts(This,pcIncludeFiles,pcExcludeFiles,pcComponents) (This)->lpVtbl->GetFileCounts(This,pcIncludeFiles,pcExcludeFiles,pcComponents)
+#define IVssExamineWriterMetadataEx2_GetFileCounts(This,pcincludeFiles,pcExcludeFiles,pcComponents) (This)->lpVtbl->GetFileCounts(This,pcincludeFiles,pcExcludeFiles,pcComponents)
 #define IVssExamineWriterMetadataEx2_GetIncludeFile(This,iFile,ppFiledesc) (This)->lpVtbl->GetIncludeFile(This,iFile,ppFiledesc)
 #define IVssExamineWriterMetadataEx2_GetExcludeFile(This,iFile,ppFiledesc) (This)->lpVtbl->GetExcludeFile(This,iFile,ppFiledesc)
 #define IVssExamineWriterMetadataEx2_GetComponent(This,iComponent,ppComponent) (This)->lpVtbl->GetComponent(This,iComponent,ppComponent)
@@ -860,8 +860,8 @@ static __WIDL_INLINE ULONG IVssExamineWriterMetadataEx2_Release(IVssExamineWrite
 static __WIDL_INLINE HRESULT IVssExamineWriterMetadataEx2_GetIdentity(IVssExamineWriterMetadataEx2* This,VSS_ID *pidInstance,VSS_ID *pidWriter,BSTR *pbstrWriterName,VSS_USAGE_TYPE *pUsage,VSS_SOURCE_TYPE *pSource) {
     return This->lpVtbl->GetIdentity(This,pidInstance,pidWriter,pbstrWriterName,pUsage,pSource);
 }
-static __WIDL_INLINE HRESULT IVssExamineWriterMetadataEx2_GetFileCounts(IVssExamineWriterMetadataEx2* This,UINT *pcIncludeFiles,UINT *pcExcludeFiles,UINT *pcComponents) {
-    return This->lpVtbl->GetFileCounts(This,pcIncludeFiles,pcExcludeFiles,pcComponents);
+static __WIDL_INLINE HRESULT IVssExamineWriterMetadataEx2_GetFileCounts(IVssExamineWriterMetadataEx2* This,UINT *pcincludeFiles,UINT *pcExcludeFiles,UINT *pcComponents) {
+    return This->lpVtbl->GetFileCounts(This,pcincludeFiles,pcExcludeFiles,pcComponents);
 }
 static __WIDL_INLINE HRESULT IVssExamineWriterMetadataEx2_GetIncludeFile(IVssExamineWriterMetadataEx2* This,UINT iFile,IVssWMFiledesc **ppFiledesc) {
     return This->lpVtbl->GetIncludeFile(This,iFile,ppFiledesc);

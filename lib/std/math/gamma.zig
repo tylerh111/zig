@@ -17,7 +17,7 @@ const std = @import("../std.zig");
 ///  - gamma(+inf)  = +inf
 pub fn gamma(comptime T: type, x: T) T {
     if (T != f32 and T != f64) {
-        @compileError("gamma not implemented for " ++ @typeName(T));
+        @compileerror("gamma not implemented for " ++ @typename(T));
     }
     // common integer case first
     if (x == @trunc(x)) {
@@ -32,8 +32,8 @@ pub fn gamma(comptime T: type, x: T) T {
             return 1 / x;
         }
         if (x < integer_result_table.len) {
-            const i = @as(u8, @intFromFloat(x));
-            return @floatCast(integer_result_table[i]);
+            const i = @as(u8, @intfromfloat(x));
+            return @floatcast(integer_result_table[i]);
         }
     }
     // below this, result underflows, but has a sign
@@ -93,7 +93,7 @@ pub fn gamma(comptime T: type, x: T) T {
 ///  - lgamma(2)     = +0.0
 pub fn lgamma(comptime T: type, x: T) T {
     if (T != f32 and T != f64) {
-        @compileError("gamma not implemented for " ++ @typeName(T));
+        @compileerror("gamma not implemented for " ++ @typename(T));
     }
     // common integer case first
     if (x == @trunc(x)) {
@@ -106,8 +106,8 @@ pub fn lgamma(comptime T: type, x: T) T {
         // lgamma(1) = +0.0
         // lgamma(2) = +0.0
         if (x < integer_result_table.len) {
-            const i = @as(u8, @intFromFloat(x));
-            return @log(@as(T, @floatCast(integer_result_table[i])));
+            const i = @as(u8, @intfromfloat(x));
+            return @log(@as(T, @floatcast(integer_result_table[i])));
         }
         // lgamma(+inf) = +inf
         if (std.math.isPositiveInf(x)) {
@@ -225,8 +225,8 @@ fn series(comptime T: type, abs: T) T {
 // but not for integer x or |x| < 2^-54, we handle those already
 fn sinpi(comptime T: type, x: T) T {
     const xmod2 = @mod(x, 2); // [0, 2]
-    const n = (@as(u8, @intFromFloat(4 * xmod2)) + 1) / 2; // {0, 1, 2, 3, 4}
-    const y = xmod2 - 0.5 * @as(T, @floatFromInt(n)); // [-0.25, 0.25]
+    const n = (@as(u8, @intfromfloat(4 * xmod2)) + 1) / 2; // {0, 1, 2, 3, 4}
+    const y = xmod2 - 0.5 * @as(T, @floatfromint(n)); // [-0.25, 0.25]
     return switch (n) {
         0, 4 => @sin(std.math.pi * y),
         1 => @cos(std.math.pi * y),

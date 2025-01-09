@@ -105,7 +105,7 @@ pub const Rational = struct {
             try self.p.setString(10, str[0..i]);
 
             const base = IntConst{ .limbs = &[_]Limb{10}, .positive = true };
-            var local_buf: [@sizeOf(Limb) * Int.default_capacity]u8 align(@alignOf(Limb)) = undefined;
+            var local_buf: [@sizeof(Limb) * Int.default_capacity]u8 align(@alignof(Limb)) = undefined;
             var fba = std.heap.FixedBufferAllocator.init(&local_buf);
             const base_managed = try base.toManaged(fba.allocator());
 
@@ -135,10 +135,10 @@ pub const Rational = struct {
     /// completely represent the provided float.
     pub fn setFloat(self: *Rational, comptime T: type, f: T) !void {
         // Translated from golang.go/src/math/big/rat.go.
-        debug.assert(@typeInfo(T) == .Float);
+        debug.assert(@typeinfo(T) == .Float);
 
-        const UnsignedInt = std.meta.Int(.unsigned, @typeInfo(T).Float.bits);
-        const f_bits = @as(UnsignedInt, @bitCast(f));
+        const UnsignedInt = std.meta.Int(.unsigned, @typeinfo(T).Float.bits);
+        const f_bits = @as(UnsignedInt, @bitcast(f));
 
         const exponent_bits = math.floatExponentBits(T);
         const exponent_bias = (1 << (exponent_bits - 1)) - 1;
@@ -147,7 +147,7 @@ pub const Rational = struct {
         const exponent_mask = (1 << exponent_bits) - 1;
         const mantissa_mask = (1 << mantissa_bits) - 1;
 
-        var exponent = @as(i16, @intCast((f_bits >> mantissa_bits) & exponent_mask));
+        var exponent = @as(i16, @intcast((f_bits >> mantissa_bits) & exponent_mask));
         var mantissa = f_bits & mantissa_mask;
 
         switch (exponent) {
@@ -178,9 +178,9 @@ pub const Rational = struct {
 
         try self.q.set(1);
         if (shift >= 0) {
-            try self.q.shiftLeft(&self.q, @as(usize, @intCast(shift)));
+            try self.q.shiftLeft(&self.q, @as(usize, @intcast(shift)));
         } else {
-            try self.p.shiftLeft(&self.p, @as(usize, @intCast(-shift)));
+            try self.p.shiftLeft(&self.p, @as(usize, @intcast(-shift)));
         }
 
         try self.reduce();
@@ -193,9 +193,9 @@ pub const Rational = struct {
     pub fn toFloat(self: Rational, comptime T: type) !T {
         // Translated from golang.go/src/math/big/rat.go.
         // TODO: Indicate whether the result is not exact.
-        debug.assert(@typeInfo(T) == .Float);
+        debug.assert(@typeinfo(T) == .Float);
 
-        const fsize = @typeInfo(T).Float.bits;
+        const fsize = @typeinfo(T).Float.bits;
         const BitReprType = std.meta.Int(.unsigned, fsize);
 
         const msize = math.floatMantissaBits(T);
@@ -211,7 +211,7 @@ pub const Rational = struct {
         }
 
         // 1. left-shift a or sub so that a/b is in [1 << msize1, 1 << (msize2 + 1)]
-        var exp = @as(isize, @intCast(self.p.bitCountTwosComp())) - @as(isize, @intCast(self.q.bitCountTwosComp()));
+        var exp = @as(isize, @intcast(self.p.bitCountTwosComp())) - @as(isize, @intcast(self.q.bitCountTwosComp()));
 
         var a2 = try self.p.clone();
         defer a2.deinit();
@@ -221,9 +221,9 @@ pub const Rational = struct {
 
         const shift = msize2 - exp;
         if (shift >= 0) {
-            try a2.shiftLeft(&a2, @as(usize, @intCast(shift)));
+            try a2.shiftLeft(&a2, @as(usize, @intcast(shift)));
         } else {
-            try b2.shiftLeft(&b2, @as(usize, @intCast(-shift)));
+            try b2.shiftLeft(&b2, @as(usize, @intcast(-shift)));
         }
 
         // 2. compute quotient and remainder
@@ -234,7 +234,7 @@ pub const Rational = struct {
         var r = try Int.init(self.p.allocator);
         defer r.deinit();
 
-        try Int.divTrunc(&q, &r, &a2, &b2);
+        try Int.divtrunc(&q, &r, &a2, &b2);
 
         var mantissa = extractLowBits(q, BitReprType);
         var have_rem = r.len() > 0;
@@ -255,8 +255,8 @@ pub const Rational = struct {
         // 4. Rounding
         if (emin - msize <= exp and exp <= emin) {
             // denormal
-            const shift1 = @as(math.Log2Int(BitReprType), @intCast(emin - (exp - 1)));
-            const lost_bits = mantissa & ((@as(BitReprType, @intCast(1)) << shift1) - 1);
+            const shift1 = @as(math.Log2Int(BitReprType), @intcast(emin - (exp - 1)));
+            const lost_bits = mantissa & ((@as(BitReprType, @intcast(1)) << shift1) - 1);
             have_rem = have_rem or lost_bits != 0;
             mantissa >>= shift1;
             exp = 2 - ebias;
@@ -277,7 +277,7 @@ pub const Rational = struct {
         }
         mantissa >>= 1;
 
-        const f = math.scalbn(@as(T, @floatFromInt(mantissa)), @as(i32, @intCast(exp - msize1)));
+        const f = math.scalbn(@as(T, @floatfromint(mantissa)), @as(i32, @intcast(exp - msize1)));
         if (math.isInf(f)) {
             exact = false;
         }
@@ -290,7 +290,7 @@ pub const Rational = struct {
         try self.p.set(p);
         try self.q.set(q);
 
-        self.p.setSign(@intFromBool(self.p.isPositive()) ^ @intFromBool(self.q.isPositive()) == 0);
+        self.p.setSign(@intfrombool(self.p.isPositive()) ^ @intfrombool(self.q.isPositive()) == 0);
         self.q.setSign(true);
 
         try self.reduce();
@@ -311,7 +311,7 @@ pub const Rational = struct {
         try self.p.copy(a.toConst());
         try self.q.copy(b.toConst());
 
-        self.p.setSign(@intFromBool(self.p.isPositive()) ^ @intFromBool(self.q.isPositive()) == 0);
+        self.p.setSign(@intfrombool(self.p.isPositive()) ^ @intfrombool(self.q.isPositive()) == 0);
         self.q.setSign(true);
 
         try self.reduce();
@@ -466,17 +466,17 @@ pub const Rational = struct {
 
             // TODO: divexact would be useful here
             // TODO: don't copy r.q for div
-            try Int.divTrunc(&r.p, &unused, &r.p, &a);
-            try Int.divTrunc(&r.q, &unused, &r.q, &a);
+            try Int.divtrunc(&r.p, &unused, &r.p, &a);
+            try Int.divtrunc(&r.q, &unused, &r.q, &a);
         }
     }
 };
 
 fn extractLowBits(a: Int, comptime T: type) T {
-    debug.assert(@typeInfo(T) == .Int);
+    debug.assert(@typeinfo(T) == .Int);
 
-    const t_bits = @typeInfo(T).Int.bits;
-    const limb_bits = @typeInfo(Limb).Int.bits;
+    const t_bits = @typeinfo(T).Int.bits;
+    const limb_bits = @typeinfo(Limb).Int.bits;
     if (t_bits <= limb_bits) {
         return @as(T, @truncate(a.limbs[0]));
     } else {

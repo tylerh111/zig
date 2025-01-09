@@ -2921,7 +2921,7 @@ typedef enum D3D12_TRI_STATE {
     D3D12_TRI_STATE_TRUE = 0x1
 } D3D12_TRI_STATE;
 typedef struct D3D12_FEATURE_DATA_D3D12_OPTIONS12 {
-    D3D12_TRI_STATE MSPrimitivesPipelineStatisticIncludesCulledPrimitives;
+    D3D12_TRI_STATE MSPrimitivesPipelineStatisticincludesCulledPrimitives;
     WINBOOL EnhancedBarriersSupported;
     WINBOOL RelaxedFormatCastingSupported;
 } D3D12_FEATURE_DATA_D3D12_OPTIONS12;

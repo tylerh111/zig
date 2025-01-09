@@ -7,7 +7,7 @@ const expectStringStartsWith = std.testing.expectStringStartsWith;
 // Most tests here can be comptime but use runtime so that a stacktrace
 // can show failure location.
 //
-// Note certain results of `@typeName()` expect `behavior.zig` to be the
+// Note certain results of `@typename()` expect `behavior.zig` to be the
 // root file. Running a test against this file as root will result in
 // failures.
 
@@ -21,20 +21,20 @@ test "anon fn param" {
     // https://github.com/ziglang/zig/issues/9339
     try expectEqualStringsIgnoreDigits(
         "behavior.typename.TypeFromFn(behavior.typename.test.anon fn param__struct_0)",
-        @typeName(TypeFromFn(struct {})),
+        @typename(TypeFromFn(struct {})),
     );
     try expectEqualStringsIgnoreDigits(
         "behavior.typename.TypeFromFn(behavior.typename.test.anon fn param__union_0)",
-        @typeName(TypeFromFn(union { unused: u8 })),
+        @typename(TypeFromFn(union { unused: u8 })),
     );
     try expectEqualStringsIgnoreDigits(
         "behavior.typename.TypeFromFn(behavior.typename.test.anon fn param__enum_0)",
-        @typeName(TypeFromFn(enum { unused })),
+        @typename(TypeFromFn(enum { unused })),
     );
 
     try expectEqualStringsIgnoreDigits(
         "behavior.typename.TypeFromFnB(behavior.typename.test.anon fn param__struct_0,behavior.typename.test.anon fn param__union_0,behavior.typename.test.anon fn param__enum_0)",
-        @typeName(TypeFromFnB(struct {}, union { unused: u8 }, enum { unused })),
+        @typename(TypeFromFnB(struct {}, union { unused: u8 }, enum { unused })),
     );
 }
 
@@ -52,15 +52,15 @@ test "anon field init" {
 
     try expectEqualStringsIgnoreDigits(
         "behavior.typename.test.anon field init__struct_0",
-        @typeName(Foo.T1),
+        @typename(Foo.T1),
     );
     try expectEqualStringsIgnoreDigits(
         "behavior.typename.test.anon field init__union_0",
-        @typeName(Foo.T2),
+        @typename(Foo.T2),
     );
     try expectEqualStringsIgnoreDigits(
         "behavior.typename.test.anon field init__enum_0",
-        @typeName(Foo.T3),
+        @typename(Foo.T3),
     );
 }
 
@@ -70,20 +70,20 @@ test "basic" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    try expectEqualStrings("i64", @typeName(i64));
-    try expectEqualStrings("*usize", @typeName(*usize));
-    try expectEqualStrings("[]u8", @typeName([]u8));
+    try expectEqualStrings("i64", @typename(i64));
+    try expectEqualStrings("*usize", @typename(*usize));
+    try expectEqualStrings("[]u8", @typename([]u8));
 
-    try expectEqualStrings("fn () void", @typeName(fn () void));
-    try expectEqualStrings("fn (u32) void", @typeName(fn (u32) void));
-    try expectEqualStrings("fn (u32) void", @typeName(fn (a: u32) void));
+    try expectEqualStrings("fn () void", @typename(fn () void));
+    try expectEqualStrings("fn (u32) void", @typename(fn (u32) void));
+    try expectEqualStrings("fn (u32) void", @typename(fn (a: u32) void));
 
-    try expectEqualStrings("fn (comptime u32) void", @typeName(fn (comptime u32) void));
-    try expectEqualStrings("fn (noalias []u8) void", @typeName(fn (noalias []u8) void));
+    try expectEqualStrings("fn (comptime u32) void", @typename(fn (comptime u32) void));
+    try expectEqualStrings("fn (noalias []u8) void", @typename(fn (noalias []u8) void));
 
-    try expectEqualStrings("fn () callconv(.C) void", @typeName(fn () callconv(.C) void));
-    try expectEqualStrings("fn (...) callconv(.C) void", @typeName(fn (...) callconv(.C) void));
-    try expectEqualStrings("fn (u32, ...) callconv(.C) void", @typeName(fn (u32, ...) callconv(.C) void));
+    try expectEqualStrings("fn () callconv(.C) void", @typename(fn () callconv(.C) void));
+    try expectEqualStrings("fn (...) callconv(.C) void", @typename(fn (...) callconv(.C) void));
+    try expectEqualStrings("fn (u32, ...) callconv(.C) void", @typename(fn (u32, ...) callconv(.C) void));
 }
 
 test "top level decl" {
@@ -94,31 +94,31 @@ test "top level decl" {
 
     try expectEqualStrings(
         "behavior.typename.A_Struct",
-        @typeName(A_Struct),
+        @typename(A_Struct),
     );
     try expectEqualStrings(
         "behavior.typename.A_Union",
-        @typeName(A_Union),
+        @typename(A_Union),
     );
     try expectEqualStrings(
         "behavior.typename.A_Enum",
-        @typeName(A_Enum),
+        @typename(A_Enum),
     );
 
     // regular fn, without error
     try expectEqualStrings(
         "fn () void",
-        @typeName(@TypeOf(regular)),
+        @typename(@TypeOf(regular)),
     );
     // regular fn inside struct, with error
     try expectEqualStrings(
-        "fn () @typeInfo(@typeInfo(@TypeOf(behavior.typename.B.doTest)).Fn.return_type.?).ErrorUnion.error_set!void",
-        @typeName(@TypeOf(B.doTest)),
+        "fn () @typeinfo(@typeinfo(@TypeOf(behavior.typename.B.doTest)).Fn.return_type.?).ErrorUnion.error_set!void",
+        @typename(@TypeOf(B.doTest)),
     );
     // generic fn
     try expectEqualStrings(
         "fn (comptime type) type",
-        @typeName(@TypeOf(TypeFromFn)),
+        @typename(@TypeOf(TypeFromFn)),
     );
 }
 
@@ -145,24 +145,24 @@ test "fn param" {
     // https://github.com/ziglang/zig/issues/675
     try expectEqualStrings(
         "behavior.typename.TypeFromFn(u8)",
-        @typeName(TypeFromFn(u8)),
+        @typename(TypeFromFn(u8)),
     );
     try expectEqualStrings(
         "behavior.typename.TypeFromFn(behavior.typename.A_Struct)",
-        @typeName(TypeFromFn(A_Struct)),
+        @typename(TypeFromFn(A_Struct)),
     );
     try expectEqualStrings(
         "behavior.typename.TypeFromFn(behavior.typename.A_Union)",
-        @typeName(TypeFromFn(A_Union)),
+        @typename(TypeFromFn(A_Union)),
     );
     try expectEqualStrings(
         "behavior.typename.TypeFromFn(behavior.typename.A_Enum)",
-        @typeName(TypeFromFn(A_Enum)),
+        @typename(TypeFromFn(A_Enum)),
     );
 
     try expectEqualStrings(
         "behavior.typename.TypeFromFn2(u8,bool)",
-        @typeName(TypeFromFn2(u8, bool)),
+        @typename(TypeFromFn2(u8, bool)),
     );
 }
 
@@ -228,11 +228,11 @@ test "local variable" {
     const Qux = enum { a, b };
     const Quux = enum { a, b };
 
-    try expectEqualStrings("behavior.typename.test.local variable.Foo", @typeName(Foo));
-    try expectEqualStrings("behavior.typename.test.local variable.Bar", @typeName(Bar));
-    try expectEqualStrings("behavior.typename.test.local variable.Baz", @typeName(Baz));
-    try expectEqualStrings("behavior.typename.test.local variable.Qux", @typeName(Qux));
-    try expectEqualStrings("behavior.typename.test.local variable.Quux", @typeName(Quux));
+    try expectEqualStrings("behavior.typename.test.local variable.Foo", @typename(Foo));
+    try expectEqualStrings("behavior.typename.test.local variable.Bar", @typename(Bar));
+    try expectEqualStrings("behavior.typename.test.local variable.Baz", @typename(Baz));
+    try expectEqualStrings("behavior.typename.test.local variable.Qux", @typename(Qux));
+    try expectEqualStrings("behavior.typename.test.local variable.Quux", @typename(Quux));
 }
 
 test "comptime parameters not converted to anytype in function type" {
@@ -242,7 +242,7 @@ test "comptime parameters not converted to anytype in function type" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const T = fn (fn (type) void, void) void;
-    try expectEqualStrings("fn (comptime fn (comptime type) void, void) void", @typeName(T));
+    try expectEqualStrings("fn (comptime fn (comptime type) void, void) void", @typename(T));
 }
 
 test "anon name strategy used in sub expression" {
@@ -254,7 +254,7 @@ test "anon name strategy used in sub expression" {
     const S = struct {
         fn getTheName() []const u8 {
             return struct {
-                const name = @typeName(@This());
+                const name = @typename(@This());
             }.name;
         }
     };

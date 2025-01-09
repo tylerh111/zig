@@ -66,7 +66,7 @@ pub fn HuffmanEncoder(comptime size: usize) type {
             // Set list to be the set of all non-zero literals and their frequencies
             for (freq, 0..) |f, i| {
                 if (f != 0) {
-                    list[count] = LiteralNode{ .literal = @as(u16, @intCast(i)), .freq = f };
+                    list[count] = LiteralNode{ .literal = @as(u16, @intcast(i)), .freq = f };
                     count += 1;
                 } else {
                     list[count] = LiteralNode{ .literal = 0x00, .freq = 0 };
@@ -81,7 +81,7 @@ pub fn HuffmanEncoder(comptime size: usize) type {
                 // two or fewer literals, everything has bit length 1.
                 for (list, 0..) |node, i| {
                     // "list" is in order of increasing literal value.
-                    self.codes[node.literal].set(@as(u16, @intCast(i)), 1);
+                    self.codes[node.literal].set(@as(u16, @intcast(i)), 1);
                 }
                 return;
             }
@@ -98,7 +98,7 @@ pub fn HuffmanEncoder(comptime size: usize) type {
             var total: u32 = 0;
             for (freq, 0..) |f, i| {
                 if (f != 0) {
-                    total += @as(u32, @intCast(f)) * @as(u32, @intCast(self.codes[i].len));
+                    total += @as(u32, @intcast(f)) * @as(u32, @intcast(self.codes[i].len));
                 }
             }
             return total;
@@ -161,7 +161,7 @@ pub fn HuffmanEncoder(comptime size: usize) type {
             }
 
             // We need a total of 2*n - 2 items at top level and have already generated 2.
-            levels[max_bits].needed = 2 * @as(u32, @intCast(n)) - 4;
+            levels[max_bits].needed = 2 * @as(u32, @intcast(n)) - 4;
 
             {
                 var level = max_bits;
@@ -261,19 +261,19 @@ pub fn HuffmanEncoder(comptime size: usize) type {
                 // are encoded using "bits" bits, and get the values
                 // code, code + 1, ....  The code values are
                 // assigned in literal order (not frequency order).
-                const chunk = list[list.len - @as(u32, @intCast(bits)) ..];
+                const chunk = list[list.len - @as(u32, @intcast(bits)) ..];
 
                 self.lns = chunk;
                 mem.sort(LiteralNode, self.lns, {}, byLiteral);
 
                 for (chunk) |node| {
                     self.codes[node.literal] = HuffCode{
-                        .code = bitReverse(u16, code, @as(u5, @intCast(n))),
-                        .len = @as(u16, @intCast(n)),
+                        .code = bitreverse(u16, code, @as(u5, @intcast(n))),
+                        .len = @as(u16, @intcast(n)),
                     };
                     code += 1;
                 }
-                list = list[0 .. list.len - @as(u32, @intCast(bits))];
+                list = list[0 .. list.len - @as(u32, @intcast(bits))];
             }
         }
     };
@@ -324,7 +324,7 @@ pub fn fixedLiteralEncoder() LiteralEncoder {
                 size = 8;
             },
         }
-        h.codes[ch] = HuffCode{ .code = bitReverse(u16, bits, @as(u5, @intCast(size))), .len = size };
+        h.codes[ch] = HuffCode{ .code = bitreverse(u16, bits, @as(u5, @intcast(size))), .len = size };
     }
     return h;
 }
@@ -332,7 +332,7 @@ pub fn fixedLiteralEncoder() LiteralEncoder {
 pub fn fixedDistanceEncoder() DistanceEncoder {
     var h: DistanceEncoder = undefined;
     for (h.codes, 0..) |_, ch| {
-        h.codes[ch] = HuffCode{ .code = bitReverse(u16, @as(u16, @intCast(ch)), 5), .len = 5 };
+        h.codes[ch] = HuffCode{ .code = bitreverse(u16, @as(u16, @intcast(ch)), 5), .len = 5 };
     }
     return h;
 }
@@ -426,16 +426,16 @@ test "generate a Huffman code for the fixed literal table specific to Deflate" {
     for (enc.codes) |c| {
         switch (c.len) {
             7 => {
-                const v = @bitReverse(@as(u7, @intCast(c.code)));
+                const v = @bitreverse(@as(u7, @intcast(c.code)));
                 try testing.expect(v <= 0b0010111);
             },
             8 => {
-                const v = @bitReverse(@as(u8, @intCast(c.code)));
+                const v = @bitreverse(@as(u8, @intcast(c.code)));
                 try testing.expect((v >= 0b000110000 and v <= 0b10111111) or
                     (v >= 0b11000000 and v <= 11000111));
             },
             9 => {
-                const v = @bitReverse(@as(u9, @intCast(c.code)));
+                const v = @bitreverse(@as(u9, @intcast(c.code)));
                 try testing.expect(v >= 0b110010000 and v <= 0b111111111);
             },
             else => unreachable,
@@ -446,19 +446,19 @@ test "generate a Huffman code for the fixed literal table specific to Deflate" {
 test "generate a Huffman code for the 30 possible relative distances (LZ77 distances) of Deflate" {
     const enc = fixedDistanceEncoder();
     for (enc.codes) |c| {
-        const v = @bitReverse(@as(u5, @intCast(c.code)));
+        const v = @bitreverse(@as(u5, @intcast(c.code)));
         try testing.expect(v <= 29);
         try testing.expect(c.len == 5);
     }
 }
 
 // Reverse bit-by-bit a N-bit code.
-fn bitReverse(comptime T: type, value: T, n: usize) T {
-    const r = @bitReverse(value);
-    return r >> @as(math.Log2Int(T), @intCast(@typeInfo(T).Int.bits - n));
+fn bitreverse(comptime T: type, value: T, n: usize) T {
+    const r = @bitreverse(value);
+    return r >> @as(math.Log2Int(T), @intcast(@typeinfo(T).Int.bits - n));
 }
 
-test bitReverse {
+test bitreverse {
     const ReverseBitsTest = struct {
         in: u16,
         bit_count: u5,
@@ -477,7 +477,7 @@ test bitReverse {
     };
 
     for (reverse_bits_tests) |h| {
-        const v = bitReverse(u16, h.in, h.bit_count);
+        const v = bitreverse(u16, h.in, h.bit_count);
         try std.testing.expectEqual(h.out, v);
     }
 }

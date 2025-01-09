@@ -1,6 +1,6 @@
 const x = @import("builtin").bogus;
 export fn entry() usize {
-    return @sizeOf(@TypeOf(x));
+    return @sizeof(@TypeOf(x));
 }
 
 // error

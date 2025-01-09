@@ -18,13 +18,13 @@ pub fn acosh(x: anytype) @TypeOf(x) {
     return switch (T) {
         f32 => acosh32(x),
         f64 => acosh64(x),
-        else => @compileError("acosh not implemented for " ++ @typeName(T)),
+        else => @compileerror("acosh not implemented for " ++ @typename(T)),
     };
 }
 
 // acosh(x) = log(x + sqrt(x * x - 1))
 fn acosh32(x: f32) f32 {
-    const u = @as(u32, @bitCast(x));
+    const u = @as(u32, @bitcast(x));
     const i = u & 0x7FFFFFFF;
 
     // |x| < 2, invalid if x < 1 or nan
@@ -42,7 +42,7 @@ fn acosh32(x: f32) f32 {
 }
 
 fn acosh64(x: f64) f64 {
-    const u = @as(u64, @bitCast(x));
+    const u = @as(u64, @bitcast(x));
     const e = (u >> 52) & 0x7FF;
 
     // |x| < 2, invalid if x < 1 or nan

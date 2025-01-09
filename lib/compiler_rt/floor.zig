@@ -27,8 +27,8 @@ comptime {
 }
 
 pub fn __floorh(x: f16) callconv(.C) f16 {
-    var u: u16 = @bitCast(x);
-    const e = @as(i16, @intCast((u >> 10) & 31)) - 15;
+    var u: u16 = @bitcast(x);
+    const e = @as(i16, @intcast((u >> 10) & 31)) - 15;
     var m: u16 = undefined;
 
     // TODO: Shouldn't need this explicit check.
@@ -41,7 +41,7 @@ pub fn __floorh(x: f16) callconv(.C) f16 {
     }
 
     if (e >= 0) {
-        m = @as(u16, 1023) >> @intCast(e);
+        m = @as(u16, 1023) >> @intcast(e);
         if (u & m == 0) {
             return x;
         }
@@ -49,7 +49,7 @@ pub fn __floorh(x: f16) callconv(.C) f16 {
         if (u >> 15 != 0) {
             u += m;
         }
-        return @bitCast(u & ~m);
+        return @bitcast(u & ~m);
     } else {
         mem.doNotOptimizeAway(x + 0x1.0p120);
         if (u >> 15 == 0) {
@@ -61,8 +61,8 @@ pub fn __floorh(x: f16) callconv(.C) f16 {
 }
 
 pub fn floorf(x: f32) callconv(.C) f32 {
-    var u: u32 = @bitCast(x);
-    const e = @as(i32, @intCast((u >> 23) & 0xFF)) - 0x7F;
+    var u: u32 = @bitcast(x);
+    const e = @as(i32, @intcast((u >> 23) & 0xFF)) - 0x7F;
     var m: u32 = undefined;
 
     // TODO: Shouldn't need this explicit check.
@@ -75,7 +75,7 @@ pub fn floorf(x: f32) callconv(.C) f32 {
     }
 
     if (e >= 0) {
-        m = @as(u32, 0x007FFFFF) >> @intCast(e);
+        m = @as(u32, 0x007FFFFF) >> @intcast(e);
         if (u & m == 0) {
             return x;
         }
@@ -83,7 +83,7 @@ pub fn floorf(x: f32) callconv(.C) f32 {
         if (u >> 31 != 0) {
             u += m;
         }
-        return @bitCast(u & ~m);
+        return @bitcast(u & ~m);
     } else {
         mem.doNotOptimizeAway(x + 0x1.0p120);
         if (u >> 31 == 0) {
@@ -97,7 +97,7 @@ pub fn floorf(x: f32) callconv(.C) f32 {
 pub fn floor(x: f64) callconv(.C) f64 {
     const f64_toint = 1.0 / math.floatEps(f64);
 
-    const u: u64 = @bitCast(x);
+    const u: u64 = @bitcast(x);
     const e = (u >> 52) & 0x7FF;
     var y: f64 = undefined;
 
@@ -127,13 +127,13 @@ pub fn floor(x: f64) callconv(.C) f64 {
 
 pub fn __floorx(x: f80) callconv(.C) f80 {
     // TODO: more efficient implementation
-    return @floatCast(floorq(x));
+    return @floatcast(floorq(x));
 }
 
 pub fn floorq(x: f128) callconv(.C) f128 {
     const f128_toint = 1.0 / math.floatEps(f128);
 
-    const u: u128 = @bitCast(x);
+    const u: u128 = @bitcast(x);
     const e = (u >> 112) & 0x7FFF;
     var y: f128 = undefined;
 
@@ -160,13 +160,13 @@ pub fn floorq(x: f128) callconv(.C) f128 {
 }
 
 pub fn floorl(x: c_longdouble) callconv(.C) c_longdouble {
-    switch (@typeInfo(c_longdouble).Float.bits) {
+    switch (@typeinfo(c_longdouble).Float.bits) {
         16 => return __floorh(x),
         32 => return floorf(x),
         64 => return floor(x),
         80 => return __floorx(x),
         128 => return floorq(x),
-        else => @compileError("unreachable"),
+        else => @compileerror("unreachable"),
     }
 }
 

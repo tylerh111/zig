@@ -53,7 +53,7 @@ pub const CpuModel = union(enum) {
     explicit: *const Target.Cpu.Model,
 
     pub fn eql(a: CpuModel, b: CpuModel) bool {
-        const Tag = @typeInfo(CpuModel).Union.tag_type.?;
+        const Tag = @typeinfo(CpuModel).Union.tag_type.?;
         const a_tag: Tag = a;
         const b_tag: Tag = b;
         if (a_tag != b_tag) return false;
@@ -70,7 +70,7 @@ pub const OsVersion = union(enum) {
     windows: Target.Os.WindowsVersion,
 
     pub fn eql(a: OsVersion, b: OsVersion) bool {
-        const Tag = @typeInfo(OsVersion).Union.tag_type.?;
+        const Tag = @typeinfo(OsVersion).Union.tag_type.?;
         const a_tag: Tag = a;
         const b_tag: Tag = b;
         if (a_tag != b_tag) return false;
@@ -281,7 +281,7 @@ pub fn parse(args: ParseOptions) !Query {
             }
             const feature_name = cpu_features[start..index];
             for (all_features, 0..) |feature, feat_index_usize| {
-                const feat_index = @as(Target.Cpu.Feature.Set.Index, @intCast(feat_index_usize));
+                const feat_index = @as(Target.Cpu.Feature.Set.Index, @intcast(feat_index_usize));
                 if (mem.eql(u8, feature_name, feature.name)) {
                     set.addFeature(feat_index);
                     break;
@@ -393,8 +393,8 @@ pub fn zigTriple(self: Query, allocator: Allocator) Allocator.Error![]u8 {
     if (self.isNativeTriple())
         return allocator.dupe(u8, "native");
 
-    const arch_name = if (self.cpu_arch) |arch| @tagName(arch) else "native";
-    const os_name = if (self.os_tag) |os_tag| @tagName(os_tag) else "native";
+    const arch_name = if (self.cpu_arch) |arch| @tagname(arch) else "native";
+    const os_name = if (self.os_tag) |os_tag| @tagname(os_tag) else "native";
 
     var result = std.ArrayList(u8).init(allocator);
     defer result.deinit();
@@ -431,14 +431,14 @@ pub fn zigTriple(self: Query, allocator: Allocator) Allocator.Error![]u8 {
     }
 
     if (self.glibc_version) |v| {
-        const name = if (self.abi) |abi| @tagName(abi) else "gnu";
+        const name = if (self.abi) |abi| @tagname(abi) else "gnu";
         try result.ensureUnusedCapacity(name.len + 2);
         result.appendAssumeCapacity('-');
         result.appendSliceAssumeCapacity(name);
         result.appendAssumeCapacity('.');
         try formatVersion(v, result.writer());
     } else if (self.abi) |abi| {
-        const name = @tagName(abi);
+        const name = @tagname(abi);
         try result.ensureUnusedCapacity(name.len + 1);
         result.appendAssumeCapacity('-');
         result.appendSliceAssumeCapacity(name);
@@ -480,7 +480,7 @@ pub fn serializeCpu(q: Query, buffer: *std.ArrayList(u8)) Allocator.Error!void {
     const all_features = cpu_arch.allFeaturesList();
 
     for (all_features, 0..) |feature, i_usize| {
-        const i: Target.Cpu.Feature.Set.Index = @intCast(i_usize);
+        const i: Target.Cpu.Feature.Set.Index = @intcast(i_usize);
         try buffer.ensureUnusedCapacity(feature.name.len + 1);
         if (q.cpu_features_sub.isEnabled(i)) {
             buffer.appendAssumeCapacity('-');
@@ -592,7 +592,7 @@ test parse {
         const triple = std.fmt.bufPrint(
             buf[0..],
             "native-native-{s}.2.1.1",
-            .{@tagName(builtin.target.abi)},
+            .{@tagname(builtin.target.abi)},
         ) catch unreachable;
 
         try std.testing.expectEqualSlices(u8, triple, text);

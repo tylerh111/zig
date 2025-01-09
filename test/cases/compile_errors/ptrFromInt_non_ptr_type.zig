@@ -1,9 +1,9 @@
 pub export fn entry() void {
-    _ = @as(i32, @ptrFromInt(10));
+    _ = @as(i32, @ptrfromint(10));
 }
 
 pub export fn entry2() void {
-    _ = @as([]u8, @ptrFromInt(20));
+    _ = @as([]u8, @ptrfromint(20));
 }
 
 // error

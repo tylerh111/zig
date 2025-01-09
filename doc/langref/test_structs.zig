@@ -65,7 +65,7 @@ const Empty = struct {
 };
 test "struct namespaced variable" {
     try expect(Empty.PI == 3.14);
-    try expect(@sizeOf(Empty) == 0);
+    try expect(@sizeof(Empty) == 0);
 
     // you can still instantiate an empty struct
     const does_nothing = Empty{};
@@ -76,7 +76,7 @@ test "struct namespaced variable" {
 // struct field order is determined by the compiler for optimal performance.
 // however, you can still calculate a struct base pointer given a field pointer:
 fn setYBasedOnX(x: *f32, y: f32) void {
-    const point: *Point = @fieldParentPtr("x", x);
+    const point: *Point = @fieldparentptr("x", x);
     point.y = y;
 }
 test "field parent pointer" {

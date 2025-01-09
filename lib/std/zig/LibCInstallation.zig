@@ -82,27 +82,27 @@ pub fn parse(
 
     const os_tag = target.os.tag;
     if (self.crt_dir == null and !target.isDarwin()) {
-        log.err("crt_dir may not be empty for {s}", .{@tagName(os_tag)});
+        log.err("crt_dir may not be empty for {s}", .{@tagname(os_tag)});
         return error.ParseError;
     }
 
     if (self.msvc_lib_dir == null and os_tag == .windows and target.abi == .msvc) {
         log.err("msvc_lib_dir may not be empty for {s}-{s}", .{
-            @tagName(os_tag),
-            @tagName(target.abi),
+            @tagname(os_tag),
+            @tagname(target.abi),
         });
         return error.ParseError;
     }
     if (self.kernel32_lib_dir == null and os_tag == .windows and target.abi == .msvc) {
         log.err("kernel32_lib_dir may not be empty for {s}-{s}", .{
-            @tagName(os_tag),
-            @tagName(target.abi),
+            @tagname(os_tag),
+            @tagname(target.abi),
         });
         return error.ParseError;
     }
 
     if (self.gcc_dir == null and os_tag == .haiku) {
-        log.err("gcc_dir may not be empty for {s}", .{@tagName(os_tag)});
+        log.err("gcc_dir may not be empty for {s}", .{@tagname(os_tag)});
         return error.ParseError;
     }
 
@@ -110,7 +110,7 @@ pub fn parse(
 }
 
 pub fn render(self: LibCInstallation, out: anytype) !void {
-    @setEvalBranchQuota(4000);
+    @setevalbranchquota(4000);
     const include_dir = self.include_dir orelse "";
     const sys_include_dir = self.sys_include_dir orelse "";
     const crt_dir = self.crt_dir orelse "";
@@ -189,7 +189,7 @@ pub fn findNative(args: FindNativeOptions) FindError!LibCInstallation {
         };
         defer sdk.free(args.allocator);
 
-        try self.findNativeMsvcIncludeDir(args, sdk);
+        try self.findNativeMsvcincludeDir(args, sdk);
         try self.findNativeMsvcLibDir(args, sdk);
         try self.findNativeKernel32LibDir(args, sdk);
         try self.findNativeIncludeDirWindows(args, sdk);
@@ -508,7 +508,7 @@ fn findNativeKernel32LibDir(
     return error.LibCKernel32LibNotFound;
 }
 
-fn findNativeMsvcIncludeDir(
+fn findNativeMsvcincludeDir(
     self: *LibCInstallation,
     args: FindNativeOptions,
     sdk: std.zig.WindowsSdk,

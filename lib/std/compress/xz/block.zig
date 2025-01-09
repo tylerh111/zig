@@ -105,7 +105,7 @@ pub fn Decoder(comptime ReaderType: type) type {
                     has_unpacked_size: bool,
                 };
 
-                const flags = @as(Flags, @bitCast(try header_reader.readByte()));
+                const flags = @as(Flags, @bitcast(try header_reader.readByte()));
                 const filter_count = @as(u3, flags.last_filter_index) + 1;
                 if (filter_count > 1)
                     return error.Unsupported;
@@ -123,10 +123,10 @@ pub fn Decoder(comptime ReaderType: type) type {
 
                 const filter_id = @as(
                     FilterId,
-                    @enumFromInt(try std.leb.readULEB128(u64, header_reader)),
+                    @enumfromint(try std.leb.readULEB128(u64, header_reader)),
                 );
 
-                if (@intFromEnum(filter_id) >= 0x4000_0000_0000_0000)
+                if (@intfromenum(filter_id) >= 0x4000_0000_0000_0000)
                     return error.CorruptInput;
 
                 if (filter_id != .lzma2)

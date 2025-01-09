@@ -4,9 +4,9 @@ fn foo(a: anytype) !void {
 }
 const Error = error{ A, B };
 export fn entry() void {
-    const info = @typeInfo(@TypeOf(foo));
+    const info = @typeinfo(@TypeOf(foo));
     const ret_type = info.Fn.return_type.?;
-    const error_set = @typeInfo(ret_type).ErrorUnion.error_set;
+    const error_set = @typeinfo(ret_type).ErrorUnion.error_set;
     _ = Error || error_set;
 }
 

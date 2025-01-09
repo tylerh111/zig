@@ -77,9 +77,9 @@ pub fn main() !void {
         cache_root, std.crypto.random.int(u64),
     });
     fs.cwd().makePath(tmp_dir_path) catch |err|
-        fatal("unable to create tmp dir '{s}': {s}", .{ tmp_dir_path, @errorName(err) });
+        fatal("unable to create tmp dir '{s}': {s}", .{ tmp_dir_path, @errorname(err) });
     defer fs.cwd().deleteTree(tmp_dir_path) catch |err| std.log.err("unable to delete '{s}': {s}", .{
-        tmp_dir_path, @errorName(err),
+        tmp_dir_path, @errorname(err),
     });
 
     var out_file = try fs.cwd().createFile(output_path, .{});
@@ -135,8 +135,8 @@ fn printOutput(
             switch (code.mode) {
                 .Debug => {},
                 else => {
-                    try build_args.appendSlice(&[_][]const u8{ "-O", @tagName(code.mode) });
-                    try shell_out.print("-O {s} ", .{@tagName(code.mode)});
+                    try build_args.appendSlice(&[_][]const u8{ "-O", @tagname(code.mode) });
+                    try shell_out.print("-O {s} ", .{@tagname(code.mode)});
                 },
             }
             for (code.link_objects) |link_object| {
@@ -275,9 +275,9 @@ fn printOutput(
                 .Debug => {},
                 else => {
                     try test_args.appendSlice(&[_][]const u8{
-                        "-O", @tagName(code.mode),
+                        "-O", @tagname(code.mode),
                     });
-                    try shell_out.print("-O {s} ", .{@tagName(code.mode)});
+                    try shell_out.print("-O {s} ", .{@tagname(code.mode)});
                 },
             }
             if (code.link_libc) {
@@ -327,8 +327,8 @@ fn printOutput(
             switch (code.mode) {
                 .Debug => {},
                 else => {
-                    try test_args.appendSlice(&[_][]const u8{ "-O", @tagName(code.mode) });
-                    try shell_out.print("-O {s} ", .{@tagName(code.mode)});
+                    try test_args.appendSlice(&[_][]const u8{ "-O", @tagname(code.mode) });
+                    try shell_out.print("-O {s} ", .{@tagname(code.mode)});
                 },
             }
             if (code.link_libc) {
@@ -446,8 +446,8 @@ fn printOutput(
             switch (code.mode) {
                 .Debug => {},
                 else => {
-                    try build_args.appendSlice(&[_][]const u8{ "-O", @tagName(code.mode) });
-                    try shell_out.print("-O {s} ", .{@tagName(code.mode)});
+                    try build_args.appendSlice(&[_][]const u8{ "-O", @tagname(code.mode) });
+                    try shell_out.print("-O {s} ", .{@tagname(code.mode)});
                 },
             }
 
@@ -518,8 +518,8 @@ fn printOutput(
             switch (code.mode) {
                 .Debug => {},
                 else => {
-                    try test_args.appendSlice(&[_][]const u8{ "-O", @tagName(code.mode) });
-                    try shell_out.print("-O {s} ", .{@tagName(code.mode)});
+                    try test_args.appendSlice(&[_][]const u8{ "-O", @tagname(code.mode) });
+                    try shell_out.print("-O {s} ", .{@tagname(code.mode)});
                 },
             }
             if (code.target_str) |triple| {
@@ -1236,10 +1236,10 @@ test "term output from zig" {
 
     {
         // 2.2-without-reference-traces.out
-        const input = "\x1b[1m/usr/local/lib/zig/lib/std/io/fixed_buffer_stream.zig:128:29: \x1b[31;1merror: \x1b[0m\x1b[1minvalid type given to fixedBufferStream\n\x1b[0m                    else => @compileError(\"invalid type given to fixedBufferStream\"),\n                            \x1b[32;1m^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\x1b[0m\x1b[1m/usr/local/lib/zig/lib/std/io/fixed_buffer_stream.zig:116:66: \x1b[36;1mnote: \x1b[0m\x1b[1mcalled from here\n\x1b[0mpub fn fixedBufferStream(buffer: anytype) FixedBufferStream(Slice(@TypeOf(buffer))) {\n;                                                            \x1b[32;1m~~~~~^~~~~~~~~~~~~~~~~\n\x1b[0m";
+        const input = "\x1b[1m/usr/local/lib/zig/lib/std/io/fixed_buffer_stream.zig:128:29: \x1b[31;1merror: \x1b[0m\x1b[1minvalid type given to fixedBufferStream\n\x1b[0m                    else => @compileerror(\"invalid type given to fixedBufferStream\"),\n                            \x1b[32;1m^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\x1b[0m\x1b[1m/usr/local/lib/zig/lib/std/io/fixed_buffer_stream.zig:116:66: \x1b[36;1mnote: \x1b[0m\x1b[1mcalled from here\n\x1b[0mpub fn fixedBufferStream(buffer: anytype) FixedBufferStream(Slice(@TypeOf(buffer))) {\n;                                                            \x1b[32;1m~~~~~^~~~~~~~~~~~~~~~~\n\x1b[0m";
         const expect =
             \\<span class="sgr-1m">/usr/local/lib/zig/lib/std/io/fixed_buffer_stream.zig:128:29: </span><span class="sgr-31_1m">error: </span><span class="sgr-1m">invalid type given to fixedBufferStream
-            \\</span>                    else => @compileError("invalid type given to fixedBufferStream"),
+            \\</span>                    else => @compileerror("invalid type given to fixedBufferStream"),
             \\                            <span class="sgr-32_1m">^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             \\</span><span class="sgr-1m">/usr/local/lib/zig/lib/std/io/fixed_buffer_stream.zig:116:66: </span><span class="sgr-36_1m">note: </span><span class="sgr-1m">called from here
             \\</span>pub fn fixedBufferStream(buffer: anytype) FixedBufferStream(Slice(@TypeOf(buffer))) {

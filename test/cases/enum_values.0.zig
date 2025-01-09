@@ -7,8 +7,8 @@ pub fn main() void {
         &number1;
         &number2;
     }
-    const number3: Number = @enumFromInt(2);
-    if (@intFromEnum(number3) != 2) {
+    const number3: Number = @enumfromint(2);
+    if (@intfromenum(number3) != 2) {
         unreachable;
     }
     return;

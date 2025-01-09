@@ -15,7 +15,7 @@ fn f(n: Number) i32 {
 }
 
 export fn entry() usize {
-    return @sizeOf(@TypeOf(&f));
+    return @sizeof(@TypeOf(&f));
 }
 
 // error

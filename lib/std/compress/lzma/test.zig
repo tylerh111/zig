@@ -56,34 +56,34 @@ test "decompress huge dict" {
 test "unknown size with end of payload marker" {
     try testDecompressEqual(
         "Hello\nWorld!\n",
-        @embedFile("testdata/good-unknown_size-with_eopm.lzma"),
+        @embedfile("testdata/good-unknown_size-with_eopm.lzma"),
     );
 }
 
 test "known size without end of payload marker" {
     try testDecompressEqual(
         "Hello\nWorld!\n",
-        @embedFile("testdata/good-known_size-without_eopm.lzma"),
+        @embedfile("testdata/good-known_size-without_eopm.lzma"),
     );
 }
 
 test "known size with end of payload marker" {
     try testDecompressEqual(
         "Hello\nWorld!\n",
-        @embedFile("testdata/good-known_size-with_eopm.lzma"),
+        @embedfile("testdata/good-known_size-with_eopm.lzma"),
     );
 }
 
 test "too big uncompressed size in header" {
     try testDecompressError(
         error.CorruptInput,
-        @embedFile("testdata/bad-too_big_size-with_eopm.lzma"),
+        @embedfile("testdata/bad-too_big_size-with_eopm.lzma"),
     );
 }
 
 test "too small uncompressed size in header" {
     try testDecompressError(
         error.CorruptInput,
-        @embedFile("testdata/bad-too_small_size-without_eopm-3.lzma"),
+        @embedfile("testdata/bad-too_small_size-without_eopm-3.lzma"),
     );
 }

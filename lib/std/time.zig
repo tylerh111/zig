@@ -63,7 +63,7 @@ test sleep {
 /// before the epoch.
 /// See `posix.clock_gettime` for a POSIX timestamp.
 pub fn timestamp() i64 {
-    return @divFloor(milliTimestamp(), ms_per_s);
+    return @divfloor(milliTimestamp(), ms_per_s);
 }
 
 /// Get a calendar timestamp, in milliseconds, relative to UTC 1970-01-01.
@@ -72,7 +72,7 @@ pub fn timestamp() i64 {
 /// before the epoch.
 /// See `posix.clock_gettime` for a POSIX timestamp.
 pub fn milliTimestamp() i64 {
-    return @as(i64, @intCast(@divFloor(nanoTimestamp(), ns_per_ms)));
+    return @as(i64, @intcast(@divfloor(nanoTimestamp(), ns_per_ms)));
 }
 
 /// Get a calendar timestamp, in microseconds, relative to UTC 1970-01-01.
@@ -81,7 +81,7 @@ pub fn milliTimestamp() i64 {
 /// before the epoch.
 /// See `posix.clock_gettime` for a POSIX timestamp.
 pub fn microTimestamp() i64 {
-    return @as(i64, @intCast(@divFloor(nanoTimestamp(), ns_per_us)));
+    return @as(i64, @intcast(@divfloor(nanoTimestamp(), ns_per_us)));
 }
 
 /// Get a calendar timestamp, in nanoseconds, relative to UTC 1970-01-01.
@@ -99,7 +99,7 @@ pub fn nanoTimestamp() i128 {
             var ft: windows.FILETIME = undefined;
             windows.kernel32.GetSystemTimeAsFileTime(&ft);
             const ft64 = (@as(u64, ft.dwHighDateTime) << 32) | ft.dwLowDateTime;
-            return @as(i128, @as(i64, @bitCast(ft64)) + epoch_adj) * 100;
+            return @as(i128, @as(i64, @bitcast(ft64)) + epoch_adj) * 100;
         },
         .wasi => {
             var ns: std.os.wasi.timestamp_t = undefined;
@@ -256,7 +256,7 @@ pub const Instant = struct {
             }
 
             // Convert to ns using fixed point.
-            const scale = @as(u64, std.time.ns_per_s << 32) / @as(u32, @intCast(qpf));
+            const scale = @as(u64, std.time.ns_per_s << 32) / @as(u32, @intcast(qpf));
             const result = (@as(u96, qpc) * scale) >> 32;
             return @as(u64, @truncate(result));
         }
@@ -267,9 +267,9 @@ pub const Instant = struct {
         }
 
         // Convert timespec diff to ns
-        const seconds = @as(u64, @intCast(self.timestamp.tv_sec - earlier.timestamp.tv_sec));
-        const elapsed = (seconds * ns_per_s) + @as(u32, @intCast(self.timestamp.tv_nsec));
-        return elapsed - @as(u32, @intCast(earlier.timestamp.tv_nsec));
+        const seconds = @as(u64, @intcast(self.timestamp.tv_sec - earlier.timestamp.tv_sec));
+        const elapsed = (seconds * ns_per_s) + @as(u32, @intcast(self.timestamp.tv_nsec));
+        return elapsed - @as(u32, @intcast(earlier.timestamp.tv_nsec));
     }
 };
 

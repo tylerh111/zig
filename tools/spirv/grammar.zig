@@ -97,7 +97,7 @@ pub const Enumerant = struct {
                 else => return error.UnexpectedToken,
             }
         }
-        pub const jsonStringify = @compileError("not supported");
+        pub const jsonStringify = @compileerror("not supported");
     },
     capabilities: [][]const u8 = &[_][]const u8{},
     /// Valid for .ValueEnum and .BitEnum

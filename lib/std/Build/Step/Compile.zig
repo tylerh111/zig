@@ -67,7 +67,7 @@ installed_headers: ArrayList(HeaderInstallation),
 /// created otherwise.
 installed_headers_include_tree: ?*Step.WriteFile = null,
 
-// keep in sync with src/Compilation.zig:RcIncludes
+// keep in sync with src/Compilation.zig:Rcincludes
 /// Behavior of automatic detection of include directories when compiling .rc files.
 ///  any: Use MSVC if available, fall back to MinGW.
 ///  msvc: Use MSVC include paths (must be present on the system).
@@ -340,7 +340,7 @@ pub fn create(owner: *std.Build, options: Options) *Compile {
             .@"test" => "zig test",
         },
         name_adjusted,
-        @tagName(options.root_module.optimize orelse .Debug),
+        @tagname(options.root_module.optimize orelse .Debug),
         resolved_target.query.zigTriple(owner.allocator) catch @panic("OOM"),
     });
 
@@ -539,7 +539,7 @@ pub fn addObjCopy(cs: *Compile, options: Step.ObjCopy.Options) *Step.ObjCopy {
     var copy = options;
     if (copy.basename == null) {
         if (options.format) |f| {
-            copy.basename = b.fmt("{s}.{s}", .{ cs.name, @tagName(f) });
+            copy.basename = b.fmt("{s}.{s}", .{ cs.name, @tagname(f) });
         } else {
             copy.basename = cs.name;
         }
@@ -992,7 +992,7 @@ fn getGeneratedFilePath(compile: *Compile, comptime tag_name: []const u8, asking
 fn make(step: *Step, prog_node: std.Progress.Node) !void {
     const b = step.owner;
     const arena = b.allocator;
-    const compile: *Compile = @fieldParentPtr("step", step);
+    const compile: *Compile = @fieldparentptr("step", step);
 
     var zig_args = ArrayList([]const u8).init(arena);
     defer zig_args.deinit();
@@ -1015,7 +1015,7 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
     try addFlag(&zig_args, "lld", compile.use_lld);
 
     if (compile.root_module.resolved_target.?.query.ofmt) |ofmt| {
-        try zig_args.append(try std.fmt.allocPrint(arena, "-ofmt={s}", .{@tagName(ofmt)}));
+        try zig_args.append(try std.fmt.allocPrint(arena, "-ofmt={s}", .{@tagname(ofmt)}));
     }
 
     switch (compile.entry) {
@@ -1053,7 +1053,7 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
         var prev_preferred_link_mode: std.builtin.LinkMode = .dynamic;
         // Track the number of positional arguments so that a nice error can be
         // emitted if there is nothing to link.
-        var total_linker_objects: usize = @intFromBool(compile.root_module.root_source_file != null);
+        var total_linker_objects: usize = @intfrombool(compile.root_module.root_source_file != null);
 
         {
             // Fully recursive iteration including dynamic libraries to detect
@@ -1542,7 +1542,7 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
     }
 
     if (compile.wasi_exec_model) |model| {
-        try zig_args.append(b.fmt("-mexec-model={s}", .{@tagName(model)}));
+        try zig_args.append(b.fmt("-mexec-model={s}", .{@tagname(model)}));
     }
     if (compile.linker_script) |linker_script| {
         try zig_args.append("--script");
@@ -1586,7 +1586,7 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
     for (b.search_prefixes.items) |search_prefix| {
         var prefix_dir = fs.cwd().openDir(search_prefix, .{}) catch |err| {
             return step.fail("unable to open prefix directory '{s}': {s}", .{
-                search_prefix, @errorName(err),
+                search_prefix, @errorname(err),
             });
         };
         defer prefix_dir.close();
@@ -1602,7 +1602,7 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
         } else |err| switch (err) {
             error.FileNotFound => {},
             else => |e| return step.fail("unable to access '{s}/lib' directory: {s}", .{
-                search_prefix, @errorName(e),
+                search_prefix, @errorname(e),
             }),
         }
 
@@ -1613,14 +1613,14 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
         } else |err| switch (err) {
             error.FileNotFound => {},
             else => |e| return step.fail("unable to access '{s}/include' directory: {s}", .{
-                search_prefix, @errorName(e),
+                search_prefix, @errorname(e),
             }),
         }
     }
 
     if (compile.rc_includes != .any) {
         try zig_args.append("-rcincludes");
-        try zig_args.append(@tagName(compile.rc_includes));
+        try zig_args.append(@tagname(compile.rc_includes));
     }
 
     try addFlag(&zig_args, "each-lib-rpath", compile.each_lib_rpath);
@@ -1630,7 +1630,7 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
             .hexstring => |hs| b.fmt("--build-id=0x{s}", .{
                 std.fmt.fmtSliceHexLower(hs.toSlice()),
             }),
-            .none, .fast, .uuid, .sha1, .md5 => b.fmt("--build-id={s}", .{@tagName(build_id)}),
+            .none, .fast, .uuid, .sha1, .md5 => b.fmt("--build-id={s}", .{@tagname(build_id)}),
         });
     }
 
@@ -1810,14 +1810,14 @@ pub fn doAtomicSymLinks(
     const major_only_path = b.pathJoin(&.{ out_dir, filename_major_only });
     fs.atomicSymLink(arena, out_basename, major_only_path) catch |err| {
         return step.fail("unable to symlink {s} -> {s}: {s}", .{
-            major_only_path, out_basename, @errorName(err),
+            major_only_path, out_basename, @errorname(err),
         });
     };
     // sym link for libfoo.so to libfoo.so.1
     const name_only_path = b.pathJoin(&.{ out_dir, filename_name_only });
     fs.atomicSymLink(arena, filename_major_only, name_only_path) catch |err| {
         return step.fail("Unable to symlink {s} -> {s}: {s}", .{
-            name_only_path, filename_major_only, @errorName(err),
+            name_only_path, filename_major_only, @errorname(err),
         });
     };
 }

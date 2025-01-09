@@ -96,7 +96,7 @@ pub fn resolve(self: Relocation, atom_index: Atom.Index, code: []u8, image_base:
         source_vaddr,
         target_vaddr_with_addend,
         coff_file.getSymbolName(self.target),
-        @tagName(self.type),
+        @tagname(self.type),
     });
 
     const ctx: Context = .{
@@ -127,9 +127,9 @@ fn resolveAarch64(self: Relocation, ctx: Context) void {
     var buffer = ctx.code[self.offset..];
     switch (self.type) {
         .got_page, .import_page, .page => {
-            const source_page = @as(i32, @intCast(ctx.source_vaddr >> 12));
-            const target_page = @as(i32, @intCast(ctx.target_vaddr >> 12));
-            const pages = @as(u21, @bitCast(@as(i21, @intCast(target_page - source_page))));
+            const source_page = @as(i32, @intcast(ctx.source_vaddr >> 12));
+            const target_page = @as(i32, @intcast(ctx.target_vaddr >> 12));
+            const pages = @as(u21, @bitcast(@as(i21, @intcast(target_page - source_page))));
             var inst = aarch64.Instruction{
                 .pc_relative_address = mem.bytesToValue(meta.TagPayload(
                     aarch64.Instruction,
@@ -143,7 +143,7 @@ fn resolveAarch64(self: Relocation, ctx: Context) void {
         .got_pageoff, .import_pageoff, .pageoff => {
             assert(!self.pcrel);
 
-            const narrowed = @as(u12, @truncate(@as(u64, @intCast(ctx.target_vaddr))));
+            const narrowed = @as(u12, @truncate(@as(u64, @intcast(ctx.target_vaddr))));
             if (isArithmeticOp(buffer[0..4])) {
                 var inst = aarch64.Instruction{
                     .add_subtract_immediate = mem.bytesToValue(meta.TagPayload(
@@ -164,13 +164,13 @@ fn resolveAarch64(self: Relocation, ctx: Context) void {
                     if (inst.load_store_register.size == 0) {
                         if (inst.load_store_register.v == 1) {
                             // 128-bit SIMD is scaled by 16.
-                            break :blk @divExact(narrowed, 16);
+                            break :blk @divexact(narrowed, 16);
                         }
                         // Otherwise, 8-bit SIMD or ldrb.
                         break :blk narrowed;
                     } else {
                         const denom: u4 = math.powi(u4, 2, inst.load_store_register.size) catch unreachable;
-                        break :blk @divExact(narrowed, denom);
+                        break :blk @divexact(narrowed, denom);
                     }
                 };
                 inst.load_store_register.offset = offset;
@@ -208,15 +208,15 @@ fn resolveX86(self: Relocation, ctx: Context) void {
 
         .got, .import => {
             assert(self.pcrel);
-            const disp = @as(i32, @intCast(ctx.target_vaddr)) - @as(i32, @intCast(ctx.source_vaddr)) - 4;
+            const disp = @as(i32, @intcast(ctx.target_vaddr)) - @as(i32, @intcast(ctx.source_vaddr)) - 4;
             mem.writeInt(i32, buffer[0..4], disp, .little);
         },
         .direct => {
             if (self.pcrel) {
-                const disp = @as(i32, @intCast(ctx.target_vaddr)) - @as(i32, @intCast(ctx.source_vaddr)) - 4;
+                const disp = @as(i32, @intcast(ctx.target_vaddr)) - @as(i32, @intcast(ctx.source_vaddr)) - 4;
                 mem.writeInt(i32, buffer[0..4], disp, .little);
             } else switch (ctx.ptr_width) {
-                .p32 => mem.writeInt(u32, buffer[0..4], @as(u32, @intCast(ctx.target_vaddr + ctx.image_base)), .little),
+                .p32 => mem.writeInt(u32, buffer[0..4], @as(u32, @intcast(ctx.target_vaddr + ctx.image_base)), .little),
                 .p64 => switch (self.length) {
                     2 => mem.writeInt(u32, buffer[0..4], @as(u32, @truncate(ctx.target_vaddr + ctx.image_base)), .little),
                     3 => mem.writeInt(u64, buffer[0..8], ctx.target_vaddr + ctx.image_base, .little),

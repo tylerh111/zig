@@ -13,12 +13,12 @@ export fn entry() void {
         fn c() void {
             var x: u24 = 42;
             _ = &x;
-            _ = @shlExact(x, 24);
+            _ = @shlexact(x, 24);
         }
         fn d() void {
             var x: u24 = 42;
             _ = &x;
-            _ = @shrExact(x, 24);
+            _ = @shrexact(x, 24);
         }
     };
     S.a();

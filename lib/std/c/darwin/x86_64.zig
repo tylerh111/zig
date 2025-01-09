@@ -61,7 +61,7 @@ pub const float_state = extern struct {
 };
 
 pub const THREAD_STATE = 4;
-pub const THREAD_STATE_COUNT: c.mach_msg_type_number_t = @sizeOf(thread_state) / @sizeOf(c_int);
+pub const THREAD_STATE_COUNT: c.mach_msg_type_number_t = @sizeof(thread_state) / @sizeof(c_int);
 
 pub const EXC_TYPES_COUNT = 14;
 pub const EXC_MASK_MACHINE = 0;

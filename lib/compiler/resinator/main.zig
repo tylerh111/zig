@@ -103,7 +103,7 @@ pub fn main() !void {
         error.OutOfMemory => |e| return e,
         else => |e| {
             switch (e) {
-                error.MsvcIncludesNotFound => {
+                error.MsvcincludesNotFound => {
                     try error_handler.emitMessage(allocator, .err, "MSVC include paths could not be automatically detected", .{});
                 },
                 error.MingwIncludesNotFound => {
@@ -164,7 +164,7 @@ pub fn main() !void {
             break :full_input try preprocessed_buf.toOwnedSlice();
         } else {
             break :full_input std.fs.cwd().readFileAlloc(allocator, options.input_filename, std.math.maxInt(usize)) catch |err| {
-                try error_handler.emitMessage(allocator, .err, "unable to read input file path '{s}': {s}", .{ options.input_filename, @errorName(err) });
+                try error_handler.emitMessage(allocator, .err, "unable to read input file path '{s}': {s}", .{ options.input_filename, @errorname(err) });
                 std.process.exit(1);
             };
         }
@@ -191,7 +191,7 @@ pub fn main() !void {
     };
 
     var output_file = std.fs.cwd().createFile(options.output_filename, .{}) catch |err| {
-        try error_handler.emitMessage(allocator, .err, "unable to create output file '{s}': {s}", .{ options.output_filename, @errorName(err) });
+        try error_handler.emitMessage(allocator, .err, "unable to create output file '{s}': {s}", .{ options.output_filename, @errorname(err) });
         std.process.exit(1);
     };
     var output_file_closed = false;
@@ -240,7 +240,7 @@ pub fn main() !void {
     // write the depfile
     if (options.depfile_path) |depfile_path| {
         var depfile = std.fs.cwd().createFile(depfile_path, .{}) catch |err| {
-            try error_handler.emitMessage(allocator, .err, "unable to create depfile '{s}': {s}", .{ depfile_path, @errorName(err) });
+            try error_handler.emitMessage(allocator, .err, "unable to create depfile '{s}': {s}", .{ depfile_path, @errorname(err) });
             std.process.exit(1);
         };
         defer depfile.close();
@@ -268,7 +268,7 @@ fn getIncludePaths(arena: std.mem.Allocator, auto_includes_option: cli.Options.A
     if (builtin.target.os.tag != .windows) {
         switch (includes) {
             // MSVC can't be found when the host isn't Windows, so short-circuit.
-            .msvc => return error.MsvcIncludesNotFound,
+            .msvc => return error.MsvcincludesNotFound,
             // Skip straight to gnu since we won't be able to detect MSVC on non-Windows hosts.
             .any => includes = .gnu,
             .none, .gnu => {},
@@ -296,7 +296,7 @@ fn getIncludePaths(arena: std.mem.Allocator, auto_includes_option: cli.Options.A
                         includes = .gnu;
                         continue;
                     }
-                    return error.MsvcIncludesNotFound;
+                    return error.MsvcincludesNotFound;
                 };
                 if (detected_libc.libc_include_dir_list.len == 0) {
                     if (includes == .any) {
@@ -304,7 +304,7 @@ fn getIncludePaths(arena: std.mem.Allocator, auto_includes_option: cli.Options.A
                         includes = .gnu;
                         continue;
                     }
-                    return error.MsvcIncludesNotFound;
+                    return error.MsvcincludesNotFound;
                 }
                 return detected_libc.libc_include_dir_list;
             },
@@ -505,8 +505,8 @@ fn diagnosticsToErrorBundle(
         const src_loc = src_loc: {
             var src_loc: ErrorBundle.SourceLocation = .{
                 .src_path = try bundle.addString(err_filename),
-                .line = @intCast(err_line - 1), // 1-based -> 0-based
-                .column = @intCast(column - 1), // 1-based -> 0-based
+                .line = @intcast(err_line - 1), // 1-based -> 0-based
+                .column = @intcast(column - 1), // 1-based -> 0-based
                 .span_start = 0,
                 .span_main = 0,
                 .span_end = 0,
@@ -514,9 +514,9 @@ fn diagnosticsToErrorBundle(
             if (err_details.print_source_line) {
                 const source_line = err_details.token.getLineForErrorDisplay(source, source_line_start);
                 const visual_info = err_details.visualTokenInfo(source_line_start, source_line_start + source_line.len);
-                src_loc.span_start = @intCast(visual_info.point_offset - visual_info.before_len);
-                src_loc.span_main = @intCast(visual_info.point_offset);
-                src_loc.span_end = @intCast(visual_info.point_offset + 1 + visual_info.after_len);
+                src_loc.span_start = @intcast(visual_info.point_offset - visual_info.before_len);
+                src_loc.span_main = @intcast(visual_info.point_offset);
+                src_loc.span_end = @intcast(visual_info.point_offset + 1 + visual_info.after_len);
                 src_loc.source_line = try bundle.addString(source_line);
             }
             break :src_loc try bundle.addSourceLocation(src_loc);
@@ -552,9 +552,9 @@ fn diagnosticsToErrorBundle(
 
 fn flushErrorMessageIntoBundle(wip: *ErrorBundle.Wip, msg: ErrorBundle.ErrorMessage, notes: []const ErrorBundle.ErrorMessage) !void {
     try wip.addRootErrorMessage(msg);
-    const notes_start = try wip.reserveNotes(@intCast(notes.len));
+    const notes_start = try wip.reserveNotes(@intcast(notes.len));
     for (notes_start.., notes) |i, note| {
-        wip.extra.items[i] = @intFromEnum(wip.addErrorMessageAssumeCapacity(note));
+        wip.extra.items[i] = @intfromenum(wip.addErrorMessageAssumeCapacity(note));
     }
 }
 

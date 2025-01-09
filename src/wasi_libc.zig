@@ -272,7 +272,7 @@ fn addCCArgs(
 ) error{OutOfMemory}!void {
     const target = comp.getTarget();
     const arch_name = std.zig.target.muslArchNameHeaders(target.cpu.arch);
-    const os_name = @tagName(target.os.tag);
+    const os_name = @tagname(target.os.tag);
     const triple = try std.fmt.allocPrint(arena, "{s}-{s}-musl", .{ arch_name, os_name });
     const o_arg = if (options.want_O3) "-O3" else "-Os";
 

@@ -78,7 +78,7 @@ const ModuleInfo = struct {
             id_offsets.items.len = 0;
             try parser.parseInstructionResultIds(binary, inst, &id_offsets);
 
-            const first_operand_offset: u32 = @intCast(inst.offset + 1);
+            const first_operand_offset: u32 = @intcast(inst.offset + 1);
             for (id_offsets.items) |offset| {
                 operand_is_id.set(first_operand_offset + offset);
             }
@@ -91,11 +91,11 @@ const ModuleInfo = struct {
                 else => unreachable,
             };
 
-            const result_id: ResultId = @enumFromInt(inst.operands[id_offsets.items[result_id_index]]);
+            const result_id: ResultId = @enumfromint(inst.operands[id_offsets.items[result_id_index]]);
             const entity = Entity{
                 .kind = inst.opcode,
                 .first_operand = first_operand_offset,
-                .num_operands = @intCast(inst.operands.len),
+                .num_operands = @intcast(inst.operands.len),
                 .result_id_index = result_id_index,
                 .first_decoration = undefined, // Filled in later
             };
@@ -247,7 +247,7 @@ const EntityContext = struct {
             // algorithm though, and because we don't expect any correctness issues with it, we leave that for now.
 
             // TODO: Do we need to mind the storage class here? Its going to be recursive regardless, right?
-            const struct_id: ResultId = @enumFromInt(entity.operands(self.binary)[2]);
+            const struct_id: ResultId = @enumfromint(entity.operands(self.binary)[2]);
             const entry = try self.ptr_map_a.getOrPut(self.a, struct_id);
             if (entry.found_existing) {
                 // Pointer already seen. Hash the index instead of recursing into its children.
@@ -265,7 +265,7 @@ const EntityContext = struct {
         }
 
         if (entity.kind == .OpTypePointer) {
-            const struct_id: ResultId = @enumFromInt(entity.operands(self.binary)[2]);
+            const struct_id: ResultId = @enumfromint(entity.operands(self.binary)[2]);
             assert(self.ptr_map_a.swapRemove(struct_id));
         }
     }
@@ -280,7 +280,7 @@ const EntityContext = struct {
                 continue;
             } else if (self.info.operand_is_id.isSet(entity.first_operand + i)) {
                 // Operand is ID
-                try self.hashInner(hasher, @enumFromInt(operand));
+                try self.hashInner(hasher, @enumfromint(operand));
             } else {
                 // Operand is merely data
                 std.hash.autoHash(hasher, operand);
@@ -321,8 +321,8 @@ const EntityContext = struct {
             // May be a forward reference, or should be saved as a potential
             // forward reference in the future. Whatever the case, it should
             // be the same for both a and b.
-            const struct_id_a: ResultId = @enumFromInt(entity_a.operands(self.binary)[2]);
-            const struct_id_b: ResultId = @enumFromInt(entity_b.operands(self.binary)[2]);
+            const struct_id_a: ResultId = @enumfromint(entity_a.operands(self.binary)[2]);
+            const struct_id_b: ResultId = @enumfromint(entity_b.operands(self.binary)[2]);
 
             const entry_a = try self.ptr_map_a.getOrPut(self.a, struct_id_a);
             const entry_b = try self.ptr_map_b.getOrPut(self.a, struct_id_b);
@@ -354,8 +354,8 @@ const EntityContext = struct {
         }
 
         if (entity_a.kind == .OpTypePointer) {
-            const struct_id_a: ResultId = @enumFromInt(entity_a.operands(self.binary)[2]);
-            const struct_id_b: ResultId = @enumFromInt(entity_b.operands(self.binary)[2]);
+            const struct_id_a: ResultId = @enumfromint(entity_a.operands(self.binary)[2]);
+            const struct_id_b: ResultId = @enumfromint(entity_b.operands(self.binary)[2]);
 
             assert(self.ptr_map_a.swapRemove(struct_id_a));
             assert(self.ptr_map_b.swapRemove(struct_id_b));
@@ -389,7 +389,7 @@ const EntityContext = struct {
                 continue;
             } else if (a_is_id) {
                 // Both are IDs, so recurse.
-                if (!try self.eqlInner(@enumFromInt(operand_a), @enumFromInt(operand_b))) {
+                if (!try self.eqlInner(@enumfromint(operand_a), @enumfromint(operand_b))) {
                     return false;
                 }
             } else if (operand_a != operand_b) {
@@ -470,12 +470,12 @@ pub fn run(parser: *BinaryModule.Parser, binary: *BinaryModule, progress: std.Pr
 
         const maybe_result_id_offset: ?u16 = for (0..2) |i| {
             if (inst_spec.operands.len > i and inst_spec.operands[i].kind == .IdResult) {
-                break @intCast(i);
+                break @intcast(i);
             }
         } else null;
 
         if (maybe_result_id_offset) |offset| {
-            const result_id: ResultId = @enumFromInt(inst.operands[offset]);
+            const result_id: ResultId = @enumfromint(inst.operands[offset]);
             if (replace.contains(result_id)) continue;
         }
 
@@ -491,7 +491,7 @@ pub fn run(parser: *BinaryModule.Parser, binary: *BinaryModule, progress: std.Pr
             .Annotation, .Debug => {
                 // For decoration-style instructions, only emit them
                 // if the target is not removed.
-                const target: ResultId = @enumFromInt(inst.operands[0]);
+                const target: ResultId = @enumfromint(inst.operands[0]);
                 if (replace.contains(target)) continue;
             },
             else => {},
@@ -506,18 +506,18 @@ pub fn run(parser: *BinaryModule.Parser, binary: *BinaryModule, progress: std.Pr
             const is_id = info.operand_is_id.isSet(inst.offset + 1 + i);
             if (!is_id) continue;
 
-            if (replace.get(@enumFromInt(operand.*))) |new_id| {
-                operand.* = @intFromEnum(new_id);
+            if (replace.get(@enumfromint(operand.*))) |new_id| {
+                operand.* = @intfromenum(new_id);
             }
 
             if (maybe_result_id_offset == null or maybe_result_id_offset.? != i) {
-                const id: ResultId = @enumFromInt(operand.*);
+                const id: ResultId = @enumfromint(operand.*);
                 const index = info.entities.getIndex(id) orelse continue;
                 const entity = info.entities.values()[index];
                 if (entity.kind == .OpTypePointer and !emitted_ptrs.contains(id)) {
                     // Grab the pointer's storage class from its operands in the original
                     // module.
-                    const storage_class: spec.StorageClass = @enumFromInt(entity.operands(binary)[1]);
+                    const storage_class: spec.StorageClass = @enumfromint(entity.operands(binary)[1]);
                     try section.emit(a, .OpTypeForwardPointer, .{
                         .pointer_type = id,
                         .storage_class = storage_class,
@@ -528,7 +528,7 @@ pub fn run(parser: *BinaryModule.Parser, binary: *BinaryModule, progress: std.Pr
         }
 
         if (inst.opcode == .OpTypePointer) {
-            const result_id: ResultId = @enumFromInt(new_operands.items[maybe_result_id_offset.?]);
+            const result_id: ResultId = @enumfromint(new_operands.items[maybe_result_id_offset.?]);
             try emitted_ptrs.put(result_id, {});
         }
 

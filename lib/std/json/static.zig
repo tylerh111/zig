@@ -209,7 +209,7 @@ pub fn innerParse(
     source: anytype,
     options: ParseOptions,
 ) ParseError(@TypeOf(source.*))!T {
-    switch (@typeInfo(T)) {
+    switch (@typeinfo(T)) {
         .Bool => {
             return switch (try source.next()) {
                 .true => true,
@@ -264,7 +264,7 @@ pub fn innerParse(
                 return T.jsonParse(allocator, source, options);
             }
 
-            if (unionInfo.tag_type == null) @compileError("Unable to parse into untagged union '" ++ @typeName(T) ++ "'");
+            if (unionInfo.tag_type == null) @compileerror("Unable to parse into untagged union '" ++ @typename(T) ++ "'");
 
             if (.object_begin != try source.next()) return error.UnexpectedToken;
 
@@ -287,10 +287,10 @@ pub fn innerParse(
                         // void isn't really a json type, but we can support void payload union tags with {} as a value.
                         if (.object_begin != try source.next()) return error.UnexpectedToken;
                         if (.object_end != try source.next()) return error.UnexpectedToken;
-                        result = @unionInit(T, u_field.name, {});
+                        result = @unioninit(T, u_field.name, {});
                     } else {
                         // Recurse.
-                        result = @unionInit(T, u_field.name, try innerParse(u_field.type, allocator, source, options));
+                        result = @unioninit(T, u_field.name, try innerParse(u_field.type, allocator, source, options));
                     }
                     break;
                 }
@@ -340,7 +340,7 @@ pub fn innerParse(
                 };
 
                 inline for (structInfo.fields, 0..) |field, i| {
-                    if (field.is_comptime) @compileError("comptime fields are not supported: " ++ @typeName(T) ++ "." ++ field.name);
+                    if (field.is_comptime) @compileerror("comptime fields are not supported: " ++ @typename(T) ++ "." ++ field.name);
                     if (std.mem.eql(u8, field.name, field_name)) {
                         // Free the name token now in case we're using an allocator that optimizes freeing the last allocated object.
                         // (Recursing into innerParse() might trigger more allocations.)
@@ -468,7 +468,7 @@ pub fn innerParse(
                             }
 
                             if (ptrInfo.sentinel) |some| {
-                                const sentinel_value = @as(*align(1) const ptrInfo.child, @ptrCast(some)).*;
+                                const sentinel_value = @as(*align(1) const ptrInfo.child, @ptrcast(some)).*;
                                 return try arraylist.toOwnedSliceSentinel(sentinel_value);
                             }
 
@@ -482,7 +482,7 @@ pub fn innerParse(
                                 // Use our own array list so we can append the sentinel.
                                 var value_list = ArrayList(u8).init(allocator);
                                 _ = try source.allocNextIntoArrayList(&value_list, .alloc_always);
-                                return try value_list.toOwnedSliceSentinel(@as(*const u8, @ptrCast(sentinel_ptr)).*);
+                                return try value_list.toOwnedSliceSentinel(@as(*const u8, @ptrcast(sentinel_ptr)).*);
                             }
                             if (ptrInfo.is_const) {
                                 switch (try source.nextAllocMax(allocator, options.allocate.?, options.max_value_len.?)) {
@@ -500,10 +500,10 @@ pub fn innerParse(
                         else => return error.UnexpectedToken,
                     }
                 },
-                else => @compileError("Unable to parse into type '" ++ @typeName(T) ++ "'"),
+                else => @compileerror("Unable to parse into type '" ++ @typename(T) ++ "'"),
             }
         },
-        else => @compileError("Unable to parse into type '" ++ @typeName(T) ++ "'"),
+        else => @compileerror("Unable to parse into type '" ++ @typename(T) ++ "'"),
     }
     unreachable;
 }
@@ -540,7 +540,7 @@ pub fn innerParseFromValue(
     source: Value,
     options: ParseOptions,
 ) ParseFromValueError!T {
-    switch (@typeInfo(T)) {
+    switch (@typeinfo(T)) {
         .Bool => {
             switch (source) {
                 .bool => |b| return b,
@@ -549,8 +549,8 @@ pub fn innerParseFromValue(
         },
         .Float, .ComptimeFloat => {
             switch (source) {
-                .float => |f| return @as(T, @floatCast(f)),
-                .integer => |i| return @as(T, @floatFromInt(i)),
+                .float => |f| return @as(T, @floatcast(f)),
+                .integer => |i| return @as(T, @floatfromint(i)),
                 .number_string, .string => |s| return std.fmt.parseFloat(T, s),
                 else => return error.UnexpectedToken,
             }
@@ -561,12 +561,12 @@ pub fn innerParseFromValue(
                     if (@round(f) != f) return error.InvalidNumber;
                     if (f > std.math.maxInt(T)) return error.Overflow;
                     if (f < std.math.minInt(T)) return error.Overflow;
-                    return @as(T, @intFromFloat(f));
+                    return @as(T, @intfromfloat(f));
                 },
                 .integer => |i| {
                     if (i > std.math.maxInt(T)) return error.Overflow;
                     if (i < std.math.minInt(T)) return error.Overflow;
-                    return @as(T, @intCast(i));
+                    return @as(T, @intcast(i));
                 },
                 .number_string, .string => |s| {
                     return sliceToInt(T, s);
@@ -597,7 +597,7 @@ pub fn innerParseFromValue(
                 return T.jsonParseFromValue(allocator, source, options);
             }
 
-            if (unionInfo.tag_type == null) @compileError("Unable to parse into untagged union '" ++ @typeName(T) ++ "'");
+            if (unionInfo.tag_type == null) @compileerror("Unable to parse into untagged union '" ++ @typename(T) ++ "'");
 
             if (source != .object) return error.UnexpectedToken;
             if (source.object.count() != 1) return error.UnexpectedToken;
@@ -612,10 +612,10 @@ pub fn innerParseFromValue(
                         // void isn't really a json type, but we can support void payload union tags with {} as a value.
                         if (kv.value_ptr.* != .object) return error.UnexpectedToken;
                         if (kv.value_ptr.*.object.count() != 0) return error.UnexpectedToken;
-                        return @unionInit(T, u_field.name, {});
+                        return @unioninit(T, u_field.name, {});
                     }
                     // Recurse.
-                    return @unionInit(T, u_field.name, try innerParseFromValue(u_field.type, allocator, kv.value_ptr.*, options));
+                    return @unioninit(T, u_field.name, try innerParseFromValue(u_field.type, allocator, kv.value_ptr.*, options));
                 }
             }
             // Didn't match anything.
@@ -649,7 +649,7 @@ pub fn innerParseFromValue(
                 const field_name = kv.key_ptr.*;
 
                 inline for (structInfo.fields, 0..) |field, i| {
-                    if (field.is_comptime) @compileError("comptime fields are not supported: " ++ @typeName(T) ++ "." ++ field.name);
+                    if (field.is_comptime) @compileerror("comptime fields are not supported: " ++ @typename(T) ++ "." ++ field.name);
                     if (std.mem.eql(u8, field.name, field_name)) {
                         assert(!fields_seen[i]); // Can't have duplicate keys in a Value.object.
                         @field(r, field.name) = try innerParseFromValue(field.type, allocator, kv.value_ptr.*, options);
@@ -706,7 +706,7 @@ pub fn innerParseFromValue(
                     switch (source) {
                         .array => |array| {
                             const r = if (ptrInfo.sentinel) |sentinel_ptr|
-                                try allocator.allocSentinel(ptrInfo.child, array.items.len, @as(*align(1) const ptrInfo.child, @ptrCast(sentinel_ptr)).*)
+                                try allocator.allocSentinel(ptrInfo.child, array.items.len, @as(*align(1) const ptrInfo.child, @ptrcast(sentinel_ptr)).*)
                             else
                                 try allocator.alloc(ptrInfo.child, array.items.len);
 
@@ -721,7 +721,7 @@ pub fn innerParseFromValue(
                             // Dynamic length string.
 
                             const r = if (ptrInfo.sentinel) |sentinel_ptr|
-                                try allocator.allocSentinel(ptrInfo.child, s.len, @as(*align(1) const ptrInfo.child, @ptrCast(sentinel_ptr)).*)
+                                try allocator.allocSentinel(ptrInfo.child, s.len, @as(*align(1) const ptrInfo.child, @ptrcast(sentinel_ptr)).*)
                             else
                                 try allocator.alloc(ptrInfo.child, s.len);
                             @memcpy(r[0..], s);
@@ -731,10 +731,10 @@ pub fn innerParseFromValue(
                         else => return error.UnexpectedToken,
                     }
                 },
-                else => @compileError("Unable to parse into type '" ++ @typeName(T) ++ "'"),
+                else => @compileerror("Unable to parse into type '" ++ @typename(T) ++ "'"),
             }
         },
-        else => @compileError("Unable to parse into type '" ++ @typeName(T) ++ "'"),
+        else => @compileerror("Unable to parse into type '" ++ @typename(T) ++ "'"),
     }
 }
 
@@ -763,7 +763,7 @@ fn sliceToInt(comptime T: type, slice: []const u8) !T {
     const float = try std.fmt.parseFloat(f128, slice);
     if (@round(float) != float) return error.InvalidNumber;
     if (float > std.math.maxInt(T) or float < std.math.minInt(T)) return error.Overflow;
-    return @as(T, @intCast(@as(i128, @intFromFloat(float))));
+    return @as(T, @intcast(@as(i128, @intfromfloat(float))));
 }
 
 fn sliceToEnum(comptime T: type, slice: []const u8) !T {
@@ -771,15 +771,15 @@ fn sliceToEnum(comptime T: type, slice: []const u8) !T {
     if (std.meta.stringToEnum(T, slice)) |value| return value;
     // Check for a numeric value.
     if (!isNumberFormattedLikeAnInteger(slice)) return error.InvalidEnumTag;
-    const n = std.fmt.parseInt(@typeInfo(T).Enum.tag_type, slice, 10) catch return error.InvalidEnumTag;
+    const n = std.fmt.parseInt(@typeinfo(T).Enum.tag_type, slice, 10) catch return error.InvalidEnumTag;
     return std.meta.intToEnum(T, n);
 }
 
-fn fillDefaultStructValues(comptime T: type, r: *T, fields_seen: *[@typeInfo(T).Struct.fields.len]bool) !void {
-    inline for (@typeInfo(T).Struct.fields, 0..) |field, i| {
+fn fillDefaultStructValues(comptime T: type, r: *T, fields_seen: *[@typeinfo(T).Struct.fields.len]bool) !void {
+    inline for (@typeinfo(T).Struct.fields, 0..) |field, i| {
         if (!fields_seen[i]) {
             if (field.default_value) |default_ptr| {
-                const default = @as(*align(1) const field.type, @ptrCast(default_ptr)).*;
+                const default = @as(*align(1) const field.type, @ptrcast(default_ptr)).*;
                 @field(r, field.name) = default;
             } else {
                 return error.MissingField;

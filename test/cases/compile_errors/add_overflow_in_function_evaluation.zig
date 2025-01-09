@@ -4,7 +4,7 @@ fn add(a: u16, b: u16) u16 {
 }
 
 export fn entry() usize {
-    return @sizeOf(@TypeOf(y));
+    return @sizeof(@TypeOf(y));
 }
 
 // error

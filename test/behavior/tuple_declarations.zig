@@ -11,7 +11,7 @@ test "tuple declaration type info" {
 
     {
         const T = struct { comptime u32 align(2) = 1, []const u8 };
-        const info = @typeInfo(T).Struct;
+        const info = @typeinfo(T).Struct;
 
         try expect(info.layout == .auto);
         try expect(info.backing_integer == null);
@@ -21,7 +21,7 @@ test "tuple declaration type info" {
 
         try expectEqualStrings(info.fields[0].name, "0");
         try expect(info.fields[0].type == u32);
-        try expect(@as(*const u32, @ptrCast(@alignCast(info.fields[0].default_value))).* == 1);
+        try expect(@as(*const u32, @ptrcast(@aligncast(info.fields[0].default_value))).* == 1);
         try expect(info.fields[0].is_comptime);
         try expect(info.fields[0].alignment == 2);
 
@@ -29,7 +29,7 @@ test "tuple declaration type info" {
         try expect(info.fields[1].type == []const u8);
         try expect(info.fields[1].default_value == null);
         try expect(!info.fields[1].is_comptime);
-        try expect(info.fields[1].alignment == @alignOf([]const u8));
+        try expect(info.fields[1].alignment == @alignof([]const u8));
     }
 }
 

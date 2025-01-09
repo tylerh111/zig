@@ -746,7 +746,7 @@
       </p>
       {#code|multiline_string_literals.zig#}
 
-      {#see_also|@embedFile#}
+      {#see_also|@embedfile#}
       {#header_close#}
       {#header_close#}
       {#header_open|Assignment#}
@@ -995,7 +995,7 @@
 
       {#header_open|Local Variables#}
       <p>
-      Local variables occur inside {#link|Functions#}, {#link|comptime#} blocks, and {#link|@cImport#} blocks.
+      Local variables occur inside {#link|Functions#}, {#link|comptime#} blocks, and {#link|@cimport#} blocks.
       </p>
       <p>
       When a local variable is {#syntax#}const{#endsyntax#}, it means that after initialization, the variable's
@@ -1090,7 +1090,7 @@
       which operates in strict mode.</p>
       {#code|float_mode_exe.zig#}
 
-      {#see_also|@setFloatMode|Division by Zero#}
+      {#see_also|@setfloatmode|Division by Zero#}
       {#header_close#}
       {#header_close#}
       {#header_open|Operators#}
@@ -1125,7 +1125,7 @@ a += b{#endsyntax#}</pre></td>
             <ul>
               <li>Can cause {#link|overflow|Default Operations#} for integers.</li>
               <li>Invokes {#link|Peer Type Resolution#} for the operands.</li>
-              <li>See also {#link|@addWithOverflow#}.</li>
+              <li>See also {#link|@addwithoverflow#}.</li>
             </ul>
           </td>
           <td>
@@ -1145,7 +1145,7 @@ a +%= b{#endsyntax#}</pre></td>
             <ul>
               <li>Twos-complement wrapping behavior.</li>
               <li>Invokes {#link|Peer Type Resolution#} for the operands.</li>
-              <li>See also {#link|@addWithOverflow#}.</li>
+              <li>See also {#link|@addwithoverflow#}.</li>
             </ul>
           </td>
           <td>
@@ -1184,7 +1184,7 @@ a -= b{#endsyntax#}</pre></td>
             <ul>
               <li>Can cause {#link|overflow|Default Operations#} for integers.</li>
               <li>Invokes {#link|Peer Type Resolution#} for the operands.</li>
-              <li>See also {#link|@subWithOverflow#}.</li>
+              <li>See also {#link|@subwithoverflow#}.</li>
             </ul>
           </td>
           <td>
@@ -1204,7 +1204,7 @@ a -%= b{#endsyntax#}</pre></td>
             <ul>
               <li>Twos-complement wrapping behavior.</li>
               <li>Invokes {#link|Peer Type Resolution#} for the operands.</li>
-              <li>See also {#link|@subWithOverflow#}.</li>
+              <li>See also {#link|@subwithoverflow#}.</li>
             </ul>
           </td>
           <td>
@@ -1278,7 +1278,7 @@ a *= b{#endsyntax#}</pre></td>
             <ul>
               <li>Can cause {#link|overflow|Default Operations#} for integers.</li>
               <li>Invokes {#link|Peer Type Resolution#} for the operands.</li>
-              <li>See also {#link|@mulWithOverflow#}.</li>
+              <li>See also {#link|@mulwithoverflow#}.</li>
             </ul>
           </td>
           <td>
@@ -1298,7 +1298,7 @@ a *%= b{#endsyntax#}</pre></td>
             <ul>
               <li>Twos-complement wrapping behavior.</li>
               <li>Invokes {#link|Peer Type Resolution#} for the operands.</li>
-              <li>See also {#link|@mulWithOverflow#}.</li>
+              <li>See also {#link|@mulwithoverflow#}.</li>
             </ul>
           </td>
           <td>
@@ -1339,9 +1339,9 @@ a /= b{#endsyntax#}</pre></td>
               <li>Can cause {#link|Division by Zero#} for integers.</li>
               <li>Can cause {#link|Division by Zero#} for floats in {#link|FloatMode.Optimized Mode|Floating Point Operations#}.</li>
               <li>Signed integer operands must be comptime-known and positive. In other cases, use
-                {#link|@divTrunc#},
-                {#link|@divFloor#}, or
-                {#link|@divExact#} instead.
+                {#link|@divtrunc#},
+                {#link|@divfloor#}, or
+                {#link|@divexact#} instead.
               </li>
               <li>Invokes {#link|Peer Type Resolution#} for the operands.</li>
             </ul>
@@ -1391,8 +1391,8 @@ a <<= b{#endsyntax#}</pre></td>
               <li>{#syntax#}b{#endsyntax#} must be
               {#link|comptime-known|comptime#} or have a type with log2 number
               of bits as {#syntax#}a{#endsyntax#}.</li>
-              <li>See also {#link|@shlExact#}.</li>
-              <li>See also {#link|@shlWithOverflow#}.</li>
+              <li>See also {#link|@shlexact#}.</li>
+              <li>See also {#link|@shlwithoverflow#}.</li>
             </ul>
           </td>
           <td>
@@ -1410,8 +1410,8 @@ a <<|= b{#endsyntax#}</pre></td>
           </td>
           <td>
             <ul>
-              <li>See also {#link|@shlExact#}.</li>
-              <li>See also {#link|@shlWithOverflow#}.</li>
+              <li>See also {#link|@shlexact#}.</li>
+              <li>See also {#link|@shlwithoverflow#}.</li>
             </ul>
           </td>
           <td>
@@ -1433,7 +1433,7 @@ a >>= b{#endsyntax#}</pre></td>
               <li>{#syntax#}b{#endsyntax#} must be
                 {#link|comptime-known|comptime#} or have a type with log2 number
                 of bits as {#syntax#}a{#endsyntax#}.</li>
-              <li>See also {#link|@shrExact#}.</li>
+              <li>See also {#link|@shrexact#}.</li>
             </ul>
           </td>
           <td>
@@ -1893,7 +1893,7 @@ or
       </p>
       <ul>
           <li>Arithmetic ({#syntax#}+{#endsyntax#}, {#syntax#}-{#endsyntax#}, {#syntax#}/{#endsyntax#}, {#syntax#}*{#endsyntax#},
-                         {#syntax#}@divFloor{#endsyntax#}, {#syntax#}@sqrt{#endsyntax#}, {#syntax#}@ceil{#endsyntax#},
+                         {#syntax#}@divfloor{#endsyntax#}, {#syntax#}@sqrt{#endsyntax#}, {#syntax#}@ceil{#endsyntax#},
                          {#syntax#}@log{#endsyntax#}, etc.)</li>
           <li>Bitwise operators ({#syntax#}>>{#endsyntax#}, {#syntax#}<<{#endsyntax#}, {#syntax#}&{#endsyntax#},
                                  {#syntax#}|{#endsyntax#}, {#syntax#}~{#endsyntax#}, etc.)</li>
@@ -1989,15 +1989,15 @@ or
       an undefined memory layout:</p>
       {#code|test_comptime_pointers.zig#}
 
-      <p>To convert an integer address into a pointer, use {#syntax#}@ptrFromInt{#endsyntax#}.
-      To convert a pointer to an integer, use {#syntax#}@intFromPtr{#endsyntax#}:</p>
+      <p>To convert an integer address into a pointer, use {#syntax#}@ptrfromint{#endsyntax#}.
+      To convert a pointer to an integer, use {#syntax#}@intfromptr{#endsyntax#}:</p>
       {#code|test_integer_pointer_conversion.zig#}
 
       <p>Zig is able to preserve memory addresses in comptime code, as long as
       the pointer is never dereferenced:</p>
       {#code|test_comptime_pointer_conversion.zig#}
 
-      {#see_also|Optional Pointers|@ptrFromInt|@intFromPtr|C Pointers#}
+      {#see_also|Optional Pointers|@ptrfromint|@intfromptr|C Pointers#}
       {#header_open|volatile#}
       <p>Loads and stores are assumed to not have side effects. If a given load or store
       should have side effects, such as Memory Mapped Input/Output (MMIO), use {#syntax#}volatile{#endsyntax#}.
@@ -2012,11 +2012,11 @@ or
       </p>
       {#header_close#}
       <p>
-      {#link|@ptrCast#} converts a pointer's element type to another. This
+      {#link|@ptrcast#} converts a pointer's element type to another. This
       creates a new pointer that can cause undetectable illegal behavior
       depending on the loads and stores that pass through it. Generally, other
       kinds of type conversions are preferable to
-      {#syntax#}@ptrCast{#endsyntax#} if possible.
+      {#syntax#}@ptrcast{#endsyntax#} if possible.
       </p>
       {#code|test_pointer_casting.zig#}
 
@@ -2025,7 +2025,7 @@ or
       Each type has an <strong>alignment</strong> - a number of bytes such that,
       when a value of the type is loaded from or stored to memory,
       the memory address must be evenly divisible by this number. You can use
-      {#link|@alignOf#} to find out this value for any type.
+      {#link|@alignof#} to find out this value for any type.
       </p>
       <p>
       Alignment depends on the CPU architecture, but is always a power of two, and
@@ -2049,7 +2049,7 @@ or
 
       <p>
       If you have a pointer or a slice that has a small alignment, but you know that it actually
-      has a bigger alignment, use {#link|@alignCast#} to change the
+      has a bigger alignment, use {#link|@aligncast#} to change the
       pointer into a more aligned pointer. This is a no-op at runtime, but inserts a
       {#link|safety check|Incorrect Pointer Alignment#}:
       </p>
@@ -2187,7 +2187,7 @@ or
       </ul>
       <p>
       This means that a {#syntax#}packed struct{#endsyntax#} can participate
-      in a {#link|@bitCast#} or a {#link|@ptrCast#} to reinterpret memory.
+      in a {#link|@bitcast#} or a {#link|@ptrcast#} to reinterpret memory.
       This even works at {#link|comptime#}:
       </p>
       {#code|test_packed_structs.zig#}
@@ -2219,9 +2219,9 @@ or
       {#code|test_packed_struct_field_address.zig#}
 
       <p>
-      This can be observed with {#link|@bitOffsetOf#} and {#link|offsetOf#}:
+      This can be observed with {#link|@bitoffsetof#} and {#link|offsetof#}:
       </p>
-      {#code|test_bitOffsetOf_offsetOf.zig#}
+      {#code|test_bitoffsetof_offsetof.zig#}
 
       <p>
       Packed structs have the same alignment as their backing integer, however, overaligned
@@ -2292,12 +2292,12 @@ or
       {#code|test_tuples.zig#}
 
       {#header_close#}
-      {#see_also|comptime|@fieldParentPtr#}
+      {#see_also|comptime|@fieldparentptr#}
       {#header_close#}
       {#header_open|enum#}
       {#code|test_enums.zig#}
 
-      {#see_also|@typeInfo|@tagName|@sizeOf#}
+      {#see_also|@typeinfo|@tagname|@sizeof#}
 
       {#header_open|extern enum#}
       <p>
@@ -2327,8 +2327,8 @@ or
       The enum must specify a tag type and cannot consume every enumeration value.
       </p>
       <p>
-      {#link|@enumFromInt#} on a non-exhaustive enum involves the safety semantics
-      of {#link|@intCast#} to the integer tag type, but beyond that always results in
+      {#link|@enumfromint#} on a non-exhaustive enum involves the safety semantics
+      of {#link|@intcast#} to the integer tag type, but beyond that always results in
       a well-defined enum value.
       </p>
       <p>
@@ -2345,7 +2345,7 @@ or
       A bare {#syntax#}union{#endsyntax#} defines a set of possible types that a value
       can be as a list of fields. Only one field can be active at a time.
       The in-memory representation of bare unions is not guaranteed.
-      Bare unions cannot be used to reinterpret memory. For that, use {#link|@ptrCast#},
+      Bare unions cannot be used to reinterpret memory. For that, use {#link|@ptrcast#},
       or use an {#link|extern union#} or a {#link|packed union#} which have
       guaranteed in-memory layout.
       {#link|Accessing the non-active field|Wrong Union Field Access#} is
@@ -2360,7 +2360,7 @@ or
       In order to use {#link|switch#} with a union, it must be a {#link|Tagged union#}.
       </p>
       <p>
-      To initialize a union when the tag is a {#link|comptime#}-known name, see {#link|@unionInit#}.
+      To initialize a union when the tag is a {#link|comptime#}-known name, see {#link|@unioninit#}.
       </p>
 
       {#header_open|Tagged union#}
@@ -2383,10 +2383,10 @@ or
       {#code|test_union_method.zig#}
 
       <p>
-      {#link|@tagName#} can be used to return a {#link|comptime#}
+      {#link|@tagname#} can be used to return a {#link|comptime#}
       {#syntax#}[:0]const u8{#endsyntax#} value representing the field name:
       </p>
-      {#code|test_tagName.zig#}
+      {#code|test_tagname.zig#}
 
       {#header_close#}
 
@@ -2471,7 +2471,7 @@ or
       </p>
       {#code|test_switch_tagged_union.zig#}
 
-      {#see_also|comptime|enum|@compileError|Compile Variables#}
+      {#see_also|comptime|enum|@compileerror|Compile Variables#}
 
       {#header_open|Exhaustive Switching#}
       <p>
@@ -2738,7 +2738,7 @@ or
       <p>
       Function parameters can be declared with {#syntax#}anytype{#endsyntax#} in place of the type.
       In this case the parameter types will be inferred when the function is called.
-      Use {#link|@TypeOf#} and {#link|@typeInfo#} to get information about the inferred type.
+      Use {#link|@TypeOf#} and {#link|@typeinfo#} to get information about the inferred type.
       </p>
       {#code|test_fn_type_inference.zig#}
 
@@ -3112,7 +3112,7 @@ fn createFoo(param: i32) !Foo {
       <ul>
         <li>Return an error from main</li>
         <li>An error makes its way to {#syntax#}catch unreachable{#endsyntax#} and you have not overridden the default panic handler</li>
-        <li>Use {#link|errorReturnTrace#} to access the current return trace. You can use {#syntax#}std.debug.dumpStackTrace{#endsyntax#} to print it. This function returns comptime-known {#link|null#} when building without error return tracing support.</li>
+        <li>Use {#link|errorreturntrace#} to access the current return trace. You can use {#syntax#}std.debug.dumpStackTrace{#endsyntax#} to print it. This function returns comptime-known {#link|null#} when building without error return tracing support.</li>
       </ul>
       {#header_open|Implementation Details#}
       <p>
@@ -3147,7 +3147,7 @@ pub const StackTrace = struct {
       {#syntax_block|zig|zig_return_error_fn.zig#}
 // marked as "no-inline" in LLVM IR
 fn __zig_return_error(stack_trace: *StackTrace) void {
-    stack_trace.instruction_addresses[stack_trace.index] = @returnAddress();
+    stack_trace.instruction_addresses[stack_trace.index] = @returnaddress();
     stack_trace.index = (stack_trace.index + 1) % N;
 }
       {#end_syntax_block#}
@@ -3392,21 +3392,21 @@ void do_a_thing(struct Foo *foo) {
       Some explicit casts are no-ops at runtime; some are not.
       </p>
       <ul>
-          <li>{#link|@bitCast#} - change type but maintain bit representation</li>
-          <li>{#link|@alignCast#} - make a pointer have more alignment</li>
-          <li>{#link|@enumFromInt#} - obtain an enum value based on its integer tag value</li>
-          <li>{#link|@errorFromInt#} - obtain an error code based on its integer value</li>
-          <li>{#link|@errorCast#} - convert to a smaller error set</li>
-          <li>{#link|@floatCast#} - convert a larger float to a smaller float</li>
-          <li>{#link|@floatFromInt#} - convert an integer to a float value</li>
-          <li>{#link|@intCast#} - convert between integer types</li>
-          <li>{#link|@intFromBool#} - convert true to 1 and false to 0</li>
-          <li>{#link|@intFromEnum#} - obtain the integer tag value of an enum or tagged union</li>
-          <li>{#link|@intFromError#} - obtain the integer value of an error code</li>
-          <li>{#link|@intFromFloat#} - obtain the integer part of a float value</li>
-          <li>{#link|@intFromPtr#} - obtain the address of a pointer</li>
-          <li>{#link|@ptrFromInt#} - convert an address to a pointer</li>
-          <li>{#link|@ptrCast#} - convert between pointer types</li>
+          <li>{#link|@bitcast#} - change type but maintain bit representation</li>
+          <li>{#link|@aligncast#} - make a pointer have more alignment</li>
+          <li>{#link|@enumfromint#} - obtain an enum value based on its integer tag value</li>
+          <li>{#link|@errorfromint#} - obtain an error code based on its integer value</li>
+          <li>{#link|@errorcast#} - convert to a smaller error set</li>
+          <li>{#link|@floatcast#} - convert a larger float to a smaller float</li>
+          <li>{#link|@floatfromint#} - convert an integer to a float value</li>
+          <li>{#link|@intcast#} - convert between integer types</li>
+          <li>{#link|@intfrombool#} - convert true to 1 and false to 0</li>
+          <li>{#link|@intfromenum#} - obtain the integer tag value of an enum or tagged union</li>
+          <li>{#link|@intfromerror#} - obtain the integer value of an error code</li>
+          <li>{#link|@intfromfloat#} - obtain the integer part of a float value</li>
+          <li>{#link|@intfromptr#} - obtain the address of a pointer</li>
+          <li>{#link|@ptrfromint#} - convert an address to a pointer</li>
+          <li>{#link|@ptrcast#} - convert between pointer types</li>
           <li>{#link|@truncate#} - convert between integer types, chopping off bits</li>
       </ul>
       {#header_close#}
@@ -3431,7 +3431,7 @@ void do_a_thing(struct Foo *foo) {
       {#header_close#}
 
       {#header_open|Zero Bit Types#}
-      <p>For some types, {#link|@sizeOf#} is 0:</p>
+      <p>For some types, {#link|@sizeof#} is 0:</p>
       <ul>
           <li>{#link|void#}</li>
           <li>The {#link|Integers#} {#syntax#}u0{#endsyntax#} and {#syntax#}i0{#endsyntax#}.</li>
@@ -3514,7 +3514,7 @@ void do_a_thing(struct Foo *foo) {
       language to perform this coercion before taking a reference.
       </p>
       <p>
-      The result type mechanism is utilized by casting builtins such as {#syntax#}@intCast{#endsyntax#}.
+      The result type mechanism is utilized by casting builtins such as {#syntax#}@intcast{#endsyntax#}.
       Rather than taking as an argument the type to cast to, these builtins use their result type to
       determine this information. The result type is often known from context; where it is not, the
       {#syntax#}@as{#endsyntax#} builtin can be used to explicitly provide a result type.
@@ -3601,7 +3601,7 @@ void do_a_thing(struct Foo *foo) {
             <td>{#syntax#}x{#endsyntax#} is a {#syntax#}std.builtin.Type{#endsyntax#}</td>
           </tr>
           <tr>
-            <th scope="row">{#syntax#}@typeInfo(x){#endsyntax#}</th>
+            <th scope="row">{#syntax#}@typeinfo(x){#endsyntax#}</th>
             <td>-</td>
             <td>{#syntax#}x{#endsyntax#} is a {#syntax#}type{#endsyntax#}</td>
           </tr>
@@ -3717,7 +3717,7 @@ void do_a_thing(struct Foo *foo) {
             <td>{#syntax#}x{#endsyntax#} has no result location</td>
           </tr>
           <tr>
-            <th scope="row">{#syntax#}@typeInfo(x){#endsyntax#}</th>
+            <th scope="row">{#syntax#}@typeinfo(x){#endsyntax#}</th>
             <td>{#syntax#}ptr{#endsyntax#}</td>
             <td>{#syntax#}x{#endsyntax#} has no result location</td>
           </tr>
@@ -3746,12 +3746,12 @@ void do_a_thing(struct Foo *foo) {
       {#link|C imports|Import from C Header File#}:
       </p>
       {#syntax_block|zig|c.zig#}
-pub usingnamespace @cImport({
-    @cInclude("epoxy/gl.h");
-    @cInclude("GLFW/glfw3.h");
-    @cDefine("STBI_ONLY_PNG", "");
-    @cDefine("STBI_NO_STDIO", "");
-    @cInclude("stb_image.h");
+pub usingnamespace @cimport({
+    @cinclude("epoxy/gl.h");
+    @cinclude("GLFW/glfw3.h");
+    @cdefine("STBI_ONLY_PNG", "");
+    @cdefine("STBI_NO_STDIO", "");
+    @cinclude("stb_image.h");
 });
       {#end_syntax_block#}
       <p>
@@ -3944,7 +3944,7 @@ fn performFn(start_value: i32) i32 {
       compile-time took more than 1000 branches, and thus emits an error and
       gives up. If the programmer wants to increase the budget for compile-time
       computation, they can use a built-in function called
-      {#link|@setEvalBranchQuota#} to change the default number 1000 to
+      {#link|@setevalbranchquota#} to change the default number 1000 to
       something else.
       </p>
       <p>
@@ -4165,7 +4165,7 @@ pub fn print(self: *Writer, arg0: []const u8, arg1: i32) !void {
       <p>TODO: @atomic rmw</p>
       <p>TODO: builtin atomic memory ordering enum</p>
 
-      {#see_also|@atomicLoad|@atomicStore|@atomicRmw|@fence|@cmpxchgWeak|@cmpxchgStrong#}
+      {#see_also|@atomicload|@atomicstore|@atomicrmw|@fence|@cmpxchgweak|@cmpxchgstrong#}
 
       {#header_close#}
 
@@ -4188,8 +4188,8 @@ pub fn print(self: *Writer, arg0: []const u8, arg1: i32) !void {
       The {#syntax#}comptime{#endsyntax#} keyword on a parameter means that the parameter must be known
       at compile time.
       </p>
-      {#header_open|@addrSpaceCast#}
-      <pre>{#syntax#}@addrSpaceCast(ptr: anytype) anytype{#endsyntax#}</pre>
+      {#header_open|@addrspacecast#}
+      <pre>{#syntax#}@addrspacecast(ptr: anytype) anytype{#endsyntax#}</pre>
       <p>
       Converts a pointer from one address space to another. The new address space is inferred
 			based on the result type. Depending on the current target and address spaces, this cast
@@ -4198,14 +4198,14 @@ pub fn print(self: *Writer, arg0: []const u8, arg1: i32) !void {
 			cast a pointer between the same address spaces.
       </p>
       {#header_close#}
-      {#header_open|@addWithOverflow#}
-      <pre>{#syntax#}@addWithOverflow(a: anytype, b: anytype) struct { @TypeOf(a, b), u1 }{#endsyntax#}</pre>
+      {#header_open|@addwithoverflow#}
+      <pre>{#syntax#}@addwithoverflow(a: anytype, b: anytype) struct { @TypeOf(a, b), u1 }{#endsyntax#}</pre>
       <p>
       Performs {#syntax#}a + b{#endsyntax#} and returns a tuple with the result and a possible overflow bit.
       </p>
       {#header_close#}
-      {#header_open|@alignCast#}
-      <pre>{#syntax#}@alignCast(ptr: anytype) anytype{#endsyntax#}</pre>
+      {#header_open|@aligncast#}
+      <pre>{#syntax#}@aligncast(ptr: anytype) anytype{#endsyntax#}</pre>
       <p>
       {#syntax#}ptr{#endsyntax#} can be {#syntax#}*T{#endsyntax#}, {#syntax#}?*T{#endsyntax#}, or {#syntax#}[]T{#endsyntax#}.
 			Changes the alignment of a pointer. The alignment to use is inferred based on the result type.
@@ -4214,8 +4214,8 @@ pub fn print(self: *Writer, arg0: []const u8, arg1: i32) !void {
       to the generated code to make sure the pointer is aligned as promised.</p>
 
       {#header_close#}
-      {#header_open|@alignOf#}
-      <pre>{#syntax#}@alignOf(comptime T: type) comptime_int{#endsyntax#}</pre>
+      {#header_open|@alignof#}
+      <pre>{#syntax#}@alignof(comptime T: type) comptime_int{#endsyntax#}</pre>
       <p>
       This function returns the number of bytes that this type should be aligned to
       for the current target to match the C ABI. When the child type of a pointer has
@@ -4223,11 +4223,11 @@ pub fn print(self: *Writer, arg0: []const u8, arg1: i32) !void {
       </p>
       <pre>{#syntax#}const assert = @import("std").debug.assert;
 comptime {
-    assert(*u32 == *align(@alignOf(u32)) u32);
+    assert(*u32 == *align(@alignof(u32)) u32);
 }{#endsyntax#}</pre>
       <p>
       The result is a target-specific compile time constant. It is guaranteed to be
-      less than or equal to {#link|@sizeOf(T)|@sizeOf#}.
+      less than or equal to {#link|@sizeof(T)|@sizeof#}.
       </p>
       {#see_also|Alignment#}
       {#header_close#}
@@ -4240,8 +4240,8 @@ comptime {
       </p>
       {#header_close#}
 
-      {#header_open|@atomicLoad#}
-      <pre>{#syntax#}@atomicLoad(comptime T: type, ptr: *const T, comptime ordering: AtomicOrder) T{#endsyntax#}</pre>
+      {#header_open|@atomicload#}
+      <pre>{#syntax#}@atomicload(comptime T: type, ptr: *const T, comptime ordering: AtomicOrder) T{#endsyntax#}</pre>
       <p>
       This builtin function atomically dereferences a pointer to a {#syntax#}T{#endsyntax#} and returns the value.
       </p>
@@ -4250,11 +4250,11 @@ comptime {
       an integer or an enum.
       </p>
       <p>{#syntax#}AtomicOrder{#endsyntax#} can be found with {#syntax#}@import("std").builtin.AtomicOrder{#endsyntax#}.</p>
-      {#see_also|@atomicStore|@atomicRmw|@fence|@cmpxchgWeak|@cmpxchgStrong#}
+      {#see_also|@atomicstore|@atomicrmw|@fence|@cmpxchgweak|@cmpxchgstrong#}
       {#header_close#}
 
-      {#header_open|@atomicRmw#}
-      <pre>{#syntax#}@atomicRmw(comptime T: type, ptr: *T, comptime op: AtomicRmwOp, operand: T, comptime ordering: AtomicOrder) T{#endsyntax#}</pre>
+      {#header_open|@atomicrmw#}
+      <pre>{#syntax#}@atomicrmw(comptime T: type, ptr: *T, comptime op: AtomicRmwOp, operand: T, comptime ordering: AtomicOrder) T{#endsyntax#}</pre>
       <p>
       This builtin function dereferences a pointer to a {#syntax#}T{#endsyntax#} and atomically
       modifies the value and returns the previous value.
@@ -4265,11 +4265,11 @@ comptime {
       </p>
       <p>{#syntax#}AtomicOrder{#endsyntax#} can be found with {#syntax#}@import("std").builtin.AtomicOrder{#endsyntax#}.</p>
       <p>{#syntax#}AtomicRmwOp{#endsyntax#} can be found with {#syntax#}@import("std").builtin.AtomicRmwOp{#endsyntax#}.</p>
-      {#see_also|@atomicStore|@atomicLoad|@fence|@cmpxchgWeak|@cmpxchgStrong#}
+      {#see_also|@atomicstore|@atomicload|@fence|@cmpxchgweak|@cmpxchgstrong#}
       {#header_close#}
 
-      {#header_open|@atomicStore#}
-      <pre>{#syntax#}@atomicStore(comptime T: type, ptr: *T, value: T, comptime ordering: AtomicOrder) void{#endsyntax#}</pre>
+      {#header_open|@atomicstore#}
+      <pre>{#syntax#}@atomicstore(comptime T: type, ptr: *T, value: T, comptime ordering: AtomicOrder) void{#endsyntax#}</pre>
       <p>
       This builtin function dereferences a pointer to a {#syntax#}T{#endsyntax#} and atomically stores the given value.
       </p>
@@ -4278,20 +4278,20 @@ comptime {
       an integer or an enum.
       </p>
       <p>{#syntax#}AtomicOrder{#endsyntax#} can be found with {#syntax#}@import("std").builtin.AtomicOrder{#endsyntax#}.</p>
-      {#see_also|@atomicLoad|@atomicRmw|@fence|@cmpxchgWeak|@cmpxchgStrong#}
+      {#see_also|@atomicload|@atomicrmw|@fence|@cmpxchgweak|@cmpxchgstrong#}
       {#header_close#}
 
-      {#header_open|@bitCast#}
-      <pre>{#syntax#}@bitCast(value: anytype) anytype{#endsyntax#}</pre>
+      {#header_open|@bitcast#}
+      <pre>{#syntax#}@bitcast(value: anytype) anytype{#endsyntax#}</pre>
       <p>
       Converts a value of one type to another type. The return type is the
 			inferred result type.
       </p>
       <p>
-      Asserts that {#syntax#}@sizeOf(@TypeOf(value)) == @sizeOf(DestType){#endsyntax#}.
+      Asserts that {#syntax#}@sizeof(@TypeOf(value)) == @sizeof(DestType){#endsyntax#}.
       </p>
       <p>
-      Asserts that {#syntax#}@typeInfo(DestType) != .Pointer{#endsyntax#}. Use {#syntax#}@ptrCast{#endsyntax#} or {#syntax#}@ptrFromInt{#endsyntax#} if you need this.
+      Asserts that {#syntax#}@typeinfo(DestType) != .Pointer{#endsyntax#}. Use {#syntax#}@ptrcast{#endsyntax#} or {#syntax#}@ptrfromint{#endsyntax#} if you need this.
       </p>
       <p>
       Can be used for these things for example:
@@ -4305,8 +4305,8 @@ comptime {
       </p>
       {#header_close#}
 
-      {#header_open|@bitOffsetOf#}
-      <pre>{#syntax#}@bitOffsetOf(comptime T: type, comptime field_name: []const u8) comptime_int{#endsyntax#}</pre>
+      {#header_open|@bitoffsetof#}
+      <pre>{#syntax#}@bitoffsetof(comptime T: type, comptime field_name: []const u8) comptime_int{#endsyntax#}</pre>
       <p>
       Returns the bit offset of a field relative to its containing struct.
       </p>
@@ -4315,11 +4315,11 @@ comptime {
       For packed structs, non-byte-aligned fields will share a byte offset, but they will have different
       bit offsets.
       </p>
-      {#see_also|@offsetOf#}
+      {#see_also|@offsetof#}
       {#header_close#}
 
-      {#header_open|@bitSizeOf#}
-      <pre>{#syntax#}@bitSizeOf(comptime T: type) comptime_int{#endsyntax#}</pre>
+      {#header_open|@bitsizeof#}
+      <pre>{#syntax#}@bitsizeof(comptime T: type) comptime_int{#endsyntax#}</pre>
       <p>
       This function returns the number of bits it takes to store {#syntax#}T{#endsyntax#} in memory if the type
       were a field in a packed struct/union.
@@ -4329,7 +4329,7 @@ comptime {
       This function measures the size at runtime. For types that are disallowed at runtime, such as
       {#syntax#}comptime_int{#endsyntax#} and {#syntax#}type{#endsyntax#}, the result is {#syntax#}0{#endsyntax#}.
       </p>
-      {#see_also|@sizeOf|@typeInfo#}
+      {#see_also|@sizeof|@typeinfo#}
       {#header_close#}
 
       {#header_open|@breakpoint#}
@@ -4345,8 +4345,8 @@ comptime {
       {#see_also|@trap#}
       {#header_close#}
 
-      {#header_open|@mulAdd#}
-      <pre>{#syntax#}@mulAdd(comptime T: type, a: T, b: T, c: T) T{#endsyntax#}</pre>
+      {#header_open|@muladd#}
+      <pre>{#syntax#}@muladd(comptime T: type, a: T, b: T, c: T) T{#endsyntax#}</pre>
       <p>
       Fused multiply-add, similar to {#syntax#}(a * b) + c{#endsyntax#}, except
       only rounds once, and is thus more accurate.
@@ -4356,8 +4356,8 @@ comptime {
       </p>
       {#header_close#}
 
-      {#header_open|@byteSwap#}
-      <pre>{#syntax#}@byteSwap(operand: anytype) T{#endsyntax#}</pre>
+      {#header_open|@byteswap#}
+      <pre>{#syntax#}@byteswap(operand: anytype) T{#endsyntax#}</pre>
       <p>{#syntax#}@TypeOf(operand){#endsyntax#} must be an integer type or an integer vector type with bit count evenly divisible by 8.</p>
       <p>{#syntax#}operand{#endsyntax#} may be an {#link|integer|Integers#} or {#link|vector|Vectors#}.</p>
       <p>
@@ -4366,16 +4366,16 @@ comptime {
       </p>
       <p>
       Note that for the purposes of memory layout with respect to endianness, the integer type should be
-      related to the number of bytes reported by {#link|@sizeOf#} bytes. This is demonstrated with
-      {#syntax#}u24{#endsyntax#}. {#syntax#}@sizeOf(u24) == 4{#endsyntax#}, which means that a
+      related to the number of bytes reported by {#link|@sizeof#} bytes. This is demonstrated with
+      {#syntax#}u24{#endsyntax#}. {#syntax#}@sizeof(u24) == 4{#endsyntax#}, which means that a
       {#syntax#}u24{#endsyntax#} stored in memory takes 4 bytes, and those 4 bytes are what are swapped on
       a little vs big endian system. On the other hand, if {#syntax#}T{#endsyntax#} is specified to
       be {#syntax#}u24{#endsyntax#}, then only 3 bytes are reversed.
       </p>
       {#header_close#}
 
-      {#header_open|@bitReverse#}
-      <pre>{#syntax#}@bitReverse(integer: anytype) T{#endsyntax#}</pre>
+      {#header_open|@bitreverse#}
+      <pre>{#syntax#}@bitreverse(integer: anytype) T{#endsyntax#}</pre>
       <p>{#syntax#}@TypeOf(anytype){#endsyntax#} accepts any integer type or integer vector type.</p>
       <p>
       Reverses the bitpattern of an integer value, including the sign bit if applicable.
@@ -4386,12 +4386,12 @@ comptime {
       </p>
       {#header_close#}
 
-      {#header_open|@offsetOf#}
-      <pre>{#syntax#}@offsetOf(comptime T: type, comptime field_name: []const u8) comptime_int{#endsyntax#}</pre>
+      {#header_open|@offsetof#}
+      <pre>{#syntax#}@offsetof(comptime T: type, comptime field_name: []const u8) comptime_int{#endsyntax#}</pre>
       <p>
       Returns the byte offset of a field relative to its containing struct.
       </p>
-      {#see_also|@bitOffsetOf#}
+      {#see_also|@bitoffsetof#}
       {#header_close#}
 
       {#header_open|@call#}
@@ -4409,13 +4409,13 @@ comptime {
 
       {#header_close#}
 
-      {#header_open|@cDefine#}
-      <pre>{#syntax#}@cDefine(comptime name: []const u8, value) void{#endsyntax#}</pre>
+      {#header_open|@cdefine#}
+      <pre>{#syntax#}@cdefine(comptime name: []const u8, value) void{#endsyntax#}</pre>
       <p>
-      This function can only occur inside {#syntax#}@cImport{#endsyntax#}.
+      This function can only occur inside {#syntax#}@cimport{#endsyntax#}.
       </p>
       <p>
-      This appends <code>#define $name $value</code> to the {#syntax#}@cImport{#endsyntax#}
+      This appends <code>#define $name $value</code> to the {#syntax#}@cimport{#endsyntax#}
       temporary buffer.
       </p>
       <p>
@@ -4425,11 +4425,11 @@ comptime {
       <p>
       Use the void value, like this:
       </p>
-      <pre>{#syntax#}@cDefine("_GNU_SOURCE", {}){#endsyntax#}</pre>
-      {#see_also|Import from C Header File|@cInclude|@cImport|@cUndef|void#}
+      <pre>{#syntax#}@cdefine("_GNU_SOURCE", {}){#endsyntax#}</pre>
+      {#see_also|Import from C Header File|@cinclude|@cimport|@cundef|void#}
       {#header_close#}
-      {#header_open|@cImport#}
-      <pre>{#syntax#}@cImport(expression) type{#endsyntax#}</pre>
+      {#header_open|@cimport#}
+      <pre>{#syntax#}@cimport(expression) type{#endsyntax#}</pre>
       <p>
       This function parses C code and imports the functions, types, variables,
       and compatible macro definitions into a new empty struct type, and then
@@ -4437,32 +4437,32 @@ comptime {
       </p>
       <p>
       {#syntax#}expression{#endsyntax#} is interpreted at compile time. The builtin functions
-          {#syntax#}@cInclude{#endsyntax#}, {#syntax#}@cDefine{#endsyntax#}, and {#syntax#}@cUndef{#endsyntax#} work
+          {#syntax#}@cinclude{#endsyntax#}, {#syntax#}@cdefine{#endsyntax#}, and {#syntax#}@cundef{#endsyntax#} work
       within this expression, appending to a temporary buffer which is then parsed as C code.
       </p>
       <p>
-      Usually you should only have one {#syntax#}@cImport{#endsyntax#} in your entire application, because it saves the compiler
+      Usually you should only have one {#syntax#}@cimport{#endsyntax#} in your entire application, because it saves the compiler
       from invoking clang multiple times, and prevents inline functions from being duplicated.
       </p>
       <p>
-      Reasons for having multiple {#syntax#}@cImport{#endsyntax#} expressions would be:
+      Reasons for having multiple {#syntax#}@cimport{#endsyntax#} expressions would be:
       </p>
       <ul>
           <li>To avoid a symbol collision, for example if foo.h and bar.h both <code>#define CONNECTION_COUNT</code></li>
         <li>To analyze the C code with different preprocessor defines</li>
       </ul>
-      {#see_also|Import from C Header File|@cInclude|@cDefine|@cUndef#}
+      {#see_also|Import from C Header File|@cinclude|@cdefine|@cundef#}
       {#header_close#}
-      {#header_open|@cInclude#}
-      <pre>{#syntax#}@cInclude(comptime path: []const u8) void{#endsyntax#}</pre>
+      {#header_open|@cinclude#}
+      <pre>{#syntax#}@cinclude(comptime path: []const u8) void{#endsyntax#}</pre>
       <p>
-      This function can only occur inside {#syntax#}@cImport{#endsyntax#}.
+      This function can only occur inside {#syntax#}@cimport{#endsyntax#}.
       </p>
       <p>
       This appends <code>#include &lt;$path&gt;\n</code> to the {#syntax#}c_import{#endsyntax#}
       temporary buffer.
       </p>
-      {#see_also|Import from C Header File|@cImport|@cDefine|@cUndef#}
+      {#see_also|Import from C Header File|@cimport|@cdefine|@cundef#}
       {#header_close#}
 
       {#header_open|@clz#}
@@ -4482,40 +4482,40 @@ comptime {
       If {#syntax#}operand{#endsyntax#} is zero, {#syntax#}@clz{#endsyntax#} returns the bit width
       of integer type {#syntax#}T{#endsyntax#}.
       </p>
-      {#see_also|@ctz|@popCount#}
+      {#see_also|@ctz|@popcount#}
       {#header_close#}
 
-      {#header_open|@cmpxchgStrong#}
-      <pre>{#syntax#}@cmpxchgStrong(comptime T: type, ptr: *T, expected_value: T, new_value: T, success_order: AtomicOrder, fail_order: AtomicOrder) ?T{#endsyntax#}</pre>
+      {#header_open|@cmpxchgstrong#}
+      <pre>{#syntax#}@cmpxchgstrong(comptime T: type, ptr: *T, expected_value: T, new_value: T, success_order: AtomicOrder, fail_order: AtomicOrder) ?T{#endsyntax#}</pre>
       <p>
       This function performs a strong atomic compare-and-exchange operation, returning {#syntax#}null{#endsyntax#}
       if the current value is not the given expected value. It's the equivalent of this code,
       except atomic:
       </p>
-      {#code|not_atomic_cmpxchgStrong.zig#}
+      {#code|not_atomic_cmpxchgstrong.zig#}
 
       <p>
-      If you are using cmpxchg in a retry loop, {#link|@cmpxchgWeak#} is the better choice, because it can be implemented
+      If you are using cmpxchg in a retry loop, {#link|@cmpxchgweak#} is the better choice, because it can be implemented
       more efficiently in machine instructions.
       </p>
       <p>
       {#syntax#}T{#endsyntax#} must be a pointer, a {#syntax#}bool{#endsyntax#}, a float,
       an integer or an enum.
       </p>
-      <p>{#syntax#}@typeInfo(@TypeOf(ptr)).Pointer.alignment{#endsyntax#} must be {#syntax#}>= @sizeOf(T).{#endsyntax#}</p>
+      <p>{#syntax#}@typeinfo(@TypeOf(ptr)).Pointer.alignment{#endsyntax#} must be {#syntax#}>= @sizeof(T).{#endsyntax#}</p>
       <p>{#syntax#}AtomicOrder{#endsyntax#} can be found with {#syntax#}@import("std").builtin.AtomicOrder{#endsyntax#}.</p>
-      {#see_also|@atomicStore|@atomicLoad|@atomicRmw|@fence|@cmpxchgWeak#}
+      {#see_also|@atomicstore|@atomicload|@atomicrmw|@fence|@cmpxchgweak#}
       {#header_close#}
 
-      {#header_open|@cmpxchgWeak#}
-      <pre>{#syntax#}@cmpxchgWeak(comptime T: type, ptr: *T, expected_value: T, new_value: T, success_order: AtomicOrder, fail_order: AtomicOrder) ?T{#endsyntax#}</pre>
+      {#header_open|@cmpxchgweak#}
+      <pre>{#syntax#}@cmpxchgweak(comptime T: type, ptr: *T, expected_value: T, new_value: T, success_order: AtomicOrder, fail_order: AtomicOrder) ?T{#endsyntax#}</pre>
       <p>
       This function performs a weak atomic compare-and-exchange operation, returning {#syntax#}null{#endsyntax#}
       if the current value is not the given expected value. It's the equivalent of this code,
       except atomic:
       </p>
-      {#syntax_block|zig|cmpxchgWeakButNotAtomic#}
-fn cmpxchgWeakButNotAtomic(comptime T: type, ptr: *T, expected_value: T, new_value: T) ?T {
+      {#syntax_block|zig|cmpxchgweakButNotAtomic#}
+fn cmpxchgweakButNotAtomic(comptime T: type, ptr: *T, expected_value: T, new_value: T) ?T {
     const old_value = ptr.*;
     if (old_value == expected_value and usuallyTrueButSometimesFalse()) {
         ptr.* = new_value;
@@ -4526,21 +4526,21 @@ fn cmpxchgWeakButNotAtomic(comptime T: type, ptr: *T, expected_value: T, new_val
 }
       {#end_syntax_block#}
       <p>
-      If you are using cmpxchg in a retry loop, the sporadic failure will be no problem, and {#syntax#}cmpxchgWeak{#endsyntax#}
+      If you are using cmpxchg in a retry loop, the sporadic failure will be no problem, and {#syntax#}cmpxchgweak{#endsyntax#}
       is the better choice, because it can be implemented more efficiently in machine instructions.
-      However if you need a stronger guarantee, use {#link|@cmpxchgStrong#}.
+      However if you need a stronger guarantee, use {#link|@cmpxchgstrong#}.
       </p>
       <p>
       {#syntax#}T{#endsyntax#} must be a pointer, a {#syntax#}bool{#endsyntax#}, a float,
       an integer or an enum.
       </p>
-      <p>{#syntax#}@typeInfo(@TypeOf(ptr)).Pointer.alignment{#endsyntax#} must be {#syntax#}>= @sizeOf(T).{#endsyntax#}</p>
+      <p>{#syntax#}@typeinfo(@TypeOf(ptr)).Pointer.alignment{#endsyntax#} must be {#syntax#}>= @sizeof(T).{#endsyntax#}</p>
       <p>{#syntax#}AtomicOrder{#endsyntax#} can be found with {#syntax#}@import("std").builtin.AtomicOrder{#endsyntax#}.</p>
-      {#see_also|@atomicStore|@atomicLoad|@atomicRmw|@fence|@cmpxchgStrong#}
+      {#see_also|@atomicstore|@atomicload|@atomicrmw|@fence|@cmpxchgstrong#}
       {#header_close#}
 
-      {#header_open|@compileError#}
-      <pre>{#syntax#}@compileError(comptime msg: []const u8) noreturn{#endsyntax#}</pre>
+      {#header_open|@compileerror#}
+      <pre>{#syntax#}@compileerror(comptime msg: []const u8) noreturn{#endsyntax#}</pre>
       <p>
       This function, when semantically analyzed, causes a compile error with the
       message {#syntax#}msg{#endsyntax#}.
@@ -4552,8 +4552,8 @@ fn cmpxchgWeakButNotAtomic(comptime T: type, ptr: *T, expected_value: T, new_val
       </p>
       {#header_close#}
 
-      {#header_open|@compileLog#}
-      <pre>{#syntax#}@compileLog(args: ...) void{#endsyntax#}</pre>
+      {#header_open|@compilelog#}
+      <pre>{#syntax#}@compilelog(args: ...) void{#endsyntax#}</pre>
       <p>
       This function prints the arguments passed to it at compile-time.
       </p>
@@ -4567,12 +4567,12 @@ fn cmpxchgWeakButNotAtomic(comptime T: type, ptr: *T, expected_value: T, new_val
       This function can be used to do "printf debugging" on
       compile-time executing code.
       </p>
-      {#code|test_compileLog_builtin.zig#}
+      {#code|test_compilelog_builtin.zig#}
 
       {#header_close#}
 
-      {#header_open|@constCast#}
-      <pre>{#syntax#}@constCast(value: anytype) DestType{#endsyntax#}</pre>
+      {#header_open|@constcast#}
+      <pre>{#syntax#}@constcast(value: anytype) DestType{#endsyntax#}</pre>
       <p>
       Remove {#syntax#}const{#endsyntax#} qualifier from a pointer.
       </p>
@@ -4595,94 +4595,94 @@ fn cmpxchgWeakButNotAtomic(comptime T: type, ptr: *T, expected_value: T, new_val
       If {#syntax#}operand{#endsyntax#} is zero, {#syntax#}@ctz{#endsyntax#} returns
       the bit width of integer type {#syntax#}T{#endsyntax#}.
       </p>
-      {#see_also|@clz|@popCount#}
+      {#see_also|@clz|@popcount#}
       {#header_close#}
 
-      {#header_open|@cUndef#}
-      <pre>{#syntax#}@cUndef(comptime name: []const u8) void{#endsyntax#}</pre>
+      {#header_open|@cundef#}
+      <pre>{#syntax#}@cundef(comptime name: []const u8) void{#endsyntax#}</pre>
       <p>
-      This function can only occur inside {#syntax#}@cImport{#endsyntax#}.
+      This function can only occur inside {#syntax#}@cimport{#endsyntax#}.
       </p>
       <p>
-      This appends <code>#undef $name</code> to the {#syntax#}@cImport{#endsyntax#}
+      This appends <code>#undef $name</code> to the {#syntax#}@cimport{#endsyntax#}
       temporary buffer.
       </p>
-      {#see_also|Import from C Header File|@cImport|@cDefine|@cInclude#}
+      {#see_also|Import from C Header File|@cimport|@cdefine|@cinclude#}
       {#header_close#}
 
-      {#header_open|@cVaArg#}
-      <pre>{#syntax#}@cVaArg(operand: *std.builtin.VaList, comptime T: type) T{#endsyntax#}</pre>
+      {#header_open|@cvaarg#}
+      <pre>{#syntax#}@cvaarg(operand: *std.builtin.VaList, comptime T: type) T{#endsyntax#}</pre>
       <p>
       Implements the C macro {#syntax#}va_arg{#endsyntax#}.
       </p>
-      {#see_also|@cVaCopy|@cVaEnd|@cVaStart#}
+      {#see_also|@cvacopy|@cvaend|@cvastart#}
       {#header_close#}
-      {#header_open|@cVaCopy#}
-      <pre>{#syntax#}@cVaCopy(src: *std.builtin.VaList) std.builtin.VaList{#endsyntax#}</pre>
+      {#header_open|@cvacopy#}
+      <pre>{#syntax#}@cvacopy(src: *std.builtin.VaList) std.builtin.VaList{#endsyntax#}</pre>
       <p>
       Implements the C macro {#syntax#}va_copy{#endsyntax#}.
       </p>
-      {#see_also|@cVaArg|@cVaEnd|@cVaStart#}
+      {#see_also|@cvaarg|@cvaend|@cvastart#}
       {#header_close#}
-      {#header_open|@cVaEnd#}
-      <pre>{#syntax#}@cVaEnd(src: *std.builtin.VaList) void{#endsyntax#}</pre>
+      {#header_open|@cvaend#}
+      <pre>{#syntax#}@cvaend(src: *std.builtin.VaList) void{#endsyntax#}</pre>
       <p>
       Implements the C macro {#syntax#}va_end{#endsyntax#}.
       </p>
-      {#see_also|@cVaArg|@cVaCopy|@cVaStart#}
+      {#see_also|@cvaarg|@cvacopy|@cvastart#}
       {#header_close#}
-      {#header_open|@cVaStart#}
-      <pre>{#syntax#}@cVaStart() std.builtin.VaList{#endsyntax#}</pre>
+      {#header_open|@cvastart#}
+      <pre>{#syntax#}@cvastart() std.builtin.VaList{#endsyntax#}</pre>
       <p>
       Implements the C macro {#syntax#}va_start{#endsyntax#}. Only valid inside a variadic function.
       </p>
-      {#see_also|@cVaArg|@cVaCopy|@cVaEnd#}
+      {#see_also|@cvaarg|@cvacopy|@cvaend#}
       {#header_close#}
 
-      {#header_open|@divExact#}
-      <pre>{#syntax#}@divExact(numerator: T, denominator: T) T{#endsyntax#}</pre>
+      {#header_open|@divexact#}
+      <pre>{#syntax#}@divexact(numerator: T, denominator: T) T{#endsyntax#}</pre>
       <p>
       Exact division. Caller guarantees {#syntax#}denominator != 0{#endsyntax#} and
-          {#syntax#}@divTrunc(numerator, denominator) * denominator == numerator{#endsyntax#}.
+          {#syntax#}@divtrunc(numerator, denominator) * denominator == numerator{#endsyntax#}.
       </p>
       <ul>
-          <li>{#syntax#}@divExact(6, 3) == 2{#endsyntax#}</li>
-          <li>{#syntax#}@divExact(a, b) * b == a{#endsyntax#}</li>
+          <li>{#syntax#}@divexact(6, 3) == 2{#endsyntax#}</li>
+          <li>{#syntax#}@divexact(a, b) * b == a{#endsyntax#}</li>
       </ul>
-      <p>For a function that returns a possible error code, use {#syntax#}@import("std").math.divExact{#endsyntax#}.</p>
-      {#see_also|@divTrunc|@divFloor#}
+      <p>For a function that returns a possible error code, use {#syntax#}@import("std").math.divexact{#endsyntax#}.</p>
+      {#see_also|@divtrunc|@divfloor#}
       {#header_close#}
-      {#header_open|@divFloor#}
-      <pre>{#syntax#}@divFloor(numerator: T, denominator: T) T{#endsyntax#}</pre>
+      {#header_open|@divfloor#}
+      <pre>{#syntax#}@divfloor(numerator: T, denominator: T) T{#endsyntax#}</pre>
       <p>
       Floored division. Rounds toward negative infinity. For unsigned integers it is
       the same as {#syntax#}numerator / denominator{#endsyntax#}. Caller guarantees {#syntax#}denominator != 0{#endsyntax#} and
-              {#syntax#}!(@typeInfo(T) == .Int and T.is_signed and numerator == std.math.minInt(T) and denominator == -1){#endsyntax#}.
+              {#syntax#}!(@typeinfo(T) == .Int and T.is_signed and numerator == std.math.minInt(T) and denominator == -1){#endsyntax#}.
       </p>
       <ul>
-          <li>{#syntax#}@divFloor(-5, 3) == -2{#endsyntax#}</li>
-          <li>{#syntax#}(@divFloor(a, b) * b) + @mod(a, b) == a{#endsyntax#}</li>
+          <li>{#syntax#}@divfloor(-5, 3) == -2{#endsyntax#}</li>
+          <li>{#syntax#}(@divfloor(a, b) * b) + @mod(a, b) == a{#endsyntax#}</li>
       </ul>
-      <p>For a function that returns a possible error code, use {#syntax#}@import("std").math.divFloor{#endsyntax#}.</p>
-      {#see_also|@divTrunc|@divExact#}
+      <p>For a function that returns a possible error code, use {#syntax#}@import("std").math.divfloor{#endsyntax#}.</p>
+      {#see_also|@divtrunc|@divexact#}
       {#header_close#}
-      {#header_open|@divTrunc#}
-      <pre>{#syntax#}@divTrunc(numerator: T, denominator: T) T{#endsyntax#}</pre>
+      {#header_open|@divtrunc#}
+      <pre>{#syntax#}@divtrunc(numerator: T, denominator: T) T{#endsyntax#}</pre>
       <p>
       Truncated division. Rounds toward zero. For unsigned integers it is
       the same as {#syntax#}numerator / denominator{#endsyntax#}. Caller guarantees {#syntax#}denominator != 0{#endsyntax#} and
-              {#syntax#}!(@typeInfo(T) == .Int and T.is_signed and numerator == std.math.minInt(T) and denominator == -1){#endsyntax#}.
+              {#syntax#}!(@typeinfo(T) == .Int and T.is_signed and numerator == std.math.minInt(T) and denominator == -1){#endsyntax#}.
       </p>
       <ul>
-          <li>{#syntax#}@divTrunc(-5, 3) == -1{#endsyntax#}</li>
-          <li>{#syntax#}(@divTrunc(a, b) * b) + @rem(a, b) == a{#endsyntax#}</li>
+          <li>{#syntax#}@divtrunc(-5, 3) == -1{#endsyntax#}</li>
+          <li>{#syntax#}(@divtrunc(a, b) * b) + @rem(a, b) == a{#endsyntax#}</li>
       </ul>
-      <p>For a function that returns a possible error code, use {#syntax#}@import("std").math.divTrunc{#endsyntax#}.</p>
-      {#see_also|@divFloor|@divExact#}
+      <p>For a function that returns a possible error code, use {#syntax#}@import("std").math.divtrunc{#endsyntax#}.</p>
+      {#see_also|@divfloor|@divexact#}
       {#header_close#}
 
-      {#header_open|@embedFile#}
-      <pre>{#syntax#}@embedFile(comptime path: []const u8) *const [N:0]u8{#endsyntax#}</pre>
+      {#header_open|@embedfile#}
+      <pre>{#syntax#}@embedfile(comptime path: []const u8) *const [N:0]u8{#endsyntax#}</pre>
       <p>
       This function returns a compile time constant pointer to null-terminated,
       fixed-size array with length equal to the byte count of the file given by
@@ -4696,8 +4696,8 @@ fn cmpxchgWeakButNotAtomic(comptime T: type, ptr: *T, expected_value: T, new_val
       {#see_also|@import#}
       {#header_close#}
 
-      {#header_open|@enumFromInt#}
-      <pre>{#syntax#}@enumFromInt(integer: anytype) anytype{#endsyntax#}</pre>
+      {#header_open|@enumfromint#}
+      <pre>{#syntax#}@enumfromint(integer: anytype) anytype{#endsyntax#}</pre>
       <p>
       Converts an integer into an {#link|enum#} value. The return type is the inferred result type.
       </p>
@@ -4705,11 +4705,11 @@ fn cmpxchgWeakButNotAtomic(comptime T: type, ptr: *T, expected_value: T, new_val
       Attempting to convert an integer which represents no value in the chosen enum type invokes
       safety-checked {#link|Undefined Behavior#}.
       </p>
-      {#see_also|@intFromEnum#}
+      {#see_also|@intfromenum#}
       {#header_close#}
 
-      {#header_open|@errorFromInt#}
-      <pre>{#syntax#}@errorFromInt(value: std.meta.Int(.unsigned, @bitSizeOf(anyerror))) anyerror{#endsyntax#}</pre>
+      {#header_open|@errorfromint#}
+      <pre>{#syntax#}@errorfromint(value: std.meta.Int(.unsigned, @bitsizeof(anyerror))) anyerror{#endsyntax#}</pre>
       <p>
       Converts from the integer representation of an error into {#link|The Global Error Set#} type.
       </p>
@@ -4721,24 +4721,24 @@ fn cmpxchgWeakButNotAtomic(comptime T: type, ptr: *T, expected_value: T, new_val
       Attempting to convert an integer that does not correspond to any error results in
       safety-protected {#link|Undefined Behavior#}.
       </p>
-      {#see_also|@intFromError#}
+      {#see_also|@intfromerror#}
       {#header_close#}
 
-      {#header_open|@errorName#}
-      <pre>{#syntax#}@errorName(err: anyerror) [:0]const u8{#endsyntax#}</pre>
+      {#header_open|@errorname#}
+      <pre>{#syntax#}@errorname(err: anyerror) [:0]const u8{#endsyntax#}</pre>
       <p>
       This function returns the string representation of an error. The string representation
       of {#syntax#}error.OutOfMem{#endsyntax#} is {#syntax#}"OutOfMem"{#endsyntax#}.
       </p>
       <p>
-      If there are no calls to {#syntax#}@errorName{#endsyntax#} in an entire application,
+      If there are no calls to {#syntax#}@errorname{#endsyntax#} in an entire application,
       or all calls have a compile-time known value for {#syntax#}err{#endsyntax#}, then no
       error name table will be generated.
       </p>
       {#header_close#}
 
-      {#header_open|@errorReturnTrace#}
-      <pre>{#syntax#}@errorReturnTrace() ?*builtin.StackTrace{#endsyntax#}</pre>
+      {#header_open|@errorreturntrace#}
+      <pre>{#syntax#}@errorreturntrace() ?*builtin.StackTrace{#endsyntax#}</pre>
       <p>
       If the binary is built with error return tracing, and this function is invoked in a
       function that calls a function with an error or error union return type, returns a
@@ -4746,8 +4746,8 @@ fn cmpxchgWeakButNotAtomic(comptime T: type, ptr: *T, expected_value: T, new_val
       </p>
       {#header_close#}
 
-      {#header_open|@errorCast#}
-      <pre>{#syntax#}@errorCast(value: anytype) anytype{#endsyntax#}</pre>
+      {#header_open|@errorcast#}
+      <pre>{#syntax#}@errorcast(value: anytype) anytype{#endsyntax#}</pre>
       <p>
       Converts an error set or error union value from one error set to another error set. The return type is the
 			inferred result type. Attempting to convert an error which is not in the destination error
@@ -4806,7 +4806,7 @@ fn cmpxchgWeakButNotAtomic(comptime T: type, ptr: *T, expected_value: T, new_val
       The {#syntax#}fence{#endsyntax#} function is used to introduce happens-before edges between operations.
       </p>
       <p>{#syntax#}AtomicOrder{#endsyntax#} can be found with {#syntax#}@import("std").builtin.AtomicOrder{#endsyntax#}.</p>
-      {#see_also|@atomicStore|@atomicLoad|@atomicRmw|@cmpxchgWeak|@cmpxchgStrong#}
+      {#see_also|@atomicstore|@atomicload|@atomicrmw|@cmpxchgweak|@cmpxchgstrong#}
       {#header_close#}
 
       {#header_open|@field#}
@@ -4818,32 +4818,32 @@ fn cmpxchgWeakButNotAtomic(comptime T: type, ptr: *T, expected_value: T, new_val
 
       {#header_close#}
 
-      {#header_open|@fieldParentPtr#}
-      <pre>{#syntax#}@fieldParentPtr(comptime field_name: []const u8, field_ptr: *T) anytype{#endsyntax#}</pre>
+      {#header_open|@fieldparentptr#}
+      <pre>{#syntax#}@fieldparentptr(comptime field_name: []const u8, field_ptr: *T) anytype{#endsyntax#}</pre>
       <p>
       Given a pointer to a field, returns the base pointer of a struct.
       </p>
       {#header_close#}
 
-      {#header_open|@floatCast#}
-      <pre>{#syntax#}@floatCast(value: anytype) anytype{#endsyntax#}</pre>
+      {#header_open|@floatcast#}
+      <pre>{#syntax#}@floatcast(value: anytype) anytype{#endsyntax#}</pre>
       <p>
       Convert from one float type to another. This cast is safe, but may cause the
       numeric value to lose precision. The return type is the inferred result type.
       </p>
       {#header_close#}
 
-      {#header_open|@floatFromInt#}
-      <pre>{#syntax#}@floatFromInt(int: anytype) anytype{#endsyntax#}</pre>
+      {#header_open|@floatfromint#}
+      <pre>{#syntax#}@floatfromint(int: anytype) anytype{#endsyntax#}</pre>
       <p>
       Converts an integer to the closest floating point representation. The return type is the inferred result type.
-			To convert the other way, use {#link|@intFromFloat#}. This operation is legal
+			To convert the other way, use {#link|@intfromfloat#}. This operation is legal
       for all values of all integer types.
       </p>
       {#header_close#}
 
-      {#header_open|@frameAddress#}
-      <pre>{#syntax#}@frameAddress() usize{#endsyntax#}</pre>
+      {#header_open|@frameaddress#}
+      <pre>{#syntax#}@frameaddress() usize{#endsyntax#}</pre>
       <p>
       This function returns the base pointer of the current stack frame.
       </p>
@@ -4857,19 +4857,19 @@ fn cmpxchgWeakButNotAtomic(comptime T: type, ptr: *T, expected_value: T, new_val
       </p>
       {#header_close#}
 
-      {#header_open|@hasDecl#}
-      <pre>{#syntax#}@hasDecl(comptime Container: type, comptime name: []const u8) bool{#endsyntax#}</pre>
+      {#header_open|@hasdecl#}
+      <pre>{#syntax#}@hasdecl(comptime Container: type, comptime name: []const u8) bool{#endsyntax#}</pre>
       <p>
       Returns whether or not a {#link|container|Containers#} has a declaration
       matching {#syntax#}name{#endsyntax#}.
       </p>
-      {#code|test_hasDecl_builtin.zig#}
+      {#code|test_hasdecl_builtin.zig#}
 
-      {#see_also|@hasField#}
+      {#see_also|@hasfield#}
       {#header_close#}
 
-      {#header_open|@hasField#}
-      <pre>{#syntax#}@hasField(comptime Container: type, comptime name: []const u8) bool{#endsyntax#}</pre>
+      {#header_open|@hasfield#}
+      <pre>{#syntax#}@hasfield(comptime Container: type, comptime name: []const u8) bool{#endsyntax#}</pre>
       <p>Returns whether the field name of a struct, union, or enum exists.</p>
       <p>
       The result is a compile time constant.
@@ -4877,7 +4877,7 @@ fn cmpxchgWeakButNotAtomic(comptime T: type, ptr: *T, expected_value: T, new_val
       <p>
       It does not include functions, variables, or constants.
       </p>
-      {#see_also|@hasDecl#}
+      {#see_also|@hasdecl#}
       {#header_close#}
 
       {#header_open|@import#}
@@ -4911,11 +4911,11 @@ fn cmpxchgWeakButNotAtomic(comptime T: type, ptr: *T, expected_value: T, new_val
               This is usually <code>src/main.zig</code> but depends on what file is built.
           </li>
       </ul>
-      {#see_also|Compile Variables|@embedFile#}
+      {#see_also|Compile Variables|@embedfile#}
       {#header_close#}
 
-      {#header_open|@inComptime#}
-      <pre>{#syntax#}@inComptime() bool{#endsyntax#}</pre>
+      {#header_open|@incomptime#}
+      <pre>{#syntax#}@incomptime() bool{#endsyntax#}</pre>
       <p>
       Returns whether the builtin was run in a {#syntax#}comptime{#endsyntax#} context. The result is a compile-time constant.
       </p>
@@ -4925,15 +4925,15 @@ fn cmpxchgWeakButNotAtomic(comptime T: type, ptr: *T, expected_value: T, new_val
       {#see_also|comptime#}
       {#header_close#}
 
-      {#header_open|@intCast#}
-      <pre>{#syntax#}@intCast(int: anytype) anytype{#endsyntax#}</pre>
+      {#header_open|@intcast#}
+      <pre>{#syntax#}@intcast(int: anytype) anytype{#endsyntax#}</pre>
       <p>
       Converts an integer to another integer while keeping the same numerical value.
 			The return type is the inferred result type.
       Attempting to convert a number which is out of range of the destination type results in
       safety-protected {#link|Undefined Behavior#}.
       </p>
-      {#code|test_intCast_builtin.zig#}
+      {#code|test_intcast_builtin.zig#}
 
       <p>
       To truncate the significant bits of a number out of range of the destination type, use {#link|@truncate#}.
@@ -4944,16 +4944,16 @@ fn cmpxchgWeakButNotAtomic(comptime T: type, ptr: *T, expected_value: T, new_val
       </p>
       {#header_close#}
 
-      {#header_open|@intFromBool#}
-      <pre>{#syntax#}@intFromBool(value: bool) u1{#endsyntax#}</pre>
+      {#header_open|@intfrombool#}
+      <pre>{#syntax#}@intfrombool(value: bool) u1{#endsyntax#}</pre>
       <p>
       Converts {#syntax#}true{#endsyntax#} to {#syntax#}@as(u1, 1){#endsyntax#} and {#syntax#}false{#endsyntax#} to
                   {#syntax#}@as(u1, 0){#endsyntax#}.
       </p>
       {#header_close#}
 
-      {#header_open|@intFromEnum#}
-      <pre>{#syntax#}@intFromEnum(enum_or_tagged_union: anytype) anytype{#endsyntax#}</pre>
+      {#header_open|@intfromenum#}
+      <pre>{#syntax#}@intfromenum(enum_or_tagged_union: anytype) anytype{#endsyntax#}</pre>
       <p>
       Converts an enumeration value into its integer tag type. When a tagged union is passed,
       the tag value is used as the enumeration value.
@@ -4962,11 +4962,11 @@ fn cmpxchgWeakButNotAtomic(comptime T: type, ptr: *T, expected_value: T, new_val
       If there is only one possible enum value, the result is a {#syntax#}comptime_int{#endsyntax#}
       known at {#link|comptime#}.
       </p>
-      {#see_also|@enumFromInt#}
+      {#see_also|@enumfromint#}
       {#header_close#}
 
-      {#header_open|@intFromError#}
-      <pre>{#syntax#}@intFromError(err: anytype) std.meta.Int(.unsigned, @bitSizeOf(anyerror)){#endsyntax#}</pre>
+      {#header_open|@intfromerror#}
+      <pre>{#syntax#}@intfromerror(err: anytype) std.meta.Int(.unsigned, @bitsizeof(anyerror)){#endsyntax#}</pre>
       <p>
       Supports the following types:
       </p>
@@ -4982,11 +4982,11 @@ fn cmpxchgWeakButNotAtomic(comptime T: type, ptr: *T, expected_value: T, new_val
       It is generally recommended to avoid this
       cast, as the integer representation of an error is not stable across source code changes.
       </p>
-      {#see_also|@errorFromInt#}
+      {#see_also|@errorfromint#}
       {#header_close#}
 
-      {#header_open|@intFromFloat#}
-      <pre>{#syntax#}@intFromFloat(float: anytype) anytype{#endsyntax#}</pre>
+      {#header_open|@intfromfloat#}
+      <pre>{#syntax#}@intfromfloat(float: anytype) anytype{#endsyntax#}</pre>
       <p>
       Converts the integer part of a floating point number to the inferred result type.
       </p>
@@ -4994,16 +4994,16 @@ fn cmpxchgWeakButNotAtomic(comptime T: type, ptr: *T, expected_value: T, new_val
       If the integer part of the floating point number cannot fit in the destination type,
       it invokes safety-checked {#link|Undefined Behavior#}.
       </p>
-      {#see_also|@floatFromInt#}
+      {#see_also|@floatfromint#}
       {#header_close#}
 
-      {#header_open|@intFromPtr#}
-      <pre>{#syntax#}@intFromPtr(value: anytype) usize{#endsyntax#}</pre>
+      {#header_open|@intfromptr#}
+      <pre>{#syntax#}@intfromptr(value: anytype) usize{#endsyntax#}</pre>
       <p>
       Converts {#syntax#}value{#endsyntax#} to a {#syntax#}usize{#endsyntax#} which is the address of the pointer.
       {#syntax#}value{#endsyntax#} can be {#syntax#}*T{#endsyntax#} or {#syntax#}?*T{#endsyntax#}.
       </p>
-      <p>To convert the other way, use {#link|@ptrFromInt#}</p>
+      <p>To convert the other way, use {#link|@ptrfromint#}</p>
       {#header_close#}
 
       {#header_open|@max#}
@@ -5056,8 +5056,8 @@ fn cmpxchgWeakButNotAtomic(comptime T: type, ptr: *T, expected_value: T, new_val
       {#see_also|@max|Vectors#}
       {#header_close#}
 
-      {#header_open|@wasmMemorySize#}
-      <pre>{#syntax#}@wasmMemorySize(index: u32) usize{#endsyntax#}</pre>
+      {#header_open|@wasmmemorysize#}
+      <pre>{#syntax#}@wasmmemorysize(index: u32) usize{#endsyntax#}</pre>
       <p>
       This function returns the size of the Wasm memory identified by {#syntax#}index{#endsyntax#} as
       an unsigned value in units of Wasm pages. Note that each Wasm page is 64KB in size.
@@ -5067,11 +5067,11 @@ fn cmpxchgWeakButNotAtomic(comptime T: type, ptr: *T, expected_value: T, new_val
       designers targeting Wasm. So unless you are writing a new allocator from scratch, you should use
       something like {#syntax#}@import("std").heap.WasmPageAllocator{#endsyntax#}.
       </p>
-      {#see_also|@wasmMemoryGrow#}
+      {#see_also|@wasmmemorygrow#}
       {#header_close#}
 
-      {#header_open|@wasmMemoryGrow#}
-      <pre>{#syntax#}@wasmMemoryGrow(index: u32, delta: usize) isize{#endsyntax#}</pre>
+      {#header_open|@wasmmemorygrow#}
+      <pre>{#syntax#}@wasmmemorygrow(index: u32, delta: usize) isize{#endsyntax#}</pre>
       <p>
       This function increases the size of the Wasm memory identified by {#syntax#}index{#endsyntax#} by
       {#syntax#}delta{#endsyntax#} in units of unsigned number of Wasm pages. Note that each Wasm page
@@ -5083,9 +5083,9 @@ fn cmpxchgWeakButNotAtomic(comptime T: type, ptr: *T, expected_value: T, new_val
       designers targeting Wasm. So unless you are writing a new allocator from scratch, you should use
       something like {#syntax#}@import("std").heap.WasmPageAllocator{#endsyntax#}.
       </p>
-      {#code|test_wasmMemoryGrow_builtin.zig#}
+      {#code|test_wasmmemorygrow_builtin.zig#}
 
-      {#see_also|@wasmMemorySize#}
+      {#see_also|@wasmmemorysize#}
       {#header_close#}
 
       {#header_open|@mod#}
@@ -5097,14 +5097,14 @@ fn cmpxchgWeakButNotAtomic(comptime T: type, ptr: *T, expected_value: T, new_val
       </p>
       <ul>
           <li>{#syntax#}@mod(-5, 3) == 1{#endsyntax#}</li>
-          <li>{#syntax#}(@divFloor(a, b) * b) + @mod(a, b) == a{#endsyntax#}</li>
+          <li>{#syntax#}(@divfloor(a, b) * b) + @mod(a, b) == a{#endsyntax#}</li>
       </ul>
       <p>For a function that returns an error code, see {#syntax#}@import("std").math.mod{#endsyntax#}.</p>
       {#see_also|@rem#}
       {#header_close#}
 
-      {#header_open|@mulWithOverflow#}
-      <pre>{#syntax#}@mulWithOverflow(a: anytype, b: anytype) struct { @TypeOf(a, b), u1 }{#endsyntax#}</pre>
+      {#header_open|@mulwithoverflow#}
+      <pre>{#syntax#}@mulwithoverflow(a: anytype, b: anytype) struct { @TypeOf(a, b), u1 }{#endsyntax#}</pre>
       <p>
       Performs {#syntax#}a * b{#endsyntax#} and returns a tuple with the result and a possible overflow bit.
       </p>
@@ -5128,8 +5128,8 @@ fn cmpxchgWeakButNotAtomic(comptime T: type, ptr: *T, expected_value: T, new_val
       {#see_also|Root Source File#}
       {#header_close#}
 
-      {#header_open|@popCount#}
-      <pre>{#syntax#}@popCount(operand: anytype) anytype{#endsyntax#}</pre>
+      {#header_open|@popcount#}
+      <pre>{#syntax#}@popcount(operand: anytype) anytype{#endsyntax#}</pre>
       <p>{#syntax#}@TypeOf(operand){#endsyntax#} must be an integer type.</p>
       <p>{#syntax#}operand{#endsyntax#} may be an {#link|integer|Integers#} or {#link|vector|Vectors#}.</p>
       <p>
@@ -5160,8 +5160,8 @@ fn cmpxchgWeakButNotAtomic(comptime T: type, ptr: *T, expected_value: T, new_val
       <p>{#syntax#}PrefetchOptions{#endsyntax#} can be found with {#syntax#}@import("std").builtin.PrefetchOptions{#endsyntax#}.</p>
       {#header_close#}
 
-      {#header_open|@ptrCast#}
-      <pre>{#syntax#}@ptrCast(value: anytype) anytype{#endsyntax#}</pre>
+      {#header_open|@ptrcast#}
+      <pre>{#syntax#}@ptrcast(value: anytype) anytype{#endsyntax#}</pre>
       <p>
       Converts a pointer of one type to a pointer of another type. The return type is the inferred result type.
       </p>
@@ -5170,22 +5170,22 @@ fn cmpxchgWeakButNotAtomic(comptime T: type, ptr: *T, expected_value: T, new_val
       to a non-optional pointer invokes safety-checked {#link|Undefined Behavior#}.
       </p>
       <p>
-      {#syntax#}@ptrCast{#endsyntax#} cannot be used for:
+      {#syntax#}@ptrcast{#endsyntax#} cannot be used for:
       </p>
       <ul>
-          <li>Removing {#syntax#}const{#endsyntax#} qualifier, use {#link|@constCast#}.</li>
-          <li>Removing {#syntax#}volatile{#endsyntax#} qualifier, use {#link|@volatileCast#}.</li>
-          <li>Changing pointer address space, use {#link|@addrSpaceCast#}.</li>
-          <li>Increasing pointer alignment, use {#link|@alignCast#}.</li>
+          <li>Removing {#syntax#}const{#endsyntax#} qualifier, use {#link|@constcast#}.</li>
+          <li>Removing {#syntax#}volatile{#endsyntax#} qualifier, use {#link|@volatilecast#}.</li>
+          <li>Changing pointer address space, use {#link|@addrspacecast#}.</li>
+          <li>Increasing pointer alignment, use {#link|@aligncast#}.</li>
           <li>Casting a non-slice pointer to a slice, use slicing syntax {#syntax#}ptr[start..end]{#endsyntax#}.</li>
       </ul>
       {#header_close#}
 
-      {#header_open|@ptrFromInt#}
-      <pre>{#syntax#}@ptrFromInt(address: usize) anytype{#endsyntax#}</pre>
+      {#header_open|@ptrfromint#}
+      <pre>{#syntax#}@ptrfromint(address: usize) anytype{#endsyntax#}</pre>
       <p>
       Converts an integer to a {#link|pointer|Pointers#}. The return type is the inferred result type.
-			To convert the other way, use {#link|@intFromPtr#}. Casting an address of 0 to a destination type
+			To convert the other way, use {#link|@intfromptr#}. Casting an address of 0 to a destination type
       which in not {#link|optional|Optional Pointers#} and does not have the {#syntax#}allowzero{#endsyntax#} attribute will result in a
       {#link|Pointer Cast Invalid Null#} panic when runtime safety checks are enabled.
       </p>
@@ -5204,14 +5204,14 @@ fn cmpxchgWeakButNotAtomic(comptime T: type, ptr: *T, expected_value: T, new_val
       </p>
       <ul>
           <li>{#syntax#}@rem(-5, 3) == -2{#endsyntax#}</li>
-          <li>{#syntax#}(@divTrunc(a, b) * b) + @rem(a, b) == a{#endsyntax#}</li>
+          <li>{#syntax#}(@divtrunc(a, b) * b) + @rem(a, b) == a{#endsyntax#}</li>
       </ul>
       <p>For a function that returns an error code, see {#syntax#}@import("std").math.rem{#endsyntax#}.</p>
       {#see_also|@mod#}
       {#header_close#}
 
-      {#header_open|@returnAddress#}
-      <pre>{#syntax#}@returnAddress() usize{#endsyntax#}</pre>
+      {#header_open|@returnaddress#}
+      <pre>{#syntax#}@returnaddress() usize{#endsyntax#}</pre>
       <p>
       This function returns the address of the next machine code instruction that will be executed
       when the current function returns.
@@ -5250,8 +5250,8 @@ fn cmpxchgWeakButNotAtomic(comptime T: type, ptr: *T, expected_value: T, new_val
       </p>
       {#header_close#}
 
-      {#header_open|@setEvalBranchQuota#}
-      <pre>{#syntax#}@setEvalBranchQuota(comptime new_quota: u32) void{#endsyntax#}</pre>
+      {#header_open|@setevalbranchquota#}
+      <pre>{#syntax#}@setevalbranchquota(comptime new_quota: u32) void{#endsyntax#}</pre>
       <p>
       Increase the maximum number of backwards branches that compile-time code
       execution can use before giving up and making a compile error.
@@ -5263,17 +5263,17 @@ fn cmpxchgWeakButNotAtomic(comptime T: type, ptr: *T, expected_value: T, new_val
       <p>
       Example:
       </p>
-      {#code|test_without_setEvalBranchQuota_builtin.zig#}
+      {#code|test_without_setevalbranchquota_builtin.zig#}
 
-      <p>Now we use {#syntax#}@setEvalBranchQuota{#endsyntax#}:</p>
-      {#code|test_setEvalBranchQuota_builtin.zig#}
+      <p>Now we use {#syntax#}@setevalbranchquota{#endsyntax#}:</p>
+      {#code|test_setevalbranchquota_builtin.zig#}
 
 
       {#see_also|comptime#}
       {#header_close#}
 
-      {#header_open|@setFloatMode#}
-      <pre>{#syntax#}@setFloatMode(comptime mode: FloatMode) void{#endsyntax#}</pre>
+      {#header_open|@setfloatmode#}
+      <pre>{#syntax#}@setfloatmode(comptime mode: FloatMode) void{#endsyntax#}</pre>
       <p>Changes the current scope's rules about how floating point operations are defined.</p>
       <ul>
         <li>
@@ -5300,20 +5300,20 @@ fn cmpxchgWeakButNotAtomic(comptime T: type, ptr: *T, expected_value: T, new_val
       {#see_also|Floating Point Operations#}
       {#header_close#}
 
-      {#header_open|@setRuntimeSafety#}
-      <pre>{#syntax#}@setRuntimeSafety(comptime safety_on: bool) void{#endsyntax#}</pre>
+      {#header_open|@setruntimesafety#}
+      <pre>{#syntax#}@setruntimesafety(comptime safety_on: bool) void{#endsyntax#}</pre>
       <p>
       Sets whether runtime safety checks are enabled for the scope that contains the function call.
       </p>
-      {#code|test_setRuntimeSafety_builtin.zig#}
+      {#code|test_setruntimesafety_builtin.zig#}
 
       <p>Note: it is <a href="https://github.com/ziglang/zig/issues/978">planned</a> to replace
-      {#syntax#}@setRuntimeSafety{#endsyntax#} with <code>@optimizeFor</code></p>
+      {#syntax#}@setruntimesafety{#endsyntax#} with <code>@optimizeFor</code></p>
 
       {#header_close#}
 
-      {#header_open|@shlExact#}
-      <pre>{#syntax#}@shlExact(value: T, shift_amt: Log2T) T{#endsyntax#}</pre>
+      {#header_open|@shlexact#}
+      <pre>{#syntax#}@shlexact(value: T, shift_amt: Log2T) T{#endsyntax#}</pre>
       <p>
       Performs the left shift operation ({#syntax#}<<{#endsyntax#}).
       For unsigned integers, the result is {#link|undefined#} if any 1 bits
@@ -5321,40 +5321,40 @@ fn cmpxchgWeakButNotAtomic(comptime T: type, ptr: *T, expected_value: T, new_val
       any bits that disagree with the resultant sign bit are shifted out.
       </p>
       <p>
-      The type of {#syntax#}shift_amt{#endsyntax#} is an unsigned integer with {#syntax#}log2(@typeInfo(T).Int.bits){#endsyntax#} bits.
-              This is because {#syntax#}shift_amt >= @typeInfo(T).Int.bits{#endsyntax#} is undefined behavior.
+      The type of {#syntax#}shift_amt{#endsyntax#} is an unsigned integer with {#syntax#}log2(@typeinfo(T).Int.bits){#endsyntax#} bits.
+              This is because {#syntax#}shift_amt >= @typeinfo(T).Int.bits{#endsyntax#} is undefined behavior.
       </p>
       <p>
       {#syntax#}comptime_int{#endsyntax#} is modeled as an integer with an infinite number of bits,
-      meaning that in such case, {#syntax#}@shlExact{#endsyntax#} always produces a result and
+      meaning that in such case, {#syntax#}@shlexact{#endsyntax#} always produces a result and
       cannot produce a compile error.
       </p>
-      {#see_also|@shrExact|@shlWithOverflow#}
+      {#see_also|@shrexact|@shlwithoverflow#}
       {#header_close#}
 
-      {#header_open|@shlWithOverflow#}
-      <pre>{#syntax#}@shlWithOverflow(a: anytype, shift_amt: Log2T) struct { @TypeOf(a), u1 }{#endsyntax#}</pre>
+      {#header_open|@shlwithoverflow#}
+      <pre>{#syntax#}@shlwithoverflow(a: anytype, shift_amt: Log2T) struct { @TypeOf(a), u1 }{#endsyntax#}</pre>
       <p>
       Performs {#syntax#}a << b{#endsyntax#} and returns a tuple with the result and a possible overflow bit.
       </p>
       <p>
-      The type of {#syntax#}shift_amt{#endsyntax#} is an unsigned integer with {#syntax#}log2(@typeInfo(@TypeOf(a)).Int.bits){#endsyntax#} bits.
-              This is because {#syntax#}shift_amt >= @typeInfo(@TypeOf(a)).Int.bits{#endsyntax#} is undefined behavior.
+      The type of {#syntax#}shift_amt{#endsyntax#} is an unsigned integer with {#syntax#}log2(@typeinfo(@TypeOf(a)).Int.bits){#endsyntax#} bits.
+              This is because {#syntax#}shift_amt >= @typeinfo(@TypeOf(a)).Int.bits{#endsyntax#} is undefined behavior.
       </p>
-      {#see_also|@shlExact|@shrExact#}
+      {#see_also|@shlexact|@shrexact#}
       {#header_close#}
 
-      {#header_open|@shrExact#}
-      <pre>{#syntax#}@shrExact(value: T, shift_amt: Log2T) T{#endsyntax#}</pre>
+      {#header_open|@shrexact#}
+      <pre>{#syntax#}@shrexact(value: T, shift_amt: Log2T) T{#endsyntax#}</pre>
       <p>
       Performs the right shift operation ({#syntax#}>>{#endsyntax#}). Caller guarantees
       that the shift will not shift any 1 bits out.
       </p>
       <p>
-      The type of {#syntax#}shift_amt{#endsyntax#} is an unsigned integer with {#syntax#}log2(@typeInfo(T).Int.bits){#endsyntax#} bits.
-              This is because {#syntax#}shift_amt >= @typeInfo(T).Int.bits{#endsyntax#} is undefined behavior.
+      The type of {#syntax#}shift_amt{#endsyntax#} is an unsigned integer with {#syntax#}log2(@typeinfo(T).Int.bits){#endsyntax#} bits.
+              This is because {#syntax#}shift_amt >= @typeinfo(T).Int.bits{#endsyntax#} is undefined behavior.
       </p>
-      {#see_also|@shlExact|@shlWithOverflow#}
+      {#see_also|@shlexact|@shlwithoverflow#}
       {#header_close#}
 
       {#header_open|@shuffle#}
@@ -5396,8 +5396,8 @@ fn cmpxchgWeakButNotAtomic(comptime T: type, ptr: *T, expected_value: T, new_val
       {#see_also|Vectors#}
       {#header_close#}
 
-      {#header_open|@sizeOf#}
-      <pre>{#syntax#}@sizeOf(comptime T: type) comptime_int{#endsyntax#}</pre>
+      {#header_open|@sizeof#}
+      <pre>{#syntax#}@sizeof(comptime T: type) comptime_int{#endsyntax#}</pre>
       <p>
       This function returns the number of bytes it takes to store {#syntax#}T{#endsyntax#} in memory.
       The result is a target-specific compile time constant.
@@ -5405,14 +5405,14 @@ fn cmpxchgWeakButNotAtomic(comptime T: type, ptr: *T, expected_value: T, new_val
       <p>
       This size may contain padding bytes. If there were two consecutive T in memory, the padding would be the offset
       in bytes between element at index 0 and the element at index 1. For {#link|integer|Integers#},
-      consider whether you want to use {#syntax#}@sizeOf(T){#endsyntax#} or
-      {#syntax#}@typeInfo(T).Int.bits{#endsyntax#}.
+      consider whether you want to use {#syntax#}@sizeof(T){#endsyntax#} or
+      {#syntax#}@typeinfo(T).Int.bits{#endsyntax#}.
       </p>
       <p>
       This function measures the size at runtime. For types that are disallowed at runtime, such as
       {#syntax#}comptime_int{#endsyntax#} and {#syntax#}type{#endsyntax#}, the result is {#syntax#}0{#endsyntax#}.
       </p>
-      {#see_also|@bitSizeOf|@typeInfo#}
+      {#see_also|@bitsizeof|@typeinfo#}
       {#header_close#}
 
       {#header_open|@splat#}
@@ -5457,7 +5457,7 @@ fn cmpxchgWeakButNotAtomic(comptime T: type, ptr: *T, expected_value: T, new_val
       </p>
       {#code|test_reduce_builtin.zig#}
 
-      {#see_also|Vectors|@setFloatMode#}
+      {#see_also|Vectors|@setfloatmode#}
       {#header_close#}
 
       {#header_open|@src#}
@@ -5615,15 +5615,15 @@ fn cmpxchgWeakButNotAtomic(comptime T: type, ptr: *T, expected_value: T, new_val
       </p>
       {#header_close#}
 
-      {#header_open|@subWithOverflow#}
-      <pre>{#syntax#}@subWithOverflow(a: anytype, b: anytype) struct { @TypeOf(a, b), u1 }{#endsyntax#}</pre>
+      {#header_open|@subwithoverflow#}
+      <pre>{#syntax#}@subwithoverflow(a: anytype, b: anytype) struct { @TypeOf(a, b), u1 }{#endsyntax#}</pre>
       <p>
       Performs {#syntax#}a - b{#endsyntax#} and returns a tuple with the result and a possible overflow bit.
       </p>
       {#header_close#}
 
-      {#header_open|@tagName#}
-      <pre>{#syntax#}@tagName(value: anytype) [:0]const u8{#endsyntax#}</pre>
+      {#header_open|@tagname#}
+      <pre>{#syntax#}@tagname(value: anytype) [:0]const u8{#endsyntax#}</pre>
       <p>
       Converts an enum value or union value to a string literal representing the name.</p><p>If the enum is non-exhaustive and the tag value does not map to a name, it invokes safety-checked {#link|Undefined Behavior#}.
       </p>
@@ -5672,14 +5672,14 @@ fn cmpxchgWeakButNotAtomic(comptime T: type, ptr: *T, expected_value: T, new_val
       {#code|test_truncate_builtin.zig#}
 
       <p>
-      Use {#link|@intCast#} to convert numbers guaranteed to fit the destination type.
+      Use {#link|@intcast#} to convert numbers guaranteed to fit the destination type.
       </p>
       {#header_close#}
 
       {#header_open|@Type#}
       <pre>{#syntax#}@Type(comptime info: std.builtin.Type) type{#endsyntax#}</pre>
       <p>
-      This function is the inverse of {#link|@typeInfo#}. It reifies type information
+      This function is the inverse of {#link|@typeinfo#}. It reifies type information
       into a {#syntax#}type{#endsyntax#}.
       </p>
       <p>
@@ -5711,8 +5711,8 @@ fn cmpxchgWeakButNotAtomic(comptime T: type, ptr: *T, expected_value: T, new_val
           <li>{#link|Functions#}</li>
       </ul>
       {#header_close#}
-      {#header_open|@typeInfo#}
-      <pre>{#syntax#}@typeInfo(comptime T: type) std.builtin.Type{#endsyntax#}</pre>
+      {#header_open|@typeinfo#}
+      <pre>{#syntax#}@typeinfo(comptime T: type) std.builtin.Type{#endsyntax#}</pre>
       <p>
       Provides type reflection.
       </p>
@@ -5728,8 +5728,8 @@ fn cmpxchgWeakButNotAtomic(comptime T: type, ptr: *T, expected_value: T, new_val
       </p>
       {#header_close#}
 
-      {#header_open|@typeName#}
-      <pre>{#syntax#}@typeName(T: type) *const [N:0]u8{#endsyntax#}</pre>
+      {#header_open|@typename#}
+      <pre>{#syntax#}@typename(T: type) *const [N:0]u8{#endsyntax#}</pre>
       <p>
       This function returns the string representation of a type, as
       an array. It is equivalent to a string literal of the type name.
@@ -5751,14 +5751,14 @@ fn cmpxchgWeakButNotAtomic(comptime T: type, ptr: *T, expected_value: T, new_val
 
       {#header_close#}
 
-      {#header_open|@unionInit#}
-      <pre>{#syntax#}@unionInit(comptime Union: type, comptime active_field_name: []const u8, init_expr) Union{#endsyntax#}</pre>
+      {#header_open|@unioninit#}
+      <pre>{#syntax#}@unioninit(comptime Union: type, comptime active_field_name: []const u8, init_expr) Union{#endsyntax#}</pre>
       <p>
       This is the same thing as {#link|union#} initialization syntax, except that the field name is a
       {#link|comptime#}-known value rather than an identifier token.
       </p>
       <p>
-      {#syntax#}@unionInit{#endsyntax#} forwards its {#link|result location|Result Location Semantics#} to {#syntax#}init_expr{#endsyntax#}.
+      {#syntax#}@unioninit{#endsyntax#} forwards its {#link|result location|Result Location Semantics#} to {#syntax#}init_expr{#endsyntax#}.
       </p>
       {#header_close#}
 
@@ -5768,22 +5768,22 @@ fn cmpxchgWeakButNotAtomic(comptime T: type, ptr: *T, expected_value: T, new_val
       <p>Creates {#link|Vectors#}.</p>
       {#header_close#}
 
-      {#header_open|@volatileCast#}
-      <pre>{#syntax#}@volatileCast(value: anytype) DestType{#endsyntax#}</pre>
+      {#header_open|@volatilecast#}
+      <pre>{#syntax#}@volatilecast(value: anytype) DestType{#endsyntax#}</pre>
       <p>
       Remove {#syntax#}volatile{#endsyntax#} qualifier from a pointer.
       </p>
       {#header_close#}
 
-      {#header_open|@workGroupId#}
-      <pre>{#syntax#}@workGroupId(comptime dimension: u32) u32{#endsyntax#}</pre>
+      {#header_open|@workgroupid#}
+      <pre>{#syntax#}@workgroupid(comptime dimension: u32) u32{#endsyntax#}</pre>
       <p>
       Returns the index of the work group in the current kernel invocation in dimension {#syntax#}dimension{#endsyntax#}.
       </p>
       {#header_close#}
 
-      {#header_open|@workGroupSize#}
-      <pre>{#syntax#}@workGroupSize(comptime dimension: u32) u32{#endsyntax#}</pre>
+      {#header_open|@workgroupsize#}
+      <pre>{#syntax#}@workgroupsize(comptime dimension: u32) u32{#endsyntax#}</pre>
       <p>
       Returns the number of work items that a work group has in dimension {#syntax#}dimension{#endsyntax#}.
       </p>
@@ -5792,7 +5792,7 @@ fn cmpxchgWeakButNotAtomic(comptime T: type, ptr: *T, expected_value: T, new_val
       {#header_open|@workItemId#}
       <pre>{#syntax#}@workItemId(comptime dimension: u32) u32{#endsyntax#}</pre>
       <p>
-      Returns the index of the work item in the work group in dimension {#syntax#}dimension{#endsyntax#}. This function returns values between {#syntax#}0{#endsyntax#} (inclusive) and {#syntax#}@workGroupSize(dimension){#endsyntax#} (exclusive).
+      Returns the index of the work item in the work group in dimension {#syntax#}dimension{#endsyntax#}. This function returns values between {#syntax#}0{#endsyntax#} (inclusive) and {#syntax#}@workgroupsize(dimension){#endsyntax#} (exclusive).
       </p>
       {#header_close#}
 
@@ -5883,9 +5883,9 @@ fn cmpxchgWeakButNotAtomic(comptime T: type, ptr: *T, expected_value: T, new_val
       detected at compile-time, Zig emits a compile error and refuses to continue.
       Most undefined behavior that cannot be detected at compile-time can be detected
       at runtime. In these cases, Zig has safety checks. Safety checks can be disabled
-      on a per-block basis with {#link|@setRuntimeSafety#}. The {#link|ReleaseFast#}
+      on a per-block basis with {#link|@setruntimesafety#}. The {#link|ReleaseFast#}
       and {#link|ReleaseSmall#} build modes disable all safety checks (except where overridden
-      by {#link|@setRuntimeSafety#}) in order to facilitate optimizations.
+      by {#link|@setruntimesafety#}) in order to facilitate optimizations.
       </p>
       <p>
       When a safety check fails, Zig crashes with a stack trace, like this:
@@ -5939,9 +5939,9 @@ fn cmpxchgWeakButNotAtomic(comptime T: type, ptr: *T, expected_value: T, new_val
           <li>{#syntax#}-{#endsyntax#} (negation)</li>
           <li>{#syntax#}*{#endsyntax#} (multiplication)</li>
           <li>{#syntax#}/{#endsyntax#} (division)</li>
-        <li>{#link|@divTrunc#} (division)</li>
-        <li>{#link|@divFloor#} (division)</li>
-        <li>{#link|@divExact#} (division)</li>
+        <li>{#link|@divtrunc#} (division)</li>
+        <li>{#link|@divfloor#} (division)</li>
+        <li>{#link|@divexact#} (division)</li>
       </ul>
       <p>Example with addition at compile-time:</p>
       {#code|test_comptime_overflow.zig#}
@@ -5956,9 +5956,9 @@ fn cmpxchgWeakButNotAtomic(comptime T: type, ptr: *T, expected_value: T, new_val
           <li>{#syntax#}@import("std").math.add{#endsyntax#}</li>
           <li>{#syntax#}@import("std").math.sub{#endsyntax#}</li>
           <li>{#syntax#}@import("std").math.mul{#endsyntax#}</li>
-          <li>{#syntax#}@import("std").math.divTrunc{#endsyntax#}</li>
-          <li>{#syntax#}@import("std").math.divFloor{#endsyntax#}</li>
-          <li>{#syntax#}@import("std").math.divExact{#endsyntax#}</li>
+          <li>{#syntax#}@import("std").math.divtrunc{#endsyntax#}</li>
+          <li>{#syntax#}@import("std").math.divfloor{#endsyntax#}</li>
+          <li>{#syntax#}@import("std").math.divexact{#endsyntax#}</li>
           <li>{#syntax#}@import("std").math.shl{#endsyntax#}</li>
       </ul>
       <p>Example of catching an overflow for addition:</p>
@@ -5971,15 +5971,15 @@ fn cmpxchgWeakButNotAtomic(comptime T: type, ptr: *T, expected_value: T, new_val
       (as a {#syntax#}u1{#endsyntax#}) and the possibly overflowed bits of the operation:
       </p>
       <ul>
-          <li>{#link|@addWithOverflow#}</li>
-          <li>{#link|@subWithOverflow#}</li>
-          <li>{#link|@mulWithOverflow#}</li>
-          <li>{#link|@shlWithOverflow#}</li>
+          <li>{#link|@addwithoverflow#}</li>
+          <li>{#link|@subwithoverflow#}</li>
+          <li>{#link|@mulwithoverflow#}</li>
+          <li>{#link|@shlwithoverflow#}</li>
       </ul>
       <p>
-      Example of {#link|@addWithOverflow#}:
+      Example of {#link|@addwithoverflow#}:
       </p>
-      {#code|addWithOverflow_builtin.zig#}
+      {#code|addwithoverflow_builtin.zig#}
 
       {#header_close#}
       {#header_open|Wrapping Operations#}
@@ -5998,18 +5998,18 @@ fn cmpxchgWeakButNotAtomic(comptime T: type, ptr: *T, expected_value: T, new_val
       {#header_close#}
       {#header_open|Exact Left Shift Overflow#}
       <p>At compile-time:</p>
-      {#code|test_comptime_shlExact_overwlow.zig#}
+      {#code|test_comptime_shlexact_overwlow.zig#}
 
       <p>At runtime:</p>
-      {#code|runtime_shlExact_overflow.zig#}
+      {#code|runtime_shlexact_overflow.zig#}
 
       {#header_close#}
       {#header_open|Exact Right Shift Overflow#}
       <p>At compile-time:</p>
-      {#code|test_comptime_shrExact_overflow.zig#}
+      {#code|test_comptime_shrexact_overflow.zig#}
 
       <p>At runtime:</p>
-      {#code|runtime_shrExact_overflow.zig#}
+      {#code|runtime_shrexact_overflow.zig#}
 
       {#header_close#}
       {#header_open|Division by Zero#}
@@ -6030,10 +6030,10 @@ fn cmpxchgWeakButNotAtomic(comptime T: type, ptr: *T, expected_value: T, new_val
       {#header_close#}
       {#header_open|Exact Division Remainder#}
       <p>At compile-time:</p>
-      {#code|test_comptime_divExact_remainder.zig#}
+      {#code|test_comptime_divexact_remainder.zig#}
 
       <p>At runtime:</p>
-      {#code|runtime_divExact_remainder.zig#}
+      {#code|runtime_divexact_remainder.zig#}
 
       {#header_close#}
       {#header_open|Attempt to Unwrap Null#}
@@ -6458,32 +6458,32 @@ fn cmpxchgWeakButNotAtomic(comptime T: type, ptr: *T, expected_value: T, new_val
       {#header_close#}
       {#header_open|Import from C Header File#}
       <p>
-      The {#syntax#}@cImport{#endsyntax#} builtin function can be used
+      The {#syntax#}@cimport{#endsyntax#} builtin function can be used
       to directly import symbols from <code class="file">.h</code> files:
       </p>
-      {#code|cImport_builtin.zig#}
+      {#code|cimport_builtin.zig#}
 
       <p>
-      The {#syntax#}@cImport{#endsyntax#} function takes an expression as a parameter.
+      The {#syntax#}@cimport{#endsyntax#} function takes an expression as a parameter.
       This expression is evaluated at compile-time and is used to control
       preprocessor directives and include multiple <code class="file">.h</code> files:
       </p>
-      {#syntax_block|zig|@cImport Expression#}
+      {#syntax_block|zig|@cimport Expression#}
 const builtin = @import("builtin");
 
-const c = @cImport({
-    @cDefine("NDEBUG", builtin.mode == .ReleaseFast);
+const c = @cimport({
+    @cdefine("NDEBUG", builtin.mode == .ReleaseFast);
     if (something) {
-        @cDefine("_GNU_SOURCE", {});
+        @cdefine("_GNU_SOURCE", {});
     }
-    @cInclude("stdlib.h");
+    @cinclude("stdlib.h");
     if (something) {
-        @cUndef("_GNU_SOURCE");
+        @cundef("_GNU_SOURCE");
     }
-    @cInclude("soundio.h");
+    @cinclude("soundio.h");
 });
       {#end_syntax_block#}
-      {#see_also|@cImport|@cInclude|@cDefine|@cUndef|@import#}
+      {#see_also|@cimport|@cinclude|@cdefine|@cundef|@import#}
       {#header_close#}
 
       {#header_open|C Translation CLI#}
@@ -6544,41 +6544,41 @@ $ zig translate-c -cflags -fshort-enums -- varycflags.h|grep -B1 do_something
 pub const enum_FOO = u8;
 pub extern fn do_something(foo: enum_FOO) c_int;{#end_shell_samp#}
       {#header_close#}
-      {#header_open|@cImport vs translate-c#}
-      <p>{#syntax#}@cImport{#endsyntax#} and <kbd>zig translate-c</kbd> use the same underlying
+      {#header_open|@cimport vs translate-c#}
+      <p>{#syntax#}@cimport{#endsyntax#} and <kbd>zig translate-c</kbd> use the same underlying
       C translation functionality, so on a technical level they are equivalent. In practice,
-      {#syntax#}@cImport{#endsyntax#} is useful as a way to quickly and easily access numeric constants, typedefs,
+      {#syntax#}@cimport{#endsyntax#} is useful as a way to quickly and easily access numeric constants, typedefs,
       and record types without needing any extra setup. If you need to pass {#link|cflags|Using -target and -cflags#}
       to clang, or if you would like to edit the translated code, it is recommended to use
       <kbd>zig translate-c</kbd> and save the results to a file. Common reasons for editing
       the generated code include: changing {#syntax#}anytype{#endsyntax#} parameters in function-like macros to more
       specific types; changing {#syntax#}[*c]T{#endsyntax#} pointers to {#syntax#}[*]T{#endsyntax#} or
       {#syntax#}*T{#endsyntax#} pointers for improved type safety; and
-      {#link|enabling or disabling runtime safety|@setRuntimeSafety#} within specific functions.
+      {#link|enabling or disabling runtime safety|@setruntimesafety#} within specific functions.
       </p>
       {#header_close#}
-      {#see_also|Targets|C Type Primitives|Pointers|C Pointers|Import from C Header File|@cInclude|@cImport|@setRuntimeSafety#}
+      {#see_also|Targets|C Type Primitives|Pointers|C Pointers|Import from C Header File|@cinclude|@cimport|@setruntimesafety#}
       {#header_close#}
       {#header_open|C Translation Caching#}
       <p>
         The C translation feature (whether used via <kbd>zig translate-c</kbd> or
-        {#syntax#}@cImport{#endsyntax#}) integrates with the Zig caching system. Subsequent runs with
+        {#syntax#}@cimport{#endsyntax#}) integrates with the Zig caching system. Subsequent runs with
         the same source file, target, and cflags will use the cache instead of repeatedly translating
         the same code.
       </p>
       <p>
-        To see where the cached files are stored when compiling code that uses {#syntax#}@cImport{#endsyntax#},
+        To see where the cached files are stored when compiling code that uses {#syntax#}@cimport{#endsyntax#},
         use the <kbd>--verbose-cimport</kbd> flag:
       </p>
       {#code|verbose_cimport_flag.zig#}
 
       <p>
         <code class="file">cimport.h</code> contains the file to translate (constructed from calls to
-        {#syntax#}@cInclude{#endsyntax#}, {#syntax#}@cDefine{#endsyntax#}, and {#syntax#}@cUndef{#endsyntax#}),
+        {#syntax#}@cinclude{#endsyntax#}, {#syntax#}@cdefine{#endsyntax#}, and {#syntax#}@cundef{#endsyntax#}),
         <code class="file">cimport.h.d</code> is the list of file dependencies, and
         <code class="file">cimport.zig</code> contains the translated output.
       </p>
-      {#see_also|Import from C Header File|C Translation CLI|@cInclude|@cImport#}
+      {#see_also|Import from C Header File|C Translation CLI|@cinclude|@cimport#}
       {#header_close#}
       {#header_open|Translation failures#}
       <p>
@@ -6588,7 +6588,7 @@ pub extern fn do_something(foo: enum_FOO) c_int;{#end_shell_samp#}
       </p>
       <p>
         Demotion comes in three varieties - {#link|opaque#}, <em>extern</em>, and
-        {#syntax#}@compileError{#endsyntax#}.
+        {#syntax#}@compileerror{#endsyntax#}.
 
         C structs and unions that cannot be translated correctly will be translated as {#syntax#}opaque{}{#endsyntax#}.
         Functions that contain opaque types or code constructs that cannot be translated will be demoted
@@ -6598,19 +6598,19 @@ pub extern fn do_something(foo: enum_FOO) c_int;{#end_shell_samp#}
         can be called so long as the linker is aware of the compiled function.
       </p>
       <p>
-        {#syntax#}@compileError{#endsyntax#} is used when top-level definitions (global variables,
+        {#syntax#}@compileerror{#endsyntax#} is used when top-level definitions (global variables,
         function prototypes, macros) cannot be translated or demoted. Since Zig uses lazy analysis for
         top-level declarations, untranslatable entities will not cause a compile error in your code unless
         you actually use them.
       </p>
-      {#see_also|opaque|extern|@compileError#}
+      {#see_also|opaque|extern|@compileerror#}
       {#header_close#}
       {#header_open|C Macros#}
       <p>
         C Translation makes a best-effort attempt to translate function-like macros into equivalent
         Zig functions. Since C macros operate at the level of lexical tokens, not all C macros
         can be translated to Zig. Macros that cannot be translated will be demoted to
-        {#syntax#}@compileError{#endsyntax#}. Note that C code which <em>uses</em> macros will be
+        {#syntax#}@compileerror{#endsyntax#}. Note that C code which <em>uses</em> macros will be
         translated without any additional issues (since Zig operates on the pre-processed source
         with macros expanded). It is merely the macros themselves which may not be translatable to
         Zig.
@@ -6628,11 +6628,11 @@ int foo(void) {
       {#code|macro.zig#}
 
       <p>Note that {#syntax#}foo{#endsyntax#} was translated correctly despite using a non-translatable
-        macro. {#syntax#}MAKELOCAL{#endsyntax#} was demoted to {#syntax#}@compileError{#endsyntax#} since
+        macro. {#syntax#}MAKELOCAL{#endsyntax#} was demoted to {#syntax#}@compileerror{#endsyntax#} since
         it cannot be expressed as a Zig function; this simply means that you cannot directly use
         {#syntax#}MAKELOCAL{#endsyntax#} from Zig.
       </p>
-      {#see_also|@compileError#}
+      {#see_also|@compileerror#}
       {#header_close#}
 
       {#header_open|C Pointers#}
@@ -6676,7 +6676,7 @@ int foo(void) {
       {#code|test_variadic_function.zig#}
 
       <p>
-        Variadic functions can be implemented using {#link|@cVaStart#}, {#link|@cVaEnd#}, {#link|@cVaArg#} and {#link|@cVaCopy#}.
+        Variadic functions can be implemented using {#link|@cvastart#}, {#link|@cvaend#}, {#link|@cvaarg#} and {#link|@cvacopy#}.
       </p>
       {#code|test_defining_variadic_function.zig#}
 

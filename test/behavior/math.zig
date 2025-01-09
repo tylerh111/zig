@@ -117,7 +117,7 @@ fn testClzVectors() !void {
     const Vu8 = @Vector(64, u8);
     const Vu128 = @Vector(64, u128);
 
-    @setEvalBranchQuota(10_000);
+    @setevalbranchquota(10_000);
     try testOneClzVector(u8, 64, @as(Vu8, @splat(0b10001010)), @as(Vu4, @splat(0)));
     try testOneClzVector(u8, 64, @as(Vu8, @splat(0b00001010)), @as(Vu4, @splat(4)));
     try testOneClzVector(u8, 64, @as(Vu8, @splat(0b00011010)), @as(Vu4, @splat(3)));
@@ -136,8 +136,8 @@ fn testOneClzVector(
 }
 
 fn expectVectorsEqual(a: anytype, b: anytype) !void {
-    const len_a = @typeInfo(@TypeOf(a)).Vector.len;
-    const len_b = @typeInfo(@TypeOf(b)).Vector.len;
+    const len_a = @typeinfo(@TypeOf(a)).Vector.len;
+    const len_b = @typeinfo(@TypeOf(b)).Vector.len;
     try expect(len_a == len_b);
 
     var i: usize = 0;
@@ -208,7 +208,7 @@ test "@ctz vectors" {
 fn testCtzVectors() !void {
     const Vu4 = @Vector(64, u4);
     const Vu8 = @Vector(64, u8);
-    @setEvalBranchQuota(10_000);
+    @setevalbranchquota(10_000);
     try testOneCtzVector(u8, 64, @as(Vu8, @splat(0b10100000)), @as(Vu4, @splat(5)));
     try testOneCtzVector(u8, 64, @as(Vu8, @splat(0b10001010)), @as(Vu4, @splat(1)));
     try testOneCtzVector(u8, 64, @as(Vu8, @splat(0b00000000)), @as(Vu4, @splat(8)));
@@ -425,11 +425,11 @@ test "binary not 128-bit" {
         break :x ~@as(u128, 0x55555555_55555555_55555555_55555555) == 0xaaaaaaaa_aaaaaaaa_aaaaaaaa_aaaaaaaa;
     });
     try expect(comptime x: {
-        break :x ~@as(i128, 0x55555555_55555555_55555555_55555555) == @as(i128, @bitCast(@as(u128, 0xaaaaaaaa_aaaaaaaa_aaaaaaaa_aaaaaaaa)));
+        break :x ~@as(i128, 0x55555555_55555555_55555555_55555555) == @as(i128, @bitcast(@as(u128, 0xaaaaaaaa_aaaaaaaa_aaaaaaaa_aaaaaaaa)));
     });
 
     try testBinaryNot128(u128, 0xaaaaaaaa_aaaaaaaa_aaaaaaaa_aaaaaaaa);
-    try testBinaryNot128(i128, @as(i128, @bitCast(@as(u128, 0xaaaaaaaa_aaaaaaaa_aaaaaaaa_aaaaaaaa))));
+    try testBinaryNot128(i128, @as(i128, @bitcast(@as(u128, 0xaaaaaaaa_aaaaaaaa_aaaaaaaa_aaaaaaaa))));
 }
 
 fn testBinaryNot128(comptime Type: type, x: Type) !void {
@@ -458,38 +458,38 @@ fn testDivision() !void {
     try expect(div(u32, 13, 3) == 4);
     try expect(div(f32, 1.0, 2.0) == 0.5);
 
-    try expect(divExact(u32, 55, 11) == 5);
-    try expect(divExact(i32, -55, 11) == -5);
-    try expect(divExact(f32, 55.0, 11.0) == 5.0);
-    try expect(divExact(f32, -55.0, 11.0) == -5.0);
+    try expect(divexact(u32, 55, 11) == 5);
+    try expect(divexact(i32, -55, 11) == -5);
+    try expect(divexact(f32, 55.0, 11.0) == 5.0);
+    try expect(divexact(f32, -55.0, 11.0) == -5.0);
 
-    try expect(divFloor(i32, 5, 3) == 1);
-    try expect(divFloor(i32, -5, 3) == -2);
-    try expect(divFloor(f32, 5.0, 3.0) == 1.0);
-    try expect(divFloor(f32, -5.0, 3.0) == -2.0);
-    try expect(divFloor(i32, -0x80000000, -2) == 0x40000000);
-    try expect(divFloor(i32, 0, -0x80000000) == 0);
-    try expect(divFloor(i32, -0x40000001, 0x40000000) == -2);
-    try expect(divFloor(i32, -0x80000000, 1) == -0x80000000);
-    try expect(divFloor(i32, 10, 12) == 0);
-    try expect(divFloor(i32, -14, 12) == -2);
-    try expect(divFloor(i32, -2, 12) == -1);
+    try expect(divfloor(i32, 5, 3) == 1);
+    try expect(divfloor(i32, -5, 3) == -2);
+    try expect(divfloor(f32, 5.0, 3.0) == 1.0);
+    try expect(divfloor(f32, -5.0, 3.0) == -2.0);
+    try expect(divfloor(i32, -0x80000000, -2) == 0x40000000);
+    try expect(divfloor(i32, 0, -0x80000000) == 0);
+    try expect(divfloor(i32, -0x40000001, 0x40000000) == -2);
+    try expect(divfloor(i32, -0x80000000, 1) == -0x80000000);
+    try expect(divfloor(i32, 10, 12) == 0);
+    try expect(divfloor(i32, -14, 12) == -2);
+    try expect(divfloor(i32, -2, 12) == -1);
 
-    try expect(divTrunc(i32, 5, 3) == 1);
-    try expect(divTrunc(i32, -5, 3) == -1);
-    try expect(divTrunc(i32, 9, -10) == 0);
-    try expect(divTrunc(i32, -9, 10) == 0);
-    try expect(divTrunc(f32, 5.0, 3.0) == 1.0);
-    try expect(divTrunc(f32, -5.0, 3.0) == -1.0);
-    try expect(divTrunc(f32, 9.0, -10.0) == 0.0);
-    try expect(divTrunc(f32, -9.0, 10.0) == 0.0);
-    try expect(divTrunc(f64, 5.0, 3.0) == 1.0);
-    try expect(divTrunc(f64, -5.0, 3.0) == -1.0);
-    try expect(divTrunc(f64, 9.0, -10.0) == 0.0);
-    try expect(divTrunc(f64, -9.0, 10.0) == 0.0);
-    try expect(divTrunc(i32, 10, 12) == 0);
-    try expect(divTrunc(i32, -14, 12) == -1);
-    try expect(divTrunc(i32, -2, 12) == 0);
+    try expect(divtrunc(i32, 5, 3) == 1);
+    try expect(divtrunc(i32, -5, 3) == -1);
+    try expect(divtrunc(i32, 9, -10) == 0);
+    try expect(divtrunc(i32, -9, 10) == 0);
+    try expect(divtrunc(f32, 5.0, 3.0) == 1.0);
+    try expect(divtrunc(f32, -5.0, 3.0) == -1.0);
+    try expect(divtrunc(f32, 9.0, -10.0) == 0.0);
+    try expect(divtrunc(f32, -9.0, 10.0) == 0.0);
+    try expect(divtrunc(f64, 5.0, 3.0) == 1.0);
+    try expect(divtrunc(f64, -5.0, 3.0) == -1.0);
+    try expect(divtrunc(f64, 9.0, -10.0) == 0.0);
+    try expect(divtrunc(f64, -9.0, 10.0) == 0.0);
+    try expect(divtrunc(i32, 10, 12) == 0);
+    try expect(divtrunc(i32, -14, 12) == -1);
+    try expect(divtrunc(i32, -2, 12) == 0);
 
     try expect(mod(i32, 10, 12) == 10);
     try expect(mod(i32, -14, 12) == 10);
@@ -498,8 +498,8 @@ fn testDivision() !void {
     try expect(mod(i32, -14, -12) == -2);
     try expect(mod(i32, -2, -12) == -2);
 
-    try expect(divTrunc(i20, 20, -5) == -4);
-    try expect(divTrunc(i20, -20, -4) == 5);
+    try expect(divtrunc(i20, 20, -5) == -4);
+    try expect(divtrunc(i20, -20, -4) == 5);
 
     comptime {
         try expect(
@@ -512,13 +512,13 @@ fn testDivision() !void {
             1194735857077236777412821811143690633098347576 / 508740759824825164163191790951174292733114988 == 2,
         );
         try expect(
-            @divTrunc(-1194735857077236777412821811143690633098347576, 508740759824825164163191790951174292733114988) == -2,
+            @divtrunc(-1194735857077236777412821811143690633098347576, 508740759824825164163191790951174292733114988) == -2,
         );
         try expect(
-            @divTrunc(1194735857077236777412821811143690633098347576, -508740759824825164163191790951174292733114988) == -2,
+            @divtrunc(1194735857077236777412821811143690633098347576, -508740759824825164163191790951174292733114988) == -2,
         );
         try expect(
-            @divTrunc(-1194735857077236777412821811143690633098347576, -508740759824825164163191790951174292733114988) == 2,
+            @divtrunc(-1194735857077236777412821811143690633098347576, -508740759824825164163191790951174292733114988) == 2,
         );
         try expect(
             4126227191251978491697987544882340798050766755606969681711 % 10 == 1,
@@ -541,28 +541,28 @@ test "division half-precision floats" {
 fn testDivisionFP16() !void {
     try expect(div(f16, 1.0, 2.0) == 0.5);
 
-    try expect(divExact(f16, 55.0, 11.0) == 5.0);
-    try expect(divExact(f16, -55.0, 11.0) == -5.0);
+    try expect(divexact(f16, 55.0, 11.0) == 5.0);
+    try expect(divexact(f16, -55.0, 11.0) == -5.0);
 
-    try expect(divFloor(f16, 5.0, 3.0) == 1.0);
-    try expect(divFloor(f16, -5.0, 3.0) == -2.0);
-    try expect(divTrunc(f16, 5.0, 3.0) == 1.0);
-    try expect(divTrunc(f16, -5.0, 3.0) == -1.0);
-    try expect(divTrunc(f16, 9.0, -10.0) == 0.0);
-    try expect(divTrunc(f16, -9.0, 10.0) == 0.0);
+    try expect(divfloor(f16, 5.0, 3.0) == 1.0);
+    try expect(divfloor(f16, -5.0, 3.0) == -2.0);
+    try expect(divtrunc(f16, 5.0, 3.0) == 1.0);
+    try expect(divtrunc(f16, -5.0, 3.0) == -1.0);
+    try expect(divtrunc(f16, 9.0, -10.0) == 0.0);
+    try expect(divtrunc(f16, -9.0, 10.0) == 0.0);
 }
 
 fn div(comptime T: type, a: T, b: T) T {
     return a / b;
 }
-fn divExact(comptime T: type, a: T, b: T) T {
-    return @divExact(a, b);
+fn divexact(comptime T: type, a: T, b: T) T {
+    return @divexact(a, b);
 }
-fn divFloor(comptime T: type, a: T, b: T) T {
-    return @divFloor(a, b);
+fn divfloor(comptime T: type, a: T, b: T) T {
+    return @divfloor(a, b);
 }
-fn divTrunc(comptime T: type, a: T, b: T) T {
-    return @divTrunc(a, b);
+fn divtrunc(comptime T: type, a: T, b: T) T {
+    return @divtrunc(a, b);
 }
 fn mod(comptime T: type, a: T, b: T) T {
     return @mod(a, b);
@@ -696,7 +696,7 @@ fn make_f128(x: f128) f128 {
 }
 
 fn test_f128() !void {
-    try expect(@sizeOf(f128) == 16);
+    try expect(@sizeof(f128) == 16);
     try expect(make_f128(1.0) == 1.0);
     try expect(make_f128(1.0) != 1.1);
     try expect(make_f128(1.0) > 0.9);
@@ -740,7 +740,7 @@ test "128-bit multiplication" {
     }
 }
 
-test "@addWithOverflow" {
+test "@addwithoverflow" {
     if (builtin.zig_backend == .stage2_aarch64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_arm) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
@@ -749,14 +749,14 @@ test "@addWithOverflow" {
     {
         var a: u8 = 250;
         _ = &a;
-        const ov = @addWithOverflow(a, 100);
+        const ov = @addwithoverflow(a, 100);
         try expect(ov[0] == 94);
         try expect(ov[1] == 1);
     }
     {
         var a: u8 = 100;
         _ = &a;
-        const ov = @addWithOverflow(a, 150);
+        const ov = @addwithoverflow(a, 150);
         try expect(ov[0] == 250);
         try expect(ov[1] == 0);
     }
@@ -764,11 +764,11 @@ test "@addWithOverflow" {
         var a: u8 = 200;
         _ = &a;
         var b: u8 = 99;
-        var ov = @addWithOverflow(a, b);
+        var ov = @addwithoverflow(a, b);
         try expect(ov[0] == 43);
         try expect(ov[1] == 1);
         b = 55;
-        ov = @addWithOverflow(a, b);
+        ov = @addwithoverflow(a, b);
         try expect(ov[0] == 255);
         try expect(ov[1] == 0);
     }
@@ -777,7 +777,7 @@ test "@addWithOverflow" {
         var a: usize = 6;
         var b: usize = 6;
         _ = .{ &a, &b };
-        const ov = @addWithOverflow(a, b);
+        const ov = @addwithoverflow(a, b);
         try expect(ov[0] == 12);
         try expect(ov[1] == 0);
     }
@@ -786,7 +786,7 @@ test "@addWithOverflow" {
         var a: isize = -6;
         var b: isize = -6;
         _ = .{ &a, &b };
-        const ov = @addWithOverflow(a, b);
+        const ov = @addwithoverflow(a, b);
         try expect(ov[0] == -12);
         try expect(ov[1] == 0);
     }
@@ -809,12 +809,12 @@ test "small int addition" {
     x += 1;
     try expect(x == 3);
 
-    const ov = @addWithOverflow(x, 1);
+    const ov = @addwithoverflow(x, 1);
     try expect(ov[0] == 0);
     try expect(ov[1] == 1);
 }
 
-test "basic @mulWithOverflow" {
+test "basic @mulwithoverflow" {
     if (builtin.zig_backend == .stage2_aarch64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_arm) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
@@ -822,14 +822,14 @@ test "basic @mulWithOverflow" {
     {
         var a: u8 = 86;
         _ = &a;
-        const ov = @mulWithOverflow(a, 3);
+        const ov = @mulwithoverflow(a, 3);
         try expect(ov[0] == 2);
         try expect(ov[1] == 1);
     }
     {
         var a: u8 = 85;
         _ = &a;
-        const ov = @mulWithOverflow(a, 3);
+        const ov = @mulwithoverflow(a, 3);
         try expect(ov[0] == 255);
         try expect(ov[1] == 0);
     }
@@ -837,17 +837,17 @@ test "basic @mulWithOverflow" {
     var a: u8 = 123;
     _ = &a;
     var b: u8 = 2;
-    var ov = @mulWithOverflow(a, b);
+    var ov = @mulwithoverflow(a, b);
     try expect(ov[0] == 246);
     try expect(ov[1] == 0);
 
     b = 4;
-    ov = @mulWithOverflow(a, b);
+    ov = @mulwithoverflow(a, b);
     try expect(ov[0] == 236);
     try expect(ov[1] == 1);
 }
 
-test "extensive @mulWithOverflow" {
+test "extensive @mulwithoverflow" {
     if (builtin.zig_backend == .stage2_aarch64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_arm) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
@@ -856,12 +856,12 @@ test "extensive @mulWithOverflow" {
         var a: u5 = 3;
         _ = &a;
         var b: u5 = 10;
-        var ov = @mulWithOverflow(a, b);
+        var ov = @mulwithoverflow(a, b);
         try expect(ov[0] == 30);
         try expect(ov[1] == 0);
 
         b = 11;
-        ov = @mulWithOverflow(a, b);
+        ov = @mulwithoverflow(a, b);
         try expect(ov[0] == 1);
         try expect(ov[1] == 1);
     }
@@ -870,12 +870,12 @@ test "extensive @mulWithOverflow" {
         var a: i5 = 3;
         _ = &a;
         var b: i5 = -5;
-        var ov = @mulWithOverflow(a, b);
+        var ov = @mulwithoverflow(a, b);
         try expect(ov[0] == -15);
         try expect(ov[1] == 0);
 
         b = -6;
-        ov = @mulWithOverflow(a, b);
+        ov = @mulwithoverflow(a, b);
         try expect(ov[0] == 14);
         try expect(ov[1] == 1);
     }
@@ -885,12 +885,12 @@ test "extensive @mulWithOverflow" {
         _ = &a;
         var b: u8 = 85;
 
-        var ov = @mulWithOverflow(a, b);
+        var ov = @mulwithoverflow(a, b);
         try expect(ov[0] == 255);
         try expect(ov[1] == 0);
 
         b = 86;
-        ov = @mulWithOverflow(a, b);
+        ov = @mulwithoverflow(a, b);
         try expect(ov[0] == 2);
         try expect(ov[1] == 1);
     }
@@ -899,12 +899,12 @@ test "extensive @mulWithOverflow" {
         var a: i8 = 3;
         _ = &a;
         var b: i8 = -42;
-        var ov = @mulWithOverflow(a, b);
+        var ov = @mulwithoverflow(a, b);
         try expect(ov[0] == -126);
         try expect(ov[1] == 0);
 
         b = -43;
-        ov = @mulWithOverflow(a, b);
+        ov = @mulwithoverflow(a, b);
         try expect(ov[0] == 127);
         try expect(ov[1] == 1);
     }
@@ -913,12 +913,12 @@ test "extensive @mulWithOverflow" {
         var a: u14 = 3;
         _ = &a;
         var b: u14 = 0x1555;
-        var ov = @mulWithOverflow(a, b);
+        var ov = @mulwithoverflow(a, b);
         try expect(ov[0] == 0x3fff);
         try expect(ov[1] == 0);
 
         b = 0x1556;
-        ov = @mulWithOverflow(a, b);
+        ov = @mulwithoverflow(a, b);
         try expect(ov[0] == 2);
         try expect(ov[1] == 1);
     }
@@ -927,12 +927,12 @@ test "extensive @mulWithOverflow" {
         var a: i14 = 3;
         _ = &a;
         var b: i14 = -0xaaa;
-        var ov = @mulWithOverflow(a, b);
+        var ov = @mulwithoverflow(a, b);
         try expect(ov[0] == -0x1ffe);
         try expect(ov[1] == 0);
 
         b = -0xaab;
-        ov = @mulWithOverflow(a, b);
+        ov = @mulwithoverflow(a, b);
         try expect(ov[0] == 0x1fff);
     }
 
@@ -940,12 +940,12 @@ test "extensive @mulWithOverflow" {
         var a: u16 = 3;
         _ = &a;
         var b: u16 = 0x5555;
-        var ov = @mulWithOverflow(a, b);
+        var ov = @mulwithoverflow(a, b);
         try expect(ov[0] == 0xffff);
         try expect(ov[1] == 0);
 
         b = 0x5556;
-        ov = @mulWithOverflow(a, b);
+        ov = @mulwithoverflow(a, b);
         try expect(ov[0] == 2);
         try expect(ov[1] == 1);
     }
@@ -954,12 +954,12 @@ test "extensive @mulWithOverflow" {
         var a: i16 = 3;
         _ = &a;
         var b: i16 = -0x2aaa;
-        var ov = @mulWithOverflow(a, b);
+        var ov = @mulwithoverflow(a, b);
         try expect(ov[0] == -0x7ffe);
         try expect(ov[1] == 0);
 
         b = -0x2aab;
-        ov = @mulWithOverflow(a, b);
+        ov = @mulwithoverflow(a, b);
         try expect(ov[0] == 0x7fff);
         try expect(ov[1] == 1);
     }
@@ -968,12 +968,12 @@ test "extensive @mulWithOverflow" {
         var a: u30 = 3;
         _ = &a;
         var b: u30 = 0x15555555;
-        var ov = @mulWithOverflow(a, b);
+        var ov = @mulwithoverflow(a, b);
         try expect(ov[0] == 0x3fffffff);
         try expect(ov[1] == 0);
 
         b = 0x15555556;
-        ov = @mulWithOverflow(a, b);
+        ov = @mulwithoverflow(a, b);
         try expect(ov[0] == 2);
         try expect(ov[1] == 1);
     }
@@ -982,12 +982,12 @@ test "extensive @mulWithOverflow" {
         var a: i30 = 3;
         _ = &a;
         var b: i30 = -0xaaaaaaa;
-        var ov = @mulWithOverflow(a, b);
+        var ov = @mulwithoverflow(a, b);
         try expect(ov[0] == -0x1ffffffe);
         try expect(ov[1] == 0);
 
         b = -0xaaaaaab;
-        ov = @mulWithOverflow(a, b);
+        ov = @mulwithoverflow(a, b);
         try expect(ov[0] == 0x1fffffff);
         try expect(ov[1] == 1);
     }
@@ -996,12 +996,12 @@ test "extensive @mulWithOverflow" {
         var a: u32 = 3;
         _ = &a;
         var b: u32 = 0x55555555;
-        var ov = @mulWithOverflow(a, b);
+        var ov = @mulwithoverflow(a, b);
         try expect(ov[0] == 0xffffffff);
         try expect(ov[1] == 0);
 
         b = 0x55555556;
-        ov = @mulWithOverflow(a, b);
+        ov = @mulwithoverflow(a, b);
         try expect(ov[0] == 2);
         try expect(ov[1] == 1);
     }
@@ -1010,18 +1010,18 @@ test "extensive @mulWithOverflow" {
         var a: i32 = 3;
         _ = &a;
         var b: i32 = -0x2aaaaaaa;
-        var ov = @mulWithOverflow(a, b);
+        var ov = @mulwithoverflow(a, b);
         try expect(ov[0] == -0x7ffffffe);
         try expect(ov[1] == 0);
 
         b = -0x2aaaaaab;
-        ov = @mulWithOverflow(a, b);
+        ov = @mulwithoverflow(a, b);
         try expect(ov[0] == 0x7fffffff);
         try expect(ov[1] == 1);
     }
 }
 
-test "@mulWithOverflow bitsize > 32" {
+test "@mulwithoverflow bitsize > 32" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     // aarch64 fails on a release build of the compiler.
@@ -1034,12 +1034,12 @@ test "@mulWithOverflow bitsize > 32" {
         var a: u62 = 3;
         _ = &a;
         var b: u62 = 0x1555555555555555;
-        var ov = @mulWithOverflow(a, b);
+        var ov = @mulwithoverflow(a, b);
         try expect(ov[0] == 0x3fffffffffffffff);
         try expect(ov[1] == 0);
 
         b = 0x1555555555555556;
-        ov = @mulWithOverflow(a, b);
+        ov = @mulwithoverflow(a, b);
         try expect(ov[0] == 2);
         try expect(ov[1] == 1);
     }
@@ -1048,12 +1048,12 @@ test "@mulWithOverflow bitsize > 32" {
         var a: i62 = 3;
         _ = &a;
         var b: i62 = -0xaaaaaaaaaaaaaaa;
-        var ov = @mulWithOverflow(a, b);
+        var ov = @mulwithoverflow(a, b);
         try expect(ov[0] == -0x1ffffffffffffffe);
         try expect(ov[1] == 0);
 
         b = -0xaaaaaaaaaaaaaab;
-        ov = @mulWithOverflow(a, b);
+        ov = @mulwithoverflow(a, b);
         try expect(ov[0] == 0x1fffffffffffffff);
         try expect(ov[1] == 1);
     }
@@ -1062,12 +1062,12 @@ test "@mulWithOverflow bitsize > 32" {
         var a: u64 = 3;
         _ = &a;
         var b: u64 = 0x5555555555555555;
-        var ov = @mulWithOverflow(a, b);
+        var ov = @mulwithoverflow(a, b);
         try expect(ov[0] == 0xffffffffffffffff);
         try expect(ov[1] == 0);
 
         b = 0x5555555555555556;
-        ov = @mulWithOverflow(a, b);
+        ov = @mulwithoverflow(a, b);
         try expect(ov[0] == 2);
         try expect(ov[1] == 1);
     }
@@ -1076,18 +1076,18 @@ test "@mulWithOverflow bitsize > 32" {
         var a: i64 = 3;
         _ = &a;
         var b: i64 = -0x2aaaaaaaaaaaaaaa;
-        var ov = @mulWithOverflow(a, b);
+        var ov = @mulwithoverflow(a, b);
         try expect(ov[0] == -0x7ffffffffffffffe);
         try expect(ov[1] == 0);
 
         b = -0x2aaaaaaaaaaaaaab;
-        ov = @mulWithOverflow(a, b);
+        ov = @mulwithoverflow(a, b);
         try expect(ov[0] == 0x7fffffffffffffff);
         try expect(ov[1] == 1);
     }
 }
 
-test "@mulWithOverflow u256" {
+test "@mulwithoverflow u256" {
     if (builtin.zig_backend == .stage2_c) return error.SkipZigTest;
     if (builtin.zig_backend == .stage2_wasm) return error.SkipZigTest;
     if (builtin.zig_backend == .stage2_spirv64) return error.SkipZigTest;
@@ -1096,34 +1096,34 @@ test "@mulWithOverflow u256" {
     {
         const const_lhs: u256 = 8035709466408580321693645878924206181189;
         const const_rhs: u256 = 343954217539185679456797259115612849079;
-        const const_result = @mulWithOverflow(const_lhs, const_rhs);
+        const const_result = @mulwithoverflow(const_lhs, const_rhs);
         comptime assert(const_result[0] == 100698109432518020450541558444080472799095368135495022414802684874680804056403);
         comptime assert(const_result[1] == 1);
 
         var var_lhs = const_lhs;
         var var_rhs = const_rhs;
         _ = .{ &var_lhs, &var_rhs };
-        const var_result = @mulWithOverflow(var_lhs, var_rhs);
+        const var_result = @mulwithoverflow(var_lhs, var_rhs);
         try std.testing.expect(var_result[0] == const_result[0]);
         try std.testing.expect(var_result[1] == const_result[1]);
     }
     {
         const const_lhs: u256 = 100477140835310762407466294984162740292250605075409128262608;
         const const_rhs: u256 = 406310585934439581231;
-        const const_result = @mulWithOverflow(const_lhs, const_rhs);
+        const const_result = @mulwithoverflow(const_lhs, const_rhs);
         comptime assert(const_result[0] == 66110554277021146912650321519727251744526528332039438002889524600764482652976);
         comptime assert(const_result[1] == 1);
 
         var var_lhs = const_lhs;
         var var_rhs = const_rhs;
         _ = .{ &var_lhs, &var_rhs };
-        const var_result = @mulWithOverflow(var_lhs, var_rhs);
+        const var_result = @mulwithoverflow(var_lhs, var_rhs);
         try std.testing.expect(var_result[0] == const_result[0]);
         try std.testing.expect(var_result[1] == const_result[1]);
     }
 }
 
-test "@subWithOverflow" {
+test "@subwithoverflow" {
     if (builtin.zig_backend == .stage2_aarch64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_arm) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
@@ -1132,14 +1132,14 @@ test "@subWithOverflow" {
     {
         var a: u8 = 1;
         _ = &a;
-        const ov = @subWithOverflow(a, 2);
+        const ov = @subwithoverflow(a, 2);
         try expect(ov[0] == 255);
         try expect(ov[1] == 1);
     }
     {
         var a: u8 = 1;
         _ = &a;
-        const ov = @subWithOverflow(a, 1);
+        const ov = @subwithoverflow(a, 1);
         try expect(ov[0] == 0);
         try expect(ov[1] == 0);
     }
@@ -1148,11 +1148,11 @@ test "@subWithOverflow" {
         var a: u8 = 1;
         _ = &a;
         var b: u8 = 2;
-        var ov = @subWithOverflow(a, b);
+        var ov = @subwithoverflow(a, b);
         try expect(ov[0] == 255);
         try expect(ov[1] == 1);
         b = 1;
-        ov = @subWithOverflow(a, b);
+        ov = @subwithoverflow(a, b);
         try expect(ov[0] == 0);
         try expect(ov[1] == 0);
     }
@@ -1161,7 +1161,7 @@ test "@subWithOverflow" {
         var a: usize = 6;
         var b: usize = 6;
         _ = .{ &a, &b };
-        const ov = @subWithOverflow(a, b);
+        const ov = @subwithoverflow(a, b);
         try expect(ov[0] == 0);
         try expect(ov[1] == 0);
     }
@@ -1170,13 +1170,13 @@ test "@subWithOverflow" {
         var a: isize = -6;
         var b: isize = -6;
         _ = .{ &a, &b };
-        const ov = @subWithOverflow(a, b);
+        const ov = @subwithoverflow(a, b);
         try expect(ov[0] == 0);
         try expect(ov[1] == 0);
     }
 }
 
-test "@shlWithOverflow" {
+test "@shlwithoverflow" {
     if (builtin.zig_backend == .stage2_aarch64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_arm) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_spirv64) return error.SkipZigTest;
@@ -1186,12 +1186,12 @@ test "@shlWithOverflow" {
         var a: u4 = 2;
         _ = &a;
         var b: u2 = 1;
-        var ov = @shlWithOverflow(a, b);
+        var ov = @shlwithoverflow(a, b);
         try expect(ov[0] == 4);
         try expect(ov[1] == 0);
 
         b = 3;
-        ov = @shlWithOverflow(a, b);
+        ov = @shlwithoverflow(a, b);
         try expect(ov[0] == 0);
         try expect(ov[1] == 1);
     }
@@ -1200,23 +1200,23 @@ test "@shlWithOverflow" {
         var a: i9 = 127;
         _ = &a;
         var b: u4 = 1;
-        var ov = @shlWithOverflow(a, b);
+        var ov = @shlwithoverflow(a, b);
         try expect(ov[0] == 254);
         try expect(ov[1] == 0);
 
         b = 2;
-        ov = @shlWithOverflow(a, b);
+        ov = @shlwithoverflow(a, b);
         try expect(ov[0] == -4);
         try expect(ov[1] == 1);
     }
 
     {
-        const ov = @shlWithOverflow(@as(u16, 0b0010111111111111), 3);
+        const ov = @shlwithoverflow(@as(u16, 0b0010111111111111), 3);
         try expect(ov[0] == 0b0111111111111000);
         try expect(ov[1] == 1);
     }
     {
-        const ov = @shlWithOverflow(@as(u16, 0b0010111111111111), 2);
+        const ov = @shlwithoverflow(@as(u16, 0b0010111111111111), 2);
         try expect(ov[0] == 0b1011111111111100);
         try expect(ov[1] == 0);
     }
@@ -1224,11 +1224,11 @@ test "@shlWithOverflow" {
         var a: u16 = 0b0000_0000_0000_0011;
         _ = &a;
         var b: u4 = 15;
-        var ov = @shlWithOverflow(a, b);
+        var ov = @shlwithoverflow(a, b);
         try expect(ov[0] == 0b1000_0000_0000_0000);
         try expect(ov[1] == 1);
         b = 14;
-        ov = @shlWithOverflow(a, b);
+        ov = @shlwithoverflow(a, b);
         try expect(ov[0] == 0b1100_0000_0000_0000);
         try expect(ov[1] == 0);
     }
@@ -1240,28 +1240,28 @@ test "overflow arithmetic with u0 values" {
     {
         var a: u0 = 0;
         _ = &a;
-        const ov = @addWithOverflow(a, 0);
+        const ov = @addwithoverflow(a, 0);
         try expect(ov[1] == 0);
         try expect(ov[1] == 0);
     }
     {
         var a: u0 = 0;
         _ = &a;
-        const ov = @subWithOverflow(a, 0);
+        const ov = @subwithoverflow(a, 0);
         try expect(ov[1] == 0);
         try expect(ov[1] == 0);
     }
     {
         var a: u0 = 0;
         _ = &a;
-        const ov = @mulWithOverflow(a, 0);
+        const ov = @mulwithoverflow(a, 0);
         try expect(ov[1] == 0);
         try expect(ov[1] == 0);
     }
     {
         var a: u0 = 0;
         _ = &a;
-        const ov = @shlWithOverflow(a, 0);
+        const ov = @shlwithoverflow(a, 0);
         try expect(ov[1] == 0);
         try expect(ov[1] == 0);
     }
@@ -1278,7 +1278,7 @@ test "allow signed integer division/remainder when values are comptime-known and
     var undef: i32 = undefined;
     _ = &undef;
     if (0 % undef != 0) {
-        @compileError("0 as numerator should return comptime zero independent of denominator");
+        @compileerror("0 as numerator should return comptime zero independent of denominator");
     }
 }
 
@@ -1294,33 +1294,33 @@ test "quad hex float literal parsing accurate" {
 
     // implied 1 is dropped, with an exponent of 0 (0x3fff) after biasing.
     const expected: u128 = 0x3fff1111222233334444555566667777;
-    try expect(@as(u128, @bitCast(a)) == expected);
+    try expect(@as(u128, @bitcast(a)) == expected);
 
     // non-normalized
     const b: f128 = 0x11.111222233334444555566667777p-4;
-    try expect(@as(u128, @bitCast(b)) == expected);
+    try expect(@as(u128, @bitcast(b)) == expected);
 
     const S = struct {
         fn doTheTest() !void {
             {
                 var f: f128 = 0x1.2eab345678439abcdefea56782346p+5;
                 _ = &f;
-                try expect(@as(u128, @bitCast(f)) == 0x40042eab345678439abcdefea5678234);
+                try expect(@as(u128, @bitcast(f)) == 0x40042eab345678439abcdefea5678234);
             }
             {
                 var f: f128 = 0x1.edcb34a235253948765432134674fp-1;
                 _ = &f;
-                try expect(@as(u128, @bitCast(f)) == 0x3ffeedcb34a235253948765432134675); // round-to-even
+                try expect(@as(u128, @bitcast(f)) == 0x3ffeedcb34a235253948765432134675); // round-to-even
             }
             {
                 var f: f128 = 0x1.353e45674d89abacc3a2ebf3ff4ffp-50;
                 _ = &f;
-                try expect(@as(u128, @bitCast(f)) == 0x3fcd353e45674d89abacc3a2ebf3ff50);
+                try expect(@as(u128, @bitcast(f)) == 0x3fcd353e45674d89abacc3a2ebf3ff50);
             }
             {
                 var f: f128 = 0x1.ed8764648369535adf4be3214567fp-9;
                 _ = &f;
-                try expect(@as(u128, @bitCast(f)) == 0x3ff6ed8764648369535adf4be3214568);
+                try expect(@as(u128, @bitcast(f)) == 0x3ff6ed8764648369535adf4be3214568);
             }
             const exp2ft = [_]f64{
                 0x1.6a09e667f3bcdp-1,
@@ -1375,7 +1375,7 @@ test "quad hex float literal parsing accurate" {
             };
 
             for (exp2ft, 0..) |x, i| {
-                try expect(@as(u64, @bitCast(x)) == answers[i]);
+                try expect(@as(u64, @bitcast(x)) == answers[i]);
             }
         }
     };
@@ -1400,10 +1400,10 @@ test "exact shift left" {
     try testShlExact(0b00110101);
     try comptime testShlExact(0b00110101);
 
-    if (@shlExact(1, 1) != 2) @compileError("should be 2");
+    if (@shlexact(1, 1) != 2) @compileerror("should be 2");
 }
 fn testShlExact(x: u8) !void {
-    const shifted = @shlExact(x, 2);
+    const shifted = @shlexact(x, 2);
     try expect(shifted == 0b11010100);
 }
 
@@ -1414,7 +1414,7 @@ test "exact shift right" {
     try comptime testShrExact(0b10110100);
 }
 fn testShrExact(x: u8) !void {
-    const shifted = @shrExact(x, 2);
+    const shifted = @shrexact(x, 2);
     try expect(shifted == 0b00101101);
 }
 
@@ -1430,10 +1430,10 @@ test "shift left/right on u0 operand" {
             try expectEqual(@as(u0, 0), x >> 0);
             try expectEqual(@as(u0, 0), x << y);
             try expectEqual(@as(u0, 0), x >> y);
-            try expectEqual(@as(u0, 0), @shlExact(x, 0));
-            try expectEqual(@as(u0, 0), @shrExact(x, 0));
-            try expectEqual(@as(u0, 0), @shlExact(x, y));
-            try expectEqual(@as(u0, 0), @shrExact(x, y));
+            try expectEqual(@as(u0, 0), @shlexact(x, 0));
+            try expectEqual(@as(u0, 0), @shrexact(x, 0));
+            try expectEqual(@as(u0, 0), @shlexact(x, y));
+            try expectEqual(@as(u0, 0), @shrexact(x, y));
         }
     };
     try S.doTheTest();
@@ -1754,12 +1754,12 @@ test "signed zeros are represented properly" {
         }
 
         fn testOne(comptime T: type) !void {
-            const ST = std.meta.Int(.unsigned, @typeInfo(T).Float.bits);
+            const ST = std.meta.Int(.unsigned, @typeinfo(T).Float.bits);
             var as_fp_val = -@as(T, 0.0);
             _ = &as_fp_val;
-            const as_uint_val: ST = @bitCast(as_fp_val);
+            const as_uint_val: ST = @bitcast(as_fp_val);
             // Ensure the sign bit is set.
-            try expect(as_uint_val >> (@typeInfo(T).Float.bits - 1) == 1);
+            try expect(as_uint_val >> (@typeinfo(T).Float.bits - 1) == 1);
         }
     };
 
@@ -1787,13 +1787,13 @@ fn testAbsFloatOne(in: f32, out: f32) !void {
 test "mod lazy values" {
     {
         const X = struct { x: u32 };
-        const x = @sizeOf(X);
+        const x = @sizeof(X);
         const y = 1 % x;
         _ = y;
     }
     {
         const X = struct { x: u32 };
-        const x = @sizeOf(X);
+        const x = @sizeof(X);
         const y = x % 1;
         _ = y;
     }

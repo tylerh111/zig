@@ -245,12 +245,12 @@ int DwarfInstructions<A, R>::stepWithDwarf(A &addressSpace, pint_t pc,
       // by a CFI directive later on.
       newRegisters.setSP(cfa);
 
-      pint_t returnAddress = 0;
+      pint_t returnaddress = 0;
       constexpr int lastReg = R::lastDwarfRegNum();
       static_assert(static_cast<int>(CFI_Parser<A>::kMaxRegisterNumber) >=
                         lastReg,
                     "register range too large");
-      assert(lastReg >= (int)cieInfo.returnAddressRegister &&
+      assert(lastReg >= (int)cieInfo.returnaddressRegister &&
              "register range does not contain return address register");
       for (int i = 0; i <= lastReg; ++i) {
         if (prolog.savedRegisters[i].location !=
@@ -263,8 +263,8 @@ int DwarfInstructions<A, R>::stepWithDwarf(A &addressSpace, pint_t pc,
             newRegisters.setVectorRegister(
                 i, getSavedVectorRegister(addressSpace, registers, cfa,
                                           prolog.savedRegisters[i]));
-          else if (i == (int)cieInfo.returnAddressRegister)
-            returnAddress = getSavedRegister(addressSpace, registers, cfa,
+          else if (i == (int)cieInfo.returnaddressRegister)
+            returnaddress = getSavedRegister(addressSpace, registers, cfa,
                                              prolog.savedRegisters[i]);
           else if (registers.validRegister(i))
             newRegisters.setRegister(
@@ -272,10 +272,10 @@ int DwarfInstructions<A, R>::stepWithDwarf(A &addressSpace, pint_t pc,
                                     prolog.savedRegisters[i]));
           else
             return UNW_EBADREG;
-        } else if (i == (int)cieInfo.returnAddressRegister) {
+        } else if (i == (int)cieInfo.returnaddressRegister) {
             // Leaf function keeps the return address in register and there is no
             // explicit instructions how to restore it.
-            returnAddress = registers.getRegister(cieInfo.returnAddressRegister);
+            returnaddress = registers.getRegister(cieInfo.returnaddressRegister);
         }
       }
 
@@ -289,11 +289,11 @@ int DwarfInstructions<A, R>::stepWithDwarf(A &addressSpace, pint_t pc,
       // to a NOP on pre-v8.3a architectures.
       if ((R::getArch() == REGISTERS_ARM64) &&
           getRA_SIGN_STATE(addressSpace, registers, cfa, prolog) &&
-          returnAddress != 0) {
+          returnaddress != 0) {
 #if !defined(_LIBUNWIND_IS_NATIVE_ONLY)
         return UNW_ECROSSRASIGNING;
 #else
-        register unsigned long long x17 __asm("x17") = returnAddress;
+        register unsigned long long x17 __asm("x17") = returnaddress;
         register unsigned long long x16 __asm("x16") = cfa;
 
         // These are the autia1716/autib1716 instructions. The hint instructions
@@ -303,7 +303,7 @@ int DwarfInstructions<A, R>::stepWithDwarf(A &addressSpace, pint_t pc,
           asm("hint 0xe" : "+r"(x17) : "r"(x16)); // autib1716
         else
           asm("hint 0xc" : "+r"(x17) : "r"(x16)); // autia1716
-        returnAddress = x17;
+        returnaddress = x17;
 #endif
       }
 #endif
@@ -317,7 +317,7 @@ int DwarfInstructions<A, R>::stepWithDwarf(A &addressSpace, pint_t pc,
                              prolog.savedRegisters[UNW_ARM_RA_AUTH_CODE]);
         __asm__ __volatile__("autg %0, %1, %2"
                              :
-                             : "r"(pac), "r"(returnAddress), "r"(cfa)
+                             : "r"(pac), "r"(returnaddress), "r"(cfa)
                              :);
       }
 #endif
@@ -325,17 +325,17 @@ int DwarfInstructions<A, R>::stepWithDwarf(A &addressSpace, pint_t pc,
 #if defined(_LIBUNWIND_TARGET_SPARC)
       if (R::getArch() == REGISTERS_SPARC) {
         // Skip call site instruction and delay slot
-        returnAddress += 8;
+        returnaddress += 8;
         // Skip unimp instruction if function returns a struct
-        if ((addressSpace.get32(returnAddress) & 0xC1C00000) == 0)
-          returnAddress += 4;
+        if ((addressSpace.get32(returnaddress) & 0xC1C00000) == 0)
+          returnaddress += 4;
       }
 #endif
 
 #if defined(_LIBUNWIND_TARGET_SPARC64)
       // Skip call site instruction and delay slot.
       if (R::getArch() == REGISTERS_SPARC64)
-        returnAddress += 8;
+        returnaddress += 8;
 #endif
 
 #if defined(_LIBUNWIND_TARGET_PPC64)
@@ -347,10 +347,10 @@ int DwarfInstructions<A, R>::stepWithDwarf(A &addressSpace, pint_t pc,
       // then r2 was saved and needs to be restored.
       // ELFv2 ABI specifies that the TOC Pointer must be saved at SP + 24,
       // while in ELFv1 ABI it is saved at SP + 40.
-      if (R::getArch() == REGISTERS_PPC64 && returnAddress != 0) {
+      if (R::getArch() == REGISTERS_PPC64 && returnaddress != 0) {
         pint_t sp = newRegisters.getRegister(UNW_REG_SP);
         pint_t r2 = 0;
-        switch (addressSpace.get32(returnAddress)) {
+        switch (addressSpace.get32(returnaddress)) {
         case PPC64_ELFV1_R2_LOAD_INST_ENCODING:
           r2 = addressSpace.get64(sp + PPC64_ELFV1_R2_OFFSET);
           break;
@@ -365,7 +365,7 @@ int DwarfInstructions<A, R>::stepWithDwarf(A &addressSpace, pint_t pc,
 
       // Return address is address after call site instruction, so setting IP to
       // that does simulates a return.
-      newRegisters.setIP(returnAddress);
+      newRegisters.setIP(returnaddress);
 
       // Simulate the step by replacing the register set with the new ones.
       registers = newRegisters;

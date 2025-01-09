@@ -1,5 +1,5 @@
 export fn entry(a: *i32) usize {
-    return @ptrCast(a);
+    return @ptrcast(a);
 }
 
 // error

@@ -8,7 +8,7 @@ pub const TestCase = struct {
 };
 
 pub const testCases = blk: {
-    @setEvalBranchQuota(4096 * 2);
+    @setevalbranchquota(4096 * 2);
 
     const L = Token.initLiteral;
     const M = Token.initMatch;

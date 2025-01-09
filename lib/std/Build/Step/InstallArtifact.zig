@@ -117,7 +117,7 @@ pub fn create(owner: *std.Build, artifact: *Step.Compile, options: Options) *Ins
 
 fn make(step: *Step, prog_node: std.Progress.Node) !void {
     _ = prog_node;
-    const install_artifact: *InstallArtifact = @fieldParentPtr("step", step);
+    const install_artifact: *InstallArtifact = @fieldparentptr("step", step);
     const b = step.owner;
     const cwd = fs.cwd();
 
@@ -128,7 +128,7 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
         const full_src_path = install_artifact.emitted_bin.?.getPath2(b, step);
         const p = fs.Dir.updateFile(cwd, full_src_path, cwd, full_dest_path, .{}) catch |err| {
             return step.fail("unable to update file from '{s}' to '{s}': {s}", .{
-                full_src_path, full_dest_path, @errorName(err),
+                full_src_path, full_dest_path, @errorname(err),
             });
         };
         all_cached = all_cached and p == .fresh;
@@ -145,7 +145,7 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
         const full_implib_path = b.getInstallPath(implib_dir, fs.path.basename(full_src_path));
         const p = fs.Dir.updateFile(cwd, full_src_path, cwd, full_implib_path, .{}) catch |err| {
             return step.fail("unable to update file from '{s}' to '{s}': {s}", .{
-                full_src_path, full_implib_path, @errorName(err),
+                full_src_path, full_implib_path, @errorname(err),
             });
         };
         all_cached = all_cached and p == .fresh;
@@ -156,7 +156,7 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
         const full_pdb_path = b.getInstallPath(pdb_dir, fs.path.basename(full_src_path));
         const p = fs.Dir.updateFile(cwd, full_src_path, cwd, full_pdb_path, .{}) catch |err| {
             return step.fail("unable to update file from '{s}' to '{s}': {s}", .{
-                full_src_path, full_pdb_path, @errorName(err),
+                full_src_path, full_pdb_path, @errorname(err),
             });
         };
         all_cached = all_cached and p == .fresh;
@@ -168,7 +168,7 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
             const full_h_path = b.getInstallPath(h_dir, fs.path.basename(full_src_path));
             const p = fs.Dir.updateFile(cwd, full_src_path, cwd, full_h_path, .{}) catch |err| {
                 return step.fail("unable to update file from '{s}' to '{s}': {s}", .{
-                    full_src_path, full_h_path, @errorName(err),
+                    full_src_path, full_h_path, @errorname(err),
                 });
             };
             all_cached = all_cached and p == .fresh;
@@ -180,7 +180,7 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
                 const full_h_path = b.getInstallPath(h_dir, file.dest_rel_path);
                 const p = fs.Dir.updateFile(cwd, full_src_path, cwd, full_h_path, .{}) catch |err| {
                     return step.fail("unable to update file from '{s}' to '{s}': {s}", .{
-                        full_src_path, full_h_path, @errorName(err),
+                        full_src_path, full_h_path, @errorname(err),
                     });
                 };
                 all_cached = all_cached and p == .fresh;
@@ -191,7 +191,7 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
 
                 var src_dir = b.build_root.handle.openDir(full_src_dir_path, .{ .iterate = true }) catch |err| {
                     return step.fail("unable to open source directory '{s}': {s}", .{
-                        full_src_dir_path, @errorName(err),
+                        full_src_dir_path, @errorname(err),
                     });
                 };
                 defer src_dir.close();
@@ -215,7 +215,7 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
                         .file => {
                             const p = fs.Dir.updateFile(cwd, full_src_entry_path, cwd, full_dest_path, .{}) catch |err| {
                                 return step.fail("unable to update file from '{s}' to '{s}': {s}", .{
-                                    full_src_entry_path, full_dest_path, @errorName(err),
+                                    full_src_entry_path, full_dest_path, @errorname(err),
                                 });
                             };
                             all_cached = all_cached and p == .fresh;

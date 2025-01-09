@@ -45,7 +45,7 @@ fn addExpect(
 
     const b = self.b;
     const annotated_case_name = fmt.allocPrint(b.allocator, "check {s} ({s})", .{
-        name, @tagName(optimize_mode),
+        name, @tagname(optimize_mode),
     }) catch @panic("OOM");
     for (self.test_filters) |test_filter| {
         if (mem.indexOf(u8, annotated_case_name, test_filter)) |_| break;
@@ -70,7 +70,7 @@ fn addExpect(
     check_run.setName(annotated_case_name);
     check_run.addFileArg(run.captureStdErr());
     check_run.addArgs(&.{
-        @tagName(optimize_mode),
+        @tagname(optimize_mode),
     });
     check_run.expectStdOutEqual(mode_config.expect);
 

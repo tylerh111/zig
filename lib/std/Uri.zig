@@ -48,7 +48,7 @@ pub const Component = union(enum) {
     ) @TypeOf(writer).Error!void {
         if (fmt_str.len == 0) {
             try writer.print("std.Uri.Component{{ .{s} = \"{}\" }}", .{
-                @tagName(component),
+                @tagname(component),
                 std.zig.fmtEscapes(switch (component) {
                     .raw, .percent_encoded => |string| string,
                 }),
@@ -93,7 +93,7 @@ pub const Component = union(enum) {
         } else if (comptime std.mem.eql(u8, fmt_str, "fragment")) switch (component) {
             .raw => |raw| try percentEncode(writer, raw, isFragmentChar),
             .percent_encoded => |percent_encoded| try writer.writeAll(percent_encoded),
-        } else @compileError("invalid format string '" ++ fmt_str ++ "'");
+        } else @compileerror("invalid format string '" ++ fmt_str ++ "'");
     }
 
     pub fn percentEncode(
@@ -346,7 +346,7 @@ pub fn resolve_inplace(base: Uri, new: []const u8, aux_buf: *[]u8) ResolveInPlac
     const new_parsed = parse(new_mut) catch |err|
         (parseAfterScheme("", new_mut) catch return err);
     // As you can see above, `new_mut` is not a const pointer.
-    const new_path: []u8 = @constCast(new_parsed.path.percent_encoded);
+    const new_path: []u8 = @constcast(new_parsed.path.percent_encoded);
 
     if (new_parsed.scheme.len > 0) return .{
         .scheme = new_parsed.scheme,

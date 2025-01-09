@@ -1,6 +1,6 @@
 const Writer = struct {
     pub fn printValue(self: *Writer, value: anytype) !void {
-        switch (@typeInfo(@TypeOf(value))) {
+        switch (@typeinfo(@TypeOf(value))) {
             .Int => {
                 return self.writeInt(value);
             },
@@ -11,7 +11,7 @@ const Writer = struct {
                 return self.write(value);
             },
             else => {
-                @compileError("Unable to print type '" ++ @typeName(@TypeOf(value)) ++ "'");
+                @compileerror("Unable to print type '" ++ @typename(@TypeOf(value)) ++ "'");
             },
         }
     }

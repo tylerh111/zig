@@ -137,7 +137,7 @@ pub const fmtHtml = @import("markdown/renderer.zig").fmtHtml;
 pub const main = if (@import("root") == @This())
     mainImpl
 else
-    @compileError("only available as root source file");
+    @compileerror("only available as root source file");
 
 fn mainImpl() !void {
     const gpa = std.heap.c_allocator;

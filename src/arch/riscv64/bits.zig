@@ -78,7 +78,7 @@ pub const Memory = struct {
                 };
             },
             .frame => |index| {
-                const base_loc = mir.frame_locs.get(@intFromEnum(index));
+                const base_loc = mir.frame_locs.get(@intfromenum(index));
                 return .{
                     .base = base_loc.base,
                     .disp = base_loc.disp + offset,
@@ -104,16 +104,16 @@ pub const Immediate = union(enum) {
     pub fn asSigned(imm: Immediate, bit_size: u64) i64 {
         return switch (imm) {
             .signed => |x| switch (bit_size) {
-                1, 8 => @as(i8, @intCast(x)),
-                16 => @as(i16, @intCast(x)),
+                1, 8 => @as(i8, @intcast(x)),
+                16 => @as(i16, @intcast(x)),
                 32, 64 => x,
                 else => unreachable,
             },
             .unsigned => |x| switch (bit_size) {
-                1, 8 => @as(i8, @bitCast(@as(u8, @intCast(x)))),
-                16 => @as(i16, @bitCast(@as(u16, @intCast(x)))),
-                32 => @as(i32, @bitCast(@as(u32, @intCast(x)))),
-                64 => @bitCast(x),
+                1, 8 => @as(i8, @bitcast(@as(u8, @intcast(x)))),
+                16 => @as(i16, @bitcast(@as(u16, @intcast(x)))),
+                32 => @as(i32, @bitcast(@as(u32, @intcast(x)))),
+                64 => @bitcast(x),
                 else => unreachable,
             },
         };
@@ -122,15 +122,15 @@ pub const Immediate = union(enum) {
     pub fn asUnsigned(imm: Immediate, bit_size: u64) u64 {
         return switch (imm) {
             .signed => |x| switch (bit_size) {
-                1, 8 => @as(u8, @bitCast(@as(i8, @intCast(x)))),
-                16 => @as(u16, @bitCast(@as(i16, @intCast(x)))),
-                32, 64 => @as(u32, @bitCast(x)),
+                1, 8 => @as(u8, @bitcast(@as(i8, @intcast(x)))),
+                16 => @as(u16, @bitcast(@as(i16, @intcast(x)))),
+                32, 64 => @as(u32, @bitcast(x)),
                 else => unreachable,
             },
             .unsigned => |x| switch (bit_size) {
-                1, 8 => @as(u8, @intCast(x)),
-                16 => @as(u16, @intCast(x)),
-                32 => @as(u32, @intCast(x)),
+                1, 8 => @as(u8, @intcast(x)),
+                16 => @as(u16, @intcast(x)),
+                32 => @as(u32, @intcast(x)),
                 64 => x,
                 else => unreachable,
             },
@@ -138,11 +138,11 @@ pub const Immediate = union(enum) {
     }
 
     pub fn asBits(imm: Immediate, comptime T: type) T {
-        const int_info = @typeInfo(T).Int;
-        if (int_info.signedness != .unsigned) @compileError("Immediate.asBits needs unsigned T");
+        const int_info = @typeinfo(T).Int;
+        if (int_info.signedness != .unsigned) @compileerror("Immediate.asBits needs unsigned T");
         return switch (imm) {
-            .signed => |x| @bitCast(@as(std.meta.Int(.signed, int_info.bits), @intCast(x))),
-            .unsigned => |x| @intCast(x),
+            .signed => |x| @bitcast(@as(std.meta.Int(.signed, int_info.bits), @intcast(x))),
+            .unsigned => |x| @intcast(x),
         };
     }
 };
@@ -171,7 +171,7 @@ pub const Register = enum(u6) {
     /// Returns the unique 5-bit ID of this register which is used in
     /// the machine code
     pub fn id(self: Register) u5 {
-        return @as(u5, @truncate(@intFromEnum(self)));
+        return @as(u5, @truncate(@intfromenum(self)));
     }
 
     pub fn dwarfLocOp(reg: Register) u8 {
@@ -197,10 +197,10 @@ pub const FrameIndex = enum(u32) {
     /// Other indices are used for local variable stack slots
     _,
 
-    pub const named_count = @typeInfo(FrameIndex).Enum.fields.len;
+    pub const named_count = @typeinfo(FrameIndex).Enum.fields.len;
 
     pub fn isNamed(fi: FrameIndex) bool {
-        return @intFromEnum(fi) < named_count;
+        return @intfromenum(fi) < named_count;
     }
 
     pub fn format(
@@ -212,10 +212,10 @@ pub const FrameIndex = enum(u32) {
         try writer.writeAll("FrameIndex");
         if (fi.isNamed()) {
             try writer.writeByte('.');
-            try writer.writeAll(@tagName(fi));
+            try writer.writeAll(@tagname(fi));
         } else {
             try writer.writeByte('(');
-            try std.fmt.formatType(@intFromEnum(fi), fmt, options, writer, 0);
+            try std.fmt.formatType(@intfromenum(fi), fmt, options, writer, 0);
             try writer.writeByte(')');
         }
     }

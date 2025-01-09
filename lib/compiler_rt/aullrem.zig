@@ -21,13 +21,13 @@ pub fn _allrem(a: i64, b: i64) callconv(.Stdcall) i64 {
     const an = (a ^ s_a) -% s_a;
     const bn = (b ^ s_b) -% s_b;
 
-    const r = @as(u64, @bitCast(an)) % @as(u64, @bitCast(bn));
+    const r = @as(u64, @bitcast(an)) % @as(u64, @bitcast(bn));
     const s = s_a ^ s_b;
-    return (@as(i64, @bitCast(r)) ^ s) -% s;
+    return (@as(i64, @bitcast(r)) ^ s) -% s;
 }
 
 pub fn _aullrem() callconv(.Naked) void {
-    @setRuntimeSafety(false);
+    @setruntimesafety(false);
 
     // The stack layout is:
     // ESP+16 divisor (hi)

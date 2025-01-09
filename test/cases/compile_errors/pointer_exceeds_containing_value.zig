@@ -1,13 +1,13 @@
 export fn entry1() void {
     const x: u32 = 123;
-    const ptr: [*]const u32 = @ptrCast(&x);
+    const ptr: [*]const u32 = @ptrcast(&x);
     _ = ptr - 1;
 }
 
 export fn entry2() void {
     const S = extern struct { x: u32, y: u32 };
     const y: u32 = 123;
-    const parent_ptr: *const S = @fieldParentPtr("y", &y);
+    const parent_ptr: *const S = @fieldparentptr("y", &y);
     _ = parent_ptr;
 }
 

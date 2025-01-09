@@ -44,8 +44,8 @@ pub fn initMatch(dist: u16, len: u16) Token {
     assert(dist >= consts.min_distance and dist <= consts.max_distance);
     return .{
         .kind = .match,
-        .dist = @intCast(dist - consts.min_distance),
-        .len_lit = @intCast(len - consts.base_length),
+        .dist = @intcast(dist - consts.min_distance),
+        .len_lit = @intcast(len - consts.base_length),
     };
 }
 
@@ -276,7 +276,7 @@ const match_distances = [_]MatchDistance{
 };
 
 test "size" {
-    try expect(@sizeOf(Token) == 4);
+    try expect(@sizeof(Token) == 4);
 }
 
 // testing table https://datatracker.ietf.org/doc/html/rfc1951#page-12

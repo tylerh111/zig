@@ -227,12 +227,12 @@ pub const Data = union(InstEnc) {
 
     pub fn toU32(self: Data) u32 {
         return switch (self) {
-            .R => |v| @as(u32, @bitCast(v)),
-            .I => |v| @as(u32, @bitCast(v)),
-            .S => |v| @as(u32, @bitCast(v)),
-            .B => |v| @as(u32, @intCast(v.opcode)) + (@as(u32, @intCast(v.imm11)) << 7) + (@as(u32, @intCast(v.imm1_4)) << 8) + (@as(u32, @intCast(v.funct3)) << 12) + (@as(u32, @intCast(v.rs1)) << 15) + (@as(u32, @intCast(v.rs2)) << 20) + (@as(u32, @intCast(v.imm5_10)) << 25) + (@as(u32, @intCast(v.imm12)) << 31),
-            .U => |v| @as(u32, @bitCast(v)),
-            .J => |v| @as(u32, @bitCast(v)),
+            .R => |v| @as(u32, @bitcast(v)),
+            .I => |v| @as(u32, @bitcast(v)),
+            .S => |v| @as(u32, @bitcast(v)),
+            .B => |v| @as(u32, @intcast(v.opcode)) + (@as(u32, @intcast(v.imm11)) << 7) + (@as(u32, @intcast(v.imm1_4)) << 8) + (@as(u32, @intcast(v.funct3)) << 12) + (@as(u32, @intcast(v.rs1)) << 15) + (@as(u32, @intcast(v.rs2)) << 20) + (@as(u32, @intcast(v.imm5_10)) << 25) + (@as(u32, @intcast(v.imm12)) << 31),
+            .U => |v| @as(u32, @bitcast(v)),
+            .J => |v| @as(u32, @bitcast(v)),
             .system => unreachable,
         };
     }
@@ -362,7 +362,7 @@ pub const Data = union(InstEnc) {
                 };
             },
 
-            else => std.debug.panic("TODO: construct {s}", .{@tagName(inst_enc)}),
+            else => std.debug.panic("TODO: construct {s}", .{@tagname(inst_enc)}),
         }
     }
 };

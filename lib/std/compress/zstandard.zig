@@ -223,9 +223,9 @@ fn testReader(data: []const u8, comptime expected: []const u8) !void {
 }
 
 test "decompression" {
-    const uncompressed = @embedFile("testdata/rfc8478.txt");
-    const compressed3 = @embedFile("testdata/rfc8478.txt.zst.3");
-    const compressed19 = @embedFile("testdata/rfc8478.txt.zst.19");
+    const uncompressed = @embedfile("testdata/rfc8478.txt");
+    const compressed3 = @embedfile("testdata/rfc8478.txt.zst.3");
+    const compressed19 = @embedfile("testdata/rfc8478.txt.zst.19");
 
     const buffer = try std.testing.allocator.alloc(u8, uncompressed.len);
     defer std.testing.allocator.free(buffer);

@@ -9,8 +9,8 @@ const Foo = enum {
 pub fn main() void {
     var a: u2 = 3;
     _ = &a;
-    const b: Foo = @enumFromInt(a);
-    std.debug.print("value: {s}\n", .{@tagName(b)});
+    const b: Foo = @enumfromint(a);
+    std.debug.print("value: {s}\n", .{@tagname(b)});
 }
 
 // exe=fail

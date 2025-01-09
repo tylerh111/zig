@@ -134,7 +134,7 @@ pub const Os = struct {
             };
         }
 
-        pub inline fn getVersionRangeTag(tag: Tag) @typeInfo(TaggedVersionRange).Union.tag_type.? {
+        pub inline fn getVersionRangeTag(tag: Tag) @typeinfo(TaggedVersionRange).Union.tag_type.? {
             return switch (tag) {
                 .freestanding,
                 .ananas,
@@ -202,9 +202,9 @@ pub const Os = struct {
                     .riscv32, .riscv64 => "riscv",
                     .sparc, .sparcel, .sparc64 => "sparc",
                     .x86, .x86_64 => "x86",
-                    else => @tagName(arch),
+                    else => @tagname(arch),
                 },
-                else => @tagName(arch),
+                else => @tagname(arch),
             };
         }
     };
@@ -254,7 +254,7 @@ pub const Os = struct {
 
         /// Returns whether the first version `ver` is newer (greater) than or equal to the second version `ver`.
         pub inline fn isAtLeast(ver: WindowsVersion, min_ver: WindowsVersion) bool {
-            return @intFromEnum(ver) >= @intFromEnum(min_ver);
+            return @intfromenum(ver) >= @intfromenum(min_ver);
         }
 
         pub const Range = struct {
@@ -262,22 +262,22 @@ pub const Os = struct {
             max: WindowsVersion,
 
             pub inline fn includesVersion(range: Range, ver: WindowsVersion) bool {
-                return @intFromEnum(ver) >= @intFromEnum(range.min) and
-                    @intFromEnum(ver) <= @intFromEnum(range.max);
+                return @intfromenum(ver) >= @intfromenum(range.min) and
+                    @intfromenum(ver) <= @intfromenum(range.max);
             }
 
             /// Checks if system is guaranteed to be at least `version` or older than `version`.
             /// Returns `null` if a runtime check is required.
             pub inline fn isAtLeast(range: Range, min_ver: WindowsVersion) ?bool {
-                if (@intFromEnum(range.min) >= @intFromEnum(min_ver)) return true;
-                if (@intFromEnum(range.max) < @intFromEnum(min_ver)) return false;
+                if (@intfromenum(range.min) >= @intfromenum(min_ver)) return true;
+                if (@intfromenum(range.max) < @intfromenum(min_ver)) return false;
                 return null;
             }
         };
 
         pub fn parse(str: []const u8) !WindowsVersion {
             return std.meta.stringToEnum(WindowsVersion, str) orelse
-                @enumFromInt(std.fmt.parseInt(u32, str, 0) catch
+                @enumfromint(std.fmt.parseInt(u32, str, 0) catch
                 return error.InvalidOperatingSystemVersion);
         }
 
@@ -289,22 +289,22 @@ pub const Os = struct {
             _: std.fmt.FormatOptions,
             writer: anytype,
         ) @TypeOf(writer).Error!void {
-            const maybe_name = std.enums.tagName(WindowsVersion, ver);
+            const maybe_name = std.enums.tagname(WindowsVersion, ver);
             if (comptime std.mem.eql(u8, fmt_str, "s")) {
                 if (maybe_name) |name|
                     try writer.print(".{s}", .{name})
                 else
-                    try writer.print(".{d}", .{@intFromEnum(ver)});
+                    try writer.print(".{d}", .{@intfromenum(ver)});
             } else if (comptime std.mem.eql(u8, fmt_str, "c")) {
                 if (maybe_name) |name|
                     try writer.print(".{s}", .{name})
                 else
-                    try writer.print("@enumFromInt(0x{X:0>8})", .{@intFromEnum(ver)});
+                    try writer.print("@enumfromint(0x{X:0>8})", .{@intfromenum(ver)});
             } else if (fmt_str.len == 0) {
                 if (maybe_name) |name|
                     try writer.print("WindowsVersion.{s}", .{name})
                 else
-                    try writer.print("WindowsVersion(0x{X:0>8})", .{@intFromEnum(ver)});
+                    try writer.print("WindowsVersion(0x{X:0>8})", .{@intfromenum(ver)});
             } else std.fmt.invalidFmtError(fmt_str, ver);
         }
     };
@@ -521,7 +521,7 @@ pub const Os = struct {
             inline .semver,
             .linux,
             .windows,
-            => |field| @field(os.version_range, @tagName(field)).isAtLeast(ver),
+            => |field| @field(os.version_range, @tagname(field)).isAtLeast(ver),
         };
     }
 
@@ -835,8 +835,8 @@ pub const Cpu = struct {
 
             pub const needed_bit_count = 288;
             pub const byte_count = (needed_bit_count + 7) / 8;
-            pub const usize_count = (byte_count + (@sizeOf(usize) - 1)) / @sizeOf(usize);
-            pub const Index = std.math.Log2Int(std.meta.Int(.unsigned, usize_count * @bitSizeOf(usize)));
+            pub const usize_count = (byte_count + (@sizeof(usize) - 1)) / @sizeof(usize);
+            pub const Index = std.math.Log2Int(std.meta.Int(.unsigned, usize_count * @bitsizeof(usize)));
             pub const ShiftInt = std.math.Log2Int(usize);
 
             pub const empty = Set{ .ints = [1]usize{0} ** usize_count };
@@ -848,15 +848,15 @@ pub const Cpu = struct {
             }
 
             pub fn isEnabled(set: Set, arch_feature_index: Index) bool {
-                const usize_index = arch_feature_index / @bitSizeOf(usize);
-                const bit_index: ShiftInt = @intCast(arch_feature_index % @bitSizeOf(usize));
+                const usize_index = arch_feature_index / @bitsizeof(usize);
+                const bit_index: ShiftInt = @intcast(arch_feature_index % @bitsizeof(usize));
                 return (set.ints[usize_index] & (@as(usize, 1) << bit_index)) != 0;
             }
 
             /// Adds the specified feature but not its dependencies.
             pub fn addFeature(set: *Set, arch_feature_index: Index) void {
-                const usize_index = arch_feature_index / @bitSizeOf(usize);
-                const bit_index: ShiftInt = @intCast(arch_feature_index % @bitSizeOf(usize));
+                const usize_index = arch_feature_index / @bitsizeof(usize);
+                const bit_index: ShiftInt = @intcast(arch_feature_index % @bitsizeof(usize));
                 set.ints[usize_index] |= @as(usize, 1) << bit_index;
             }
 
@@ -874,8 +874,8 @@ pub const Cpu = struct {
 
             /// Removes the specified feature but not its dependents.
             pub fn removeFeature(set: *Set, arch_feature_index: Index) void {
-                const usize_index = arch_feature_index / @bitSizeOf(usize);
-                const bit_index: ShiftInt = @intCast(arch_feature_index % @bitSizeOf(usize));
+                const usize_index = arch_feature_index / @bitsizeof(usize);
+                const bit_index: ShiftInt = @intcast(arch_feature_index % @bitsizeof(usize));
                 set.ints[usize_index] &= ~(@as(usize, 1) << bit_index);
             }
 
@@ -892,12 +892,12 @@ pub const Cpu = struct {
             }
 
             pub fn populateDependencies(set: *Set, all_features_list: []const Cpu.Feature) void {
-                @setEvalBranchQuota(1000000);
+                @setevalbranchquota(1000000);
 
                 var old = set.ints;
                 while (true) {
                     for (all_features_list, 0..) |feature, index_usize| {
-                        const index: Index = @intCast(index_usize);
+                        const index: Index = @intcast(index_usize);
                         if (set.isEnabled(index)) {
                             set.addFeatureSet(feature.dependencies);
                         }
@@ -940,20 +940,20 @@ pub const Cpu = struct {
                 pub fn featureSet(features: []const F) Set {
                     var x = Set.empty;
                     for (features) |feature| {
-                        x.addFeature(@intFromEnum(feature));
+                        x.addFeature(@intfromenum(feature));
                     }
                     return x;
                 }
 
                 /// Returns true if the specified feature is enabled.
                 pub fn featureSetHas(set: Set, feature: F) bool {
-                    return set.isEnabled(@intFromEnum(feature));
+                    return set.isEnabled(@intfromenum(feature));
                 }
 
                 /// Returns true if any specified feature is enabled.
                 pub fn featureSetHasAny(set: Set, features: anytype) bool {
                     inline for (features) |feature| {
-                        if (set.isEnabled(@intFromEnum(@as(F, feature)))) return true;
+                        if (set.isEnabled(@intfromenum(@as(F, feature)))) return true;
                     }
                     return false;
                 }
@@ -961,7 +961,7 @@ pub const Cpu = struct {
                 /// Returns true if every specified feature is enabled.
                 pub fn featureSetHasAll(set: Set, features: anytype) bool {
                     inline for (features) |feature| {
-                        if (!set.isEnabled(@intFromEnum(@as(F, feature)))) return false;
+                        if (!set.isEnabled(@intfromenum(@as(F, feature)))) return false;
                     }
                     return true;
                 }
@@ -1373,7 +1373,7 @@ pub const Cpu = struct {
                 .nvptx, .nvptx64 => "nvptx",
                 .wasm32, .wasm64 => "wasm",
                 .spirv32, .spirv64 => "spirv",
-                else => @tagName(arch),
+                else => @tagname(arch),
             };
         }
 
@@ -1438,8 +1438,8 @@ pub const Cpu = struct {
         }
 
         fn allCpusFromDecls(comptime cpus: type) []const *const Cpu.Model {
-            @setEvalBranchQuota(2000);
-            const decls = @typeInfo(cpus).Struct.decls;
+            @setevalbranchquota(2000);
+            const decls = @typeinfo(cpus).Struct.decls;
             var array: [decls.len]*const Cpu.Model = undefined;
             for (decls, 0..) |decl, i| {
                 array[i] = &@field(cpus, decl.name);
@@ -1556,7 +1556,7 @@ pub fn zigTriple(target: Target, allocator: Allocator) Allocator.Error![]u8 {
 }
 
 pub fn linuxTripleSimple(allocator: Allocator, arch: Cpu.Arch, os_tag: Os.Tag, abi: Abi) ![]u8 {
-    return std.fmt.allocPrint(allocator, "{s}-{s}-{s}", .{ @tagName(arch), @tagName(os_tag), @tagName(abi) });
+    return std.fmt.allocPrint(allocator, "{s}-{s}-{s}", .{ @tagname(arch), @tagname(os_tag), @tagname(abi) });
 }
 
 pub fn linuxTriple(target: Target, allocator: Allocator) ![]u8 {
@@ -1690,12 +1690,12 @@ pub const DynamicLinker = struct {
     pub fn set(dl: *DynamicLinker, maybe_path: ?[]const u8) void {
         const path = maybe_path orelse "";
         @memcpy(dl.buffer[0..path.len], path);
-        dl.len = @intCast(path.len);
+        dl.len = @intcast(path.len);
     }
 
     /// Asserts that the length is less than or equal to 255 bytes.
     pub fn setFmt(dl: *DynamicLinker, comptime fmt_str: []const u8, args: anytype) !void {
-        dl.len = @intCast((try std.fmt.bufPrint(&dl.buffer, fmt_str, args)).len);
+        dl.len = @intcast((try std.fmt.bufPrint(&dl.buffer, fmt_str, args)).len);
     }
 
     pub fn eql(lhs: DynamicLinker, rhs: DynamicLinker) bool {
@@ -1706,7 +1706,7 @@ pub const DynamicLinker = struct {
         return if (abi == .android) initFmt("/system/bin/linker{s}", .{
             if (ptrBitWidth_cpu_abi(cpu, abi) == 64) "64" else "",
         }) catch unreachable else if (abi.isMusl()) return initFmt("/lib/ld-musl-{s}{s}.so.1", .{
-            @tagName(switch (cpu.arch) {
+            @tagname(switch (cpu.arch) {
                 .thumb => .arm,
                 .thumbeb => .armeb,
                 else => cpu.arch,
@@ -1995,7 +1995,7 @@ pub fn stackAlignment(target: Target) u16 {
             else => 8,
             .linux => 16,
         },
-        else => @divExact(target.ptrBitWidth(), 8),
+        else => @divexact(target.ptrBitWidth(), 8),
     };
 }
 
@@ -2054,13 +2054,13 @@ pub fn c_type_byte_size(t: Target, c_type: CType) u16 {
         .ulonglong,
         .float,
         .double,
-        => @divExact(c_type_bit_size(t, c_type), 8),
+        => @divexact(c_type_bit_size(t, c_type), 8),
 
         .longdouble => switch (c_type_bit_size(t, c_type)) {
             16 => 2,
             32 => 4,
             64 => 8,
-            80 => @intCast(std.mem.alignForward(usize, 10, c_type_alignment(t, .longdouble))),
+            80 => @intcast(std.mem.alignForward(usize, 10, c_type_alignment(t, .longdouble))),
             128 => 16,
             else => unreachable,
         },

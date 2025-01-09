@@ -108,13 +108,13 @@ pub const EndRecord = extern struct {
 /// its context must also have a `.reader()` method that returns an instance of
 /// `std.io.Reader`.
 pub fn findEndRecord(seekable_stream: anytype, stream_len: u64) !EndRecord {
-    var buf: [@sizeOf(EndRecord) + std.math.maxInt(u16)]u8 = undefined;
+    var buf: [@sizeof(EndRecord) + std.math.maxInt(u16)]u8 = undefined;
     const record_len_max = @min(stream_len, buf.len);
     var loaded_len: u32 = 0;
 
     var comment_len: u16 = 0;
     while (true) {
-        const record_len: u32 = @as(u32, comment_len) + @sizeOf(EndRecord);
+        const record_len: u32 = @as(u32, comment_len) + @sizeof(EndRecord);
         if (record_len > record_len_max)
             return error.ZipNoEndRecord;
 
@@ -130,13 +130,13 @@ pub fn findEndRecord(seekable_stream: anytype, stream_len: u64) !EndRecord {
             loaded_len = new_loaded_len;
         }
 
-        const record_bytes = buf[buf.len - record_len ..][0..@sizeOf(EndRecord)];
+        const record_bytes = buf[buf.len - record_len ..][0..@sizeof(EndRecord)];
         if (std.mem.eql(u8, record_bytes[0..4], &end_record_sig) and
             std.mem.readInt(u16, record_bytes[20..22], .little) == comment_len)
         {
-            const record: *align(1) EndRecord = @ptrCast(record_bytes.ptr);
+            const record: *align(1) EndRecord = @ptrcast(record_bytes.ptr);
             if (builtin.target.cpu.arch.endian() != .little) {
-                std.mem.byteSwapAllFields(@TypeOf(record.*), record);
+                std.mem.byteswapAllFields(@TypeOf(record.*), record);
             }
             return record.*;
         }
@@ -168,7 +168,7 @@ pub fn decompress(
                 if (len == 0) break;
                 try writer.writeAll(buf[0..len]);
                 hash.update(buf[0..len]);
-                total_uncompressed += @intCast(len);
+                total_uncompressed += @intcast(len);
             }
         },
         .deflate => {
@@ -177,7 +177,7 @@ pub fn decompress(
             while (try decompressor.next()) |chunk| {
                 try writer.writeAll(chunk);
                 hash.update(chunk);
-                total_uncompressed += @intCast(chunk.len);
+                total_uncompressed += @intcast(chunk.len);
                 if (total_uncompressed > uncompressed_size)
                     return error.ZipUncompressSizeTooSmall;
             }
@@ -285,7 +285,7 @@ pub fn Iterator(comptime SeekableStream: type) type {
             };
             if (!end_record.need_zip64()) return result;
 
-            const locator_end_offset: u64 = @as(u64, end_record.comment_len) + @sizeOf(EndRecord) + @sizeOf(EndLocator64);
+            const locator_end_offset: u64 = @as(u64, end_record.comment_len) + @sizeof(EndRecord) + @sizeof(EndLocator64);
             if (locator_end_offset > stream_len)
                 return error.ZipTruncated;
             try stream.seekTo(stream_len - locator_end_offset);
@@ -304,9 +304,9 @@ pub fn Iterator(comptime SeekableStream: type) type {
             if (!std.mem.eql(u8, &record64.signature, &end_record64_sig))
                 return error.ZipBadEndRecord64Sig;
 
-            if (record64.end_record_size < @sizeOf(EndRecord64) - 12)
+            if (record64.end_record_size < @sizeof(EndRecord64) - 12)
                 return error.ZipEndRecord64SizeTooSmall;
-            if (record64.end_record_size > @sizeOf(EndRecord64) - 12)
+            if (record64.end_record_size > @sizeof(EndRecord64) - 12)
                 return error.ZipEndRecord64UnhandledExtraData;
 
             if (record64.version_needed_to_extract > 45)
@@ -356,7 +356,7 @@ pub fn Iterator(comptime SeekableStream: type) type {
                 return error.ZipBadCdOffset;
 
             self.cd_record_index += 1;
-            self.cd_record_offset += @sizeOf(CentralDirectoryFileHeader) + header.filename_len + header.extra_len + header.comment_len;
+            self.cd_record_offset += @sizeof(CentralDirectoryFileHeader) + header.filename_len + header.extra_len + header.comment_len;
 
             // Note: checking the version_needed_to_extract doesn't seem to be helpful, i.e. the zip file
             // at https://github.com/ninja-build/ninja/releases/download/v1.12.0/ninja-linux.zip
@@ -379,7 +379,7 @@ pub fn Iterator(comptime SeekableStream: type) type {
                 const extra = extra_buf[0..header.extra_len];
 
                 {
-                    try self.stream.seekTo(header_zip_offset + @sizeOf(CentralDirectoryFileHeader) + header.filename_len);
+                    try self.stream.seekTo(header_zip_offset + @sizeof(CentralDirectoryFileHeader) + header.filename_len);
                     const len = try self.stream.context.reader().readAll(extra);
                     if (len != extra.len)
                         return error.ZipTruncated;
@@ -393,7 +393,7 @@ pub fn Iterator(comptime SeekableStream: type) type {
                     if (end > extra.len)
                         return error.ZipBadExtraFieldSize;
                     const data = extra[extra_offset + 4 .. end];
-                    switch (@as(ExtraHeader, @enumFromInt(header_id))) {
+                    switch (@as(ExtraHeader, @enumfromint(header_id))) {
                         .zip64_info => try readZip64FileExtents(header, &extents, data),
                         else => {}, // ignore
                     }
@@ -440,7 +440,7 @@ pub fn Iterator(comptime SeekableStream: type) type {
                     return error.ZipInsufficientBuffer;
                 const filename = filename_buf[0..self.filename_len];
 
-                try stream.seekTo(self.header_zip_offset + @sizeOf(CentralDirectoryFileHeader));
+                try stream.seekTo(self.header_zip_offset + @sizeof(CentralDirectoryFileHeader));
 
                 {
                     const len = try stream.context.reader().readAll(filename);
@@ -462,7 +462,7 @@ pub fn Iterator(comptime SeekableStream: type) type {
                     if (local_header.last_modification_date != self.last_modification_date)
                         return error.ZipMismatchModDate;
 
-                    if (@as(u16, @bitCast(local_header.flags)) != @as(u16, @bitCast(self.flags)))
+                    if (@as(u16, @bitcast(local_header.flags)) != @as(u16, @bitcast(self.flags)))
                         return error.ZipMismatchFlags;
                     if (local_header.crc32 != 0 and local_header.crc32 != self.crc32)
                         return error.ZipMismatchCrc32;
@@ -510,7 +510,7 @@ pub fn Iterator(comptime SeekableStream: type) type {
                 defer out_file.close();
                 const local_data_file_offset: u64 =
                     @as(u64, self.file_offset) +
-                    @as(u64, @sizeOf(LocalFileHeader)) +
+                    @as(u64, @sizeof(LocalFileHeader)) +
                     local_data_header_offset;
                 try stream.seekTo(local_data_file_offset);
                 var limited_reader = std.io.limitedReader(stream.context.reader(), self.compressed_size);

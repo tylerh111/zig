@@ -53,7 +53,7 @@ IPSecGetAssignedPolicyData
 IPSecGetFilterData
 IPSecGetISAKMPData
 IPSecGetNegPolData
-IPSecImportPolicies
+IPSecimportPolicies
 IPSecIsDomainPolicyAssigned
 IPSecOpenPolicyStore
 IPSecSetFilterData

@@ -156,10 +156,10 @@ test "@memset provides result type" {
     const S = struct { x: u32 };
 
     var buf1: [5]S = undefined;
-    @memset(&buf1, .{ .x = @intCast(12) });
+    @memset(&buf1, .{ .x = @intcast(12) });
 
     var buf2: [5]S = undefined;
-    @memset(@as([]S, &buf2), .{ .x = @intCast(34) });
+    @memset(@as([]S, &buf2), .{ .x = @intcast(34) });
 
     for (buf1) |s| try expect(s.x == 12);
     for (buf2) |s| try expect(s.x == 34);
@@ -179,7 +179,7 @@ test "zero keys with @memset" {
         right: bool,
         var keys: @This() = undefined;
     };
-    @memset(@as([*]u8, @ptrCast(&Keys.keys))[0..@sizeOf(@TypeOf(Keys.keys))], 0);
+    @memset(@as([*]u8, @ptrcast(&Keys.keys))[0..@sizeof(@TypeOf(Keys.keys))], 0);
     try expect(!Keys.keys.up);
     try expect(!Keys.keys.down);
     try expect(!Keys.keys.left);

@@ -2,12 +2,12 @@ const std = @import("std");
 const native_arch = @import("builtin").target.cpu.arch;
 const expect = std.testing.expect;
 
-test "@wasmMemoryGrow" {
+test "@wasmmemorygrow" {
     if (native_arch != .wasm32) return error.SkipZigTest;
 
-    const prev = @wasmMemorySize(0);
-    try expect(prev == @wasmMemoryGrow(0, 1));
-    try expect(prev + 1 == @wasmMemorySize(0));
+    const prev = @wasmmemorysize(0);
+    try expect(prev == @wasmmemorygrow(0, 1));
+    try expect(prev + 1 == @wasmmemorysize(0));
 }
 
 // test

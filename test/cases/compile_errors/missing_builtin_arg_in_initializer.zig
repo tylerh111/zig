@@ -2,7 +2,7 @@ comptime {
     const a = @as();
 }
 comptime {
-    const b = @bitCast();
+    const b = @bitcast();
 }
 comptime {
     const c = @as(u32);

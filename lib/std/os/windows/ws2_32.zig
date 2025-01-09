@@ -21,7 +21,7 @@ const LPARAM = windows.LPARAM;
 const FARPROC = windows.FARPROC;
 
 pub const SOCKET = *opaque {};
-pub const INVALID_SOCKET = @as(SOCKET, @ptrFromInt(~@as(usize, 0)));
+pub const INVALID_SOCKET = @as(SOCKET, @ptrfromint(~@as(usize, 0)));
 
 pub const GROUP = u32;
 pub const ADDRESS_FAMILY = u16;
@@ -990,7 +990,7 @@ pub const SOCKET_ADDRESS_LIST = extern struct {
     Address: [1]SOCKET_ADDRESS,
 };
 
-pub const WSADATA = if (@sizeOf(usize) == @sizeOf(u64))
+pub const WSADATA = if (@sizeof(usize) == @sizeof(u64))
     extern struct {
         wVersion: WORD,
         wHighVersion: WORD,
@@ -1111,11 +1111,11 @@ pub const sockaddr = extern struct {
     pub const SS_MAXSIZE = 128;
     pub const storage = extern struct {
         family: ADDRESS_FAMILY align(8),
-        padding: [SS_MAXSIZE - @sizeOf(ADDRESS_FAMILY)]u8 = undefined,
+        padding: [SS_MAXSIZE - @sizeof(ADDRESS_FAMILY)]u8 = undefined,
 
         comptime {
-            assert(@sizeOf(storage) == SS_MAXSIZE);
-            assert(@alignOf(storage) == 8);
+            assert(@sizeof(storage) == SS_MAXSIZE);
+            assert(@alignof(storage) == 8);
         }
     };
 

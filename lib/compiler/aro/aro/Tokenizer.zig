@@ -874,7 +874,7 @@ pub const Token = struct {
 
     const all_kws = std.StaticStringMap(Id).initComptime(.{
         .{ "auto", auto: {
-            @setEvalBranchQuota(3000);
+            @setevalbranchquota(3000);
             break :auto .keyword_auto;
         } },
         .{ "break", .keyword_break },
@@ -2161,7 +2161,7 @@ fn expectTokensExtra(contents: []const u8, expected_tokens: []const Token.Id, st
         const expected_token_id = expected_tokens[i];
         i += 1;
         if (!std.meta.eql(token.id, expected_token_id)) {
-            std.debug.print("expected {s}, found {s}\n", .{ @tagName(expected_token_id), @tagName(token.id) });
+            std.debug.print("expected {s}, found {s}\n", .{ @tagname(expected_token_id), @tagname(token.id) });
             return error.TokensDoNotEqual;
         }
     }

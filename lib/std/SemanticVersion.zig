@@ -303,5 +303,5 @@ test "zig_version" {
 
     // Simulated compatibility check using Zig version.
     const compatible = comptime @import("builtin").zig_version.order(older_version) == .gt;
-    if (!compatible) @compileError("zig_version test failed");
+    if (!compatible) @compileerror("zig_version test failed");
 }

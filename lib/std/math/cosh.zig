@@ -21,7 +21,7 @@ pub fn cosh(x: anytype) @TypeOf(x) {
     return switch (T) {
         f32 => cosh32(x),
         f64 => cosh64(x),
-        else => @compileError("cosh not implemented for " ++ @typeName(T)),
+        else => @compileerror("cosh not implemented for " ++ @typename(T)),
     };
 }
 
@@ -29,9 +29,9 @@ pub fn cosh(x: anytype) @TypeOf(x) {
 //         = 1 + 0.5 * (exp(x) - 1) * (exp(x) - 1) / exp(x)
 //         = 1 + (x * x) / 2 + o(x^4)
 fn cosh32(x: f32) f32 {
-    const u = @as(u32, @bitCast(x));
+    const u = @as(u32, @bitcast(x));
     const ux = u & 0x7FFFFFFF;
-    const ax = @as(f32, @bitCast(ux));
+    const ax = @as(f32, @bitcast(ux));
 
     // |x| < log(2)
     if (ux < 0x3F317217) {
@@ -54,9 +54,9 @@ fn cosh32(x: f32) f32 {
 }
 
 fn cosh64(x: f64) f64 {
-    const u = @as(u64, @bitCast(x));
-    const w = @as(u32, @intCast(u >> 32)) & (maxInt(u32) >> 1);
-    const ax = @as(f64, @bitCast(u & (maxInt(u64) >> 1)));
+    const u = @as(u64, @bitcast(x));
+    const w = @as(u32, @intcast(u >> 32)) & (maxInt(u32) >> 1);
+    const ax = @as(f64, @bitcast(u & (maxInt(u64) >> 1)));
 
     // TODO: Shouldn't need this explicit check.
     if (x == 0.0) {

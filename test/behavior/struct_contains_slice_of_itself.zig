@@ -8,7 +8,7 @@ const Node = struct {
 
 const NodeAligned = struct {
     payload: i32,
-    children: []align(@alignOf(NodeAligned)) NodeAligned,
+    children: []align(@alignof(NodeAligned)) NodeAligned,
 };
 
 test "struct contains slice of itself" {

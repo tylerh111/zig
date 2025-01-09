@@ -8,16 +8,16 @@ const std = @import("std");
 const builtin = @import("builtin");
 const assert = std.debug.assert;
 
-const c_malloc = @cImport(
-    @cInclude("malloc.h"), // for reallocarray
+const c_malloc = @cimport(
+    @cinclude("malloc.h"), // for reallocarray
 );
 
-const c_stdlib = @cImport(
-    @cInclude("stdlib.h"), // for atexit
+const c_stdlib = @cimport(
+    @cinclude("stdlib.h"), // for atexit
 );
 
-const c_string = @cImport(
-    @cInclude("string.h"), // for strlcpy
+const c_string = @cimport(
+    @cinclude("string.h"), // for strlcpy
 );
 
 // Version of glibc this test is being built to run against
@@ -41,8 +41,8 @@ fn checkStat() !void {
 fn checkReallocarray() !void {
     // reallocarray was introduced in v2.26
     if (comptime glibc_ver.order(.{ .major = 2, .minor = 26, .patch = 0 }) == .lt) {
-        if (@hasDecl(c_malloc, "reallocarray")) {
-            @compileError("Before v2.26 'malloc.h' does not define 'reallocarray'");
+        if (@hasdecl(c_malloc, "reallocarray")) {
+            @compileerror("Before v2.26 'malloc.h' does not define 'reallocarray'");
         }
     } else {
         return try checkReallocarray_v2_26();
@@ -61,8 +61,8 @@ fn checkReallocarray_v2_26() !void {
 // getauxval introduced in v2.16
 fn checkGetAuxVal() !void {
     if (comptime glibc_ver.order(.{ .major = 2, .minor = 16, .patch = 0 }) == .lt) {
-        if (@hasDecl(std.c, "getauxval")) {
-            @compileError("Before v2.16 glibc does not define 'getauxval'");
+        if (@hasdecl(std.c, "getauxval")) {
+            @compileerror("Before v2.16 glibc does not define 'getauxval'");
         }
     } else {
         try checkGetAuxVal_v2_16();
@@ -80,8 +80,8 @@ fn checkGetAuxVal_v2_16() !void {
 // strlcpy introduced in v2.38, which is newer than many installed glibcs
 fn checkStrlcpy() !void {
     if (comptime glibc_ver.order(.{ .major = 2, .minor = 38, .patch = 0 }) == .lt) {
-        if (@hasDecl(c_string, "strlcpy")) {
-            @compileError("Before v2.38 glibc does not define 'strlcpy'");
+        if (@hasdecl(c_string, "strlcpy")) {
+            @compileerror("Before v2.38 glibc does not define 'strlcpy'");
         }
     } else {
         try checkStrlcpy_v2_38();

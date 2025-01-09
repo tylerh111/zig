@@ -1,5 +1,5 @@
 export fn a() usize {
-    return @embedFile("/root/foo").len;
+    return @embedfile("/root/foo").len;
 }
 
 // error

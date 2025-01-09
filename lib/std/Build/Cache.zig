@@ -221,9 +221,9 @@ pub const HashHelper = struct {
                 .none, .fast, .uuid, .sha1, .md5 => hh.add(std.meta.activeTag(x)),
                 .hexstring => |hex_string| hh.addBytes(hex_string.toSlice()),
             },
-            else => switch (@typeInfo(@TypeOf(x))) {
+            else => switch (@typeinfo(@TypeOf(x))) {
                 .Bool, .Int, .Enum, .Array => hh.addBytes(mem.asBytes(&x)),
-                else => @compileError("unable to hash type " ++ @typeName(@TypeOf(x))),
+                else => @compileerror("unable to hash type " ++ @typename(@TypeOf(x))),
             },
         }
     }
@@ -706,7 +706,7 @@ pub const Manifest = struct {
                 return error.FileTooBig;
             }
 
-            const contents = try self.cache.gpa.alloc(u8, @as(usize, @intCast(ch_file.stat.size)));
+            const contents = try self.cache.gpa.alloc(u8, @as(usize, @intcast(ch_file.stat.size)));
             errdefer self.cache.gpa.free(contents);
 
             // Hash while reading from disk, to keep the contents in the cpu cache while

@@ -59,7 +59,7 @@ pub fn RegisterManager(
         pub const RegisterBitSet = StaticBitSet(tracked_registers.len);
 
         fn getFunction(self: *Self) *Function {
-            return @alignCast(@fieldParentPtr("register_manager", self));
+            return @aligncast(@fieldparentptr("register_manager", self));
         }
 
         fn excludeRegister(reg: Register, register_class: RegisterBitSet) bool {
@@ -108,7 +108,7 @@ pub fn RegisterManager(
             const id_index = reg.id() -% min_id;
             if (id_index >= map.len) return null;
             const set_index = map[id_index];
-            return if (set_index < set.len) @intCast(set_index) else null;
+            return if (set_index < set.len) @intcast(set_index) else null;
         }
 
         pub fn indexOfRegIntoTracked(reg: Register) ?TrackedIndex {
@@ -411,7 +411,7 @@ const MockRegister1 = enum(u2) {
     r3,
 
     pub fn id(reg: MockRegister1) u2 {
-        return @intFromEnum(reg);
+        return @intfromenum(reg);
     }
 
     const allocatable_registers = [_]MockRegister1{ .r2, .r3 };
@@ -439,7 +439,7 @@ const MockRegister2 = enum(u2) {
     r3,
 
     pub fn id(reg: MockRegister2) u2 {
-        return @intFromEnum(reg);
+        return @intfromenum(reg);
     }
 
     const allocatable_registers = [_]MockRegister2{ .r0, .r1, .r2, .r3 };
@@ -471,14 +471,14 @@ const MockRegister3 = enum(u3) {
     x3,
 
     pub fn id(reg: MockRegister3) u3 {
-        return switch (@intFromEnum(reg)) {
-            0...3 => @as(u3, @as(u2, @truncate(@intFromEnum(reg)))),
-            4...7 => @intFromEnum(reg),
+        return switch (@intfromenum(reg)) {
+            0...3 => @as(u3, @as(u2, @truncate(@intfromenum(reg)))),
+            4...7 => @intfromenum(reg),
         };
     }
 
     pub fn enc(reg: MockRegister3) u2 {
-        return @as(u2, @truncate(@intFromEnum(reg)));
+        return @as(u2, @truncate(@intfromenum(reg)));
     }
 
     const gp_regs = [_]MockRegister3{ .r0, .r1, .r2, .r3 };

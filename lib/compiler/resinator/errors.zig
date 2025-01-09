@@ -38,15 +38,15 @@ pub const Diagnostics = struct {
     }
 
     const SmallestStringIndexType = std.meta.Int(.unsigned, @min(
-        @bitSizeOf(ErrorDetails.FileOpenError.FilenameStringIndex),
+        @bitsizeof(ErrorDetails.FileOpenError.FilenameStringIndex),
         @min(
-            @bitSizeOf(ErrorDetails.IconReadError.FilenameStringIndex),
-            @bitSizeOf(ErrorDetails.BitmapReadError.FilenameStringIndex),
+            @bitsizeof(ErrorDetails.IconReadError.FilenameStringIndex),
+            @bitsizeof(ErrorDetails.BitmapReadError.FilenameStringIndex),
         ),
     ));
 
     /// Returns the index of the added string as the SmallestStringIndexType
-    /// in order to avoid needing to `@intCast` it at callsites of putString.
+    /// in order to avoid needing to `@intcast` it at callsites of putString.
     /// Instead, this function will error if the index would ever exceed the
     /// smallest FilenameStringIndex of an ErrorDetails type.
     pub fn putString(self: *Diagnostics, str: []const u8) !SmallestStringIndexType {
@@ -56,7 +56,7 @@ pub const Diagnostics = struct {
         const dupe = try self.allocator.dupe(u8, str);
         const index = self.strings.items.len;
         try self.strings.append(self.allocator, dupe);
-        return @intCast(index);
+        return @intcast(index);
     }
 
     pub fn renderToStdErr(self: *Diagnostics, cwd: std.fs.Dir, source: []const u8, tty_config: std.io.tty.Config, source_mappings: ?SourceMappings) void {
@@ -140,7 +140,7 @@ pub const ErrorDetails = struct {
     comptime {
         // all fields in the extra union should be 32 bits or less
         for (std.meta.fields(std.meta.fieldInfo(ErrorDetails, .extra).type)) |field| {
-            std.debug.assert(@bitSizeOf(field.type) <= 32);
+            std.debug.assert(@bitsizeof(field.type) <= 32);
         }
     }
 
@@ -159,12 +159,12 @@ pub const ErrorDetails = struct {
         err: FileOpenErrorEnum,
         filename_string_index: FilenameStringIndex,
 
-        pub const FilenameStringIndex = std.meta.Int(.unsigned, 32 - @bitSizeOf(FileOpenErrorEnum));
+        pub const FilenameStringIndex = std.meta.Int(.unsigned, 32 - @bitsizeof(FileOpenErrorEnum));
         pub const FileOpenErrorEnum = std.meta.FieldEnum(std.fs.File.OpenError);
 
         pub fn enumFromError(err: std.fs.File.OpenError) FileOpenErrorEnum {
             return switch (err) {
-                inline else => |e| @field(ErrorDetails.FileOpenError.FileOpenErrorEnum, @errorName(e)),
+                inline else => |e| @field(ErrorDetails.FileOpenError.FileOpenErrorEnum, @errorname(e)),
             };
         }
     };
@@ -174,12 +174,12 @@ pub const ErrorDetails = struct {
         icon_type: enum(u1) { cursor, icon },
         filename_string_index: FilenameStringIndex,
 
-        pub const FilenameStringIndex = std.meta.Int(.unsigned, 32 - @bitSizeOf(IconReadErrorEnum) - 1);
+        pub const FilenameStringIndex = std.meta.Int(.unsigned, 32 - @bitsizeof(IconReadErrorEnum) - 1);
         pub const IconReadErrorEnum = std.meta.FieldEnum(ico.ReadError);
 
         pub fn enumFromError(err: ico.ReadError) IconReadErrorEnum {
             return switch (err) {
-                inline else => |e| @field(ErrorDetails.IconReadError.IconReadErrorEnum, @errorName(e)),
+                inline else => |e| @field(ErrorDetails.IconReadError.IconReadErrorEnum, @errorname(e)),
             };
         }
     };
@@ -191,19 +191,19 @@ pub const ErrorDetails = struct {
         bitmap_version: ico.BitmapHeader.Version = .unknown,
         _: Padding = 0,
 
-        pub const Padding = std.meta.Int(.unsigned, 15 - @bitSizeOf(ico.BitmapHeader.Version) - @bitSizeOf(ico.ImageFormat));
+        pub const Padding = std.meta.Int(.unsigned, 15 - @bitsizeof(ico.BitmapHeader.Version) - @bitsizeof(ico.ImageFormat));
     };
 
     pub const BitmapReadError = packed struct(u32) {
         err: BitmapReadErrorEnum,
         filename_string_index: FilenameStringIndex,
 
-        pub const FilenameStringIndex = std.meta.Int(.unsigned, 32 - @bitSizeOf(BitmapReadErrorEnum));
+        pub const FilenameStringIndex = std.meta.Int(.unsigned, 32 - @bitsizeof(BitmapReadErrorEnum));
         pub const BitmapReadErrorEnum = std.meta.FieldEnum(bmp.ReadError);
 
         pub fn enumFromError(err: bmp.ReadError) BitmapReadErrorEnum {
             return switch (err) {
-                inline else => |e| @field(ErrorDetails.BitmapReadError.BitmapReadErrorEnum, @errorName(e)),
+                inline else => |e| @field(ErrorDetails.BitmapReadError.BitmapReadErrorEnum, @errorname(e)),
             };
         }
     };
@@ -212,19 +212,19 @@ pub const ErrorDetails = struct {
         dib_version: ico.BitmapHeader.Version,
         filename_string_index: FilenameStringIndex,
 
-        pub const FilenameStringIndex = std.meta.Int(.unsigned, 32 - @bitSizeOf(ico.BitmapHeader.Version));
+        pub const FilenameStringIndex = std.meta.Int(.unsigned, 32 - @bitsizeof(ico.BitmapHeader.Version));
     };
 
     pub const AcceleratorError = packed struct(u32) {
         err: AcceleratorErrorEnum,
         _: Padding = 0,
 
-        pub const Padding = std.meta.Int(.unsigned, 32 - @bitSizeOf(AcceleratorErrorEnum));
+        pub const Padding = std.meta.Int(.unsigned, 32 - @bitsizeof(AcceleratorErrorEnum));
         pub const AcceleratorErrorEnum = std.meta.FieldEnum(res.ParseAcceleratorKeyStringError);
 
         pub fn enumFromError(err: res.ParseAcceleratorKeyStringError) AcceleratorErrorEnum {
             return switch (err) {
-                inline else => |e| @field(ErrorDetails.AcceleratorError.AcceleratorErrorEnum, @errorName(e)),
+                inline else => |e| @field(ErrorDetails.AcceleratorError.AcceleratorErrorEnum, @errorname(e)),
             };
         }
     };
@@ -250,12 +250,12 @@ pub const ErrorDetails = struct {
         });
 
         pub fn writeCommaSeparated(self: ExpectedTypes, writer: anytype) !void {
-            const struct_info = @typeInfo(ExpectedTypes).Struct;
+            const struct_info = @typeinfo(ExpectedTypes).Struct;
             const num_real_fields = struct_info.fields.len - 1;
-            const num_padding_bits = @bitSizeOf(ExpectedTypes) - num_real_fields;
+            const num_padding_bits = @bitsizeof(ExpectedTypes) - num_real_fields;
             const mask = std.math.maxInt(struct_info.backing_integer.?) >> num_padding_bits;
-            const relevant_bits_only = @as(struct_info.backing_integer.?, @bitCast(self)) & mask;
-            const num_set_bits = @popCount(relevant_bits_only);
+            const relevant_bits_only = @as(struct_info.backing_integer.?, @bitcast(self)) & mask;
+            const num_set_bits = @popcount(relevant_bits_only);
 
             var i: usize = 0;
             inline for (struct_info.fields) |field_info| {
@@ -478,7 +478,7 @@ pub const ErrorDetails = struct {
                 // TODO: Improve or maybe add a note making it more clear that the code page
                 //       is valid and that the code page is unsupported purely due to a limitation
                 //       in this compiler.
-                return writer.print("unsupported code page '{s} (id={})' in #pragma code_page", .{ @tagName(code_page), number });
+                return writer.print("unsupported code page '{s} (id={})' in #pragma code_page", .{ @tagname(code_page), number });
             },
             .unfinished_raw_data_block => {
                 return writer.print("unfinished raw data block at '{s}', expected closing '}}' or 'END'", .{self.token.nameForErrorDisplay(source)});
@@ -575,7 +575,7 @@ pub const ErrorDetails = struct {
                     const language_id = self.extra.string_and_language.language.asInt();
                     const language_name = language_name: {
                         if (std.meta.intToEnum(lang.LanguageId, language_id)) |lang_enum_val| {
-                            break :language_name @tagName(lang_enum_val);
+                            break :language_name @tagname(lang_enum_val);
                         } else |_| {}
                         if (language_id == lang.LOCALE_CUSTOM_UNSPECIFIED) {
                             break :language_name "LOCALE_CUSTOM_UNSPECIFIED";
@@ -594,10 +594,10 @@ pub const ErrorDetails = struct {
                 .hint => return,
             },
             .file_open_error => {
-                try writer.print("unable to open file '{s}': {s}", .{ strings[self.extra.file_open_error.filename_string_index], @tagName(self.extra.file_open_error.err) });
+                try writer.print("unable to open file '{s}': {s}", .{ strings[self.extra.file_open_error.filename_string_index], @tagname(self.extra.file_open_error.err) });
             },
             .invalid_accelerator_key => {
-                try writer.print("invalid accelerator key '{s}': {s}", .{ self.token.nameForErrorDisplay(source), @tagName(self.extra.accelerator_error.err) });
+                try writer.print("invalid accelerator key '{s}': {s}", .{ self.token.nameForErrorDisplay(source), @tagname(self.extra.accelerator_error.err) });
             },
             .accelerator_type_required => {
                 try writer.print("accelerator type [ASCII or VIRTKEY] required when key is an integer", .{});
@@ -613,7 +613,7 @@ pub const ErrorDetails = struct {
                 .hint => return,
             },
             .rc_would_error_on_icon_dir => switch (self.type) {
-                .err, .warning => return writer.print("the resource at index {} of this {s} has the format '{s}'; this would be an error in the Win32 RC compiler", .{ self.extra.icon_dir.index, @tagName(self.extra.icon_dir.icon_type), @tagName(self.extra.icon_dir.icon_format) }),
+                .err, .warning => return writer.print("the resource at index {} of this {s} has the format '{s}'; this would be an error in the Win32 RC compiler", .{ self.extra.icon_dir.index, @tagname(self.extra.icon_dir.icon_type), @tagname(self.extra.icon_dir.icon_format) }),
                 .note => {
                     // The only note supported is one specific to exactly this combination
                     if (!(self.extra.icon_dir.icon_type == .icon and self.extra.icon_dir.icon_format == .riff)) unreachable;
@@ -622,7 +622,7 @@ pub const ErrorDetails = struct {
                 .hint => return,
             },
             .format_not_supported_in_icon_dir => {
-                try writer.print("resource with format '{s}' (at index {}) is not allowed in {s} resource groups", .{ @tagName(self.extra.icon_dir.icon_format), self.extra.icon_dir.index, @tagName(self.extra.icon_dir.icon_type) });
+                try writer.print("resource with format '{s}' (at index {}) is not allowed in {s} resource groups", .{ @tagname(self.extra.icon_dir.icon_format), self.extra.icon_dir.index, @tagname(self.extra.icon_dir.icon_type) });
             },
             .icon_dir_and_resource_type_mismatch => {
                 const unexpected_type: rc.Resource = if (self.extra.resource == .icon) .cursor else .icon;
@@ -630,18 +630,18 @@ pub const ErrorDetails = struct {
                 try writer.print("resource type '{s}' does not match type '{s}' specified in the file", .{ self.extra.resource.nameForErrorDisplay(), unexpected_type.nameForErrorDisplay() });
             },
             .icon_read_error => {
-                try writer.print("unable to read {s} file '{s}': {s}", .{ @tagName(self.extra.icon_read_error.icon_type), strings[self.extra.icon_read_error.filename_string_index], @tagName(self.extra.icon_read_error.err) });
+                try writer.print("unable to read {s} file '{s}': {s}", .{ @tagname(self.extra.icon_read_error.icon_type), strings[self.extra.icon_read_error.filename_string_index], @tagname(self.extra.icon_read_error.err) });
             },
             .rc_would_error_on_bitmap_version => switch (self.type) {
                 .err => try writer.print("the DIB at index {} of this {s} is of version '{s}'; this version is no longer allowed and should be upgraded to '{s}'", .{
                     self.extra.icon_dir.index,
-                    @tagName(self.extra.icon_dir.icon_type),
+                    @tagname(self.extra.icon_dir.icon_type),
                     self.extra.icon_dir.bitmap_version.nameForErrorDisplay(),
                     ico.BitmapHeader.Version.@"nt3.1".nameForErrorDisplay(),
                 }),
                 .warning => try writer.print("the DIB at index {} of this {s} is of version '{s}'; this would be an error in the Win32 RC compiler", .{
                     self.extra.icon_dir.index,
-                    @tagName(self.extra.icon_dir.icon_type),
+                    @tagname(self.extra.icon_dir.icon_type),
                     self.extra.icon_dir.bitmap_version.nameForErrorDisplay(),
                 }),
                 .note => unreachable,
@@ -649,11 +649,11 @@ pub const ErrorDetails = struct {
             },
             .max_icon_ids_exhausted => switch (self.type) {
                 .err, .warning => try writer.print("maximum global icon/cursor ids exhausted (max is {})", .{std.math.maxInt(u16) - 1}),
-                .note => try writer.print("maximum icon/cursor id exceeded at index {} of this {s}", .{ self.extra.icon_dir.index, @tagName(self.extra.icon_dir.icon_type) }),
+                .note => try writer.print("maximum icon/cursor id exceeded at index {} of this {s}", .{ self.extra.icon_dir.index, @tagname(self.extra.icon_dir.icon_type) }),
                 .hint => return,
             },
             .bmp_read_error => {
-                try writer.print("invalid bitmap file '{s}': {s}", .{ strings[self.extra.bmp_read_error.filename_string_index], @tagName(self.extra.bmp_read_error.err) });
+                try writer.print("invalid bitmap file '{s}': {s}", .{ strings[self.extra.bmp_read_error.filename_string_index], @tagname(self.extra.bmp_read_error.err) });
             },
             .bmp_ignored_palette_bytes => {
                 const bytes = strings[self.extra.number];
@@ -716,14 +716,14 @@ pub const ErrorDetails = struct {
             },
             .invalid_filename => {
                 const disallowed_codepoint = self.extra.number;
-                if (disallowed_codepoint < 128 and std.ascii.isPrint(@intCast(disallowed_codepoint))) {
-                    try writer.print("evaluated filename contains a disallowed character: '{c}'", .{@as(u8, @intCast(disallowed_codepoint))});
+                if (disallowed_codepoint < 128 and std.ascii.isPrint(@intcast(disallowed_codepoint))) {
+                    try writer.print("evaluated filename contains a disallowed character: '{c}'", .{@as(u8, @intcast(disallowed_codepoint))});
                 } else {
                     try writer.print("evaluated filename contains a disallowed codepoint: <U+{X:0>4}>", .{disallowed_codepoint});
                 }
             },
             .rc_would_error_u16_with_l_suffix => switch (self.type) {
-                .err, .warning => return writer.print("this {s} parameter would be an error in the Win32 RC compiler", .{@tagName(self.extra.statement_with_u16_param)}),
+                .err, .warning => return writer.print("this {s} parameter would be an error in the Win32 RC compiler", .{@tagname(self.extra.statement_with_u16_param)}),
                 .note => return writer.writeAll("to avoid the error, remove any L suffixes from numbers within the parameter"),
                 .hint => return,
             },
@@ -740,7 +740,7 @@ pub const ErrorDetails = struct {
             },
             .rc_would_miscompile_dialog_menu_or_class_id_forced_ordinal => switch (self.type) {
                 .err, .warning => return,
-                .note => return writer.print("to avoid the potential miscompilation, only specify one {s} per dialog resource", .{@tagName(self.extra.menu_or_class)}),
+                .note => return writer.print("to avoid the potential miscompilation, only specify one {s} per dialog resource", .{@tagname(self.extra.menu_or_class)}),
                 .hint => return,
             },
             .rc_would_miscompile_dialog_menu_id_starts_with_digit => switch (self.type) {
@@ -751,8 +751,8 @@ pub const ErrorDetails = struct {
             .dialog_menu_id_was_uppercased => return,
             .duplicate_menu_or_class_skipped => {
                 return writer.print("this {s} was ignored; when multiple {s} statements are specified, only the last takes precedence", .{
-                    @tagName(self.extra.menu_or_class),
-                    @tagName(self.extra.menu_or_class),
+                    @tagname(self.extra.menu_or_class),
+                    @tagname(self.extra.menu_or_class),
                 });
             },
             .invalid_digit_character_in_ordinal => {
@@ -779,7 +779,7 @@ pub const ErrorDetails = struct {
                 .hint => return,
             },
             .failed_to_open_cwd => {
-                try writer.print("failed to open CWD for compilation: {s}", .{@tagName(self.extra.file_open_error.err)});
+                try writer.print("failed to open CWD for compilation: {s}", .{@tagname(self.extra.file_open_error.err)});
             },
         }
     }
@@ -994,7 +994,7 @@ const CorrespondingLines = struct {
             writeLinesFromStream(writer, buffered_reader.reader(), corresponding_span.start_line, corresponding_span.end_line) catch |err| switch (err) {
                 error.LinesNotFound => {
                     corresponding_lines.lines.clearRetainingCapacity();
-                    try writer.print("unable to print line(s) from file: {s}", .{@errorName(err)});
+                    try writer.print("unable to print line(s) from file: {s}", .{@errorname(err)});
                     corresponding_lines.lines_is_error_message = true;
                     return corresponding_lines;
                 },
@@ -1002,7 +1002,7 @@ const CorrespondingLines = struct {
             };
         } else |err| {
             corresponding_lines.lines.clearRetainingCapacity();
-            try writer.print("unable to print line(s) from file: {s}", .{@errorName(err)});
+            try writer.print("unable to print line(s) from file: {s}", .{@errorname(err)});
             corresponding_lines.lines_is_error_message = true;
             return corresponding_lines;
         }

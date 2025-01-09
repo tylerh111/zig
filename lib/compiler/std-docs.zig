@@ -65,7 +65,7 @@ pub fn main() !void {
     std.io.getStdOut().writeAll(url_with_newline) catch {};
     if (should_open_browser) {
         openBrowserTab(gpa, url_with_newline[0 .. url_with_newline.len - 1 :'\n']) catch |err| {
-            std.log.err("unable to open browser: {s}", .{@errorName(err)});
+            std.log.err("unable to open browser: {s}", .{@errorname(err)});
         };
     }
 
@@ -80,7 +80,7 @@ pub fn main() !void {
     while (true) {
         const connection = try http_server.accept();
         _ = std.Thread.spawn(.{}, accept, .{ &context, connection }) catch |err| {
-            std.log.err("unable to accept connection: {s}", .{@errorName(err)});
+            std.log.err("unable to accept connection: {s}", .{@errorname(err)});
             connection.stream.close();
             continue;
         };
@@ -96,12 +96,12 @@ fn accept(context: *Context, connection: std.net.Server.Connection) void {
         var request = server.receiveHead() catch |err| switch (err) {
             error.HttpConnectionClosing => return,
             else => {
-                std.log.err("closing http connection: {s}", .{@errorName(err)});
+                std.log.err("closing http connection: {s}", .{@errorname(err)});
                 return;
             },
         };
         serveRequest(&request, context) catch |err| {
-            std.log.err("unable to serve {s}: {s}", .{ request.head.target, @errorName(err) });
+            std.log.err("unable to serve {s}: {s}", .{ request.head.target, @errorname(err) });
             return;
         };
     }
@@ -222,7 +222,7 @@ fn serveSourcesTar(request: *std.http.Server.Request, context: *Context) !void {
     {
         // Since this command is JIT compiled, the builtin module available in
         // this source file corresponds to the user's host system.
-        const builtin_zig = @embedFile("builtin");
+        const builtin_zig = @embedfile("builtin");
 
         var file_header = std.tar.output.Header.init();
         file_header.typeflag = .regular;
@@ -286,7 +286,7 @@ fn buildWasmBinary(
         "build-exe",
         "-fno-entry",
         "-O",
-        @tagName(optimize_mode),
+        @tagname(optimize_mode),
         "-target",
         "wasm32-freestanding",
         "-mcpu",
@@ -324,7 +324,7 @@ fn buildWasmBinary(
     const stdout = poller.fifo(.stdout);
 
     poll: while (true) {
-        while (stdout.readableLength() < @sizeOf(Header)) {
+        while (stdout.readableLength() < @sizeof(Header)) {
             if (!(try poller.poll())) break :poll;
         }
         const header = stdout.reader().readStruct(Header) catch unreachable;
@@ -341,12 +341,12 @@ fn buildWasmBinary(
             },
             .error_bundle => {
                 const EbHdr = std.zig.Server.Message.ErrorBundle;
-                const eb_hdr = @as(*align(1) const EbHdr, @ptrCast(body));
+                const eb_hdr = @as(*align(1) const EbHdr, @ptrcast(body));
                 const extra_bytes =
-                    body[@sizeOf(EbHdr)..][0 .. @sizeOf(u32) * eb_hdr.extra_len];
+                    body[@sizeof(EbHdr)..][0 .. @sizeof(u32) * eb_hdr.extra_len];
                 const string_bytes =
-                    body[@sizeOf(EbHdr) + extra_bytes.len ..][0..eb_hdr.string_bytes_len];
-                // TODO: use @ptrCast when the compiler supports it
+                    body[@sizeof(EbHdr) + extra_bytes.len ..][0..eb_hdr.string_bytes_len];
+                // TODO: use @ptrcast when the compiler supports it
                 const unaligned_extra = std.mem.bytesAsSlice(u32, extra_bytes);
                 const extra_array = try arena.alloc(u32, unaligned_extra.len);
                 @memcpy(extra_array, unaligned_extra);
@@ -357,11 +357,11 @@ fn buildWasmBinary(
             },
             .emit_bin_path => {
                 const EbpHdr = std.zig.Server.Message.EmitBinPath;
-                const ebp_hdr = @as(*align(1) const EbpHdr, @ptrCast(body));
+                const ebp_hdr = @as(*align(1) const EbpHdr, @ptrcast(body));
                 if (!ebp_hdr.flags.cache_hit) {
                     std.log.info("source changes detected; rebuilt wasm component", .{});
                 }
-                result = try arena.dupe(u8, body[@sizeOf(EbpHdr)..]);
+                result = try arena.dupe(u8, body[@sizeof(EbpHdr)..]);
             },
             else => {}, // ignore other messages
         }

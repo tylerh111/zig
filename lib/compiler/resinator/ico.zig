@@ -14,7 +14,7 @@ pub fn read(allocator: std.mem.Allocator, reader: anytype, max_size: u64) ReadEr
     // Some Reader implementations have an empty ReadError error set which would
     // cause 'unreachable else' if we tried to use an else in the switch, so we
     // need to detect this case and not try to translate to ReadError
-    const empty_reader_errorset = @typeInfo(@TypeOf(reader).Error).ErrorSet == null or @typeInfo(@TypeOf(reader).Error).ErrorSet.?.len == 0;
+    const empty_reader_errorset = @typeinfo(@TypeOf(reader).Error).ErrorSet == null or @typeinfo(@TypeOf(reader).Error).ErrorSet.?.len == 0;
     if (empty_reader_errorset) {
         return readAnyError(allocator, reader, max_size) catch |err| switch (err) {
             error.EndOfStream => error.UnexpectedEOF,
@@ -131,14 +131,14 @@ pub const IconDir = struct {
     pub fn getResDataSize(self: IconDir) u32 {
         // maxInt(u16) * Entry.res_byte_len = 917,490 which is well within the u32 range.
         // Note: self.entries.len is limited to maxInt(u16)
-        return @intCast(IconDir.res_header_byte_len + self.entries.len * Entry.res_byte_len);
+        return @intcast(IconDir.res_header_byte_len + self.entries.len * Entry.res_byte_len);
     }
 
     pub fn writeResData(self: IconDir, writer: anytype, first_image_id: u16) !void {
         try writer.writeInt(u16, 0, .little);
-        try writer.writeInt(u16, @intFromEnum(self.image_type), .little);
+        try writer.writeInt(u16, @intfromenum(self.image_type), .little);
         // We know that entries.len must fit into a u16
-        try writer.writeInt(u16, @as(u16, @intCast(self.entries.len)), .little);
+        try writer.writeInt(u16, @as(u16, @intcast(self.entries.len)), .little);
 
         var image_id = first_image_id;
         for (self.entries) |entry| {

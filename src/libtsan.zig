@@ -58,7 +58,7 @@ pub fn buildTsan(comp: *Compilation, prog_node: std.Progress.Node) BuildError!vo
         comp.setMiscFailure(
             .libtsan,
             "unable to build thread sanitizer runtime: resolving configuration failed: {s}",
-            .{@errorName(err)},
+            .{@errorname(err)},
         );
         return error.SubCompilationFailed;
     };
@@ -97,7 +97,7 @@ pub fn buildTsan(comp: *Compilation, prog_node: std.Progress.Node) BuildError!vo
         comp.setMiscFailure(
             .libtsan,
             "unable to build thread sanitizer runtime: creating module failed: {s}",
-            .{@errorName(err)},
+            .{@errorname(err)},
         );
         return error.SubCompilationFailed;
     };
@@ -299,7 +299,7 @@ pub fn buildTsan(comp: *Compilation, prog_node: std.Progress.Node) BuildError!vo
         comp.setMiscFailure(
             .libtsan,
             "unable to build thread sanitizer runtime: create compilation failed: {s}",
-            .{@errorName(err)},
+            .{@errorname(err)},
         );
         return error.SubCompilationFailed;
     };
@@ -311,7 +311,7 @@ pub fn buildTsan(comp: *Compilation, prog_node: std.Progress.Node) BuildError!vo
             comp.setMiscFailure(
                 .libtsan,
                 "unable to build thread sanitizer runtime: compilation failed: {s}",
-                .{@errorName(e)},
+                .{@errorname(e)},
             );
             return error.SubCompilationFailed;
         },

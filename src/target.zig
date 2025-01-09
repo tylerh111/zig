@@ -368,7 +368,7 @@ pub fn defaultAddressSpace(
 }
 
 /// Returns true if pointers in `from` can be converted to a pointer in `to`.
-pub fn addrSpaceCastIsValid(
+pub fn addrspacecastIsValid(
     target: std.Target,
     from: AddressSpace,
     to: AddressSpace,

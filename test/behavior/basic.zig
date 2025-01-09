@@ -228,15 +228,15 @@ test "opaque types" {
 
     try expect(*OpaqueA != *OpaqueB);
 
-    try expect(mem.eql(u8, @typeName(OpaqueA), "behavior.basic.OpaqueA"));
-    try expect(mem.eql(u8, @typeName(OpaqueB), "behavior.basic.OpaqueB"));
+    try expect(mem.eql(u8, @typename(OpaqueA), "behavior.basic.OpaqueA"));
+    try expect(mem.eql(u8, @typename(OpaqueB), "behavior.basic.OpaqueB"));
 }
 
 const global_a: i32 = 1234;
 const global_b: *const i32 = &global_a;
-const global_c: *const f32 = @as(*const f32, @ptrCast(global_b));
+const global_c: *const f32 = @as(*const f32, @ptrcast(global_b));
 test "compile time global reinterpret" {
-    const d = @as(*const i32, @ptrCast(global_c));
+    const d = @as(*const i32, @ptrcast(global_c));
     try expect(d.* == 1234);
 }
 
@@ -277,7 +277,7 @@ fn testComptimeIfInsideRuntimeWhileWhichUnconditionallyBreaks(cond: bool) void {
 
 test "implicit comptime while" {
     while (false) {
-        @compileError("bad");
+        @compileerror("bad");
     }
 }
 
@@ -364,7 +364,7 @@ fn f2(x: bool) []const u8 {
 
 test "variable is allowed to be a pointer to an opaque type" {
     var x: i32 = 1234;
-    _ = hereIsAnOpaqueType(@as(*OpaqueA, @ptrCast(&x)));
+    _ = hereIsAnOpaqueType(@as(*OpaqueA, @ptrcast(&x)));
 }
 fn hereIsAnOpaqueType(ptr: *OpaqueA) *OpaqueA {
     var a = ptr;
@@ -443,7 +443,7 @@ test "array 3D const double ptr with offset" {
 }
 
 fn testArray2DConstDoublePtr(ptr: *const f32) !void {
-    const ptr2 = @as([*]const f32, @ptrCast(ptr));
+    const ptr2 = @as([*]const f32, @ptrcast(ptr));
     try expect(ptr2[0] == 1.0);
     try expect(ptr2[1] == 2.0);
 }
@@ -577,9 +577,9 @@ test "constant equal function pointers" {
 
 fn emptyFn() void {}
 
-const addr1 = @as(*const u8, @ptrCast(&emptyFn));
+const addr1 = @as(*const u8, @ptrcast(&emptyFn));
 test "comptime cast fn to ptr" {
-    const addr2 = @as(*const u8, @ptrCast(&emptyFn));
+    const addr2 = @as(*const u8, @ptrcast(&emptyFn));
     comptime assert(addr1 == addr2);
 }
 
@@ -673,7 +673,7 @@ test "string escapes" {
 
 test "explicit cast optional pointers" {
     const a: ?*i32 = undefined;
-    const b: ?*f32 = @as(?*f32, @ptrCast(a));
+    const b: ?*f32 = @as(?*f32, @ptrcast(a));
     _ = b;
 }
 
@@ -734,7 +734,7 @@ test "auto created variables have correct alignment" {
 
     const S = struct {
         fn foo(str: [*]const u8) u32 {
-            for (@as([*]align(1) const u32, @ptrCast(str))[0..1]) |v| {
+            for (@as([*]align(1) const u32, @ptrcast(str))[0..1]) |v| {
                 return v;
             }
             return 0;
@@ -755,18 +755,18 @@ test "extern variable with non-pointer opaque type" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     @export(var_to_export, .{ .name = "opaque_extern_var" });
-    try expect(@as(*align(1) u32, @ptrCast(&opaque_extern_var)).* == 42);
+    try expect(@as(*align(1) u32, @ptrcast(&opaque_extern_var)).* == 42);
 }
 extern var opaque_extern_var: opaque {};
 var var_to_export: u32 = 42;
 
-test "lazy typeInfo value as generic parameter" {
+test "lazy typeinfo value as generic parameter" {
     const S = struct {
         fn foo(args: anytype) void {
             _ = args;
         }
     };
-    S.foo(@typeInfo(@TypeOf(.{})));
+    S.foo(@typeinfo(@TypeOf(.{})));
 }
 
 test "variable name containing underscores does not shadow int primitive" {
@@ -968,21 +968,21 @@ test "const alloc with comptime-known initializer is made comptime-known" {
             .a = false,
             .b = .{ 1, 2 },
         };
-        if (s.a) @compileError("bad");
+        if (s.a) @compileerror("bad");
     }
     {
         const s: S = .{
             .a = false,
             .b = [2]u8{ 1, 2 },
         };
-        if (s.a) @compileError("bad");
+        if (s.a) @compileerror("bad");
     }
     {
         const s: S = comptime .{
             .a = false,
             .b = .{ 1, 2 },
         };
-        if (s.a) @compileError("bad");
+        if (s.a) @compileerror("bad");
     }
     {
         const Const = struct {
@@ -993,7 +993,7 @@ test "const alloc with comptime-known initializer is made comptime-known" {
             .limbs = &([1]usize{comptime std.math.maxInt(usize)} ** 128),
             .positive = false,
         };
-        if (biggest.positive) @compileError("bad");
+        if (biggest.positive) @compileerror("bad");
     }
     {
         const U = union(enum) {
@@ -1002,7 +1002,7 @@ test "const alloc with comptime-known initializer is made comptime-known" {
         const u: U = .{
             .a = comptime std.math.maxInt(usize),
         };
-        if (u.a == 0) @compileError("bad");
+        if (u.a == 0) @compileerror("bad");
     }
 }
 
@@ -1144,7 +1144,7 @@ test "pointer to struct literal with runtime field is constant" {
     var runtime_zero: usize = 0;
     _ = &runtime_zero;
     const ptr = &S{ .data = runtime_zero };
-    try expect(@typeInfo(@TypeOf(ptr)).Pointer.is_const);
+    try expect(@typeinfo(@TypeOf(ptr)).Pointer.is_const);
 }
 
 test "integer compare" {
@@ -1232,7 +1232,7 @@ test "comptime variable initialized with addresses of literals" {
     };
     _ = &st;
 
-    inline for (@typeInfo(@TypeOf(st)).Struct.fields) |field| {
+    inline for (@typeinfo(@TypeOf(st)).Struct.fields) |field| {
         _ = field;
     }
 }
@@ -1251,11 +1251,11 @@ test "proper value is returned from labeled block" {
     const S = struct {
         fn hash(v: *u32, key: anytype) void {
             const Key = @TypeOf(key);
-            if (@typeInfo(Key) == .ErrorSet) {
+            if (@typeinfo(Key) == .ErrorSet) {
                 v.* += 1;
                 return;
             }
-            switch (@typeInfo(Key)) {
+            switch (@typeinfo(Key)) {
                 .ErrorUnion => blk: {
                     const payload = key catch |err| {
                         hash(v, err);
@@ -1361,10 +1361,10 @@ test "allocation and looping over 3-byte integer" {
         return error.SkipZigTest; // TODO
     }
 
-    try expect(@sizeOf(u24) == 4);
-    try expect(@sizeOf([1]u24) == 4);
-    try expect(@alignOf(u24) == 4);
-    try expect(@alignOf([1]u24) == 4);
+    try expect(@sizeof(u24) == 4);
+    try expect(@sizeof([1]u24) == 4);
+    try expect(@alignof(u24) == 4);
+    try expect(@alignof([1]u24) == 4);
 
     var x = try std.testing.allocator.alloc(u24, 2);
     defer std.testing.allocator.free(x);

@@ -304,7 +304,7 @@ pub fn endInput(p: *Parser) Allocator.Error!Document {
     // block.
     assert(p.scratch_string.items.len == 0);
 
-    const children = try p.addExtraChildren(@ptrCast(p.scratch_extra.items));
+    const children = try p.addExtraChildren(@ptrcast(p.scratch_extra.items));
     p.nodes.items(.data)[0] = .{ .container = .{ .children = children } };
     p.scratch_string.items.len = 0;
     p.scratch_extra.items.len = 0;
@@ -440,7 +440,7 @@ fn appendBlockStart(p: *Parser, block_start: BlockStart) !void {
                     const header_data = datas[p.scratch_extra.getLast()];
                     for (p.extraChildren(header_data.container.children), 0..) |header_cell, i| {
                         const alignment = if (i < alignments.len) alignments.buffer[i] else .unset;
-                        const cell_data = &datas[@intFromEnum(header_cell)].table_cell;
+                        const cell_data = &datas[@intfromenum(header_cell)].table_cell;
                         cell_data.info.alignment = alignment;
                         cell_data.info.header = true;
                     }
@@ -832,12 +832,12 @@ fn closeLastBlock(p: *Parser) !void {
                 }
             }
 
-            const children = try p.addExtraChildren(@ptrCast(list_items));
+            const children = try p.addExtraChildren(@ptrcast(list_items));
             break :list try p.addNode(.{
                 .tag = .list,
                 .data = .{ .list = .{
                     .start = switch (b.data.list.marker) {
-                        .number_dot, .number_paren => @enumFromInt(b.data.list.start),
+                        .number_dot, .number_paren => @enumfromint(b.data.list.start),
                         .@"-", .@"*", .@"+" => .unordered,
                     },
                     .children = children,
@@ -846,7 +846,7 @@ fn closeLastBlock(p: *Parser) !void {
         },
         .list_item => list_item: {
             assert(b.string_start == p.scratch_string.items.len);
-            const children = try p.addExtraChildren(@ptrCast(p.scratch_extra.items[b.extra_start..]));
+            const children = try p.addExtraChildren(@ptrcast(p.scratch_extra.items[b.extra_start..]));
             break :list_item try p.addNode(.{
                 .tag = .list_item,
                 .data = .{ .list_item = .{
@@ -857,7 +857,7 @@ fn closeLastBlock(p: *Parser) !void {
         },
         .table => table: {
             assert(b.string_start == p.scratch_string.items.len);
-            const children = try p.addExtraChildren(@ptrCast(p.scratch_extra.items[b.extra_start..]));
+            const children = try p.addExtraChildren(@ptrcast(p.scratch_extra.items[b.extra_start..]));
             break :table try p.addNode(.{
                 .tag = .table,
                 .data = .{ .container = .{
@@ -867,7 +867,7 @@ fn closeLastBlock(p: *Parser) !void {
         },
         .table_row => table_row: {
             assert(b.string_start == p.scratch_string.items.len);
-            const children = try p.addExtraChildren(@ptrCast(p.scratch_extra.items[b.extra_start..]));
+            const children = try p.addExtraChildren(@ptrcast(p.scratch_extra.items[b.extra_start..]));
             break :table_row try p.addNode(.{
                 .tag = .table_row,
                 .data = .{ .container = .{
@@ -897,7 +897,7 @@ fn closeLastBlock(p: *Parser) !void {
         },
         .blockquote => blockquote: {
             assert(b.string_start == p.scratch_string.items.len);
-            const children = try p.addExtraChildren(@ptrCast(p.scratch_extra.items[b.extra_start..]));
+            const children = try p.addExtraChildren(@ptrcast(p.scratch_extra.items[b.extra_start..]));
             break :blockquote try p.addNode(.{
                 .tag = .blockquote,
                 .data = .{ .container = .{
@@ -1077,7 +1077,7 @@ const InlineParser = struct {
             }
         }
         try ip.parent.string_bytes.append(ip.parent.allocator, 0);
-        return @enumFromInt(string_top);
+        return @enumfromint(string_top);
     }
 
     /// Parses an autolink, starting at the opening `<`. `ip.pos` is left at the
@@ -1444,7 +1444,7 @@ const InlineParser = struct {
         }
 
         const children = ip.parent.scratch_extra.items[scratch_extra_top..];
-        return try ip.parent.addExtraChildren(@ptrCast(children));
+        return try ip.parent.addExtraChildren(@ptrcast(children));
     }
 
     /// Encodes textual content `ip.content[start..end]` to `scratch_extra`. The
@@ -1468,7 +1468,7 @@ const InlineParser = struct {
                         try ip.parent.addScratchExtraNode(try ip.parent.addNode(.{
                             .tag = .text,
                             .data = .{ .text = .{
-                                .content = @enumFromInt(string_start),
+                                .content = @enumfromint(string_start),
                             } },
                         }));
                         string_start = ip.parent.string_bytes.items.len;
@@ -1485,7 +1485,7 @@ const InlineParser = struct {
             try ip.parent.addScratchExtraNode(try ip.parent.addNode(.{
                 .tag = .text,
                 .data = .{ .text = .{
-                    .content = @enumFromInt(string_start),
+                    .content = @enumfromint(string_start),
                 } },
             }));
         }
@@ -1564,13 +1564,13 @@ fn parseInlines(p: *Parser, content: []const u8) !ExtraIndex {
 }
 
 pub fn extraData(p: Parser, comptime T: type, index: ExtraIndex) ExtraData(T) {
-    const fields = @typeInfo(T).Struct.fields;
-    var i: usize = @intFromEnum(index);
+    const fields = @typeinfo(T).Struct.fields;
+    var i: usize = @intfromenum(index);
     var result: T = undefined;
     inline for (fields) |field| {
         @field(result, field.name) = switch (field.type) {
             u32 => p.extra.items[i],
-            else => @compileError("bad field type"),
+            else => @compileerror("bad field type"),
         };
         i += 1;
     }
@@ -1579,11 +1579,11 @@ pub fn extraData(p: Parser, comptime T: type, index: ExtraIndex) ExtraData(T) {
 
 pub fn extraChildren(p: Parser, index: ExtraIndex) []const Node.Index {
     const children = p.extraData(Node.Children, index);
-    return @ptrCast(p.extra.items[children.end..][0..children.data.len]);
+    return @ptrcast(p.extra.items[children.end..][0..children.data.len]);
 }
 
 fn addNode(p: *Parser, node: Node) !Node.Index {
-    const index: Node.Index = @enumFromInt(@as(u32, @intCast(p.nodes.len)));
+    const index: Node.Index = @enumfromint(@as(u32, @intcast(p.nodes.len)));
     try p.nodes.append(p.allocator, node);
     return index;
 }
@@ -1591,7 +1591,7 @@ fn addNode(p: *Parser, node: Node) !Node.Index {
 fn addString(p: *Parser, s: []const u8) !StringIndex {
     if (s.len == 0) return .empty;
 
-    const index: StringIndex = @enumFromInt(@as(u32, @intCast(p.string_bytes.items.len)));
+    const index: StringIndex = @enumfromint(@as(u32, @intcast(p.string_bytes.items.len)));
     try p.string_bytes.ensureUnusedCapacity(p.allocator, s.len + 1);
     p.string_bytes.appendSliceAssumeCapacity(s);
     p.string_bytes.appendAssumeCapacity(0);
@@ -1599,15 +1599,15 @@ fn addString(p: *Parser, s: []const u8) !StringIndex {
 }
 
 fn addExtraChildren(p: *Parser, nodes: []const Node.Index) !ExtraIndex {
-    const index: ExtraIndex = @enumFromInt(@as(u32, @intCast(p.extra.items.len)));
+    const index: ExtraIndex = @enumfromint(@as(u32, @intcast(p.extra.items.len)));
     try p.extra.ensureUnusedCapacity(p.allocator, nodes.len + 1);
-    p.extra.appendAssumeCapacity(@intCast(nodes.len));
-    p.extra.appendSliceAssumeCapacity(@ptrCast(nodes));
+    p.extra.appendAssumeCapacity(@intcast(nodes.len));
+    p.extra.appendSliceAssumeCapacity(@ptrcast(nodes));
     return index;
 }
 
 fn addScratchExtraNode(p: *Parser, node: Node.Index) !void {
-    try p.scratch_extra.append(p.allocator, @intFromEnum(node));
+    try p.scratch_extra.append(p.allocator, @intfromenum(node));
 }
 
 fn addScratchStringLine(p: *Parser, line: []const u8) !void {

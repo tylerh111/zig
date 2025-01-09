@@ -92,7 +92,7 @@ fn generateVector(comptime a: f32, comptime b: f32) TestVector {
 }
 
 const test_vectors = init: {
-    @setEvalBranchQuota(10000);
+    @setevalbranchquota(10000);
     var vectors: [arguments.len * arguments.len]TestVector = undefined;
     for (arguments[0..], 0..) |arg_i, i| {
         for (arguments[0..], 0..) |arg_j, j| {

@@ -50,7 +50,7 @@ test "timer" {
         .it_value = time_interval,
     };
 
-    err = linux.E.init(linux.timerfd_settime(@as(i32, @intCast(timer_fd)), .{}, &new_time, null));
+    err = linux.E.init(linux.timerfd_settime(@as(i32, @intcast(timer_fd)), .{}, &new_time, null));
     try expect(err == .SUCCESS);
 
     var event = linux.epoll_event{
@@ -58,13 +58,13 @@ test "timer" {
         .data = linux.epoll_data{ .ptr = 0 },
     };
 
-    err = linux.E.init(linux.epoll_ctl(@as(i32, @intCast(epoll_fd)), linux.EPOLL.CTL_ADD, @as(i32, @intCast(timer_fd)), &event));
+    err = linux.E.init(linux.epoll_ctl(@as(i32, @intcast(epoll_fd)), linux.EPOLL.CTL_ADD, @as(i32, @intcast(timer_fd)), &event));
     try expect(err == .SUCCESS);
 
     const events_one: linux.epoll_event = undefined;
     var events = [_]linux.epoll_event{events_one} ** 8;
 
-    err = linux.E.init(linux.epoll_wait(@as(i32, @intCast(epoll_fd)), &events, 8, -1));
+    err = linux.E.init(linux.epoll_wait(@as(i32, @intcast(epoll_fd)), &events, 8, -1));
     try expect(err == .SUCCESS);
 }
 
@@ -91,11 +91,11 @@ test "statx" {
     }
 
     try expect(stat_buf.mode == statx_buf.mode);
-    try expect(@as(u32, @bitCast(stat_buf.uid)) == statx_buf.uid);
-    try expect(@as(u32, @bitCast(stat_buf.gid)) == statx_buf.gid);
-    try expect(@as(u64, @bitCast(@as(i64, stat_buf.size))) == statx_buf.size);
-    try expect(@as(u64, @bitCast(@as(i64, stat_buf.blksize))) == statx_buf.blksize);
-    try expect(@as(u64, @bitCast(@as(i64, stat_buf.blocks))) == statx_buf.blocks);
+    try expect(@as(u32, @bitcast(stat_buf.uid)) == statx_buf.uid);
+    try expect(@as(u32, @bitcast(stat_buf.gid)) == statx_buf.gid);
+    try expect(@as(u64, @bitcast(@as(i64, stat_buf.size))) == statx_buf.size);
+    try expect(@as(u64, @bitcast(@as(i64, stat_buf.blksize))) == statx_buf.blksize);
+    try expect(@as(u64, @bitcast(@as(i64, stat_buf.blocks))) == statx_buf.blocks);
 }
 
 test "user and group ids" {

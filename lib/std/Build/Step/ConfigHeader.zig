@@ -75,10 +75,10 @@ pub fn create(owner: *std.Build, options: Options) *ConfigHeader {
 
     const name = if (options.style.getPath()) |s|
         owner.fmt("configure {s} header {s} to {s}", .{
-            @tagName(options.style), s.getDisplayName(), include_path,
+            @tagname(options.style), s.getDisplayName(), include_path,
         })
     else
-        owner.fmt("configure {s} header to {s}", .{ @tagName(options.style), include_path });
+        owner.fmt("configure {s} header to {s}", .{ @tagname(options.style), include_path });
 
     config_header.* = .{
         .step = Step.init(.{
@@ -86,7 +86,7 @@ pub fn create(owner: *std.Build, options: Options) *ConfigHeader {
             .name = name,
             .owner = owner,
             .makeFn = make,
-            .first_ret_addr = options.first_ret_addr orelse @returnAddress(),
+            .first_ret_addr = options.first_ret_addr orelse @returnaddress(),
         }),
         .style = options.style,
         .values = std.StringArrayHashMap(Value).init(owner.allocator),
@@ -109,13 +109,13 @@ pub fn getOutput(config_header: *ConfigHeader) std.Build.LazyPath {
 }
 
 fn addValuesInner(config_header: *ConfigHeader, values: anytype) !void {
-    inline for (@typeInfo(@TypeOf(values)).Struct.fields) |field| {
+    inline for (@typeinfo(@TypeOf(values)).Struct.fields) |field| {
         try putValue(config_header, field.name, field.type, @field(values, field.name));
     }
 }
 
 fn putValue(config_header: *ConfigHeader, field_name: []const u8, comptime T: type, v: T) !void {
-    switch (@typeInfo(T)) {
+    switch (@typeinfo(T)) {
         .Null => {
             try config_header.values.put(field_name, .undef);
         },
@@ -132,7 +132,7 @@ fn putValue(config_header: *ConfigHeader, field_name: []const u8, comptime T: ty
             try config_header.values.put(field_name, .{ .int = v });
         },
         .EnumLiteral => {
-            try config_header.values.put(field_name, .{ .ident = @tagName(v) });
+            try config_header.values.put(field_name, .{ .ident = @tagname(v) });
         },
         .Optional => {
             if (v) |x| {
@@ -142,7 +142,7 @@ fn putValue(config_header: *ConfigHeader, field_name: []const u8, comptime T: ty
             }
         },
         .Pointer => |ptr| {
-            switch (@typeInfo(ptr.child)) {
+            switch (@typeinfo(ptr.child)) {
                 .Array => |array| {
                     if (ptr.size == .One and array.child == u8) {
                         try config_header.values.put(field_name, .{ .string = v });
@@ -158,16 +158,16 @@ fn putValue(config_header: *ConfigHeader, field_name: []const u8, comptime T: ty
                 else => {},
             }
 
-            @compileError("unsupported ConfigHeader value type: " ++ @typeName(T));
+            @compileerror("unsupported ConfigHeader value type: " ++ @typename(T));
         },
-        else => @compileError("unsupported ConfigHeader value type: " ++ @typeName(T)),
+        else => @compileerror("unsupported ConfigHeader value type: " ++ @typename(T)),
     }
 }
 
 fn make(step: *Step, prog_node: std.Progress.Node) !void {
     _ = prog_node;
     const b = step.owner;
-    const config_header: *ConfigHeader = @fieldParentPtr("step", step);
+    const config_header: *ConfigHeader = @fieldparentptr("step", step);
     const gpa = b.allocator;
     const arena = b.allocator;
 
@@ -194,7 +194,7 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
             const src_path = file_source.getPath2(b, step);
             const contents = std.fs.cwd().readFileAlloc(arena, src_path, config_header.max_bytes) catch |err| {
                 return step.fail("unable to read autoconf input file '{s}': {s}", .{
-                    src_path, @errorName(err),
+                    src_path, @errorname(err),
                 });
             };
             try render_autoconf(step, contents, &output, config_header.values, src_path);
@@ -204,7 +204,7 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
             const src_path = file_source.getPath2(b, step);
             const contents = std.fs.cwd().readFileAlloc(arena, src_path, config_header.max_bytes) catch |err| {
                 return step.fail("unable to read cmake input file '{s}': {s}", .{
-                    src_path, @errorName(err),
+                    src_path, @errorname(err),
                 });
             };
             try render_cmake(step, contents, &output, config_header.values, src_path);
@@ -241,13 +241,13 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
 
     b.cache_root.handle.makePath(sub_path_dirname) catch |err| {
         return step.fail("unable to make path '{}{s}': {s}", .{
-            b.cache_root, sub_path_dirname, @errorName(err),
+            b.cache_root, sub_path_dirname, @errorname(err),
         });
     };
 
     b.cache_root.handle.writeFile(.{ .sub_path = sub_path, .data = output.items }) catch |err| {
         return step.fail("unable to write file '{}{s}': {s}", .{
-            b.cache_root, sub_path, @errorName(err),
+            b.cache_root, sub_path, @errorname(err),
         });
     };
 
@@ -331,7 +331,7 @@ fn render_cmake(
             },
             else => {
                 try step.addError("{s}:{d}: unable to substitute variable: error: {s}", .{
-                    src_path, line_index + 1, @errorName(err),
+                    src_path, line_index + 1, @errorname(err),
                 });
                 any_errors = true;
                 continue;

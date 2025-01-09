@@ -2,7 +2,7 @@ const std = @import("std");
 
 /// Returns 1 on success, 0 on failure
 export fn verify(argc: c_int, argv: [*]const [*:0]const u16) c_int {
-    const argv_slice = argv[0..@intCast(argc)];
+    const argv_slice = argv[0..@intcast(argc)];
     testArgv(argv_slice) catch |err| switch (err) {
         error.OutOfMemory => @panic("oom"),
         error.Overflow => @panic("bytes needed to contain args would overflow usize"),
@@ -42,7 +42,7 @@ fn testArgv(expected_args: []const [*:0]const u16) !void {
             std.debug.print("{}:   actual: \"{}\"\n", .{ i, std.zig.fmtEscapes(arg) });
         }
         const peb = std.os.windows.peb();
-        const lpCmdLine: [*:0]u16 = @ptrCast(peb.ProcessParameters.CommandLine.Buffer);
+        const lpCmdLine: [*:0]u16 = @ptrcast(peb.ProcessParameters.CommandLine.Buffer);
         wtf8_buf.clearRetainingCapacity();
         try std.unicode.wtf16LeToWtf8ArrayList(&wtf8_buf, std.mem.span(lpCmdLine));
         std.debug.print("command line: \"{}\"\n", .{std.zig.fmtEscapes(wtf8_buf.items)});

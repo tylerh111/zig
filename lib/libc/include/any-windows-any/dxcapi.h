@@ -163,7 +163,7 @@ struct IStream : public ISequentialStream {
 
 struct IMalloc;
 
-struct IDxcIncludeHandler;
+struct IDxcincludeHandler;
 
 typedef HRESULT (__stdcall *DxcCreateInstanceProc)(
     _In_ REFCLSID   rclsid,
@@ -299,8 +299,8 @@ public:
   virtual SIZE_T STDMETHODCALLTYPE GetStringLength(void) = 0;
 };
 
-CROSS_PLATFORM_UUIDOF(IDxcIncludeHandler, "7f61fc7d-950d-467f-b3e3-3c02fb49187c")
-struct IDxcIncludeHandler : public IUnknown {
+CROSS_PLATFORM_UUIDOF(IDxcincludeHandler, "7f61fc7d-950d-467f-b3e3-3c02fb49187c")
+struct IDxcincludeHandler : public IUnknown {
   virtual HRESULT STDMETHODCALLTYPE LoadSource(
     _In_z_ LPCWSTR pFilename,                                 // Candidate filename.
     _COM_Outptr_result_maybenull_ IDxcBlob **ppIncludeSource  // Resultant source object for included file, nullptr if not found.
@@ -315,7 +315,7 @@ typedef struct DxcBuffer {
   UINT Encoding;
 } DxcText;
 
-struct DxcDefine {
+struct Dxcdefine {
   LPCWSTR Name;
   _Maybenull_ LPCWSTR Value;
 };
@@ -336,7 +336,7 @@ struct IDxcCompilerArgs : public IUnknown {
     _In_ UINT32 argCount                                // Number of arguments to add
   ) = 0;
   virtual HRESULT STDMETHODCALLTYPE AddDefines(
-      _In_count_(defineCount) const DxcDefine *pDefines, // Array of defines
+      _In_count_(defineCount) const Dxcdefine *pDefines, // Array of defines
       _In_ UINT32 defineCount                            // Number of defines
   ) = 0;
 };
@@ -364,7 +364,7 @@ struct IDxcLibrary : public IUnknown {
     _In_bytecount_(size) LPCVOID pText, IMalloc *pIMalloc, UINT32 size, UINT32 codePage,
     _COM_Outptr_ IDxcBlobEncoding **pBlobEncoding) = 0;
   virtual HRESULT STDMETHODCALLTYPE CreateIncludeHandler(
-    _COM_Outptr_ IDxcIncludeHandler **ppResult) = 0;
+    _COM_Outptr_ IDxcincludeHandler **ppResult) = 0;
   virtual HRESULT STDMETHODCALLTYPE CreateStreamFromBlobReadOnly(
     _In_ IDxcBlob *pBlob, _COM_Outptr_ IStream **ppStream) = 0;
   virtual HRESULT STDMETHODCALLTYPE GetBlobAsUtf8(
@@ -402,9 +402,9 @@ struct IDxcCompiler : public IUnknown {
     _In_opt_count_(argCount) LPCWSTR *pArguments, // Array of pointers to arguments
     _In_ UINT32 argCount,                         // Number of arguments
     _In_count_(defineCount)
-      const DxcDefine *pDefines,                  // Array of defines
+      const Dxcdefine *pDefines,                  // Array of defines
     _In_ UINT32 defineCount,                      // Number of defines
-    _In_opt_ IDxcIncludeHandler *pIncludeHandler, // user-provided interface to handle #include directives (optional)
+    _In_opt_ IDxcincludeHandler *pIncludeHandler, // user-provided interface to handle #include directives (optional)
     _COM_Outptr_ IDxcOperationResult **ppResult   // Compiler output status, buffer, and errors
   ) = 0;
 
@@ -415,9 +415,9 @@ struct IDxcCompiler : public IUnknown {
     _In_opt_count_(argCount) LPCWSTR *pArguments, // Array of pointers to arguments
     _In_ UINT32 argCount,                         // Number of arguments
     _In_count_(defineCount)
-      const DxcDefine *pDefines,                  // Array of defines
+      const Dxcdefine *pDefines,                  // Array of defines
     _In_ UINT32 defineCount,                      // Number of defines
-    _In_opt_ IDxcIncludeHandler *pIncludeHandler, // user-provided interface to handle #include directives (optional)
+    _In_opt_ IDxcincludeHandler *pIncludeHandler, // user-provided interface to handle #include directives (optional)
     _COM_Outptr_ IDxcOperationResult **ppResult   // Preprocessor output status, buffer, and errors
   ) = 0;
 
@@ -440,9 +440,9 @@ struct IDxcCompiler2 : public IDxcCompiler {
     _In_opt_count_(argCount) LPCWSTR *pArguments, // Array of pointers to arguments
     _In_ UINT32 argCount,                         // Number of arguments
     _In_count_(defineCount)
-      const DxcDefine *pDefines,                  // Array of defines
+      const Dxcdefine *pDefines,                  // Array of defines
     _In_ UINT32 defineCount,                      // Number of defines
-    _In_opt_ IDxcIncludeHandler *pIncludeHandler, // user-provided interface to handle #include directives (optional)
+    _In_opt_ IDxcincludeHandler *pIncludeHandler, // user-provided interface to handle #include directives (optional)
     _COM_Outptr_ IDxcOperationResult **ppResult,  // Compiler output status, buffer, and errors
     _Outptr_opt_result_z_ LPWSTR *ppDebugBlobName,// Suggested file name for debug blob. (Must be HeapFree()'d!)
     _COM_Outptr_opt_ IDxcBlob **ppDebugBlob       // Debug blob
@@ -518,7 +518,7 @@ struct IDxcUtils : public IUnknown {
 
   // Create default file-based include handler
   virtual HRESULT STDMETHODCALLTYPE CreateDefaultIncludeHandler(
-    _COM_Outptr_ IDxcIncludeHandler **ppResult) = 0;
+    _COM_Outptr_ IDxcincludeHandler **ppResult) = 0;
 
   // Convert or return matching encoded text blobs
   virtual HRESULT STDMETHODCALLTYPE GetBlobAsUtf8(
@@ -544,7 +544,7 @@ struct IDxcUtils : public IUnknown {
     _In_opt_count_(argCount) LPCWSTR *pArguments, // Array of pointers to arguments
     _In_ UINT32 argCount,                         // Number of arguments
     _In_count_(defineCount)
-      const DxcDefine *pDefines,                  // Array of defines
+      const Dxcdefine *pDefines,                  // Array of defines
     _In_ UINT32 defineCount,                      // Number of defines
     _COM_Outptr_ IDxcCompilerArgs **ppArgs        // Arguments you can use with Compile() method
   ) = 0;
@@ -608,7 +608,7 @@ struct IDxcCompiler3 : public IUnknown {
     _In_ const DxcBuffer *pSource,                // Source text to compile
     _In_opt_count_(argCount) LPCWSTR *pArguments, // Array of pointers to arguments
     _In_ UINT32 argCount,                         // Number of arguments
-    _In_opt_ IDxcIncludeHandler *pIncludeHandler, // user-provided interface to handle #include directives (optional)
+    _In_opt_ IDxcincludeHandler *pIncludeHandler, // user-provided interface to handle #include directives (optional)
     _In_ REFIID riid, _Out_ LPVOID *ppResult      // IDxcResult: status, buffer, and errors
   ) = 0;
 

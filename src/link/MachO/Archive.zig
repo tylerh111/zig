@@ -30,13 +30,13 @@ pub fn parse(self: *Archive, macho_file: *MachO, path: []const u8, handle_index:
         if (pos >= end_pos) break;
         if (!mem.isAligned(pos, 2)) pos += 1;
 
-        var hdr_buffer: [@sizeOf(ar_hdr)]u8 = undefined;
+        var hdr_buffer: [@sizeof(ar_hdr)]u8 = undefined;
         {
             const amt = try handle.preadAll(&hdr_buffer, pos);
-            if (amt != @sizeOf(ar_hdr)) return error.InputOutput;
+            if (amt != @sizeof(ar_hdr)) return error.InputOutput;
         }
-        const hdr = @as(*align(1) const ar_hdr, @ptrCast(&hdr_buffer)).*;
-        pos += @sizeOf(ar_hdr);
+        const hdr = @as(*align(1) const ar_hdr, @ptrcast(&hdr_buffer)).*;
+        pos += @sizeof(ar_hdr);
 
         if (!mem.eql(u8, &hdr.ar_fmag, ARFMAG)) {
             try macho_file.reportParseError(path, "invalid header delimiter: expected '{s}', found '{s}'", .{
@@ -101,7 +101,7 @@ pub fn writeHeader(
         .ar_fmag = undefined,
     };
     @memset(mem.asBytes(&hdr), 0x20);
-    inline for (@typeInfo(ar_hdr).Struct.fields) |field| {
+    inline for (@typeinfo(ar_hdr).Struct.fields) |field| {
         var stream = std.io.fixedBufferStream(&@field(hdr, field.name));
         stream.writer().print("0", .{}) catch unreachable;
     }

@@ -471,7 +471,7 @@ pub fn build(b: *std.Build) !void {
         .test_filters = test_filters,
         .root_src = "test/c_import.zig",
         .name = "c-import",
-        .desc = "Run the @cImport tests",
+        .desc = "Run the @cimport tests",
         .optimize_modes = optimization_modes,
         .include_paths = &.{"test/c_import"},
         .skip_single_threaded = true,
@@ -563,7 +563,7 @@ fn addWasiUpdateStep(b: *std.Build, version: [:0]const u8) !void {
         .cpu_arch = .wasm32,
         .os_tag = .wasi,
     };
-    target_query.cpu_features_add.addFeature(@intFromEnum(std.Target.wasm.Feature.bulk_memory));
+    target_query.cpu_features_add.addFeature(@intfromenum(std.Target.wasm.Feature.bulk_memory));
 
     const exe = addCompilerStep(b, .{
         .optimize = .ReleaseSmall,
@@ -1264,7 +1264,7 @@ fn generateLangRef(b: *std.Build) std.Build.LazyPath {
     });
 
     var dir = b.build_root.handle.openDir("doc/langref", .{ .iterate = true }) catch |err| {
-        std.debug.panic("unable to open 'doc/langref' directory: {s}", .{@errorName(err)});
+        std.debug.panic("unable to open 'doc/langref' directory: {s}", .{@errorname(err)});
     };
     defer dir.close();
 

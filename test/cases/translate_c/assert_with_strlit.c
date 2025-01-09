@@ -5,4 +5,4 @@ void assert(int x) {}
 // translate-c
 // c_frontend=clang
 //
-// pub const FOO = assert((@as(c_int, 0) != 0) and (@intFromPtr("error message") != 0));
+// pub const FOO = assert((@as(c_int, 0) != 0) and (@intfromptr("error message") != 0));

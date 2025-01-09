@@ -7,7 +7,7 @@ test "pointer alignment safety" {
 }
 fn foo(bytes: []u8) u32 {
     const slice4 = bytes[1..5];
-    const int_slice = std.mem.bytesAsSlice(u32, @as([]align(4) u8, @alignCast(slice4)));
+    const int_slice = std.mem.bytesAsSlice(u32, @as([]align(4) u8, @aligncast(slice4)));
     return int_slice[0];
 }
 

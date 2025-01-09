@@ -19,7 +19,7 @@ pub fn atan(x: anytype) @TypeOf(x) {
     return switch (T) {
         f32 => atan32(x),
         f64 => atan64(x),
-        else => @compileError("atan not implemented for " ++ @typeName(T)),
+        else => @compileerror("atan not implemented for " ++ @typename(T)),
     };
 }
 
@@ -47,7 +47,7 @@ fn atan32(x_: f32) f32 {
     };
 
     var x = x_;
-    var ix: u32 = @as(u32, @bitCast(x));
+    var ix: u32 = @as(u32, @bitcast(x));
     const sign = ix >> 31;
     ix &= 0x7FFFFFFF;
 
@@ -144,8 +144,8 @@ fn atan64(x_: f64) f64 {
     };
 
     var x = x_;
-    const ux: u64 = @bitCast(x);
-    var ix: u32 = @intCast(ux >> 32);
+    const ux: u64 = @bitcast(x);
+    var ix: u32 = @intcast(ux >> 32);
     const sign = ix >> 31;
     ix &= 0x7FFFFFFF;
 
@@ -166,7 +166,7 @@ fn atan64(x_: f64) f64 {
         // |x| < 2^(-27)
         if (ix < 0x3E400000) {
             if (ix < 0x00100000) {
-                mem.doNotOptimizeAway(@as(f32, @floatCast(x)));
+                mem.doNotOptimizeAway(@as(f32, @floatcast(x)));
             }
             return x;
         }
@@ -213,7 +213,7 @@ fn atan64(x_: f64) f64 {
 }
 
 test atan {
-    try expect(@as(u32, @bitCast(atan(@as(f32, 0.2)))) == @as(u32, @bitCast(atan32(0.2))));
+    try expect(@as(u32, @bitcast(atan(@as(f32, 0.2)))) == @as(u32, @bitcast(atan32(0.2))));
     try expect(atan(@as(f64, 0.2)) == atan64(0.2));
 }
 

@@ -102,9 +102,9 @@ pub fn order(a: GCCVersion, b: GCCVersion) Order {
 /// This matches clang's logic for overflowing values
 pub fn toUnsigned(self: GCCVersion) u32 {
     var result: u32 = 0;
-    if (self.major > 0) result = @as(u32, @intCast(self.major)) *% 10_000;
-    if (self.minor > 0) result +%= @as(u32, @intCast(self.minor)) *% 100;
-    if (self.patch > 0) result +%= @as(u32, @intCast(self.patch));
+    if (self.major > 0) result = @as(u32, @intcast(self.major)) *% 10_000;
+    if (self.minor > 0) result +%= @as(u32, @intcast(self.minor)) *% 100;
+    if (self.patch > 0) result +%= @as(u32, @intcast(self.patch));
     return result;
 }
 

@@ -13,7 +13,7 @@ pub fn isPtrTo(comptime id: std.builtin.TypeId) TraitFn {
     const Closure = struct {
         pub fn trait(comptime T: type) bool {
             if (!comptime isSingleItemPtr(T)) return false;
-            return id == @typeInfo(std.meta.Child(T));
+            return id == @typeinfo(std.meta.Child(T));
         }
     };
     return Closure.trait;
@@ -21,7 +21,7 @@ pub fn isPtrTo(comptime id: std.builtin.TypeId) TraitFn {
 
 pub fn isSingleItemPtr(comptime T: type) bool {
     if (comptime is(.Pointer)(T)) {
-        return @typeInfo(T).Pointer.size == .One;
+        return @typeinfo(T).Pointer.size == .One;
     }
     return false;
 }
@@ -29,7 +29,7 @@ pub fn isSingleItemPtr(comptime T: type) bool {
 pub fn is(comptime id: std.builtin.TypeId) TraitFn {
     const Closure = struct {
         pub fn trait(comptime T: type) bool {
-            return id == @typeInfo(T);
+            return id == @typeinfo(T);
         }
     };
     return Closure.trait;

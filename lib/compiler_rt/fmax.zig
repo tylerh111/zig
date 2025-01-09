@@ -39,13 +39,13 @@ pub fn fmaxq(x: f128, y: f128) callconv(.C) f128 {
 }
 
 pub fn fmaxl(x: c_longdouble, y: c_longdouble) callconv(.C) c_longdouble {
-    switch (@typeInfo(c_longdouble).Float.bits) {
+    switch (@typeinfo(c_longdouble).Float.bits) {
         16 => return __fmaxh(x, y),
         32 => return fmaxf(x, y),
         64 => return fmax(x, y),
         80 => return __fmaxx(x, y),
         128 => return fmaxq(x, y),
-        else => @compileError("unreachable"),
+        else => @compileerror("unreachable"),
     }
 }
 

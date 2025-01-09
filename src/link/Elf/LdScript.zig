@@ -60,7 +60,7 @@ pub fn parse(scr: *LdScript, data: []const u8, elf_file: *Elf) Error!void {
             const last_token = parser.it.get(last_token_id);
             const lcol = line_col.items[last_token_id];
             try elf_file.reportParseError(scr.path, "unexpected token in LD script: {s}: '{s}' ({d}:{d})", .{
-                @tagName(last_token.id),
+                @tagname(last_token.id),
                 last_token.get(data),
                 lcol.line,
                 lcol.column,
@@ -108,7 +108,7 @@ const Command = enum {
     as_needed,
 
     fn fromString(s: []const u8) ?Command {
-        inline for (@typeInfo(Command).Enum.fields) |field| {
+        inline for (@typeinfo(Command).Enum.fields) |field| {
             const upper_name = n: {
                 comptime var buf: [field.name.len]u8 = undefined;
                 inline for (field.name, 0..) |c, i| {
@@ -412,11 +412,11 @@ const TokenIterator = struct {
     }
 
     fn seekBy(it: *TokenIterator, offset: isize) void {
-        const new_pos = @as(isize, @bitCast(it.pos)) + offset;
+        const new_pos = @as(isize, @bitcast(it.pos)) + offset;
         if (new_pos < 0) {
             it.pos = 0;
         } else {
-            it.pos = @as(usize, @intCast(new_pos));
+            it.pos = @as(usize, @intcast(new_pos));
         }
     }
 

@@ -80,7 +80,7 @@ fn hash(b: *const [4]u8) u32 {
 }
 
 fn hashu(v: u32) u32 {
-    return @intCast((v *% prime4) >> consts.lookup.shift);
+    return @intcast((v *% prime4) >> consts.lookup.shift);
 }
 
 test add {
@@ -93,7 +93,7 @@ test add {
 
     var h: Self = .{};
     for (data, 0..) |_, i| {
-        const p = h.add(data[i..], @intCast(i));
+        const p = h.add(data[i..], @intcast(i));
         if (i >= 8 and i < 24) {
             try expect(p == i - 8);
         } else {
@@ -113,7 +113,7 @@ test bulkAdd {
     // one by one
     var h: Self = .{};
     for (data, 0..) |_, i| {
-        _ = h.add(data[i..], @intCast(i));
+        _ = h.add(data[i..], @intcast(i));
     }
 
     // in bulk

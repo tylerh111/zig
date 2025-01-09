@@ -10,7 +10,7 @@ pub inline fn absv(comptime ST: type, a: ST) ST {
     // taken from  Bit Twiddling Hacks
     // compute the integer absolute value (abs) without branching
     var x: ST = a;
-    const N: UT = @bitSizeOf(ST);
+    const N: UT = @bitsizeof(ST);
     const sign: ST = a >> N - 1;
     x +%= sign;
     x ^= sign;

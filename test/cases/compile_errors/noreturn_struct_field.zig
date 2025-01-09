@@ -2,7 +2,7 @@ const S = struct {
     s: noreturn,
 };
 comptime {
-    _ = @typeInfo(S);
+    _ = @typeinfo(S);
 }
 
 // error

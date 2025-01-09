@@ -31,9 +31,9 @@ test "undefined 128 bit int" {
     if (builtin.zig_backend == .stage2_spirv64) return error.SkipZigTest;
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    @setRuntimeSafety(true);
+    @setruntimesafety(true);
 
-    // TODO implement @setRuntimeSafety
+    // TODO implement @setruntimesafety
     if (builtin.mode != .Debug and builtin.mode != .ReleaseSafe) {
         return error.SkipZigTest;
     }
@@ -41,7 +41,7 @@ test "undefined 128 bit int" {
     var undef: u128 = undefined;
     var undef_signed: i128 = undefined;
     _ = .{ &undef, &undef_signed };
-    try expect(undef == 0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa and @as(u128, @bitCast(undef_signed)) == undef);
+    try expect(undef == 0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa and @as(u128, @bitcast(undef_signed)) == undef);
 }
 
 test "int128" {
@@ -53,7 +53,7 @@ test "int128" {
 
     var buff: i128 = -1;
     try expect(buff < 0 and (buff + 1) == 0);
-    try expect(@as(i8, @intCast(buff)) == @as(i8, -1));
+    try expect(@as(i8, @intcast(buff)) == @as(i8, -1));
 
     buff = minInt(i128);
     try expect(buff < 0);
@@ -63,7 +63,7 @@ test "int128" {
 
     const a: i128 = -170141183460469231731687303715884105728;
     const b: i128 = -0x8000_0000_0000_0000_0000_0000_0000_0000;
-    try expect(@divFloor(b, 1_000_000) == -170141183460469231731687303715885);
+    try expect(@divfloor(b, 1_000_000) == -170141183460469231731687303715885);
     try expect(a == b);
 }
 

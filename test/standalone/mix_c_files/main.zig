@@ -25,6 +25,6 @@ pub fn main() anyerror!void {
     x = add_C(x);
     x = add_C_zig(x);
 
-    const u = @as(u32, @intCast(x));
+    const u = @as(u32, @intcast(x));
     try std.testing.expect(u / 100 == u % 100);
 }

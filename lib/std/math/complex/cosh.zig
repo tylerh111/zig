@@ -18,7 +18,7 @@ pub fn cosh(z: anytype) Complex(@TypeOf(z.re, z.im)) {
     return switch (T) {
         f32 => cosh32(z),
         f64 => cosh64(z),
-        else => @compileError("cosh not implemented for " ++ @typeName(z)),
+        else => @compileerror("cosh not implemented for " ++ @typename(z)),
     };
 }
 
@@ -26,10 +26,10 @@ fn cosh32(z: Complex(f32)) Complex(f32) {
     const x = z.re;
     const y = z.im;
 
-    const hx: u32 = @bitCast(x);
+    const hx: u32 = @bitcast(x);
     const ix = hx & 0x7fffffff;
 
-    const hy: u32 = @bitCast(y);
+    const hy: u32 = @bitcast(y);
     const iy = hy & 0x7fffffff;
 
     if (ix < 0x7f800000 and iy < 0x7f800000) {
@@ -89,13 +89,13 @@ fn cosh64(z: Complex(f64)) Complex(f64) {
     const x = z.re;
     const y = z.im;
 
-    const fx: u64 = @bitCast(x);
-    const hx: u32 = @intCast(fx >> 32);
+    const fx: u64 = @bitcast(x);
+    const hx: u32 = @intcast(fx >> 32);
     const lx: u32 = @truncate(fx);
     const ix = hx & 0x7fffffff;
 
-    const fy: u64 = @bitCast(y);
-    const hy: u32 = @intCast(fy >> 32);
+    const fy: u64 = @bitcast(y);
+    const hy: u32 = @intcast(fy >> 32);
     const ly: u32 = @truncate(fy);
     const iy = hy & 0x7fffffff;
 

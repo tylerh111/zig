@@ -48,14 +48,14 @@ pub const DevicePath = union(Type) {
         };
 
         comptime {
-            assert(6 == @sizeOf(PciDevicePath));
-            assert(1 == @alignOf(PciDevicePath));
+            assert(6 == @sizeof(PciDevicePath));
+            assert(1 == @alignof(PciDevicePath));
 
-            assert(0 == @offsetOf(PciDevicePath, "type"));
-            assert(1 == @offsetOf(PciDevicePath, "subtype"));
-            assert(2 == @offsetOf(PciDevicePath, "length"));
-            assert(4 == @offsetOf(PciDevicePath, "function"));
-            assert(5 == @offsetOf(PciDevicePath, "device"));
+            assert(0 == @offsetof(PciDevicePath, "type"));
+            assert(1 == @offsetof(PciDevicePath, "subtype"));
+            assert(2 == @offsetof(PciDevicePath, "length"));
+            assert(4 == @offsetof(PciDevicePath, "function"));
+            assert(5 == @offsetof(PciDevicePath, "device"));
         }
 
         pub const PcCardDevicePath = extern struct {
@@ -66,13 +66,13 @@ pub const DevicePath = union(Type) {
         };
 
         comptime {
-            assert(5 == @sizeOf(PcCardDevicePath));
-            assert(1 == @alignOf(PcCardDevicePath));
+            assert(5 == @sizeof(PcCardDevicePath));
+            assert(1 == @alignof(PcCardDevicePath));
 
-            assert(0 == @offsetOf(PcCardDevicePath, "type"));
-            assert(1 == @offsetOf(PcCardDevicePath, "subtype"));
-            assert(2 == @offsetOf(PcCardDevicePath, "length"));
-            assert(4 == @offsetOf(PcCardDevicePath, "function_number"));
+            assert(0 == @offsetof(PcCardDevicePath, "type"));
+            assert(1 == @offsetof(PcCardDevicePath, "subtype"));
+            assert(2 == @offsetof(PcCardDevicePath, "length"));
+            assert(4 == @offsetof(PcCardDevicePath, "function_number"));
         }
 
         pub const MemoryMappedDevicePath = extern struct {
@@ -85,15 +85,15 @@ pub const DevicePath = union(Type) {
         };
 
         comptime {
-            assert(24 == @sizeOf(MemoryMappedDevicePath));
-            assert(1 == @alignOf(MemoryMappedDevicePath));
+            assert(24 == @sizeof(MemoryMappedDevicePath));
+            assert(1 == @alignof(MemoryMappedDevicePath));
 
-            assert(0 == @offsetOf(MemoryMappedDevicePath, "type"));
-            assert(1 == @offsetOf(MemoryMappedDevicePath, "subtype"));
-            assert(2 == @offsetOf(MemoryMappedDevicePath, "length"));
-            assert(4 == @offsetOf(MemoryMappedDevicePath, "memory_type"));
-            assert(8 == @offsetOf(MemoryMappedDevicePath, "start_address"));
-            assert(16 == @offsetOf(MemoryMappedDevicePath, "end_address"));
+            assert(0 == @offsetof(MemoryMappedDevicePath, "type"));
+            assert(1 == @offsetof(MemoryMappedDevicePath, "subtype"));
+            assert(2 == @offsetof(MemoryMappedDevicePath, "length"));
+            assert(4 == @offsetof(MemoryMappedDevicePath, "memory_type"));
+            assert(8 == @offsetof(MemoryMappedDevicePath, "start_address"));
+            assert(16 == @offsetof(MemoryMappedDevicePath, "end_address"));
         }
 
         pub const VendorDevicePath = extern struct {
@@ -104,13 +104,13 @@ pub const DevicePath = union(Type) {
         };
 
         comptime {
-            assert(20 == @sizeOf(VendorDevicePath));
-            assert(1 == @alignOf(VendorDevicePath));
+            assert(20 == @sizeof(VendorDevicePath));
+            assert(1 == @alignof(VendorDevicePath));
 
-            assert(0 == @offsetOf(VendorDevicePath, "type"));
-            assert(1 == @offsetOf(VendorDevicePath, "subtype"));
-            assert(2 == @offsetOf(VendorDevicePath, "length"));
-            assert(4 == @offsetOf(VendorDevicePath, "vendor_guid"));
+            assert(0 == @offsetof(VendorDevicePath, "type"));
+            assert(1 == @offsetof(VendorDevicePath, "subtype"));
+            assert(2 == @offsetof(VendorDevicePath, "length"));
+            assert(4 == @offsetof(VendorDevicePath, "vendor_guid"));
         }
 
         pub const ControllerDevicePath = extern struct {
@@ -121,13 +121,13 @@ pub const DevicePath = union(Type) {
         };
 
         comptime {
-            assert(8 == @sizeOf(ControllerDevicePath));
-            assert(1 == @alignOf(ControllerDevicePath));
+            assert(8 == @sizeof(ControllerDevicePath));
+            assert(1 == @alignof(ControllerDevicePath));
 
-            assert(0 == @offsetOf(ControllerDevicePath, "type"));
-            assert(1 == @offsetOf(ControllerDevicePath, "subtype"));
-            assert(2 == @offsetOf(ControllerDevicePath, "length"));
-            assert(4 == @offsetOf(ControllerDevicePath, "controller_number"));
+            assert(0 == @offsetof(ControllerDevicePath, "type"));
+            assert(1 == @offsetof(ControllerDevicePath, "subtype"));
+            assert(2 == @offsetof(ControllerDevicePath, "length"));
+            assert(4 == @offsetof(ControllerDevicePath, "controller_number"));
         }
 
         pub const BmcDevicePath = extern struct {
@@ -139,14 +139,14 @@ pub const DevicePath = union(Type) {
         };
 
         comptime {
-            assert(13 == @sizeOf(BmcDevicePath));
-            assert(1 == @alignOf(BmcDevicePath));
+            assert(13 == @sizeof(BmcDevicePath));
+            assert(1 == @alignof(BmcDevicePath));
 
-            assert(0 == @offsetOf(BmcDevicePath, "type"));
-            assert(1 == @offsetOf(BmcDevicePath, "subtype"));
-            assert(2 == @offsetOf(BmcDevicePath, "length"));
-            assert(4 == @offsetOf(BmcDevicePath, "interface_type"));
-            assert(5 == @offsetOf(BmcDevicePath, "base_address"));
+            assert(0 == @offsetof(BmcDevicePath, "type"));
+            assert(1 == @offsetof(BmcDevicePath, "subtype"));
+            assert(2 == @offsetof(BmcDevicePath, "length"));
+            assert(4 == @offsetof(BmcDevicePath, "interface_type"));
+            assert(5 == @offsetof(BmcDevicePath, "base_address"));
         }
     };
 
@@ -171,14 +171,14 @@ pub const DevicePath = union(Type) {
         };
 
         comptime {
-            assert(12 == @sizeOf(BaseAcpiDevicePath));
-            assert(1 == @alignOf(BaseAcpiDevicePath));
+            assert(12 == @sizeof(BaseAcpiDevicePath));
+            assert(1 == @alignof(BaseAcpiDevicePath));
 
-            assert(0 == @offsetOf(BaseAcpiDevicePath, "type"));
-            assert(1 == @offsetOf(BaseAcpiDevicePath, "subtype"));
-            assert(2 == @offsetOf(BaseAcpiDevicePath, "length"));
-            assert(4 == @offsetOf(BaseAcpiDevicePath, "hid"));
-            assert(8 == @offsetOf(BaseAcpiDevicePath, "uid"));
+            assert(0 == @offsetof(BaseAcpiDevicePath, "type"));
+            assert(1 == @offsetof(BaseAcpiDevicePath, "subtype"));
+            assert(2 == @offsetof(BaseAcpiDevicePath, "length"));
+            assert(4 == @offsetof(BaseAcpiDevicePath, "hid"));
+            assert(8 == @offsetof(BaseAcpiDevicePath, "uid"));
         }
 
         pub const ExpandedAcpiDevicePath = extern struct {
@@ -193,15 +193,15 @@ pub const DevicePath = union(Type) {
         };
 
         comptime {
-            assert(16 == @sizeOf(ExpandedAcpiDevicePath));
-            assert(1 == @alignOf(ExpandedAcpiDevicePath));
+            assert(16 == @sizeof(ExpandedAcpiDevicePath));
+            assert(1 == @alignof(ExpandedAcpiDevicePath));
 
-            assert(0 == @offsetOf(ExpandedAcpiDevicePath, "type"));
-            assert(1 == @offsetOf(ExpandedAcpiDevicePath, "subtype"));
-            assert(2 == @offsetOf(ExpandedAcpiDevicePath, "length"));
-            assert(4 == @offsetOf(ExpandedAcpiDevicePath, "hid"));
-            assert(8 == @offsetOf(ExpandedAcpiDevicePath, "uid"));
-            assert(12 == @offsetOf(ExpandedAcpiDevicePath, "cid"));
+            assert(0 == @offsetof(ExpandedAcpiDevicePath, "type"));
+            assert(1 == @offsetof(ExpandedAcpiDevicePath, "subtype"));
+            assert(2 == @offsetof(ExpandedAcpiDevicePath, "length"));
+            assert(4 == @offsetof(ExpandedAcpiDevicePath, "hid"));
+            assert(8 == @offsetof(ExpandedAcpiDevicePath, "uid"));
+            assert(12 == @offsetof(ExpandedAcpiDevicePath, "cid"));
         }
 
         pub const AdrDevicePath = extern struct {
@@ -213,19 +213,19 @@ pub const DevicePath = union(Type) {
             // multiple adr entries can optionally follow
             pub fn adrs(self: *const AdrDevicePath) []align(1) const u32 {
                 // self.length is a minimum of 8 with one adr which is size 4.
-                const entries = (self.length - 4) / @sizeOf(u32);
-                return @as([*]align(1) const u32, @ptrCast(&self.adr))[0..entries];
+                const entries = (self.length - 4) / @sizeof(u32);
+                return @as([*]align(1) const u32, @ptrcast(&self.adr))[0..entries];
             }
         };
 
         comptime {
-            assert(8 == @sizeOf(AdrDevicePath));
-            assert(1 == @alignOf(AdrDevicePath));
+            assert(8 == @sizeof(AdrDevicePath));
+            assert(1 == @alignof(AdrDevicePath));
 
-            assert(0 == @offsetOf(AdrDevicePath, "type"));
-            assert(1 == @offsetOf(AdrDevicePath, "subtype"));
-            assert(2 == @offsetOf(AdrDevicePath, "length"));
-            assert(4 == @offsetOf(AdrDevicePath, "adr"));
+            assert(0 == @offsetof(AdrDevicePath, "type"));
+            assert(1 == @offsetof(AdrDevicePath, "subtype"));
+            assert(2 == @offsetof(AdrDevicePath, "length"));
+            assert(4 == @offsetof(AdrDevicePath, "adr"));
         }
     };
 
@@ -291,15 +291,15 @@ pub const DevicePath = union(Type) {
         };
 
         comptime {
-            assert(8 == @sizeOf(AtapiDevicePath));
-            assert(1 == @alignOf(AtapiDevicePath));
+            assert(8 == @sizeof(AtapiDevicePath));
+            assert(1 == @alignof(AtapiDevicePath));
 
-            assert(0 == @offsetOf(AtapiDevicePath, "type"));
-            assert(1 == @offsetOf(AtapiDevicePath, "subtype"));
-            assert(2 == @offsetOf(AtapiDevicePath, "length"));
-            assert(4 == @offsetOf(AtapiDevicePath, "primary_secondary"));
-            assert(5 == @offsetOf(AtapiDevicePath, "slave_master"));
-            assert(6 == @offsetOf(AtapiDevicePath, "logical_unit_number"));
+            assert(0 == @offsetof(AtapiDevicePath, "type"));
+            assert(1 == @offsetof(AtapiDevicePath, "subtype"));
+            assert(2 == @offsetof(AtapiDevicePath, "length"));
+            assert(4 == @offsetof(AtapiDevicePath, "primary_secondary"));
+            assert(5 == @offsetof(AtapiDevicePath, "slave_master"));
+            assert(6 == @offsetof(AtapiDevicePath, "logical_unit_number"));
         }
 
         pub const ScsiDevicePath = extern struct {
@@ -311,14 +311,14 @@ pub const DevicePath = union(Type) {
         };
 
         comptime {
-            assert(8 == @sizeOf(ScsiDevicePath));
-            assert(1 == @alignOf(ScsiDevicePath));
+            assert(8 == @sizeof(ScsiDevicePath));
+            assert(1 == @alignof(ScsiDevicePath));
 
-            assert(0 == @offsetOf(ScsiDevicePath, "type"));
-            assert(1 == @offsetOf(ScsiDevicePath, "subtype"));
-            assert(2 == @offsetOf(ScsiDevicePath, "length"));
-            assert(4 == @offsetOf(ScsiDevicePath, "target_id"));
-            assert(6 == @offsetOf(ScsiDevicePath, "logical_unit_number"));
+            assert(0 == @offsetof(ScsiDevicePath, "type"));
+            assert(1 == @offsetof(ScsiDevicePath, "subtype"));
+            assert(2 == @offsetof(ScsiDevicePath, "length"));
+            assert(4 == @offsetof(ScsiDevicePath, "target_id"));
+            assert(6 == @offsetof(ScsiDevicePath, "logical_unit_number"));
         }
 
         pub const FibreChannelDevicePath = extern struct {
@@ -331,15 +331,15 @@ pub const DevicePath = union(Type) {
         };
 
         comptime {
-            assert(24 == @sizeOf(FibreChannelDevicePath));
-            assert(1 == @alignOf(FibreChannelDevicePath));
+            assert(24 == @sizeof(FibreChannelDevicePath));
+            assert(1 == @alignof(FibreChannelDevicePath));
 
-            assert(0 == @offsetOf(FibreChannelDevicePath, "type"));
-            assert(1 == @offsetOf(FibreChannelDevicePath, "subtype"));
-            assert(2 == @offsetOf(FibreChannelDevicePath, "length"));
-            assert(4 == @offsetOf(FibreChannelDevicePath, "reserved"));
-            assert(8 == @offsetOf(FibreChannelDevicePath, "world_wide_name"));
-            assert(16 == @offsetOf(FibreChannelDevicePath, "logical_unit_number"));
+            assert(0 == @offsetof(FibreChannelDevicePath, "type"));
+            assert(1 == @offsetof(FibreChannelDevicePath, "subtype"));
+            assert(2 == @offsetof(FibreChannelDevicePath, "length"));
+            assert(4 == @offsetof(FibreChannelDevicePath, "reserved"));
+            assert(8 == @offsetof(FibreChannelDevicePath, "world_wide_name"));
+            assert(16 == @offsetof(FibreChannelDevicePath, "logical_unit_number"));
         }
 
         pub const FibreChannelExDevicePath = extern struct {
@@ -352,15 +352,15 @@ pub const DevicePath = union(Type) {
         };
 
         comptime {
-            assert(24 == @sizeOf(FibreChannelExDevicePath));
-            assert(1 == @alignOf(FibreChannelExDevicePath));
+            assert(24 == @sizeof(FibreChannelExDevicePath));
+            assert(1 == @alignof(FibreChannelExDevicePath));
 
-            assert(0 == @offsetOf(FibreChannelExDevicePath, "type"));
-            assert(1 == @offsetOf(FibreChannelExDevicePath, "subtype"));
-            assert(2 == @offsetOf(FibreChannelExDevicePath, "length"));
-            assert(4 == @offsetOf(FibreChannelExDevicePath, "reserved"));
-            assert(8 == @offsetOf(FibreChannelExDevicePath, "world_wide_name"));
-            assert(16 == @offsetOf(FibreChannelExDevicePath, "logical_unit_number"));
+            assert(0 == @offsetof(FibreChannelExDevicePath, "type"));
+            assert(1 == @offsetof(FibreChannelExDevicePath, "subtype"));
+            assert(2 == @offsetof(FibreChannelExDevicePath, "length"));
+            assert(4 == @offsetof(FibreChannelExDevicePath, "reserved"));
+            assert(8 == @offsetof(FibreChannelExDevicePath, "world_wide_name"));
+            assert(16 == @offsetof(FibreChannelExDevicePath, "logical_unit_number"));
         }
 
         pub const F1394DevicePath = extern struct {
@@ -372,14 +372,14 @@ pub const DevicePath = union(Type) {
         };
 
         comptime {
-            assert(16 == @sizeOf(F1394DevicePath));
-            assert(1 == @alignOf(F1394DevicePath));
+            assert(16 == @sizeof(F1394DevicePath));
+            assert(1 == @alignof(F1394DevicePath));
 
-            assert(0 == @offsetOf(F1394DevicePath, "type"));
-            assert(1 == @offsetOf(F1394DevicePath, "subtype"));
-            assert(2 == @offsetOf(F1394DevicePath, "length"));
-            assert(4 == @offsetOf(F1394DevicePath, "reserved"));
-            assert(8 == @offsetOf(F1394DevicePath, "guid"));
+            assert(0 == @offsetof(F1394DevicePath, "type"));
+            assert(1 == @offsetof(F1394DevicePath, "subtype"));
+            assert(2 == @offsetof(F1394DevicePath, "length"));
+            assert(4 == @offsetof(F1394DevicePath, "reserved"));
+            assert(8 == @offsetof(F1394DevicePath, "guid"));
         }
 
         pub const UsbDevicePath = extern struct {
@@ -391,14 +391,14 @@ pub const DevicePath = union(Type) {
         };
 
         comptime {
-            assert(6 == @sizeOf(UsbDevicePath));
-            assert(1 == @alignOf(UsbDevicePath));
+            assert(6 == @sizeof(UsbDevicePath));
+            assert(1 == @alignof(UsbDevicePath));
 
-            assert(0 == @offsetOf(UsbDevicePath, "type"));
-            assert(1 == @offsetOf(UsbDevicePath, "subtype"));
-            assert(2 == @offsetOf(UsbDevicePath, "length"));
-            assert(4 == @offsetOf(UsbDevicePath, "parent_port_number"));
-            assert(5 == @offsetOf(UsbDevicePath, "interface_number"));
+            assert(0 == @offsetof(UsbDevicePath, "type"));
+            assert(1 == @offsetof(UsbDevicePath, "subtype"));
+            assert(2 == @offsetof(UsbDevicePath, "length"));
+            assert(4 == @offsetof(UsbDevicePath, "parent_port_number"));
+            assert(5 == @offsetof(UsbDevicePath, "interface_number"));
         }
 
         pub const SataDevicePath = extern struct {
@@ -411,15 +411,15 @@ pub const DevicePath = union(Type) {
         };
 
         comptime {
-            assert(10 == @sizeOf(SataDevicePath));
-            assert(1 == @alignOf(SataDevicePath));
+            assert(10 == @sizeof(SataDevicePath));
+            assert(1 == @alignof(SataDevicePath));
 
-            assert(0 == @offsetOf(SataDevicePath, "type"));
-            assert(1 == @offsetOf(SataDevicePath, "subtype"));
-            assert(2 == @offsetOf(SataDevicePath, "length"));
-            assert(4 == @offsetOf(SataDevicePath, "hba_port_number"));
-            assert(6 == @offsetOf(SataDevicePath, "port_multiplier_port_number"));
-            assert(8 == @offsetOf(SataDevicePath, "logical_unit_number"));
+            assert(0 == @offsetof(SataDevicePath, "type"));
+            assert(1 == @offsetof(SataDevicePath, "subtype"));
+            assert(2 == @offsetof(SataDevicePath, "length"));
+            assert(4 == @offsetof(SataDevicePath, "hba_port_number"));
+            assert(6 == @offsetof(SataDevicePath, "port_multiplier_port_number"));
+            assert(8 == @offsetof(SataDevicePath, "logical_unit_number"));
         }
 
         pub const UsbWwidDevicePath = extern struct {
@@ -431,21 +431,21 @@ pub const DevicePath = union(Type) {
             device_product_id: u16 align(1),
 
             pub fn serial_number(self: *const UsbWwidDevicePath) []align(1) const u16 {
-                const serial_len = (self.length - @sizeOf(UsbWwidDevicePath)) / @sizeOf(u16);
-                return @as([*]align(1) const u16, @ptrCast(@as([*]const u8, @ptrCast(self)) + @sizeOf(UsbWwidDevicePath)))[0..serial_len];
+                const serial_len = (self.length - @sizeof(UsbWwidDevicePath)) / @sizeof(u16);
+                return @as([*]align(1) const u16, @ptrcast(@as([*]const u8, @ptrcast(self)) + @sizeof(UsbWwidDevicePath)))[0..serial_len];
             }
         };
 
         comptime {
-            assert(10 == @sizeOf(UsbWwidDevicePath));
-            assert(1 == @alignOf(UsbWwidDevicePath));
+            assert(10 == @sizeof(UsbWwidDevicePath));
+            assert(1 == @alignof(UsbWwidDevicePath));
 
-            assert(0 == @offsetOf(UsbWwidDevicePath, "type"));
-            assert(1 == @offsetOf(UsbWwidDevicePath, "subtype"));
-            assert(2 == @offsetOf(UsbWwidDevicePath, "length"));
-            assert(4 == @offsetOf(UsbWwidDevicePath, "interface_number"));
-            assert(6 == @offsetOf(UsbWwidDevicePath, "device_vendor_id"));
-            assert(8 == @offsetOf(UsbWwidDevicePath, "device_product_id"));
+            assert(0 == @offsetof(UsbWwidDevicePath, "type"));
+            assert(1 == @offsetof(UsbWwidDevicePath, "subtype"));
+            assert(2 == @offsetof(UsbWwidDevicePath, "length"));
+            assert(4 == @offsetof(UsbWwidDevicePath, "interface_number"));
+            assert(6 == @offsetof(UsbWwidDevicePath, "device_vendor_id"));
+            assert(8 == @offsetof(UsbWwidDevicePath, "device_product_id"));
         }
 
         pub const DeviceLogicalUnitDevicePath = extern struct {
@@ -456,13 +456,13 @@ pub const DevicePath = union(Type) {
         };
 
         comptime {
-            assert(5 == @sizeOf(DeviceLogicalUnitDevicePath));
-            assert(1 == @alignOf(DeviceLogicalUnitDevicePath));
+            assert(5 == @sizeof(DeviceLogicalUnitDevicePath));
+            assert(1 == @alignof(DeviceLogicalUnitDevicePath));
 
-            assert(0 == @offsetOf(DeviceLogicalUnitDevicePath, "type"));
-            assert(1 == @offsetOf(DeviceLogicalUnitDevicePath, "subtype"));
-            assert(2 == @offsetOf(DeviceLogicalUnitDevicePath, "length"));
-            assert(4 == @offsetOf(DeviceLogicalUnitDevicePath, "lun"));
+            assert(0 == @offsetof(DeviceLogicalUnitDevicePath, "type"));
+            assert(1 == @offsetof(DeviceLogicalUnitDevicePath, "subtype"));
+            assert(2 == @offsetof(DeviceLogicalUnitDevicePath, "length"));
+            assert(4 == @offsetof(DeviceLogicalUnitDevicePath, "lun"));
         }
 
         pub const UsbClassDevicePath = extern struct {
@@ -477,17 +477,17 @@ pub const DevicePath = union(Type) {
         };
 
         comptime {
-            assert(11 == @sizeOf(UsbClassDevicePath));
-            assert(1 == @alignOf(UsbClassDevicePath));
+            assert(11 == @sizeof(UsbClassDevicePath));
+            assert(1 == @alignof(UsbClassDevicePath));
 
-            assert(0 == @offsetOf(UsbClassDevicePath, "type"));
-            assert(1 == @offsetOf(UsbClassDevicePath, "subtype"));
-            assert(2 == @offsetOf(UsbClassDevicePath, "length"));
-            assert(4 == @offsetOf(UsbClassDevicePath, "vendor_id"));
-            assert(6 == @offsetOf(UsbClassDevicePath, "product_id"));
-            assert(8 == @offsetOf(UsbClassDevicePath, "device_class"));
-            assert(9 == @offsetOf(UsbClassDevicePath, "device_subclass"));
-            assert(10 == @offsetOf(UsbClassDevicePath, "device_protocol"));
+            assert(0 == @offsetof(UsbClassDevicePath, "type"));
+            assert(1 == @offsetof(UsbClassDevicePath, "subtype"));
+            assert(2 == @offsetof(UsbClassDevicePath, "length"));
+            assert(4 == @offsetof(UsbClassDevicePath, "vendor_id"));
+            assert(6 == @offsetof(UsbClassDevicePath, "product_id"));
+            assert(8 == @offsetof(UsbClassDevicePath, "device_class"));
+            assert(9 == @offsetof(UsbClassDevicePath, "device_subclass"));
+            assert(10 == @offsetof(UsbClassDevicePath, "device_protocol"));
         }
 
         pub const I2oDevicePath = extern struct {
@@ -498,13 +498,13 @@ pub const DevicePath = union(Type) {
         };
 
         comptime {
-            assert(8 == @sizeOf(I2oDevicePath));
-            assert(1 == @alignOf(I2oDevicePath));
+            assert(8 == @sizeof(I2oDevicePath));
+            assert(1 == @alignof(I2oDevicePath));
 
-            assert(0 == @offsetOf(I2oDevicePath, "type"));
-            assert(1 == @offsetOf(I2oDevicePath, "subtype"));
-            assert(2 == @offsetOf(I2oDevicePath, "length"));
-            assert(4 == @offsetOf(I2oDevicePath, "tid"));
+            assert(0 == @offsetof(I2oDevicePath, "type"));
+            assert(1 == @offsetof(I2oDevicePath, "subtype"));
+            assert(2 == @offsetof(I2oDevicePath, "length"));
+            assert(4 == @offsetof(I2oDevicePath, "tid"));
         }
 
         pub const MacAddressDevicePath = extern struct {
@@ -516,14 +516,14 @@ pub const DevicePath = union(Type) {
         };
 
         comptime {
-            assert(37 == @sizeOf(MacAddressDevicePath));
-            assert(1 == @alignOf(MacAddressDevicePath));
+            assert(37 == @sizeof(MacAddressDevicePath));
+            assert(1 == @alignof(MacAddressDevicePath));
 
-            assert(0 == @offsetOf(MacAddressDevicePath, "type"));
-            assert(1 == @offsetOf(MacAddressDevicePath, "subtype"));
-            assert(2 == @offsetOf(MacAddressDevicePath, "length"));
-            assert(4 == @offsetOf(MacAddressDevicePath, "mac_address"));
-            assert(36 == @offsetOf(MacAddressDevicePath, "if_type"));
+            assert(0 == @offsetof(MacAddressDevicePath, "type"));
+            assert(1 == @offsetof(MacAddressDevicePath, "subtype"));
+            assert(2 == @offsetof(MacAddressDevicePath, "length"));
+            assert(4 == @offsetof(MacAddressDevicePath, "mac_address"));
+            assert(36 == @offsetof(MacAddressDevicePath, "if_type"));
         }
 
         pub const Ipv4DevicePath = extern struct {
@@ -546,20 +546,20 @@ pub const DevicePath = union(Type) {
         };
 
         comptime {
-            assert(27 == @sizeOf(Ipv4DevicePath));
-            assert(1 == @alignOf(Ipv4DevicePath));
+            assert(27 == @sizeof(Ipv4DevicePath));
+            assert(1 == @alignof(Ipv4DevicePath));
 
-            assert(0 == @offsetOf(Ipv4DevicePath, "type"));
-            assert(1 == @offsetOf(Ipv4DevicePath, "subtype"));
-            assert(2 == @offsetOf(Ipv4DevicePath, "length"));
-            assert(4 == @offsetOf(Ipv4DevicePath, "local_ip_address"));
-            assert(8 == @offsetOf(Ipv4DevicePath, "remote_ip_address"));
-            assert(12 == @offsetOf(Ipv4DevicePath, "local_port"));
-            assert(14 == @offsetOf(Ipv4DevicePath, "remote_port"));
-            assert(16 == @offsetOf(Ipv4DevicePath, "network_protocol"));
-            assert(18 == @offsetOf(Ipv4DevicePath, "static_ip_address"));
-            assert(19 == @offsetOf(Ipv4DevicePath, "gateway_ip_address"));
-            assert(23 == @offsetOf(Ipv4DevicePath, "subnet_mask"));
+            assert(0 == @offsetof(Ipv4DevicePath, "type"));
+            assert(1 == @offsetof(Ipv4DevicePath, "subtype"));
+            assert(2 == @offsetof(Ipv4DevicePath, "length"));
+            assert(4 == @offsetof(Ipv4DevicePath, "local_ip_address"));
+            assert(8 == @offsetof(Ipv4DevicePath, "remote_ip_address"));
+            assert(12 == @offsetof(Ipv4DevicePath, "local_port"));
+            assert(14 == @offsetof(Ipv4DevicePath, "remote_port"));
+            assert(16 == @offsetof(Ipv4DevicePath, "network_protocol"));
+            assert(18 == @offsetof(Ipv4DevicePath, "static_ip_address"));
+            assert(19 == @offsetof(Ipv4DevicePath, "gateway_ip_address"));
+            assert(23 == @offsetof(Ipv4DevicePath, "subnet_mask"));
         }
 
         pub const Ipv6DevicePath = extern struct {
@@ -583,20 +583,20 @@ pub const DevicePath = union(Type) {
         };
 
         comptime {
-            assert(60 == @sizeOf(Ipv6DevicePath));
-            assert(1 == @alignOf(Ipv6DevicePath));
+            assert(60 == @sizeof(Ipv6DevicePath));
+            assert(1 == @alignof(Ipv6DevicePath));
 
-            assert(0 == @offsetOf(Ipv6DevicePath, "type"));
-            assert(1 == @offsetOf(Ipv6DevicePath, "subtype"));
-            assert(2 == @offsetOf(Ipv6DevicePath, "length"));
-            assert(4 == @offsetOf(Ipv6DevicePath, "local_ip_address"));
-            assert(20 == @offsetOf(Ipv6DevicePath, "remote_ip_address"));
-            assert(36 == @offsetOf(Ipv6DevicePath, "local_port"));
-            assert(38 == @offsetOf(Ipv6DevicePath, "remote_port"));
-            assert(40 == @offsetOf(Ipv6DevicePath, "protocol"));
-            assert(42 == @offsetOf(Ipv6DevicePath, "ip_address_origin"));
-            assert(43 == @offsetOf(Ipv6DevicePath, "prefix_length"));
-            assert(44 == @offsetOf(Ipv6DevicePath, "gateway_ip_address"));
+            assert(0 == @offsetof(Ipv6DevicePath, "type"));
+            assert(1 == @offsetof(Ipv6DevicePath, "subtype"));
+            assert(2 == @offsetof(Ipv6DevicePath, "length"));
+            assert(4 == @offsetof(Ipv6DevicePath, "local_ip_address"));
+            assert(20 == @offsetof(Ipv6DevicePath, "remote_ip_address"));
+            assert(36 == @offsetof(Ipv6DevicePath, "local_port"));
+            assert(38 == @offsetof(Ipv6DevicePath, "remote_port"));
+            assert(40 == @offsetof(Ipv6DevicePath, "protocol"));
+            assert(42 == @offsetof(Ipv6DevicePath, "ip_address_origin"));
+            assert(43 == @offsetof(Ipv6DevicePath, "prefix_length"));
+            assert(44 == @offsetof(Ipv6DevicePath, "gateway_ip_address"));
         }
 
         pub const VlanDevicePath = extern struct {
@@ -607,13 +607,13 @@ pub const DevicePath = union(Type) {
         };
 
         comptime {
-            assert(6 == @sizeOf(VlanDevicePath));
-            assert(1 == @alignOf(VlanDevicePath));
+            assert(6 == @sizeof(VlanDevicePath));
+            assert(1 == @alignof(VlanDevicePath));
 
-            assert(0 == @offsetOf(VlanDevicePath, "type"));
-            assert(1 == @offsetOf(VlanDevicePath, "subtype"));
-            assert(2 == @offsetOf(VlanDevicePath, "length"));
-            assert(4 == @offsetOf(VlanDevicePath, "vlan_id"));
+            assert(0 == @offsetof(VlanDevicePath, "type"));
+            assert(1 == @offsetof(VlanDevicePath, "subtype"));
+            assert(2 == @offsetof(VlanDevicePath, "length"));
+            assert(4 == @offsetof(VlanDevicePath, "vlan_id"));
         }
 
         pub const InfiniBandDevicePath = extern struct {
@@ -644,17 +644,17 @@ pub const DevicePath = union(Type) {
         };
 
         comptime {
-            assert(48 == @sizeOf(InfiniBandDevicePath));
-            assert(1 == @alignOf(InfiniBandDevicePath));
+            assert(48 == @sizeof(InfiniBandDevicePath));
+            assert(1 == @alignof(InfiniBandDevicePath));
 
-            assert(0 == @offsetOf(InfiniBandDevicePath, "type"));
-            assert(1 == @offsetOf(InfiniBandDevicePath, "subtype"));
-            assert(2 == @offsetOf(InfiniBandDevicePath, "length"));
-            assert(4 == @offsetOf(InfiniBandDevicePath, "resource_flags"));
-            assert(8 == @offsetOf(InfiniBandDevicePath, "port_gid"));
-            assert(24 == @offsetOf(InfiniBandDevicePath, "service_id"));
-            assert(32 == @offsetOf(InfiniBandDevicePath, "target_port_id"));
-            assert(40 == @offsetOf(InfiniBandDevicePath, "device_id"));
+            assert(0 == @offsetof(InfiniBandDevicePath, "type"));
+            assert(1 == @offsetof(InfiniBandDevicePath, "subtype"));
+            assert(2 == @offsetof(InfiniBandDevicePath, "length"));
+            assert(4 == @offsetof(InfiniBandDevicePath, "resource_flags"));
+            assert(8 == @offsetof(InfiniBandDevicePath, "port_gid"));
+            assert(24 == @offsetof(InfiniBandDevicePath, "service_id"));
+            assert(32 == @offsetof(InfiniBandDevicePath, "target_port_id"));
+            assert(40 == @offsetof(InfiniBandDevicePath, "device_id"));
         }
 
         pub const UartDevicePath = extern struct {
@@ -687,17 +687,17 @@ pub const DevicePath = union(Type) {
         };
 
         comptime {
-            assert(19 == @sizeOf(UartDevicePath));
-            assert(1 == @alignOf(UartDevicePath));
+            assert(19 == @sizeof(UartDevicePath));
+            assert(1 == @alignof(UartDevicePath));
 
-            assert(0 == @offsetOf(UartDevicePath, "type"));
-            assert(1 == @offsetOf(UartDevicePath, "subtype"));
-            assert(2 == @offsetOf(UartDevicePath, "length"));
-            assert(4 == @offsetOf(UartDevicePath, "reserved"));
-            assert(8 == @offsetOf(UartDevicePath, "baud_rate"));
-            assert(16 == @offsetOf(UartDevicePath, "data_bits"));
-            assert(17 == @offsetOf(UartDevicePath, "parity"));
-            assert(18 == @offsetOf(UartDevicePath, "stop_bits"));
+            assert(0 == @offsetof(UartDevicePath, "type"));
+            assert(1 == @offsetof(UartDevicePath, "subtype"));
+            assert(2 == @offsetof(UartDevicePath, "length"));
+            assert(4 == @offsetof(UartDevicePath, "reserved"));
+            assert(8 == @offsetof(UartDevicePath, "baud_rate"));
+            assert(16 == @offsetof(UartDevicePath, "data_bits"));
+            assert(17 == @offsetof(UartDevicePath, "parity"));
+            assert(18 == @offsetof(UartDevicePath, "stop_bits"));
         }
 
         pub const VendorDefinedDevicePath = extern struct {
@@ -708,13 +708,13 @@ pub const DevicePath = union(Type) {
         };
 
         comptime {
-            assert(20 == @sizeOf(VendorDefinedDevicePath));
-            assert(1 == @alignOf(VendorDefinedDevicePath));
+            assert(20 == @sizeof(VendorDefinedDevicePath));
+            assert(1 == @alignof(VendorDefinedDevicePath));
 
-            assert(0 == @offsetOf(VendorDefinedDevicePath, "type"));
-            assert(1 == @offsetOf(VendorDefinedDevicePath, "subtype"));
-            assert(2 == @offsetOf(VendorDefinedDevicePath, "length"));
-            assert(4 == @offsetOf(VendorDefinedDevicePath, "vendor_guid"));
+            assert(0 == @offsetof(VendorDefinedDevicePath, "type"));
+            assert(1 == @offsetof(VendorDefinedDevicePath, "subtype"));
+            assert(2 == @offsetof(VendorDefinedDevicePath, "length"));
+            assert(4 == @offsetof(VendorDefinedDevicePath, "vendor_guid"));
         }
     };
 
@@ -767,18 +767,18 @@ pub const DevicePath = union(Type) {
         };
 
         comptime {
-            assert(42 == @sizeOf(HardDriveDevicePath));
-            assert(1 == @alignOf(HardDriveDevicePath));
+            assert(42 == @sizeof(HardDriveDevicePath));
+            assert(1 == @alignof(HardDriveDevicePath));
 
-            assert(0 == @offsetOf(HardDriveDevicePath, "type"));
-            assert(1 == @offsetOf(HardDriveDevicePath, "subtype"));
-            assert(2 == @offsetOf(HardDriveDevicePath, "length"));
-            assert(4 == @offsetOf(HardDriveDevicePath, "partition_number"));
-            assert(8 == @offsetOf(HardDriveDevicePath, "partition_start"));
-            assert(16 == @offsetOf(HardDriveDevicePath, "partition_size"));
-            assert(24 == @offsetOf(HardDriveDevicePath, "partition_signature"));
-            assert(40 == @offsetOf(HardDriveDevicePath, "partition_format"));
-            assert(41 == @offsetOf(HardDriveDevicePath, "signature_type"));
+            assert(0 == @offsetof(HardDriveDevicePath, "type"));
+            assert(1 == @offsetof(HardDriveDevicePath, "subtype"));
+            assert(2 == @offsetof(HardDriveDevicePath, "length"));
+            assert(4 == @offsetof(HardDriveDevicePath, "partition_number"));
+            assert(8 == @offsetof(HardDriveDevicePath, "partition_start"));
+            assert(16 == @offsetof(HardDriveDevicePath, "partition_size"));
+            assert(24 == @offsetof(HardDriveDevicePath, "partition_signature"));
+            assert(40 == @offsetof(HardDriveDevicePath, "partition_format"));
+            assert(41 == @offsetof(HardDriveDevicePath, "signature_type"));
         }
 
         pub const CdromDevicePath = extern struct {
@@ -791,15 +791,15 @@ pub const DevicePath = union(Type) {
         };
 
         comptime {
-            assert(24 == @sizeOf(CdromDevicePath));
-            assert(1 == @alignOf(CdromDevicePath));
+            assert(24 == @sizeof(CdromDevicePath));
+            assert(1 == @alignof(CdromDevicePath));
 
-            assert(0 == @offsetOf(CdromDevicePath, "type"));
-            assert(1 == @offsetOf(CdromDevicePath, "subtype"));
-            assert(2 == @offsetOf(CdromDevicePath, "length"));
-            assert(4 == @offsetOf(CdromDevicePath, "boot_entry"));
-            assert(8 == @offsetOf(CdromDevicePath, "partition_start"));
-            assert(16 == @offsetOf(CdromDevicePath, "partition_size"));
+            assert(0 == @offsetof(CdromDevicePath, "type"));
+            assert(1 == @offsetof(CdromDevicePath, "subtype"));
+            assert(2 == @offsetof(CdromDevicePath, "length"));
+            assert(4 == @offsetof(CdromDevicePath, "boot_entry"));
+            assert(8 == @offsetof(CdromDevicePath, "partition_start"));
+            assert(16 == @offsetof(CdromDevicePath, "partition_size"));
         }
 
         pub const VendorDevicePath = extern struct {
@@ -810,13 +810,13 @@ pub const DevicePath = union(Type) {
         };
 
         comptime {
-            assert(20 == @sizeOf(VendorDevicePath));
-            assert(1 == @alignOf(VendorDevicePath));
+            assert(20 == @sizeof(VendorDevicePath));
+            assert(1 == @alignof(VendorDevicePath));
 
-            assert(0 == @offsetOf(VendorDevicePath, "type"));
-            assert(1 == @offsetOf(VendorDevicePath, "subtype"));
-            assert(2 == @offsetOf(VendorDevicePath, "length"));
-            assert(4 == @offsetOf(VendorDevicePath, "guid"));
+            assert(0 == @offsetof(VendorDevicePath, "type"));
+            assert(1 == @offsetof(VendorDevicePath, "subtype"));
+            assert(2 == @offsetof(VendorDevicePath, "length"));
+            assert(4 == @offsetof(VendorDevicePath, "guid"));
         }
 
         pub const FilePathDevicePath = extern struct {
@@ -825,17 +825,17 @@ pub const DevicePath = union(Type) {
             length: u16 align(1),
 
             pub fn getPath(self: *const FilePathDevicePath) [*:0]align(1) const u16 {
-                return @as([*:0]align(1) const u16, @ptrCast(@as([*]const u8, @ptrCast(self)) + @sizeOf(FilePathDevicePath)));
+                return @as([*:0]align(1) const u16, @ptrcast(@as([*]const u8, @ptrcast(self)) + @sizeof(FilePathDevicePath)));
             }
         };
 
         comptime {
-            assert(4 == @sizeOf(FilePathDevicePath));
-            assert(1 == @alignOf(FilePathDevicePath));
+            assert(4 == @sizeof(FilePathDevicePath));
+            assert(1 == @alignof(FilePathDevicePath));
 
-            assert(0 == @offsetOf(FilePathDevicePath, "type"));
-            assert(1 == @offsetOf(FilePathDevicePath, "subtype"));
-            assert(2 == @offsetOf(FilePathDevicePath, "length"));
+            assert(0 == @offsetof(FilePathDevicePath, "type"));
+            assert(1 == @offsetof(FilePathDevicePath, "subtype"));
+            assert(2 == @offsetof(FilePathDevicePath, "length"));
         }
 
         pub const MediaProtocolDevicePath = extern struct {
@@ -846,13 +846,13 @@ pub const DevicePath = union(Type) {
         };
 
         comptime {
-            assert(20 == @sizeOf(MediaProtocolDevicePath));
-            assert(1 == @alignOf(MediaProtocolDevicePath));
+            assert(20 == @sizeof(MediaProtocolDevicePath));
+            assert(1 == @alignof(MediaProtocolDevicePath));
 
-            assert(0 == @offsetOf(MediaProtocolDevicePath, "type"));
-            assert(1 == @offsetOf(MediaProtocolDevicePath, "subtype"));
-            assert(2 == @offsetOf(MediaProtocolDevicePath, "length"));
-            assert(4 == @offsetOf(MediaProtocolDevicePath, "guid"));
+            assert(0 == @offsetof(MediaProtocolDevicePath, "type"));
+            assert(1 == @offsetof(MediaProtocolDevicePath, "subtype"));
+            assert(2 == @offsetof(MediaProtocolDevicePath, "length"));
+            assert(4 == @offsetof(MediaProtocolDevicePath, "guid"));
         }
 
         pub const PiwgFirmwareFileDevicePath = extern struct {
@@ -863,13 +863,13 @@ pub const DevicePath = union(Type) {
         };
 
         comptime {
-            assert(20 == @sizeOf(PiwgFirmwareFileDevicePath));
-            assert(1 == @alignOf(PiwgFirmwareFileDevicePath));
+            assert(20 == @sizeof(PiwgFirmwareFileDevicePath));
+            assert(1 == @alignof(PiwgFirmwareFileDevicePath));
 
-            assert(0 == @offsetOf(PiwgFirmwareFileDevicePath, "type"));
-            assert(1 == @offsetOf(PiwgFirmwareFileDevicePath, "subtype"));
-            assert(2 == @offsetOf(PiwgFirmwareFileDevicePath, "length"));
-            assert(4 == @offsetOf(PiwgFirmwareFileDevicePath, "fv_filename"));
+            assert(0 == @offsetof(PiwgFirmwareFileDevicePath, "type"));
+            assert(1 == @offsetof(PiwgFirmwareFileDevicePath, "subtype"));
+            assert(2 == @offsetof(PiwgFirmwareFileDevicePath, "length"));
+            assert(4 == @offsetof(PiwgFirmwareFileDevicePath, "fv_filename"));
         }
 
         pub const PiwgFirmwareVolumeDevicePath = extern struct {
@@ -880,13 +880,13 @@ pub const DevicePath = union(Type) {
         };
 
         comptime {
-            assert(20 == @sizeOf(PiwgFirmwareVolumeDevicePath));
-            assert(1 == @alignOf(PiwgFirmwareVolumeDevicePath));
+            assert(20 == @sizeof(PiwgFirmwareVolumeDevicePath));
+            assert(1 == @alignof(PiwgFirmwareVolumeDevicePath));
 
-            assert(0 == @offsetOf(PiwgFirmwareVolumeDevicePath, "type"));
-            assert(1 == @offsetOf(PiwgFirmwareVolumeDevicePath, "subtype"));
-            assert(2 == @offsetOf(PiwgFirmwareVolumeDevicePath, "length"));
-            assert(4 == @offsetOf(PiwgFirmwareVolumeDevicePath, "fv_name"));
+            assert(0 == @offsetof(PiwgFirmwareVolumeDevicePath, "type"));
+            assert(1 == @offsetof(PiwgFirmwareVolumeDevicePath, "subtype"));
+            assert(2 == @offsetof(PiwgFirmwareVolumeDevicePath, "length"));
+            assert(4 == @offsetof(PiwgFirmwareVolumeDevicePath, "fv_name"));
         }
 
         pub const RelativeOffsetRangeDevicePath = extern struct {
@@ -899,15 +899,15 @@ pub const DevicePath = union(Type) {
         };
 
         comptime {
-            assert(24 == @sizeOf(RelativeOffsetRangeDevicePath));
-            assert(1 == @alignOf(RelativeOffsetRangeDevicePath));
+            assert(24 == @sizeof(RelativeOffsetRangeDevicePath));
+            assert(1 == @alignof(RelativeOffsetRangeDevicePath));
 
-            assert(0 == @offsetOf(RelativeOffsetRangeDevicePath, "type"));
-            assert(1 == @offsetOf(RelativeOffsetRangeDevicePath, "subtype"));
-            assert(2 == @offsetOf(RelativeOffsetRangeDevicePath, "length"));
-            assert(4 == @offsetOf(RelativeOffsetRangeDevicePath, "reserved"));
-            assert(8 == @offsetOf(RelativeOffsetRangeDevicePath, "start"));
-            assert(16 == @offsetOf(RelativeOffsetRangeDevicePath, "end"));
+            assert(0 == @offsetof(RelativeOffsetRangeDevicePath, "type"));
+            assert(1 == @offsetof(RelativeOffsetRangeDevicePath, "subtype"));
+            assert(2 == @offsetof(RelativeOffsetRangeDevicePath, "length"));
+            assert(4 == @offsetof(RelativeOffsetRangeDevicePath, "reserved"));
+            assert(8 == @offsetof(RelativeOffsetRangeDevicePath, "start"));
+            assert(16 == @offsetof(RelativeOffsetRangeDevicePath, "end"));
         }
 
         pub const RamDiskDevicePath = extern struct {
@@ -921,16 +921,16 @@ pub const DevicePath = union(Type) {
         };
 
         comptime {
-            assert(38 == @sizeOf(RamDiskDevicePath));
-            assert(1 == @alignOf(RamDiskDevicePath));
+            assert(38 == @sizeof(RamDiskDevicePath));
+            assert(1 == @alignof(RamDiskDevicePath));
 
-            assert(0 == @offsetOf(RamDiskDevicePath, "type"));
-            assert(1 == @offsetOf(RamDiskDevicePath, "subtype"));
-            assert(2 == @offsetOf(RamDiskDevicePath, "length"));
-            assert(4 == @offsetOf(RamDiskDevicePath, "start"));
-            assert(12 == @offsetOf(RamDiskDevicePath, "end"));
-            assert(20 == @offsetOf(RamDiskDevicePath, "disk_type"));
-            assert(36 == @offsetOf(RamDiskDevicePath, "instance"));
+            assert(0 == @offsetof(RamDiskDevicePath, "type"));
+            assert(1 == @offsetof(RamDiskDevicePath, "subtype"));
+            assert(2 == @offsetof(RamDiskDevicePath, "length"));
+            assert(4 == @offsetof(RamDiskDevicePath, "start"));
+            assert(12 == @offsetof(RamDiskDevicePath, "end"));
+            assert(20 == @offsetof(RamDiskDevicePath, "disk_type"));
+            assert(36 == @offsetof(RamDiskDevicePath, "instance"));
         }
     };
 
@@ -950,19 +950,19 @@ pub const DevicePath = union(Type) {
             status_flag: u16 align(1),
 
             pub fn getDescription(self: *const BBS101DevicePath) [*:0]const u8 {
-                return @as([*:0]const u8, @ptrCast(self)) + @sizeOf(BBS101DevicePath);
+                return @as([*:0]const u8, @ptrcast(self)) + @sizeof(BBS101DevicePath);
             }
         };
 
         comptime {
-            assert(8 == @sizeOf(BBS101DevicePath));
-            assert(1 == @alignOf(BBS101DevicePath));
+            assert(8 == @sizeof(BBS101DevicePath));
+            assert(1 == @alignof(BBS101DevicePath));
 
-            assert(0 == @offsetOf(BBS101DevicePath, "type"));
-            assert(1 == @offsetOf(BBS101DevicePath, "subtype"));
-            assert(2 == @offsetOf(BBS101DevicePath, "length"));
-            assert(4 == @offsetOf(BBS101DevicePath, "device_type"));
-            assert(6 == @offsetOf(BBS101DevicePath, "status_flag"));
+            assert(0 == @offsetof(BBS101DevicePath, "type"));
+            assert(1 == @offsetof(BBS101DevicePath, "subtype"));
+            assert(2 == @offsetof(BBS101DevicePath, "length"));
+            assert(4 == @offsetof(BBS101DevicePath, "device_type"));
+            assert(6 == @offsetof(BBS101DevicePath, "status_flag"));
         }
     };
 
@@ -983,12 +983,12 @@ pub const DevicePath = union(Type) {
         };
 
         comptime {
-            assert(4 == @sizeOf(EndEntireDevicePath));
-            assert(1 == @alignOf(EndEntireDevicePath));
+            assert(4 == @sizeof(EndEntireDevicePath));
+            assert(1 == @alignof(EndEntireDevicePath));
 
-            assert(0 == @offsetOf(EndEntireDevicePath, "type"));
-            assert(1 == @offsetOf(EndEntireDevicePath, "subtype"));
-            assert(2 == @offsetOf(EndEntireDevicePath, "length"));
+            assert(0 == @offsetof(EndEntireDevicePath, "type"));
+            assert(1 == @offsetof(EndEntireDevicePath, "subtype"));
+            assert(2 == @offsetof(EndEntireDevicePath, "length"));
         }
 
         pub const EndThisInstanceDevicePath = extern struct {
@@ -998,12 +998,12 @@ pub const DevicePath = union(Type) {
         };
 
         comptime {
-            assert(4 == @sizeOf(EndEntireDevicePath));
-            assert(1 == @alignOf(EndEntireDevicePath));
+            assert(4 == @sizeof(EndEntireDevicePath));
+            assert(1 == @alignof(EndEntireDevicePath));
 
-            assert(0 == @offsetOf(EndEntireDevicePath, "type"));
-            assert(1 == @offsetOf(EndEntireDevicePath, "subtype"));
-            assert(2 == @offsetOf(EndEntireDevicePath, "length"));
+            assert(0 == @offsetof(EndEntireDevicePath, "type"));
+            assert(1 == @offsetof(EndEntireDevicePath, "subtype"));
+            assert(2 == @offsetof(EndEntireDevicePath, "length"));
         }
     };
 };

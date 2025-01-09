@@ -114,21 +114,21 @@ pub fn fixedBufferStream(buffer: anytype) FixedBufferStream(Slice(@TypeOf(buffer
 }
 
 fn Slice(comptime T: type) type {
-    switch (@typeInfo(T)) {
+    switch (@typeinfo(T)) {
         .Pointer => |ptr_info| {
             var new_ptr_info = ptr_info;
             switch (ptr_info.size) {
                 .Slice => {},
-                .One => switch (@typeInfo(ptr_info.child)) {
+                .One => switch (@typeinfo(ptr_info.child)) {
                     .Array => |info| new_ptr_info.child = info.child,
-                    else => @compileError("invalid type given to fixedBufferStream"),
+                    else => @compileerror("invalid type given to fixedBufferStream"),
                 },
-                else => @compileError("invalid type given to fixedBufferStream"),
+                else => @compileerror("invalid type given to fixedBufferStream"),
             }
             new_ptr_info.size = .Slice;
             return @Type(.{ .Pointer = new_ptr_info });
         },
-        else => @compileError("invalid type given to fixedBufferStream"),
+        else => @compileerror("invalid type given to fixedBufferStream"),
     }
 }
 

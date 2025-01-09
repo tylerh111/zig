@@ -3,10 +3,10 @@ comptime {
     const not_undef: i64 = 32;
 
     // If either of the operands are zero, then the other operand is returned.
-    @compileLog(undef + 0);
-    @compileLog(not_undef + 0);
-    @compileLog(0 + undef);
-    @compileLog(0 + not_undef);
+    @compilelog(undef + 0);
+    @compilelog(not_undef + 0);
+    @compilelog(0 + undef);
+    @compilelog(0 + not_undef);
 
     _ = undef + undef;
 }

@@ -201,7 +201,7 @@ fn maybeUpdateName(write_file: *WriteFile) void {
 fn make(step: *Step, prog_node: std.Progress.Node) !void {
     _ = prog_node;
     const b = step.owner;
-    const write_file: *WriteFile = @fieldParentPtr("step", step);
+    const write_file: *WriteFile = @fieldparentptr("step", step);
 
     // Writing to source files is kind of an extra capability of this
     // WriteFile - arguably it should be a different step. But anyway here
@@ -212,7 +212,7 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
         if (fs.path.dirname(output_source_file.sub_path)) |dirname| {
             b.build_root.handle.makePath(dirname) catch |err| {
                 return step.fail("unable to make path '{}{s}': {s}", .{
-                    b.build_root, dirname, @errorName(err),
+                    b.build_root, dirname, @errorname(err),
                 });
             };
         }
@@ -220,7 +220,7 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
             .bytes => |bytes| {
                 b.build_root.handle.writeFile(.{ .sub_path = output_source_file.sub_path, .data = bytes }) catch |err| {
                     return step.fail("unable to write file '{}{s}': {s}", .{
-                        b.build_root, output_source_file.sub_path, @errorName(err),
+                        b.build_root, output_source_file.sub_path, @errorname(err),
                     });
                 };
                 any_miss = true;
@@ -235,7 +235,7 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
                     .{},
                 ) catch |err| {
                     return step.fail("unable to update file from '{s}' to '{}{s}': {s}", .{
-                        source_path, b.build_root, output_source_file.sub_path, @errorName(err),
+                        source_path, b.build_root, output_source_file.sub_path, @errorname(err),
                     });
                 };
                 any_miss = any_miss or prev_status == .stale;
@@ -294,7 +294,7 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
 
     var cache_dir = b.cache_root.handle.makeOpenPath(cache_path, .{}) catch |err| {
         return step.fail("unable to make path '{}{s}': {s}", .{
-            b.cache_root, cache_path, @errorName(err),
+            b.cache_root, cache_path, @errorname(err),
         });
     };
     defer cache_dir.close();
@@ -305,7 +305,7 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
         if (fs.path.dirname(file.sub_path)) |dirname| {
             cache_dir.makePath(dirname) catch |err| {
                 return step.fail("unable to make path '{}{s}{c}{s}': {s}", .{
-                    b.cache_root, cache_path, fs.path.sep, dirname, @errorName(err),
+                    b.cache_root, cache_path, fs.path.sep, dirname, @errorname(err),
                 });
             };
         }
@@ -313,7 +313,7 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
             .bytes => |bytes| {
                 cache_dir.writeFile(.{ .sub_path = file.sub_path, .data = bytes }) catch |err| {
                     return step.fail("unable to write file '{}{s}{c}{s}': {s}", .{
-                        b.cache_root, cache_path, fs.path.sep, file.sub_path, @errorName(err),
+                        b.cache_root, cache_path, fs.path.sep, file.sub_path, @errorname(err),
                     });
                 };
             },
@@ -332,7 +332,7 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
                         cache_path,
                         fs.path.sep,
                         file.sub_path,
-                        @errorName(err),
+                        @errorname(err),
                     });
                 };
                 // At this point we already will mark the step as a cache miss.
@@ -354,14 +354,14 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
         if (dest_dirname.len != 0) {
             cache_dir.makePath(dest_dirname) catch |err| {
                 return step.fail("unable to make path '{}{s}{c}{s}': {s}", .{
-                    b.cache_root, cache_path, fs.path.sep, dest_dirname, @errorName(err),
+                    b.cache_root, cache_path, fs.path.sep, dest_dirname, @errorname(err),
                 });
             };
         }
 
         var src_dir = b.build_root.handle.openDir(full_src_dir_path, .{ .iterate = true }) catch |err| {
             return step.fail("unable to open source directory '{s}': {s}", .{
-                full_src_dir_path, @errorName(err),
+                full_src_dir_path, @errorname(err),
             });
         };
         defer src_dir.close();
@@ -396,7 +396,7 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
                             cache_path,
                             fs.path.sep,
                             dest_path,
-                            @errorName(err),
+                            @errorname(err),
                         });
                     };
                     _ = prev_status;

@@ -2,7 +2,7 @@ const Foo = struct {
     derp: i32,
 };
 export fn foo() usize {
-    return @offsetOf(
+    return @offsetof(
         Foo,
         "a",
     );

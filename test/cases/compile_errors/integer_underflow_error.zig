@@ -1,5 +1,5 @@
 export fn entry() void {
-    _ = @as(*anyopaque, @ptrFromInt(~@as(usize, @import("std").math.maxInt(usize)) - 1));
+    _ = @as(*anyopaque, @ptrfromint(~@as(usize, @import("std").math.maxInt(usize)) - 1));
 }
 
 // error

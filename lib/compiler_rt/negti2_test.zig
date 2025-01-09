@@ -20,7 +20,7 @@ test "negti2" {
     // max_usable == MAX(i32) == -MIN(i32)
     // == 170141183460469231731687303715884105727
     // == 7fffffffffffffffffffffffffffffff
-    // divTrunc: max_usable / i, i=1,2,3,5,100
+    // divtrunc: max_usable / i, i=1,2,3,5,100
     // 7fffffffffffffffffffffffffffffff / i
     try test__negti2(-56713727820156410577229101238628035242, 56713727820156410577229101238628035242);
     try test__negti2(56713727820156410577229101238628035242, -56713727820156410577229101238628035242);

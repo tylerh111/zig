@@ -22,7 +22,7 @@ pub const Symbol = packed struct {
             if (a.kind == b.kind) {
                 return a.symbol < b.symbol;
             }
-            return @intFromEnum(a.kind) < @intFromEnum(b.kind);
+            return @intfromenum(a.kind) < @intfromenum(b.kind);
         }
         return a.code_bits < b.code_bits;
     }
@@ -75,11 +75,11 @@ fn HuffmanDecoder(
             for (self.symbols, 0..) |_, i| {
                 const cb: u4 = if (i < lens.len) lens[i] else 0;
                 self.symbols[i] = if (i < 256)
-                    .{ .kind = .literal, .symbol = @intCast(i), .code_bits = cb }
+                    .{ .kind = .literal, .symbol = @intcast(i), .code_bits = cb }
                 else if (i == 256)
                     .{ .kind = .end_of_block, .symbol = 0xff, .code_bits = cb }
                 else
-                    .{ .kind = .match, .symbol = @intCast(i - 257), .code_bits = cb };
+                    .{ .kind = .match, .symbol = @intcast(i - 257), .code_bits = cb };
             }
             std.sort.heap(Symbol, &self.symbols, {}, Symbol.asc);
 
@@ -108,7 +108,7 @@ fn HuffmanDecoder(
                     // insert into linked table starting at root
                     const root = &self.lookup[idx];
                     const root_next = root.next;
-                    root.next = @intCast(pos);
+                    root.next = @intcast(pos);
                     sym.next = root_next;
                 }
 
@@ -229,25 +229,25 @@ test "init/find" {
     // All possible codes for each symbol.
     // Lookup table has 126 elements, to cover all possible 7 bit codes.
     for (0b0000_000..0b0100_000) |c| // 0..32 (32)
-        try testing.expectEqual(3, (try h.find(@intCast(c))).symbol);
+        try testing.expectEqual(3, (try h.find(@intcast(c))).symbol);
 
     for (0b0100_000..0b1000_000) |c| // 32..64 (32)
-        try testing.expectEqual(18, (try h.find(@intCast(c))).symbol);
+        try testing.expectEqual(18, (try h.find(@intcast(c))).symbol);
 
     for (0b1000_000..0b1010_000) |c| // 64..80 (16)
-        try testing.expectEqual(1, (try h.find(@intCast(c))).symbol);
+        try testing.expectEqual(1, (try h.find(@intcast(c))).symbol);
 
     for (0b1010_000..0b1100_000) |c| // 80..96 (16)
-        try testing.expectEqual(4, (try h.find(@intCast(c))).symbol);
+        try testing.expectEqual(4, (try h.find(@intcast(c))).symbol);
 
     for (0b1100_000..0b1110_000) |c| // 96..112 (16)
-        try testing.expectEqual(17, (try h.find(@intCast(c))).symbol);
+        try testing.expectEqual(17, (try h.find(@intcast(c))).symbol);
 
     for (0b1110_000..0b1111_000) |c| // 112..120 (8)
-        try testing.expectEqual(0, (try h.find(@intCast(c))).symbol);
+        try testing.expectEqual(0, (try h.find(@intcast(c))).symbol);
 
     for (0b1111_000..0b1_0000_000) |c| // 120...128 (8)
-        try testing.expectEqual(16, (try h.find(@intCast(c))).symbol);
+        try testing.expectEqual(16, (try h.find(@intcast(c))).symbol);
 }
 
 test "encode/decode literals" {
@@ -260,7 +260,7 @@ test "encode/decode literals" {
         freq[256] = 1; // ensure we have end of block code
         for (&freq, 1..) |*f, i| {
             if (i % j == 0)
-                f.* = @intCast(i);
+                f.* = @intcast(i);
         }
 
         // encoder from freqencies
@@ -269,7 +269,7 @@ test "encode/decode literals" {
         // get code_lens from encoder
         var code_lens = [_]u4{0} ** 286;
         for (code_lens, 0..) |_, i| {
-            code_lens[i] = @intCast(enc.codes[i].len);
+            code_lens[i] = @intcast(enc.codes[i].len);
         }
         // generate decoder from code lens
         var dec: LiteralDecoder = .{};
@@ -278,7 +278,7 @@ test "encode/decode literals" {
         // expect decoder code to match original encoder code
         for (dec.symbols) |s| {
             if (s.code_bits == 0) continue;
-            const c_code: u16 = @bitReverse(@as(u15, @intCast(s.code)));
+            const c_code: u16 = @bitreverse(@as(u15, @intcast(s.code)));
             const symbol: u16 = switch (s.kind) {
                 .literal => s.symbol,
                 .end_of_block => 256,
@@ -293,7 +293,7 @@ test "encode/decode literals" {
         for (enc.codes) |c| {
             if (c.len == 0) continue;
 
-            const s_code: u15 = @bitReverse(@as(u15, @intCast(c.code)));
+            const s_code: u15 = @bitreverse(@as(u15, @intcast(c.code)));
             const s = try dec.find(s_code);
             try testing.expect(s.code == s_code);
             try testing.expect(s.code_bits == c.len);
