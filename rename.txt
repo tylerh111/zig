@@ -110,7 +110,7 @@ Builtin Functions
     @volatileCast       | @volatilecast       | @volatile_cast
     @workGroupId        | @workgroupid        | @work_group_id
     @workGroupSize      | @workgroupsize      | @work_group_size
-    @workItemId         | @workitemid         | @work_item_id
+    @workitemid         | @workitemid         | @work_item_id
 
     @FieldType          | @FieldType
     @This               | @This
