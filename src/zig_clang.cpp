@@ -164,7 +164,7 @@ void ZigClang_detect_enum_CK(clang::CastKind x) {
         case clang::CK_DerivedToBase:
         case clang::CK_DerivedToBaseMemberPointer:
         case clang::CK_Dynamic:
-        case clang::CK_FixedPointcast:
+        case clang::CK_FixedPointCast:
         case clang::CK_FixedPointToBoolean:
         case clang::CK_FixedPointToFloating:
         case clang::CK_FixedPointToIntegral:
@@ -244,7 +244,7 @@ static_assert((clang::CastKind)ZigClangCK_IntegralToBoolean == clang::CK_Integra
 static_assert((clang::CastKind)ZigClangCK_IntegralToFloating == clang::CK_IntegralToFloating, "");
 static_assert((clang::CastKind)ZigClangCK_FloatingToFixedPoint == clang::CK_FloatingToFixedPoint, "");
 static_assert((clang::CastKind)ZigClangCK_FixedPointToFloating == clang::CK_FixedPointToFloating, "");
-static_assert((clang::CastKind)ZigClangCK_FixedPointcast == clang::CK_FixedPointcast, "");
+static_assert((clang::CastKind)ZigClangCK_FixedPointCast == clang::CK_FixedPointCast, "");
 static_assert((clang::CastKind)ZigClangCK_FixedPointToIntegral == clang::CK_FixedPointToIntegral, "");
 static_assert((clang::CastKind)ZigClangCK_IntegralToFixedPoint == clang::CK_IntegralToFixedPoint, "");
 static_assert((clang::CastKind)ZigClangCK_FixedPointToBoolean == clang::CK_FixedPointToBoolean, "");
@@ -2811,7 +2811,7 @@ bool ZigClangType_isIncompleteOrZeroLengthArrayType(const ZigClangQualType *self
     if (casted_type->isIncompleteArrayType())
         return true;
 
-    clang::QualType elem_type = *casted;   
+    clang::QualType elem_type = *casted;
     while (const clang::ConstantArrayType *ArrayT = casted_ctx->getAsConstantArrayType(elem_type)) {
         if (ArrayT->getSize() == 0)
             return true;
@@ -4059,7 +4059,7 @@ const struct ZigClangAPSInt *ZigClangEnumConstantDecl_getInitVal(const struct Zi
 // See also: https://github.com/ziglang/zig/issues/11168
 bool ZigClangIsLLVMUsingSeparateLibcxx() {
 
-    // Temporarily create an InMemoryFileSystem, so that we can perform a file 
+    // Temporarily create an InMemoryFileSystem, so that we can perform a file
     // lookup that is guaranteed to fail.
     auto FS = new llvm::vfs::InMemoryFileSystem(true);
     auto StatusOrErr = FS->status("foo.txt");
